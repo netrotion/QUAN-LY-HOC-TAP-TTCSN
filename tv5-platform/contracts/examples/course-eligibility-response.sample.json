@@ -1,0 +1,11 @@
+{
+  "courseCode": "IT6001",
+  "eligible": false,
+  "missingPrerequisites": [
+    "MATH1002 - Toán rời rạc"
+  ],
+  "warnings": [
+    "Môn học này là tiên quyết cho 3 môn chuyên ngành ở kỳ tiếp theo"
+  ],
+  "dataRevision": "rev-1001"
+}

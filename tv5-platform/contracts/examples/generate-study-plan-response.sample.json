@@ -1,0 +1,35 @@
+{
+  "planId": "plan-2026-9001",
+  "studentId": "std-2026-001",
+  "status": "DRAFT",
+  "semesters": [
+    {
+      "semesterCode": "2026_1",
+      "semesterName": "Học kỳ 1 năm học 2026-2027",
+      "courses": [
+        {
+          "courseCode": "MATH1002",
+          "courseName": "Toán rời rạc (học lại)",
+          "credits": 3,
+          "targetGrade": "B",
+          "rationale": "Gỡ nút thắt môn tiên quyết để mở khóa môn kỳ sau"
+        },
+        {
+          "courseCode": "IT6002",
+          "courseName": "Lập trình mạng",
+          "credits": 3,
+          "targetGrade": "A",
+          "rationale": "Môn cơ sở chuyên ngành"
+        }
+      ],
+      "totalCredits": 6,
+      "expectedGpa": 3.50
+    }
+  ],
+  "projectedCpa": 2.58,
+  "warnings": [
+    "Cần duy trì tối thiểu 10 tín chỉ theo quy chế nếu không phải kỳ cuối"
+  ],
+  "planVersion": 1,
+  "dataRevision": "rev-1001"
+}

@@ -1,0 +1,8 @@
+{
+  "studentId": "std-2026-001",
+  "targetGraduationSemester": "2027_2",
+  "targetCpa": 3.20,
+  "maxCreditsPerSemester": 20,
+  "includeSummerSemesters": true,
+  "dataRevision": "rev-1001"
+}

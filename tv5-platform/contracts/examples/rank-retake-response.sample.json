@@ -1,0 +1,30 @@
+{
+  "studentId": "std-2026-001",
+  "recommendations": [
+    {
+      "courseCode": "IT2001",
+      "courseName": "Lập trình hướng đối tượng",
+      "credits": 4,
+      "currentGrade": "D+",
+      "currentGradePoints": 1.5,
+      "targetGrade": "A",
+      "targetGradePoints": 4.0,
+      "potentialCpaGain": 0.16,
+      "rank": 1,
+      "rationale": "Môn 4 tín chỉ có điểm D+, cải thiện lên A mang lại ROI CPA cao nhất"
+    },
+    {
+      "courseCode": "ML1001",
+      "courseName": "Triết học Mác - Lênin",
+      "credits": 3,
+      "currentGrade": "D",
+      "currentGradePoints": 1.0,
+      "targetGrade": "B",
+      "targetGradePoints": 3.0,
+      "potentialCpaGain": 0.09,
+      "rank": 2,
+      "rationale": "Cải thiện từ D lên B với chi phí 3 tín chỉ"
+    }
+  ],
+  "dataRevision": "rev-1001"
+}

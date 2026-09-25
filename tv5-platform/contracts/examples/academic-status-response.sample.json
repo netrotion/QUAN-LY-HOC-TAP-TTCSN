@@ -1,0 +1,12 @@
+{
+  "studentId": "std-2026-001",
+  "gpa": null,
+  "cpa": 2.45,
+  "accumulatedCredits": 68,
+  "totalCreditsRequired": 135,
+  "riskLevel": "WARNING_LEVEL_1",
+  "warningMessages": [
+    "Cảnh báo học vụ mức 1 do nợ môn tiên quyết Toán rời rạc"
+  ],
+  "dataRevision": "rev-1001"
+}

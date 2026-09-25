@@ -1,0 +1,21 @@
+{
+  "studentId": "std-2026-001",
+  "currentCpa": 2.45,
+  "targetCpa": 3.20,
+  "remainingCredits": 67,
+  "requiredAverageGpa": 3.42,
+  "courseRequirements": [
+    {
+      "courseCode": "IT4001",
+      "courseName": "Cơ sở dữ liệu nâng cao",
+      "credits": 3,
+      "requiredGrade": "A",
+      "requiredGradePoints": 4.0,
+      "rationale": "Cần đạt mức A ở tối thiểu 60% số môn chuyên ngành"
+    }
+  ],
+  "feasibilityWarnings": [
+    "Mục tiêu đòi hỏi GPA trung bình các kỳ còn lại >= 3.42 (mức tương đối thử thách)"
+  ],
+  "dataRevision": "rev-1001"
+}

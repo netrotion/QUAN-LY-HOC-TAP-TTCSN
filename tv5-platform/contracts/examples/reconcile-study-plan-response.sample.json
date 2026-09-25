@@ -1,0 +1,14 @@
+{
+  "planId": "plan-2026-9001",
+  "studentId": "std-2026-001",
+  "onTrack": true,
+  "completedCourses": [
+    "MATH1002 - Điểm B (Đạt mục tiêu)"
+  ],
+  "missedOrFailedCourses": [],
+  "adjustmentsRecommended": [
+    "Tiến độ phù hợp, tiếp tục kích hoạt đăng ký kỳ tiếp theo theo lộ trình"
+  ],
+  "planVersion": 1,
+  "dataRevision": "rev-1002"
+}

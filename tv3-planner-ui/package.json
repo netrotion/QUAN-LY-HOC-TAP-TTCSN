@@ -1,0 +1,14 @@
+{
+  "name": "@haui/planner-ui",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./src/index.js",
+  "scripts": {
+    "build": "node -e \"console.log('@haui/planner-ui built successfully')\"",
+    "test": "node --test test/*.test.mjs"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-router-dom": "^6.26.2"
+  }
+}

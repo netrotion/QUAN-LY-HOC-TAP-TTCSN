@@ -1,0 +1,10 @@
+{
+  "code": "NOT_IMPLEMENTED",
+  "message": "Chức năng chưa được triển khai trong mốc bootstrap-v0",
+  "requestId": "req-9999-sample",
+  "timestamp": "2026-09-25T17:00:00Z",
+  "details": [
+    "Capability getAcademicStatus thuộc task 1.3b của TV4",
+    "Hệ thống đang chạy ở chế độ khung kỹ thuật bootstrap-v0"
+  ]
+}

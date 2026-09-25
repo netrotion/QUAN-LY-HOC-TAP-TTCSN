@@ -1,0 +1,12 @@
+{
+  "valid": false,
+  "status": "DRAFT",
+  "violations": [
+    "Tổng số tín chỉ học kỳ 1 (3 TC) nhỏ hơn hạn mức tối thiểu theo quy chế (10 TC)"
+  ],
+  "warnings": [
+    "Cần bổ sung thêm môn học để đạt ngưỡng tín chỉ tối thiểu"
+  ],
+  "planVersion": 1,
+  "dataRevision": "rev-1001"
+}

@@ -1,0 +1,72 @@
+name: HaUI Advisor CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  backend-build:
+    name: Backend Build & Contracts Test (Java 21)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Make Maven Wrapper executable
+        run: chmod +x mvnw
+
+      - name: Build & Test Maven Reactor
+        run: ./mvnw -B verify
+
+  frontend-build:
+    name: Frontend Workspaces & Quality Gates (Node 20)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies via npm ci
+        run: npm ci
+
+      - name: Run Architecture Boundaries Check
+        run: npm run check:architecture
+
+      - name: Run Contracts & Fixtures Check
+        run: npm run check:contracts
+
+      - name: Run Frontend Linter
+        run: npm run lint
+
+      - name: Run Frontend Unit Tests
+        run: npm run test
+
+      - name: Build Frontend Workspaces
+        run: npm run build
+
+  infra-smoke:
+    name: Infrastructure Smoke Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy .env.example to .env
+        run: cp .env.example .env
+
+      - name: Validate Docker Compose Configuration
+        run: docker compose --env-file .env -f tv5-platform/infra/compose.yaml config --quiet

@@ -1,0 +1,61 @@
+{
+  "manifestType": "FIXTURE_ONLY",
+  "version": "0.0.1-v0",
+  "purpose": "Kiểm tra cấu trúc và tính tương thích serialization/deserialization DTO V0, không phải dữ liệu học vụ thực tế",
+  "fixtures": [
+    {
+      "capability": "getAcademicStatus",
+      "requestSample": "academic-status-request.sample.json",
+      "responseSample": "academic-status-response.sample.json"
+    },
+    {
+      "capability": "checkCourseEligibility",
+      "requestSample": "course-eligibility-request.sample.json",
+      "responseSample": "course-eligibility-response.sample.json"
+    },
+    {
+      "capability": "generateStudyPlan",
+      "requestSample": "generate-study-plan-request.sample.json",
+      "responseSample": "generate-study-plan-response.sample.json"
+    },
+    {
+      "capability": "validateStudyPlan",
+      "requestSample": "validate-study-plan-request.sample.json",
+      "responseSample": "validate-study-plan-response.sample.json"
+    },
+    {
+      "capability": "simulateGrades",
+      "requestSample": "simulate-grades-request.sample.json",
+      "responseSample": "simulate-grades-response.sample.json"
+    },
+    {
+      "capability": "rankRetakeCourses",
+      "requestSample": "rank-retake-request.sample.json",
+      "responseSample": "rank-retake-response.sample.json"
+    },
+    {
+      "capability": "calculateTargetGrades",
+      "requestSample": "calculate-target-grades-request.sample.json",
+      "responseSample": "calculate-target-grades-response.sample.json"
+    },
+    {
+      "capability": "runGraduationAudit",
+      "requestSample": "graduation-audit-request.sample.json",
+      "responseSample": "graduation-audit-response.sample.json"
+    },
+    {
+      "capability": "reconcileStudyPlan",
+      "requestSample": "reconcile-study-plan-request.sample.json",
+      "responseSample": "reconcile-study-plan-response.sample.json"
+    },
+    {
+      "capability": "chatAdvisor",
+      "requestSample": "chat-request.sample.json",
+      "responseSample": "chat-response.sample.json"
+    },
+    {
+      "capability": "apiError",
+      "responseSample": "api-error.sample.json"
+    }
+  ]
+}

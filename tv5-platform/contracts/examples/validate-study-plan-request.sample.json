@@ -1,0 +1,23 @@
+{
+  "planId": "plan-2026-9001",
+  "studentId": "std-2026-001",
+  "semesters": [
+    {
+      "semesterCode": "2026_1",
+      "semesterName": "Học kỳ 1 năm học 2026-2027",
+      "courses": [
+        {
+          "courseCode": "MATH1002",
+          "courseName": "Toán rời rạc",
+          "credits": 3,
+          "targetGrade": "B",
+          "rationale": "Học lại"
+        }
+      ],
+      "totalCredits": 3,
+      "expectedGpa": 3.00
+    }
+  ],
+  "planVersion": 1,
+  "dataRevision": "rev-1001"
+}

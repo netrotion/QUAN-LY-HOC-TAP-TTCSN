@@ -1,0 +1,12 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+node_modules
+target
+dist
+*.log
+.idea
+.vscode
+tv1-ai/docs/sources

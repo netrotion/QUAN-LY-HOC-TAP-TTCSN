@@ -1,0 +1,26 @@
+{
+  "name": "haui-advisor-root",
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": [
+    "tv3-planner-ui",
+    "tv2-web"
+  ],
+  "scripts": {
+    "dev": "npm run --workspace=@haui/web dev",
+    "build:planner": "npm run --workspace=@haui/planner-ui build",
+    "build:web": "npm run --workspace=@haui/web build",
+    "build": "npm run build:planner && npm run build:web",
+    "lint": "node scripts/check-lint.mjs",
+    "test": "node --test tv3-planner-ui/test/*.test.mjs tv2-web/test/*.test.mjs",
+    "check:architecture": "node scripts/check-architecture.mjs",
+    "check:contracts": "node scripts/check-contracts.mjs"
+  },
+  "devDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2",
+    "vite": "^5.4.8",
+    "@vitejs/plugin-react": "^4.3.1"
+  }
+}

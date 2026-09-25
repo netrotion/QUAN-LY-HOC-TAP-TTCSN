@@ -1,0 +1,24 @@
+{
+  "answer": "Khi chưa đạt môn Toán rời rạc (MATH1002), bạn sẽ chưa đủ điều kiện tiên quyết để đăng ký môn Cấu trúc dữ liệu & Giải thuật (IT6001) trong học kỳ tới.",
+  "sources": [
+    {
+      "sourceId": "SRC_CTDT_DEMO",
+      "title": "Khung CTĐT ngành CNTT (Bản mẫu demo)",
+      "section": "Mục 4.2 - Cây quan hệ học phần tiên quyết",
+      "version": "DEMO_UNVERIFIED",
+      "referenceUrl": "/api/v1/curriculum/demo"
+    }
+  ],
+  "actions": [
+    {
+      "actionType": "OPEN_PLANNER",
+      "label": "Mở Study Planner để xem lộ trình học lại",
+      "targetRoute": "/planner",
+      "payloadJson": "{\"suggestedCourse\":\"MATH1002\"}"
+    }
+  ],
+  "planProposal": null,
+  "warnings": [
+    "Quy tắc tiên quyết dựa trên dữ liệu mô phỏng, cần đối chiếu thông báo mở lớp chính thức"
+  ]
+}

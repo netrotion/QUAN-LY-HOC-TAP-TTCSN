@@ -1,0 +1,51 @@
+{
+  "studentId": "std-2026-001",
+  "eligibleForGraduation": false,
+  "completedPercentage": 82,
+  "totalCreditsEarned": 112,
+  "totalCreditsRequired": 135,
+  "checklist": [
+    {
+      "category": "TÍN CHỈ TÍCH LŨY",
+      "name": "Tổng số tín chỉ tích lũy",
+      "completed": false,
+      "requiredCredits": 135,
+      "earnedCredits": 112,
+      "statusMessage": "Còn thiếu 23 tín chỉ"
+    },
+    {
+      "category": "KHỐI ĐẠI CƯƠNG",
+      "name": "Khối kiến thức giáo dục đại cương",
+      "completed": true,
+      "requiredCredits": 30,
+      "earnedCredits": 30,
+      "statusMessage": "Đã hoàn thành 100%"
+    },
+    {
+      "category": "CHỨNG CHỈ NGOẠI NGỮ",
+      "name": "Chuẩn đầu ra Ngoại ngữ (TOEIC 550)",
+      "completed": true,
+      "requiredCredits": null,
+      "earnedCredits": null,
+      "statusMessage": "Đã nộp chứng chỉ TOEIC 550 hợp lệ"
+    },
+    {
+      "category": "CHỨNG CHỈ TIN HỌC",
+      "name": "Chuẩn đầu ra Tin học (MOS/IC3)",
+      "completed": false,
+      "requiredCredits": null,
+      "earnedCredits": null,
+      "statusMessage": "Chưa nộp chứng chỉ tin học quốc tế"
+    }
+  ],
+  "pendingActions": [
+    {
+      "certificateType": "MOS",
+      "requiredStandard": "Đạt chứng chỉ MOS 3 môn",
+      "actionDescription": "Đăng ký thi và nộp chứng chỉ trước đợt xét tốt nghiệp 3 tháng",
+      "deadline": "2027-03-31",
+      "status": "PENDING"
+    }
+  ],
+  "dataRevision": "rev-1001"
+}

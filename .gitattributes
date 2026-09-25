@@ -1,0 +1,9 @@
+# Auto detect text files and perform LF normalization
+* text=auto eol=lf
+
+# Bảo toàn nguyên vẹn 100% byte và newline của toàn bộ tài liệu và nguồn TV1
+tv1-ai/docs/** -text
+
+# Wrapper scripts
+mvnw text eol=lf
+mvnw.cmd text eol=crlf

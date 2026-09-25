@@ -1,0 +1,222 @@
+openapi: 3.0.3
+info:
+  title: HaUI Advisor API
+  description: >
+    Hợp đồng giao tiếp kỹ thuật V0 cho dự án HaUI Advisor.
+    Các endpoint nghiệp vụ được đánh dấu x-implementation-status: NOT_IMPLEMENTED.
+  version: 0.0.1-v0
+servers:
+  - url: /api/v1
+    description: Base URL tương đối qua frontend proxy
+
+tags:
+  - name: System
+    description: Endpoint thông tin hệ thống và health check
+  - name: Academic
+    description: Tra cứu trạng thái học vụ và điều kiện môn học
+  - name: Planner
+    description: Lập và thẩm định kế hoạch học tập
+  - name: Simulation
+    description: Giả lập điểm số, tối ưu học cải thiện và tính điểm ngược
+  - name: Audit
+    description: Rà soát điều kiện tốt nghiệp
+  - name: Advisor
+    description: Trợ lý ảo tư vấn học vụ qua hội thoại
+
+paths:
+  /system/bootstrap:
+    get:
+      tags: [System]
+      summary: Thông tin bootstrap kỹ thuật
+      operationId: getBootstrapInfo
+      responses:
+        '200':
+          description: Thông tin khởi động khung dự án
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BootstrapInfoResponse'
+
+  /system/health:
+    get:
+      tags: [System]
+      summary: Health check kỹ thuật
+      operationId: getSystemHealth
+      responses:
+        '200':
+          description: Trạng thái tiến trình hoạt động
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /academic/status:
+    get:
+      tags: [Academic]
+      summary: Lấy trạng thái học vụ cá nhân
+      operationId: getAcademicStatus
+      x-implementation-status: NOT_IMPLEMENTED
+      responses:
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+
+  /academic/eligibility:
+    post:
+      tags: [Academic]
+      summary: Kiểm tra điều kiện tiên quyết môn học
+      operationId: checkEligibility
+      x-implementation-status: NOT_IMPLEMENTED
+      responses:
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+
+  /planner/generate:
+    post:
+      tags: [Planner]
+      summary: Sinh đề xuất kế hoạch học tập
+      operationId: generateStudyPlan
+      x-implementation-status: NOT_IMPLEMENTED
+      responses:
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+
+  /planner/validate:
+    post:
+      tags: [Planner]
+      summary: Thẩm định kế hoạch học tập theo quy chế
+      operationId: validateStudyPlan
+      x-implementation-status: NOT_IMPLEMENTED
+      responses:
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+
+  /planner/reconcile:
+    post:
+      tags: [Planner]
+      summary: Đối chiếu kết quả học kỳ với kế hoạch (US-13)
+      operationId: reconcileStudyPlan
+      x-implementation-status: NOT_IMPLEMENTED
+      responses:
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+
+  /simulation/grades:
+    post:
+      tags: [Simulation]
+      summary: Giả lập điểm số học kỳ tới (What-if)
+      operationId: simulateGrades
+      x-implementation-status: NOT_IMPLEMENTED
+      responses:
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+
+  /simulation/retake-ranking:
+    post:
+      tags: [Simulation]
+      summary: Xếp hạng môn học cải thiện tối ưu CPA
+      operationId: rankRetakeCourses
+      x-implementation-status: NOT_IMPLEMENTED
+      responses:
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+
+  /simulation/target-grades:
+    post:
+      tags: [Simulation]
+      summary: Tính điểm mục tiêu ngược các kỳ còn lại
+      operationId: calculateTargetGrades
+      x-implementation-status: NOT_IMPLEMENTED
+      responses:
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+
+  /audit/graduation:
+    get:
+      tags: [Audit]
+      summary: Rà soát tiến độ và điều kiện tốt nghiệp
+      operationId: runGraduationAudit
+      x-implementation-status: NOT_IMPLEMENTED
+      responses:
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+
+  /advisor/chat:
+    post:
+      tags: [Advisor]
+      summary: Gửi câu hỏi học vụ tới AI Advisor
+      operationId: chatAdvisor
+      x-implementation-status: NOT_IMPLEMENTED
+      responses:
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+
+components:
+  responses:
+    NotImplemented:
+      description: Chức năng nghiệp vụ chưa được triển khai ở mốc Bootstrap V0
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+
+  schemas:
+    BootstrapInfoResponse:
+      type: object
+      required:
+        - contractVersion
+        - runtimeMode
+        - modules
+      properties:
+        contractVersion:
+          type: string
+          example: "0.0.1-v0"
+        runtimeMode:
+          type: string
+          example: "bootstrap-v0"
+        modules:
+          type: object
+          properties:
+            contracts:
+              type: string
+              example: "READY"
+            ai:
+              type: string
+              example: "NOT_IMPLEMENTED"
+            academic:
+              type: string
+              example: "NOT_IMPLEMENTED"
+            persistence:
+              type: string
+              example: "NOT_IMPLEMENTED"
+
+    ApiErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+        - requestId
+        - timestamp
+      properties:
+        code:
+          type: string
+          example: "NOT_IMPLEMENTED"
+        message:
+          type: string
+          example: "Chức năng chưa được triển khai trong mốc bootstrap-v0"
+        requestId:
+          type: string
+          example: "req-12345"
+        timestamp:
+          type: string
+          format: date-time
+        details:
+          type: array
+          items:
+            type: string
