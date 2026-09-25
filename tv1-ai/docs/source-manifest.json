@@ -1,0 +1,72 @@
+{
+  "task": "1.1",
+  "owner": "TV1 — Lead + AI",
+  "created_on": "2026-09-25",
+  "path_base": "directory containing source-manifest.json",
+  "purpose": "Bảo toàn bản nguồn, không xác nhận tính đúng hoặc việc nghiệm thu nội dung.",
+  "files": [
+    {
+      "source_id": "S01",
+      "original_filename": "Phan_cong_HaUI_Advisor(1).xlsx",
+      "relative_path": "sources/Phan_cong_HaUI_Advisor(1).xlsx",
+      "bytes": 8687,
+      "sha256": "621af15bd8af089f76f9055ed30441791c83f8f11dd80714baa093eefb73af87",
+      "source_status": "WORK_ASSIGNMENT_SOURCE",
+      "content_modified": false
+    },
+    {
+      "source_id": "S02",
+      "original_filename": "Page Brief - HAUI ADVISOR(1).docx",
+      "relative_path": "sources/Page Brief - HAUI ADVISOR(1).docx",
+      "bytes": 38432,
+      "sha256": "9301749d3e59bce3509d0c2a0977d0efa84b85203290080157797e07b01a654f",
+      "source_status": "UNAPPROVED_DRAFT",
+      "content_modified": false
+    },
+    {
+      "source_id": "S03",
+      "original_filename": "PRD-HAUI_ADVISOR(1).docx",
+      "relative_path": "sources/PRD-HAUI_ADVISOR(1).docx",
+      "bytes": 45705,
+      "sha256": "0caad115240e4d9ae50b13c525a4557140d34eff621488857b6eacb01d7a6ef4",
+      "source_status": "UNAPPROVED_DRAFT",
+      "content_modified": false
+    },
+    {
+      "source_id": "S04",
+      "original_filename": "HAUI_ADVISOR_UI_FLOW(1).md",
+      "relative_path": "sources/HAUI_ADVISOR_UI_FLOW(1).md",
+      "bytes": 17814,
+      "sha256": "6e19d0ec5b0ad61b2876ee6c526226a7162d9c6e4ef8a6a78dc5dfce22dc3479",
+      "source_status": "UNAPPROVED_DRAFT",
+      "content_modified": false
+    },
+    {
+      "source_id": "S05",
+      "original_filename": "1790235796751_2381482604274817039_g1449798126663679773_2948c429f4b6439145e44359aeb6a598(1).jpg",
+      "relative_path": "sources/1790235796751_2381482604274817039_g1449798126663679773_2948c429f4b6439145e44359aeb6a598(1).jpg",
+      "bytes": 548246,
+      "sha256": "5afe22a47c2412073441554d797057b0ac75605dfbdfb0df291475392d197ddc",
+      "source_status": "UNAPPROVED_DRAFT_IMAGE",
+      "content_modified": false
+    },
+    {
+      "source_id": "S06",
+      "original_filename": "HaUI_Advisor_Solution_va_Prompt_theo_Phase.md",
+      "relative_path": "sources/HaUI_Advisor_Solution_va_Prompt_theo_Phase.md",
+      "bytes": 42497,
+      "sha256": "8166c99427a4ad79cd42214e2c469a60fe988390897969e1a37dd11b9e5957d0",
+      "source_status": "IMPLEMENTATION_PLAN_SOURCE",
+      "content_modified": false
+    },
+    {
+      "source_id": "S07",
+      "original_filename": "HaUI_Advisor_Phase_Thu_tu_Phu_thuoc.xlsx",
+      "relative_path": "sources/HaUI_Advisor_Phase_Thu_tu_Phu_thuoc.xlsx",
+      "bytes": 37265,
+      "sha256": "93f9f8d985d551788814b8106c9ff985b1416465bc4b02776a6168f442e0b4d0",
+      "source_status": "IMPLEMENTATION_PLAN_SOURCE",
+      "content_modified": false
+    }
+  ]
+}
