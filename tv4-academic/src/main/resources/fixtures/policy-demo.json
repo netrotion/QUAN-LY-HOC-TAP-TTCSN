@@ -1,0 +1,95 @@
+{
+  "policyId": "policy-haui-demo-2026",
+  "policyName": "Quy chế đào tạo và chuẩn học vụ HaUI Demo V0",
+  "version": "0.0.1-v0",
+  "sourceReference": "PRD §8, §9, §13.1",
+  "status": "DEMO_UNVERIFIED",
+  "description": "Toàn bộ quy tắc, ngưỡng học vụ và trọng số thuật toán trong file này được tổng hợp từ PRD và mang trạng thái DEMO_UNVERIFIED cho đến khi đối chiếu chính thức với Quy chế Đào tạo HaUI.",
+  "gradingScale": {
+    "status": "DEMO_UNVERIFIED",
+    "grades": [
+      { "letter": "A", "minScore10": 8.5, "maxScore10": 10.0, "gradePoint4": 4.0, "passed": true, "status": "DEMO_UNVERIFIED" },
+      { "letter": "B+", "minScore10": 8.0, "maxScore10": 8.4, "gradePoint4": 3.5, "passed": true, "status": "DEMO_UNVERIFIED" },
+      { "letter": "B", "minScore10": 7.0, "maxScore10": 7.9, "gradePoint4": 3.0, "passed": true, "status": "DEMO_UNVERIFIED" },
+      { "letter": "C+", "minScore10": 6.5, "maxScore10": 6.9, "gradePoint4": 2.5, "passed": true, "status": "DEMO_UNVERIFIED" },
+      { "letter": "C", "minScore10": 5.5, "maxScore10": 6.4, "gradePoint4": 2.0, "passed": true, "status": "DEMO_UNVERIFIED" },
+      { "letter": "D+", "minScore10": 5.0, "maxScore10": 5.4, "gradePoint4": 1.5, "passed": true, "status": "DEMO_UNVERIFIED" },
+      { "letter": "D", "minScore10": 4.0, "maxScore10": 4.9, "gradePoint4": 1.0, "passed": true, "status": "DEMO_UNVERIFIED" },
+      { "letter": "F", "minScore10": 0.0, "maxScore10": 3.9, "gradePoint4": 0.0, "passed": false, "status": "DEMO_UNVERIFIED" }
+    ]
+  },
+  "creditLimits": {
+    "status": "DEMO_UNVERIFIED",
+    "minCreditsMainSemester": 10,
+    "maxCreditsMainSemester": 24,
+    "maxCreditsSummerSemester": 12,
+    "minCreditsGraduationSemester": 1,
+    "rationale": "BR-03: Kỳ chính tối thiểu 10 TC (trừ kỳ cuối). BR-04: Kỳ chính tối đa 24 TC, kỳ hè tối đa 12 TC."
+  },
+  "academicRiskThresholds": {
+    "status": "DEMO_UNVERIFIED",
+    "year1MinCpa": 1.20,
+    "year2MinCpa": 1.40,
+    "year3MinCpa": 1.60,
+    "maxDebtCredits": 24,
+    "consecutiveWarningsForCritical": 2,
+    "rationale": "BR-07: Cảnh báo học tập nếu CPA < 1.20 (Năm 1), < 1.40 (Năm 2), < 1.60 (Năm 3) hoặc nợ > 24 TC. Buộc thôi học nếu cảnh báo 2 lần liên tiếp."
+  },
+  "retakeOptimizationRules": {
+    "status": "DEMO_UNVERIFIED",
+    "eligibleCurrentGrades": ["D", "D+", "C"],
+    "ineligibleGrades": ["A", "B+", "B"],
+    "replaceOldGradeInCpa": true,
+    "rationale": "BR-06: Chỉ được học cải thiện môn điểm D, D+, C. Điểm mới cao hơn sẽ thay thế điểm cũ khi tính CPA."
+  },
+  "courseSchedulingWeights": {
+    "status": "DEMO_UNVERIFIED",
+    "unblockPrerequisites": {
+      "weight": 0.40,
+      "description": "Môn nợ là tiên quyết của nhiều môn sau - Khơi thông mạch học tập, tránh nợ dây chuyền",
+      "status": "DEMO_UNVERIFIED"
+    },
+    "standardCurriculumProgression": {
+      "weight": 0.25,
+      "description": "Môn bắt buộc theo tiến độ chuẩn CTĐT - Đảm bảo đúng khung chương trình đào tạo của trường",
+      "status": "DEMO_UNVERIFIED"
+    },
+    "retakeRoi": {
+      "weight": 0.20,
+      "description": "Môn học cải thiện có ROI tăng CPA cao nhất - Nâng hạng bằng hoặc gỡ án cảnh báo nhanh nhất",
+      "status": "DEMO_UNVERIFIED"
+    },
+    "workloadBalance": {
+      "weight": 0.15,
+      "description": "Cân bằng tải tín chỉ và độ khó môn học - Tránh quá tải gây trượt môn hàng loạt trong kỳ",
+      "status": "DEMO_UNVERIFIED"
+    }
+  },
+  "graduationRequirements": {
+    "status": "DEMO_UNVERIFIED",
+    "minCpa": 2.00,
+    "totalCredits": 135,
+    "thesisEligibilityMinCreditPercent": 85,
+    "classifications": [
+      { "level": "EXCELLENT", "name": "Xuất sắc", "minCpa": 3.60, "maxRetakeCreditPercent": 5.0, "status": "DEMO_UNVERIFIED" },
+      { "level": "VERY_GOOD", "name": "Giỏi", "minCpa": 3.20, "maxRetakeCreditPercent": null, "status": "DEMO_UNVERIFIED" },
+      { "level": "GOOD", "name": "Khá", "minCpa": 2.50, "maxRetakeCreditPercent": null, "status": "DEMO_UNVERIFIED" },
+      { "level": "AVERAGE", "name": "Trung bình", "minCpa": 2.00, "maxRetakeCreditPercent": null, "status": "DEMO_UNVERIFIED" }
+    ],
+    "nonCreditRequirements": [
+      { "category": "NGOẠI NGỮ", "name": "Chuẩn đầu ra Ngoại ngữ (TOEIC 550)", "status": "DEMO_UNVERIFIED" },
+      { "category": "TIN HỌC", "name": "Chuẩn đầu ra Tin học (MOS/IC3)", "status": "DEMO_UNVERIFIED" },
+      { "category": "GDQP_AN", "name": "Chứng chỉ Giáo dục Quốc phòng - An ninh", "status": "DEMO_UNVERIFIED" },
+      { "category": "GDTC", "name": "Chứng chỉ Giáo dục Thể chất", "status": "DEMO_UNVERIFIED" }
+    ],
+    "rationale": "BR-08, BR-09, BR-10: Tích lũy đủ 100% TC, CPA >= 2.00, đủ chuẩn phi tín chỉ. Đồ án cần >= 85% TC."
+  },
+  "missingDataHandlingPolicy": {
+    "status": "DEMO_UNVERIFIED",
+    "allowDefaultZeroScore": false,
+    "allowDefaultPass": false,
+    "missingFieldRepresentation": null,
+    "unknownStatusLabel": "UNKNOWN",
+    "rationale": "Ràng buộc bắt buộc: Missing/unknown data KHÔNG ĐƯỢC tự động gán điểm = 0 hoặc mặc định đánh giá là Đã đạt."
+  }
+}
