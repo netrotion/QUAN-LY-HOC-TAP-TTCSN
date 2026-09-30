@@ -32,7 +32,8 @@ const ROOT_FILES_ALLOWED_FOR_TV5 = new Set([
 const ROOT_DIRS_ALLOWED_FOR_TV5 = [
   'scripts/',
   '.github/',
-  '.mvn/'
+  '.mvn/',
+  'data-source/'
 ];
 
 export function classifyFile(filePath) {

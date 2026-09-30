@@ -1,0 +1,389 @@
+{
+  "FL6288": {
+    "priorCourses": [
+      "FL6287"
+    ],
+    "prerequisites": []
+  },
+  "FL6289": {
+    "priorCourses": [
+      "FL6288"
+    ],
+    "prerequisites": []
+  },
+  "FL6290": {
+    "priorCourses": [
+      "FL6289"
+    ],
+    "prerequisites": []
+  },
+  "FL6086": {
+    "priorCourses": [
+      "FL6085"
+    ],
+    "prerequisites": []
+  },
+  "FL6087": {
+    "priorCourses": [
+      "FL6085",
+      "FL6086"
+    ],
+    "prerequisites": []
+  },
+  "FL6088": {
+    "priorCourses": [
+      "FL6086",
+      "FL6087"
+    ],
+    "prerequisites": []
+  },
+  "FL6283": {
+    "priorCourses": [
+      "FL6282"
+    ],
+    "prerequisites": []
+  },
+  "FL6284": {
+    "priorCourses": [
+      "FL6282",
+      "FL6283"
+    ],
+    "prerequisites": []
+  },
+  "FL6285": {
+    "priorCourses": [
+      "FL6283",
+      "FL6284"
+    ],
+    "prerequisites": []
+  },
+  "FL6293": {
+    "priorCourses": [
+      "FL6292"
+    ],
+    "prerequisites": []
+  },
+  "FL6294": {
+    "priorCourses": [
+      "FL6293"
+    ],
+    "prerequisites": []
+  },
+  "FL6295": {
+    "priorCourses": [
+      "FL6293",
+      "FL6294"
+    ],
+    "prerequisites": []
+  },
+  "LP6011": {
+    "priorCourses": [
+      "LP6010"
+    ],
+    "prerequisites": []
+  },
+  "LP6012": {
+    "priorCourses": [
+      "LP6010",
+      "LP6011"
+    ],
+    "prerequisites": []
+  },
+  "LP6013": {
+    "priorCourses": [
+      "LP6011"
+    ],
+    "prerequisites": []
+  },
+  "LP6004": {
+    "priorCourses": [
+      "LP6010",
+      "LP6011"
+    ],
+    "prerequisites": []
+  },
+  "LP6003": {
+    "priorCourses": [
+      "LP6004",
+      "LP6011"
+    ],
+    "prerequisites": []
+  },
+  "FL6335": {
+    "priorCourses": [
+      "FL6290",
+      "FL6564",
+      "FL6565"
+    ],
+    "prerequisites": []
+  },
+  "FL6336": {
+    "priorCourses": [
+      "FL6335",
+      "FL6564",
+      "FL6565"
+    ],
+    "prerequisites": []
+  },
+  "FL6343": {
+    "priorCourses": [
+      "FL6087",
+      "FL6088"
+    ],
+    "prerequisites": []
+  },
+  "FL6344": {
+    "priorCourses": [
+      "FL6088",
+      "FL6343"
+    ],
+    "prerequisites": []
+  },
+  "FL6339": {
+    "priorCourses": [
+      "FL6284",
+      "FL6285",
+      "FL6560",
+      "FL6561"
+    ],
+    "prerequisites": []
+  },
+  "FL6340": {
+    "priorCourses": [
+      "FL6285",
+      "FL6339",
+      "FL6561"
+    ],
+    "prerequisites": []
+  },
+  "FL6337": {
+    "priorCourses": [
+      "FL6295",
+      "FL6562",
+      "FL6563"
+    ],
+    "prerequisites": []
+  },
+  "FL6338": {
+    "priorCourses": [
+      "FL6295",
+      "FL6337",
+      "FL6562",
+      "FL6563"
+    ],
+    "prerequisites": []
+  },
+  "IT6015": {
+    "priorCourses": [
+      "ME6042"
+    ],
+    "prerequisites": []
+  },
+  "IT6035": {
+    "priorCourses": [
+      "BS6001"
+    ],
+    "prerequisites": []
+  },
+  "BS6008": {
+    "priorCourses": [
+      "BS6002",
+      "BS6036"
+    ],
+    "prerequisites": []
+  },
+  "IT6002": {
+    "priorCourses": [
+      "IT6015",
+      "SC6208"
+    ],
+    "prerequisites": []
+  },
+  "IT6067": {
+    "priorCourses": [
+      "IT6015"
+    ],
+    "prerequisites": []
+  },
+  "IT6120": {
+    "priorCourses": [
+      "IT5008",
+      "IT6015"
+    ],
+    "prerequisites": []
+  },
+  "IT6082": {
+    "priorCourses": [
+      "IT6015"
+    ],
+    "prerequisites": []
+  },
+  "IT6097": {
+    "priorCourses": [
+      "IT6126"
+    ],
+    "prerequisites": []
+  },
+  "IT6039": {
+    "priorCourses": [
+      "IT6015",
+      "IT6018",
+      "IT6027"
+    ],
+    "prerequisites": []
+  },
+  "IT6044": {
+    "priorCourses": [
+      "IT6002",
+      "IT6015"
+    ],
+    "prerequisites": []
+  },
+  "IT6083": {
+    "priorCourses": [
+      "IT6067",
+      "IT6203"
+    ],
+    "prerequisites": []
+  },
+  "IT6151": {
+    "priorCourses": [
+      "IT6019"
+    ],
+    "prerequisites": []
+  },
+  "IT6096": {
+    "priorCourses": [
+      "IT6097"
+    ],
+    "prerequisites": []
+  },
+  "IT6094": {
+    "priorCourses": [
+      "IT6015"
+    ],
+    "prerequisites": []
+  },
+  "IT6010": {
+    "priorCourses": [
+      "BS6001",
+      "IT6015"
+    ],
+    "prerequisites": []
+  },
+  "IT6057": {
+    "priorCourses": [
+      "IT6015",
+      "IT6126"
+    ],
+    "prerequisites": []
+  },
+  "IT6047": {
+    "priorCourses": [
+      "IT6043",
+      "IT6094"
+    ],
+    "prerequisites": []
+  },
+  "IT6019": {
+    "priorCourses": [
+      "IT6018",
+      "IT6120"
+    ],
+    "prerequisites": []
+  },
+  "IT6084": {
+    "priorCourses": [
+      "IT6002",
+      "IT6082"
+    ],
+    "prerequisites": []
+  },
+  "IT6017": {
+    "priorCourses": [
+      "IT6018",
+      "IT6120"
+    ],
+    "prerequisites": []
+  },
+  "IT6150": {
+    "priorCourses": [
+      "IT6040"
+    ],
+    "prerequisites": []
+  },
+  "IT6029": {
+    "priorCourses": [
+      "IT6015",
+      "IT6016",
+      "IT6018",
+      "IT6120"
+    ],
+    "prerequisites": []
+  },
+  "IT6060": {
+    "priorCourses": [
+      "IT6015",
+      "IT6016"
+    ],
+    "prerequisites": []
+  },
+  "IT6021": {
+    "priorCourses": [
+      "IT6017"
+    ],
+    "prerequisites": []
+  },
+  "IT6030": {
+    "priorCourses": [
+      "IT6082"
+    ],
+    "prerequisites": []
+  },
+  "IT6077": {
+    "priorCourses": [
+      "SC6019"
+    ],
+    "prerequisites": []
+  },
+  "IT6028": {
+    "priorCourses": [
+      "IT6017",
+      "IT6018"
+    ],
+    "prerequisites": []
+  },
+  "IT6020": {
+    "priorCourses": [
+      "IT6019",
+      "IT6120"
+    ],
+    "prerequisites": []
+  },
+  "IT6080": {
+    "priorCourses": [
+      "IT6019",
+      "IT6020"
+    ],
+    "prerequisites": []
+  },
+  "IT6130": {
+    "priorCourses": [
+      "IT6015"
+    ],
+    "prerequisites": []
+  },
+  "IT6131": {
+    "priorCourses": [
+      "IT6130"
+    ],
+    "prerequisites": []
+  },
+  "IT6009": {
+    "priorCourses": [
+      "IT6026",
+      "IT6150"
+    ],
+    "prerequisites": []
+  }
+}
