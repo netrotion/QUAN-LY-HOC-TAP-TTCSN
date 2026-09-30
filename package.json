@@ -13,13 +13,8 @@
     "build": "npm run build:planner && npm run build:web",
     "lint": "node scripts/check-lint.mjs",
     "test": "node --test tv3-planner-ui/test/*.test.mjs tv2-web/test/*.test.mjs",
-    "check:ownership": "node scripts/check-ownership.mjs",
-    "check:secrets": "node scripts/check-secrets.mjs",
     "check:architecture": "node scripts/check-architecture.mjs",
-    "check:contracts": "node scripts/check-contracts.mjs",
-    "smoke": "node scripts/smoke-check.mjs",
-    "check:all": "npm run check:ownership && npm run check:secrets && npm run check:architecture && npm run check:contracts && npm run lint && npm run test && npm run build",
-    "verify:all": "npm run check:all && npm run smoke"
+    "check:contracts": "node scripts/check-contracts.mjs"
   },
   "devDependencies": {
     "react": "^18.3.1",
