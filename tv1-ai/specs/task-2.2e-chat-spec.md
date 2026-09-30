@@ -236,3 +236,55 @@ Mảng `actions` chứa các nút bấm tương tác nhanh chuyển hướng tro
 > 1. Các mã trên được phân loại là **Bootstrap-only Fixtures** phục vụ duy trì test cũ (regression test).
 > 2. Chúng **KHÔNG PHẢI** là bằng chứng RAG chuẩn (Canonical RAG Evidence).
 > 3. Toàn bộ kịch bản RAG chuẩn mới bắt buộc phải sử dụng các mã định danh `REG-HAUI-01` đến `REG-HAUI-05` và phiên bản `gitblob:*`.
+
+---
+
+## 7. Chuẩn hóa Trạng thái Từng Ca (Per-case State & Source Requirements)
+
+Theo yêu cầu bổ sung bắt buộc của Task 2.2e: *"Mỗi ca có trạng thái hỏi lại / lỗi / nguồn; không tạo nguồn giả."*
+Mỗi eval case trong dataset kiểm thử bắt buộc phải khai báo đầy đủ các trường cấu trúc sau:
+
+### 7.1. Các trạng thái hội thoại (`conversation_state`)
+1. **`ANSWERED`**: Hệ thống có đầy đủ căn cứ (RAG hoặc kết quả từ Tool) để trả lời người dùng.
+   - `should_ask_clarification = false`
+   - `error = { "expected": false, "code": null }`
+   - Nếu là câu hỏi quy chế thì `source_requirement = "REQUIRED"`, mảng `sources` chứa tài liệu tương ứng.
+2. **`CLARIFICATION_REQUIRED`**: Câu hỏi thiếu tham số cần thiết (ví dụ: muốn học vượt nhưng không nói rõ kỳ tốt nghiệp dự kiến, hoặc chưa có dữ liệu bảng điểm).
+   - `should_ask_clarification = true`
+   - `error = { "expected": false, "code": null }`
+   - Tuyệt đối không tự bịa thông số người dùng chưa cung cấp.
+3. **`ERROR`**: Công cụ học vụ hoặc phụ thuộc nghiệp vụ trả lỗi.
+   - `error = { "expected": true, "code": "<semantic_error_code>" }`
+   - Không biến lỗi thành phản hồi thành công; giữ nguyên thông báo cảnh báo.
+4. **`NO_EVIDENCE`**: Câu hỏi cần nguồn nhưng tài liệu RAG hiện hành không có căn cứ.
+   - `sources = []`
+   - `source_requirement = "MUST_BE_EMPTY"`
+   - Thể hiện rõ hệ thống chưa có dữ liệu, không bịa citation hay URL giả.
+5. **`TOOL_UNAVAILABLE`**: Năng lực nghiệp vụ có trong hợp đồng `AcademicFacade` nhưng AI adapter chưa expose hoặc chưa sẵn sàng.
+   - Khai báo cờ `tool_availability = "CONTRACT_EXISTS_NOT_EXPOSED_YET"`.
+
+### 7.2. Các cấp độ yêu cầu nguồn (`source_requirement`)
+- **`REQUIRED`**: Bắt buộc phải có trích dẫn từ catalog. Nếu `sources` rỗng thì case coi như thất bại (Áp dụng cho quy chế, định nghĩa điểm, quy định học lại).
+- **`OPTIONAL`**: Kết quả cá nhân hóa đến từ Academic tool; RAG source chỉ bổ sung nếu cần giải thích căn cứ chính sách (Áp dụng cho Study Plan, What-if, ROI, Graduation Audit).
+- **`NOT_REQUIRED`**: Kịch bản không cần nguồn RAG (Áp dụng cho câu hỏi làm rõ hoặc khi thiếu bảng điểm).
+- **`MUST_BE_EMPTY`**: Không có căn cứ phù hợp; `sources` bắt buộc phải là mảng rỗng `[]` (Áp dụng cho câu hỏi ngoài phạm vi, lỗi công cụ).
+
+---
+
+## 8. Bộ Quy tắc Nghiệm thu Tự động (Automated Validation Rules)
+
+Toàn bộ các quy tắc trên được thực thi bằng mã kiểm thử tự động tại [`ChatEvalAndCatalogValidationTest.java`](file:///E:/thuctapcosonganh/tv1-ai/src/test/java/vn/haui/advisor/ai/eval/ChatEvalAndCatalogValidationTest.java):
+1. Mỗi eval case phải khai báo `conversation_state` hợp lệ.
+2. Mỗi eval case phải khai báo `source_requirement` hợp lệ.
+3. `CLARIFICATION_REQUIRED` bắt buộc phải có `should_ask_clarification = true`.
+4. `ERROR` bắt buộc phải có `error.expected = true` và mã lỗi `error.code`.
+5. `NO_EVIDENCE` bắt buộc `sources = []`.
+6. `source_requirement = REQUIRED` bắt buộc `sources` không được rỗng.
+7. `source_requirement = MUST_BE_EMPTY` bắt buộc `sources` phải rỗng.
+8. Mọi `source_id` trích dẫn phải tồn tại trong `source-catalog.json`.
+9. `version` trích dẫn phải khớp 100% với version trong catalog (`gitblob:*`).
+10. Cấm sử dụng các mã giả lập cũ (`MOCK`, `FAKE`, `DEMO`, `FIXTURE`).
+11. Kết quả cá nhân hóa (`PLAN`, `WHAT_IF`, `AUDIT`, `ROI`, `DEBT`) bắt buộc phải gọi Academic tool tương ứng.
+12. Ca lỗi công cụ không được sinh kết quả cá nhân hóa thành công.
+13. Ca hỏi quy chế (`REGULATION`) khi `ANSWERED` bắt buộc phải có nguồn.
+14. Ca thiếu bảng điểm (`MISSING_TRANSCRIPT`) cấm bịa điểm CPA hoặc sinh lộ trình cá nhân.

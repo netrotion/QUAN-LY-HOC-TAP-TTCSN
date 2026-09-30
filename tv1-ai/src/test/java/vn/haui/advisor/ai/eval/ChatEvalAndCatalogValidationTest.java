@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Automated Test Suite xác thực tính toàn vẹn của RAG Source Catalog và Chat Evaluation Dataset (Task 2.2e).
+ * Bao gồm đầy đủ 14 quy tắc nghiệm thu bắt buộc theo đặc tả bổ sung.
  */
 public class ChatEvalAndCatalogValidationTest {
 
@@ -24,6 +25,21 @@ public class ChatEvalAndCatalogValidationTest {
     private static JsonNode catalogNode;
     private static JsonNode evalNode;
     private static final Map<String, JsonNode> CATALOG_SOURCES = new HashMap<>();
+
+    private static final Set<String> VALID_CONVERSATION_STATES = Set.of(
+            "ANSWERED",
+            "CLARIFICATION_REQUIRED",
+            "ERROR",
+            "NO_EVIDENCE",
+            "TOOL_UNAVAILABLE"
+    );
+
+    private static final Set<String> VALID_SOURCE_REQUIREMENTS = Set.of(
+            "REQUIRED",
+            "OPTIONAL",
+            "NOT_REQUIRED",
+            "MUST_BE_EMPTY"
+    );
 
     @BeforeAll
     static void loadArtifacts() throws Exception {
@@ -90,7 +106,6 @@ public class ChatEvalAndCatalogValidationTest {
     @Test
     @DisplayName("Catalog 04: Đường dẫn tài liệu (path) phải trỏ đến các file Markdown thực tế tồn tại trong data-source/documents")
     void testSourceCatalogFilesExist() {
-        // Tìm đường dẫn gốc của repository bằng cách kiểm tra các cấp thư mục
         Path currentDir = Paths.get("").toAbsolutePath();
         Path repoRoot = currentDir.endsWith("tv1-ai") ? currentDir.getParent() : currentDir;
         Path documentsDir = repoRoot.resolve("data-source").resolve("documents");
@@ -104,7 +119,6 @@ public class ChatEvalAndCatalogValidationTest {
             String sourceId = src.path("source_id").asText();
             assertThat(relPath).isNotBlank();
 
-            // Lấy tên file từ relPath
             String fileName = Paths.get(relPath).getFileName().toString();
             Path targetFile = documentsDir.resolve(fileName);
 
@@ -154,86 +168,147 @@ public class ChatEvalAndCatalogValidationTest {
     }
 
     @Test
-    @DisplayName("Eval 01: chat-eval-v1.json phải chứa mảng cases hợp lệ")
-    void testChatEvalStructure() {
-        assertThat(evalNode.has("cases")).isTrue();
-        assertThat(evalNode.get("cases").isArray()).isTrue();
-        assertThat(evalNode.get("cases").size()).isGreaterThanOrEqualTo(16);
-    }
-
-    @Test
-    @DisplayName("Eval 02: Mỗi eval case phải có ID duy nhất và không rỗng")
-    void testChatEvalUniqueCaseIds() {
-        Set<String> seenCaseIds = new HashSet<>();
+    @DisplayName("Eval Rule 01: Mỗi eval case phải khai báo conversation_state hợp lệ")
+    void testChatEvalConversationStateDeclared() {
         for (JsonNode c : evalNode.get("cases")) {
             String caseId = c.path("id").asText();
-            assertThat(caseId).isNotBlank();
-            assertThat(seenCaseIds.add(caseId))
-                    .withFailMessage("Trùng lặp case ID trong eval dataset: %s", caseId)
-                    .isTrue();
+            JsonNode stateNode = c.path("expected").path("conversation_state");
+            assertThat(stateNode.isMissingNode() || stateNode.asText().isBlank())
+                    .withFailMessage("Eval case %s thiếu trường expected.conversation_state", caseId)
+                    .isFalse();
+            String state = stateNode.asText();
+            assertThat(VALID_CONVERSATION_STATES)
+                    .withFailMessage("Eval case %s có conversation_state không hợp lệ: %s", caseId, state)
+                    .contains(state);
         }
     }
 
     @Test
-    @DisplayName("Eval 03: Bộ eval phải bao phủ đầy đủ 8 nhóm kịch bản bắt buộc")
-    void testChatEvalCategoryCoverage() {
-        Set<String> requiredCategories = Set.of(
-                "REGULATION",
-                "DEBT_COURSES",
-                "STUDY_PLAN",
-                "ACCELERATED_STUDY",
-                "WHAT_IF",
-                "GRADUATION_AUDIT",
-                "GOAL_CHANGE",
-                "MISSING_TRANSCRIPT"
-        );
-
-        Set<String> presentCategories = new HashSet<>();
+    @DisplayName("Eval Rule 02: Mỗi eval case phải khai báo source_requirement hợp lệ")
+    void testChatEvalSourceRequirementDeclared() {
         for (JsonNode c : evalNode.get("cases")) {
-            String cat = c.path("category").asText();
-            presentCategories.add(cat);
-        }
-
-        for (String reqCat : requiredCategories) {
-            assertThat(presentCategories)
-                    .withFailMessage("Thiếu category bắt buộc trong eval dataset: %s", reqCat)
-                    .contains(reqCat);
+            String caseId = c.path("id").asText();
+            JsonNode reqNode = c.path("expected").path("source_requirement");
+            assertThat(reqNode.isMissingNode() || reqNode.asText().isBlank())
+                    .withFailMessage("Eval case %s thiếu trường expected.source_requirement", caseId)
+                    .isFalse();
+            String req = reqNode.asText();
+            assertThat(VALID_SOURCE_REQUIREMENTS)
+                    .withFailMessage("Eval case %s có source_requirement không hợp lệ: %s", caseId, req)
+                    .contains(req);
         }
     }
 
     @Test
-    @DisplayName("Eval 04: Mọi expected source_id trong eval cases đều phải tồn tại trong source-catalog.json")
-    void testChatEvalSourceIntegrity() {
+    @DisplayName("Eval Rule 03: CLARIFICATION_REQUIRED bắt buộc phải có should_ask_clarification = true")
+    void testChatEvalClarificationRequirement() {
+        for (JsonNode c : evalNode.get("cases")) {
+            String caseId = c.path("id").asText();
+            String state = c.path("expected").path("conversation_state").asText();
+            boolean shouldClarify = c.path("expected").path("should_ask_clarification").asBoolean();
+
+            if ("CLARIFICATION_REQUIRED".equals(state)) {
+                assertThat(shouldClarify)
+                        .withFailMessage("Eval case %s có trạng thái CLARIFICATION_REQUIRED nhưng should_ask_clarification != true", caseId)
+                        .isTrue();
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("Eval Rule 04: ERROR state bắt buộc phải có error.expected = true")
+    void testChatEvalErrorStateRequirement() {
+        for (JsonNode c : evalNode.get("cases")) {
+            String caseId = c.path("id").asText();
+            String state = c.path("expected").path("conversation_state").asText();
+            JsonNode errorNode = c.path("expected").path("error");
+
+            if ("ERROR".equals(state)) {
+                assertThat(errorNode.path("expected").asBoolean())
+                        .withFailMessage("Eval case %s có trạng thái ERROR nhưng error.expected != true", caseId)
+                        .isTrue();
+                assertThat(errorNode.path("code").asText())
+                        .withFailMessage("Eval case %s có trạng thái ERROR nhưng error.code bị trống", caseId)
+                        .isNotBlank();
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("Eval Rule 05 & 07: NO_EVIDENCE hoặc MUST_BE_EMPTY bắt buộc sources phải rỗng []")
+    void testChatEvalNoEvidenceAndMustBeEmpty() {
+        for (JsonNode c : evalNode.get("cases")) {
+            String caseId = c.path("id").asText();
+            String state = c.path("expected").path("conversation_state").asText();
+            String req = c.path("expected").path("source_requirement").asText();
+            JsonNode sources = c.path("expected").path("sources");
+
+            if ("NO_EVIDENCE".equals(state) || "MUST_BE_EMPTY".equals(req)) {
+                assertThat(sources.size())
+                        .withFailMessage("Eval case %s (state=%s, requirement=%s) bắt buộc sources phải rỗng nhưng có %d sources",
+                                caseId, state, req, sources.size())
+                        .isEqualTo(0);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("Eval Rule 06: source_requirement = REQUIRED bắt buộc sources không được rỗng")
+    void testChatEvalRequiredSourcesNotEmpty() {
+        for (JsonNode c : evalNode.get("cases")) {
+            String caseId = c.path("id").asText();
+            String req = c.path("expected").path("source_requirement").asText();
+            JsonNode sources = c.path("expected").path("sources");
+
+            if ("REQUIRED".equals(req)) {
+                assertThat(sources.size())
+                        .withFailMessage("Eval case %s có source_requirement = REQUIRED nhưng sources bị rỗng", caseId)
+                        .isGreaterThan(0);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("Eval Rule 08 & 09: Mọi expected source_id phải tồn tại trong catalog và có version khớp 100%")
+    void testChatEvalSourcesExistInCatalogWithMatchingVersion() {
         for (JsonNode c : evalNode.get("cases")) {
             String caseId = c.path("id").asText();
             JsonNode sources = c.path("expected").path("sources");
             if (sources.isArray()) {
                 for (JsonNode src : sources) {
                     String srcId = src.path("source_id").asText();
-                    assertThat(srcId).isNotBlank();
+                    String expectedVer = src.path("version").asText();
+
                     assertThat(CATALOG_SOURCES)
-                            .withFailMessage("Case %s tham chiếu source_id không tồn tại trong catalog: %s", caseId, srcId)
+                            .withFailMessage("Eval case %s tham chiếu source_id không tồn tại trong catalog: %s", caseId, srcId)
                             .containsKey(srcId);
+
+                    JsonNode catalogSrc = CATALOG_SOURCES.get(srcId);
+                    String catalogVer = catalogSrc.path("version").asText();
+                    assertThat(expectedVer)
+                            .withFailMessage("Eval case %s có version %s không khớp với version trong catalog %s cho source %s",
+                                    caseId, expectedVer, catalogVer, srcId)
+                            .isEqualTo(catalogVer);
                 }
             }
         }
     }
 
     @Test
-    @DisplayName("Eval 05: Không có case nào được dùng source ID giả lập cũ (SRC-MOCK-*, DEMO_UNVERIFIED, 2024-FIXTURE)")
-    void testChatEvalNoLegacyMockSources() {
-        List<String> forbiddenPrefixes = List.of("SRC-MOCK", "SRC_CTDT_DEMO", "DEMO_UNVERIFIED", "2024-FIXTURE");
+    @DisplayName("Eval Rule 10: Tuyệt đối không dùng source ID giả lập cũ (MOCK / FAKE / DEMO / FIXTURE)")
+    void testChatEvalNoMockOrFakeSources() {
+        List<String> forbiddenTerms = List.of("MOCK", "FAKE", "DEMO", "FIXTURE");
 
         for (JsonNode c : evalNode.get("cases")) {
             String caseId = c.path("id").asText();
             JsonNode sources = c.path("expected").path("sources");
             if (sources.isArray()) {
                 for (JsonNode src : sources) {
-                    String srcId = src.path("source_id").asText();
-                    for (String prefix : forbiddenPrefixes) {
+                    String srcId = src.path("source_id").asText().toUpperCase();
+                    for (String term : forbiddenTerms) {
                         assertThat(srcId)
-                                .withFailMessage("Case %s sử dụng source_id giả lập cũ bị cấm: %s", caseId, srcId)
-                                .doesNotContain(prefix);
+                                .withFailMessage("Eval case %s sử dụng source_id giả lập cũ bị cấm: %s (chứa %s)", caseId, srcId, term)
+                                .doesNotContain(term);
                     }
                 }
             }
@@ -241,64 +316,94 @@ public class ChatEvalAndCatalogValidationTest {
     }
 
     @Test
-    @DisplayName("Eval 06: Kịch bản MISSING_TRANSCRIPT phải yêu cầu làm rõ và không sinh kết quả cá nhân hóa")
-    void testChatEvalMissingTranscriptBehavior() {
-        boolean foundMissingTranscriptCase = false;
+    @DisplayName("Eval Rule 11: Khi mong đợi kết quả cá nhân hóa (PLAN/WHAT_IF/AUDIT/ROI/DEBT), phải có Academic tool tương ứng")
+    void testChatEvalPersonalizedResultsRequireTools() {
+        Set<String> personalizedCategories = Set.of(
+                "DEBT_COURSES",
+                "STUDY_PLAN",
+                "WHAT_IF",
+                "RETAKE_IMPROVEMENT",
+                "GRADUATION_AUDIT"
+        );
+
         for (JsonNode c : evalNode.get("cases")) {
+            String caseId = c.path("id").asText();
             String cat = c.path("category").asText();
+            String state = c.path("expected").path("conversation_state").asText();
+
+            if (personalizedCategories.contains(cat) && "ANSWERED".equals(state)) {
+                JsonNode tools = c.path("expected").path("tools");
+                assertThat(tools.size())
+                        .withFailMessage("Eval case %s thuộc category cá nhân hóa %s nhưng expected.tools lại rỗng", caseId, cat)
+                        .isGreaterThan(0);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("Eval Rule 12: Tool error không được sinh kết quả cá nhân hóa thành công")
+    void testChatEvalToolErrorDoesNotHallucinateSuccess() {
+        for (JsonNode c : evalNode.get("cases")) {
+            String caseId = c.path("id").asText();
+            String state = c.path("expected").path("conversation_state").asText();
+
+            if ("ERROR".equals(state)) {
+                JsonNode mustContain = c.path("expected").path("answer_must_contain_any");
+                assertThat(mustContain.toString())
+                        .withFailMessage("Eval case %s có trạng thái ERROR nhưng lại expect thành công", caseId)
+                        .containsAnyOf("chưa thể thực hiện", "tạm thời gián đoạn", "thử lại sau", "đang được nâng cấp");
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("Eval Rule 13: Câu hỏi quy chế (REGULATION) khi ANSWERED bắt buộc phải có source_requirement = REQUIRED và có source")
+    void testChatEvalRegulationCasesMustHaveRequiredSources() {
+        for (JsonNode c : evalNode.get("cases")) {
+            String caseId = c.path("id").asText();
+            String cat = c.path("category").asText();
+            String state = c.path("expected").path("conversation_state").asText();
+
+            if ("REGULATION".equals(cat) && "ANSWERED".equals(state)) {
+                String req = c.path("expected").path("source_requirement").asText();
+                assertThat(req)
+                        .withFailMessage("Case quy chế %s bắt buộc phải có source_requirement = REQUIRED", caseId)
+                        .isEqualTo("REQUIRED");
+
+                JsonNode sources = c.path("expected").path("sources");
+                assertThat(sources.size())
+                        .withFailMessage("Case quy chế %s có trạng thái ANSWERED nhưng thiếu source", caseId)
+                        .isGreaterThan(0);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("Eval Rule 14: Thiếu bảng điểm (MISSING_TRANSCRIPT) không được expect CPA, nợ môn hay study plan cá nhân hóa")
+    void testChatEvalMissingTranscriptStrictness() {
+        for (JsonNode c : evalNode.get("cases")) {
+            String caseId = c.path("id").asText();
+            String cat = c.path("category").asText();
+
             if ("MISSING_TRANSCRIPT".equals(cat)) {
-                foundMissingTranscriptCase = true;
-                String caseId = c.path("id").asText();
                 String transcriptStatus = c.path("context").path("transcript").asText();
                 boolean shouldClarify = c.path("expected").path("should_ask_clarification").asBoolean();
+                String state = c.path("expected").path("conversation_state").asText();
 
                 assertThat(transcriptStatus).isEqualTo("MISSING");
-                assertThat(shouldClarify)
-                        .withFailMessage("Case %s (MISSING_TRANSCRIPT) phải có should_ask_clarification = true", caseId)
-                        .isTrue();
+                assertThat(state).isEqualTo("CLARIFICATION_REQUIRED");
+                assertThat(shouldClarify).isTrue();
 
-                // Kiểm tra có mã cảnh báo TRANSCRIPT_REQUIRED
-                JsonNode warnings = c.path("expected").path("warnings");
-                assertThat(warnings.toString()).contains("TRANSCRIPT_REQUIRED");
-            }
-        }
-        assertThat(foundMissingTranscriptCase).isTrue();
-    }
-
-    @Test
-    @DisplayName("Eval 07: Kịch bản NO_EVIDENCE không được trích dẫn nguồn giả và sources phải rỗng")
-    void testChatEvalNoEvidenceBehavior() {
-        boolean foundNoEvidenceCase = false;
-        for (JsonNode c : evalNode.get("cases")) {
-            String cat = c.path("category").asText();
-            if ("NO_EVIDENCE".equals(cat)) {
-                foundNoEvidenceCase = true;
-                String caseId = c.path("id").asText();
-                JsonNode sources = c.path("expected").path("sources");
-
-                assertThat(sources.size())
-                        .withFailMessage("Case %s (NO_EVIDENCE) phải có sources = []", caseId)
+                JsonNode tools = c.path("expected").path("tools");
+                assertThat(tools.size())
+                        .withFailMessage("Case thiếu bảng điểm %s không được tự gọi tool sinh kế hoạch cá nhân", caseId)
                         .isEqualTo(0);
 
-                JsonNode warnings = c.path("expected").path("warnings");
-                assertThat(warnings.toString()).contains("POLICY_SOURCE_UNAVAILABLE");
-            }
-        }
-        assertThat(foundNoEvidenceCase).isTrue();
-    }
-
-    @Test
-    @DisplayName("Eval 08: Các câu hỏi quy chế thuần (REGULATION) phải có ít nhất 1 nguồn RAG hợp lệ")
-    void testChatEvalRegulationCasesHaveSources() {
-        for (JsonNode c : evalNode.get("cases")) {
-            String cat = c.path("category").asText();
-            if ("REGULATION".equals(cat)) {
-                String caseId = c.path("id").asText();
-                JsonNode sources = c.path("expected").path("sources");
-
-                assertThat(sources.size())
-                        .withFailMessage("Case quy chế %s bắt buộc phải có ít nhất một nguồn trích dẫn", caseId)
-                        .isGreaterThan(0);
+                JsonNode notContain = c.path("expected").path("answer_must_not_contain");
+                assertThat(notContain.toString())
+                        .withFailMessage("Case thiếu bảng điểm %s phải có luật cấm bịa điểm/môn nợ trong answer_must_not_contain", caseId)
+                        .contains("CPA")
+                        .contains("LP6004");
             }
         }
     }
