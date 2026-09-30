@@ -1,0 +1,137 @@
+{
+  "curriculumId": "curriculum-cntt-2024",
+  "curriculumName": "Chương trình đào tạo Cử nhân Công nghệ Thông tin - Khóa 2024",
+  "majorCode": "CNTT",
+  "totalCredits": 135,
+  "status": "DEMO_UNVERIFIED",
+  "knowledgeBlocks": [
+    { "blockId": "BLOCK_GEN", "blockName": "Khối kiến thức giáo dục đại cương", "requiredCredits": 30 },
+    { "blockId": "BLOCK_CORE", "blockName": "Khối kiến thức cơ sở ngành", "requiredCredits": 45 },
+    { "blockId": "BLOCK_SPEC", "blockName": "Khối kiến thức chuyên ngành", "requiredCredits": 50 },
+    { "blockId": "BLOCK_GRAD", "blockName": "Khối kiến thức tốt nghiệp", "requiredCredits": 10 }
+  ],
+  "courses": [
+    {
+      "courseCode": "MATH1001",
+      "courseName": "Giải tích 1",
+      "credits": 3,
+      "knowledgeBlock": "Khối kiến thức giáo dục đại cương",
+      "isMandatory": true,
+      "suggestedSemester": 1,
+      "prerequisites": [],
+      "priorCourses": [],
+      "corequisites": []
+    },
+    {
+      "courseCode": "MATH1002",
+      "courseName": "Toán rời rạc",
+      "credits": 3,
+      "knowledgeBlock": "Khối kiến thức giáo dục đại cương",
+      "isMandatory": true,
+      "suggestedSemester": 1,
+      "prerequisites": [],
+      "priorCourses": [],
+      "corequisites": []
+    },
+    {
+      "courseCode": "ML1001",
+      "courseName": "Triết học Mác - Lênin",
+      "credits": 3,
+      "knowledgeBlock": "Khối kiến thức giáo dục đại cương",
+      "isMandatory": true,
+      "suggestedSemester": 1,
+      "prerequisites": [],
+      "priorCourses": [],
+      "corequisites": []
+    },
+    {
+      "courseCode": "IT1001",
+      "courseName": "Nhập môn lập trình",
+      "credits": 3,
+      "knowledgeBlock": "Khối kiến thức cơ sở ngành",
+      "isMandatory": true,
+      "suggestedSemester": 1,
+      "prerequisites": [],
+      "priorCourses": [],
+      "corequisites": []
+    },
+    {
+      "courseCode": "IT2001",
+      "courseName": "Lập trình hướng đối tượng",
+      "credits": 4,
+      "knowledgeBlock": "Khối kiến thức cơ sở ngành",
+      "isMandatory": true,
+      "suggestedSemester": 2,
+      "prerequisites": ["IT1001"],
+      "priorCourses": [],
+      "corequisites": []
+    },
+    {
+      "courseCode": "IT6001",
+      "courseName": "Cấu trúc dữ liệu và giải thuật",
+      "credits": 4,
+      "knowledgeBlock": "Khối kiến thức cơ sở ngành",
+      "isMandatory": true,
+      "suggestedSemester": 2,
+      "prerequisites": ["MATH1002", "IT1001"],
+      "priorCourses": [],
+      "corequisites": []
+    },
+    {
+      "courseCode": "IT6002",
+      "courseName": "Lập trình mạng",
+      "credits": 3,
+      "knowledgeBlock": "Khối kiến thức chuyên ngành",
+      "isMandatory": true,
+      "suggestedSemester": 3,
+      "prerequisites": ["MATH1002", "IT2001"],
+      "priorCourses": [],
+      "corequisites": []
+    },
+    {
+      "courseCode": "IT3001",
+      "courseName": "Hệ cơ sở dữ liệu",
+      "credits": 3,
+      "knowledgeBlock": "Khối kiến thức cơ sở ngành",
+      "isMandatory": true,
+      "suggestedSemester": 2,
+      "prerequisites": ["MATH1002"],
+      "priorCourses": [],
+      "corequisites": []
+    },
+    {
+      "courseCode": "IT4001",
+      "courseName": "Cơ sở dữ liệu nâng cao",
+      "credits": 3,
+      "knowledgeBlock": "Khối kiến thức chuyên ngành",
+      "isMandatory": false,
+      "suggestedSemester": 3,
+      "prerequisites": ["IT3001"],
+      "priorCourses": [],
+      "corequisites": []
+    },
+    {
+      "courseCode": "IT4002",
+      "courseName": "Phát triển ứng dụng Web",
+      "credits": 3,
+      "knowledgeBlock": "Khối kiến thức chuyên ngành",
+      "isMandatory": true,
+      "suggestedSemester": 3,
+      "prerequisites": ["IT2001"],
+      "priorCourses": [],
+      "corequisites": []
+    },
+    {
+      "courseCode": "IT9001",
+      "courseName": "Đồ án tốt nghiệp Công nghệ thông tin",
+      "credits": 10,
+      "knowledgeBlock": "Khối kiến thức tốt nghiệp",
+      "isMandatory": true,
+      "suggestedSemester": 8,
+      "prerequisites": ["IT6001", "IT4002"],
+      "minCreditsRequiredToEnroll": 115,
+      "priorCourses": [],
+      "corequisites": []
+    }
+  ]
+}

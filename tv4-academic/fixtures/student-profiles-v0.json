@@ -1,0 +1,275 @@
+{
+  "profiles": [
+    {
+      "studentId": "std-2026-001",
+      "fullName": "Nguyễn Văn An",
+      "majorCode": "CNTT",
+      "cohort": 2024,
+      "currentSemester": 3,
+      "cpa": 2.45,
+      "gpa": null,
+      "accumulatedCredits": 68,
+      "totalCreditsRequired": 135,
+      "riskLevel": "WARNING_LEVEL_1",
+      "warningMessages": [
+        "Cảnh báo học vụ mức 1 do nợ môn tiên quyết Toán rời rạc (MATH1002)"
+      ],
+      "courseAttempts": [
+        {
+          "courseCode": "MATH1001",
+          "courseName": "Giải tích 1",
+          "credits": 3,
+          "semesterCode": "2024_1",
+          "letterGrade": "C",
+          "gradePoint4": 2.0,
+          "score10": 6.0,
+          "passed": true
+        },
+        {
+          "courseCode": "MATH1002",
+          "courseName": "Toán rời rạc",
+          "credits": 3,
+          "semesterCode": "2024_1",
+          "letterGrade": "F",
+          "gradePoint4": 0.0,
+          "score10": 3.0,
+          "passed": false
+        },
+        {
+          "courseCode": "IT1001",
+          "courseName": "Nhập môn lập trình",
+          "credits": 3,
+          "semesterCode": "2024_1",
+          "letterGrade": "B",
+          "gradePoint4": 3.0,
+          "score10": 7.5,
+          "passed": true
+        },
+        {
+          "courseCode": "IT2001",
+          "courseName": "Lập trình hướng đối tượng",
+          "credits": 4,
+          "semesterCode": "2024_2",
+          "letterGrade": "D+",
+          "gradePoint4": 1.5,
+          "score10": 5.2,
+          "passed": true
+        },
+        {
+          "courseCode": "ML1001",
+          "courseName": "Triết học Mác - Lênin",
+          "credits": 3,
+          "semesterCode": "2024_2",
+          "letterGrade": "D",
+          "gradePoint4": 1.0,
+          "score10": 4.5,
+          "passed": true
+        }
+      ],
+      "certificates": [
+        { "category": "NGOẠI NGỮ", "name": "TOEIC 550", "completed": true, "statusMessage": "Đã nộp chứng chỉ TOEIC 550" },
+        { "category": "TIN HỌC", "name": "MOS Tin học", "completed": false, "statusMessage": "Chưa hoàn thành" },
+        { "category": "GDQP_AN", "name": "Chứng chỉ GDQP-AN", "completed": true, "statusMessage": "Đã hoàn thành" },
+        { "category": "GDTC", "name": "Chứng chỉ GDTC", "completed": true, "statusMessage": "Đã hoàn thành" }
+      ],
+      "dataRevision": "rev-1001"
+    },
+    {
+      "studentId": "std-2026-002",
+      "fullName": "Trần Thị Bình",
+      "majorCode": "CNTT",
+      "cohort": 2024,
+      "currentSemester": 3,
+      "cpa": 3.25,
+      "gpa": 3.50,
+      "accumulatedCredits": 72,
+      "totalCreditsRequired": 135,
+      "riskLevel": "NORMAL",
+      "warningMessages": [],
+      "courseAttempts": [
+        {
+          "courseCode": "MATH1001",
+          "courseName": "Giải tích 1",
+          "credits": 3,
+          "semesterCode": "2024_1",
+          "letterGrade": "A",
+          "gradePoint4": 4.0,
+          "score10": 8.8,
+          "passed": true
+        },
+        {
+          "courseCode": "MATH1002",
+          "courseName": "Toán rời rạc",
+          "credits": 3,
+          "semesterCode": "2024_1",
+          "letterGrade": "B+",
+          "gradePoint4": 3.5,
+          "score10": 8.2,
+          "passed": true
+        },
+        {
+          "courseCode": "IT1001",
+          "courseName": "Nhập môn lập trình",
+          "credits": 3,
+          "semesterCode": "2024_1",
+          "letterGrade": "A",
+          "gradePoint4": 4.0,
+          "score10": 9.0,
+          "passed": true
+        },
+        {
+          "courseCode": "IT2001",
+          "courseName": "Lập trình hướng đối tượng",
+          "credits": 4,
+          "semesterCode": "2024_2",
+          "letterGrade": "B",
+          "gradePoint4": 3.0,
+          "score10": 7.5,
+          "passed": true
+        }
+      ],
+      "certificates": [
+        { "category": "NGOẠI NGỮ", "name": "TOEIC 550", "completed": true, "statusMessage": "Đã nộp TOEIC 650" },
+        { "category": "TIN HỌC", "name": "MOS Tin học", "completed": true, "statusMessage": "Đã nộp MOS" },
+        { "category": "GDQP_AN", "name": "GDQP-AN", "completed": true, "statusMessage": "Đã đạt" },
+        { "category": "GDTC", "name": "GDTC", "completed": true, "statusMessage": "Đã đạt" }
+      ],
+      "dataRevision": "rev-2001"
+    },
+    {
+      "studentId": "std-2026-003",
+      "fullName": "Lê Văn Cường",
+      "majorCode": "CNTT",
+      "cohort": 2022,
+      "currentSemester": 7,
+      "cpa": 3.12,
+      "gpa": 3.20,
+      "accumulatedCredits": 112,
+      "totalCreditsRequired": 135,
+      "riskLevel": "NORMAL",
+      "warningMessages": [],
+      "courseAttempts": [
+        {
+          "courseCode": "MATH1001",
+          "courseName": "Giải tích 1",
+          "credits": 3,
+          "semesterCode": "2022_1",
+          "letterGrade": "B",
+          "gradePoint4": 3.0,
+          "score10": 7.0,
+          "passed": true
+        },
+        {
+          "courseCode": "MATH1002",
+          "courseName": "Toán rời rạc",
+          "credits": 3,
+          "semesterCode": "2022_1",
+          "letterGrade": "B",
+          "gradePoint4": 3.0,
+          "score10": 7.5,
+          "passed": true
+        },
+        {
+          "courseCode": "IT1001",
+          "courseName": "Nhập môn lập trình",
+          "credits": 3,
+          "semesterCode": "2022_1",
+          "letterGrade": "A",
+          "gradePoint4": 4.0,
+          "score10": 8.5,
+          "passed": true
+        },
+        {
+          "courseCode": "IT2001",
+          "courseName": "Lập trình hướng đối tượng",
+          "credits": 4,
+          "semesterCode": "2022_2",
+          "letterGrade": "B+",
+          "gradePoint4": 3.5,
+          "score10": 8.0,
+          "passed": true
+        },
+        {
+          "courseCode": "IT6001",
+          "courseName": "Cấu trúc dữ liệu và giải thuật",
+          "credits": 4,
+          "semesterCode": "2022_2",
+          "letterGrade": "B",
+          "gradePoint4": 3.0,
+          "score10": 7.2,
+          "passed": true
+        },
+        {
+          "courseCode": "IT4002",
+          "courseName": "Phát triển ứng dụng Web",
+          "credits": 3,
+          "semesterCode": "2023_1",
+          "letterGrade": "B+",
+          "gradePoint4": 3.5,
+          "score10": 8.0,
+          "passed": true
+        }
+      ],
+      "certificates": [
+        { "category": "NGOẠI NGỮ", "name": "TOEIC 550", "completed": true, "statusMessage": "Đã nộp chứng chỉ TOEIC 550 hợp lệ" },
+        { "category": "TIN HỌC", "name": "MOS Tin học", "completed": false, "statusMessage": "Chưa nộp chứng chỉ tin học quốc tế" },
+        { "category": "GDQP_AN", "name": "GDQP-AN", "completed": true, "statusMessage": "Đã hoàn thành" },
+        { "category": "GDTC", "name": "GDTC", "completed": true, "statusMessage": "Đã hoàn thành" }
+      ],
+      "pendingActions": [
+        {
+          "certificateType": "MOS",
+          "requiredStandard": "Đạt chứng chỉ MOS 3 môn",
+          "actionDescription": "Đăng ký thi và nộp chứng chỉ trước đợt xét tốt nghiệp 3 tháng",
+          "deadline": "2027-03-31",
+          "status": "PENDING"
+        }
+      ],
+      "dataRevision": "rev-3001"
+    },
+    {
+      "studentId": "std-2026-missing",
+      "fullName": "Phạm Thị Duyên",
+      "majorCode": "CNTT",
+      "cohort": 2025,
+      "currentSemester": 1,
+      "cpa": null,
+      "gpa": null,
+      "accumulatedCredits": null,
+      "totalCreditsRequired": 135,
+      "riskLevel": "NORMAL",
+      "warningMessages": [
+        "Dữ liệu học tập chưa đầy đủ (điểm thi chưa kết chuyển)"
+      ],
+      "courseAttempts": [
+        {
+          "courseCode": "MATH1001",
+          "courseName": "Giải tích 1",
+          "credits": 3,
+          "semesterCode": "2025_1",
+          "letterGrade": null,
+          "gradePoint4": null,
+          "score10": null,
+          "passed": null
+        },
+        {
+          "courseCode": "MATH1002",
+          "courseName": "Toán rời rạc",
+          "credits": 3,
+          "semesterCode": "2025_1",
+          "letterGrade": "UNKNOWN",
+          "gradePoint4": null,
+          "score10": null,
+          "passed": null
+        }
+      ],
+      "certificates": [
+        { "category": "NGOẠI NGỮ", "name": "TOEIC 550", "completed": false, "statusMessage": "UNKNOWN" },
+        { "category": "TIN HỌC", "name": "MOS Tin học", "completed": false, "statusMessage": "UNKNOWN" },
+        { "category": "GDQP_AN", "name": "GDQP-AN", "completed": false, "statusMessage": "UNKNOWN" },
+        { "category": "GDTC", "name": "GDTC", "completed": false, "statusMessage": "UNKNOWN" }
+      ],
+      "dataRevision": "rev-missing-001"
+    }
+  ]
+}
