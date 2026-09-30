@@ -1,0 +1,337 @@
+{
+  "studentId": "2024604757",
+  "fullName": "Lê Việt Hùng",
+  "email": "lehung.haui@gmail.com",
+  "className": "2024DHKTPM02",
+  "majorCode": "CT1085",
+  "majorName": "Kỹ thuật phần mềm",
+  "faculty": "Trường Công nghệ thông tin và Truyền thông - HaUI",
+  "cohort": "K19",
+  "currentSemester": 4,
+  "accumulatedCredits": 61.0,
+  "totalCreditsRequired": 150,
+  "cpa": 3.18,
+  "gpa": 3.42,
+  "academicClassification": "Khá",
+  "riskLevel": "NORMAL",
+  "tuitionBalanceVnd": 355000,
+  "tuitionDebtVnd": 14105000,
+  "advisor": {
+    "fullName": "Trần Mai Linh",
+    "phone": "0984291823",
+    "department": "Khoa Kỹ thuật phần mềm - Trường CNTT&TT"
+  },
+  "courseAttempts": [
+    {
+      "courseCode": "DC6005",
+      "courseName": "Công tác quốc phòng và an ninh",
+      "credits": 2.0,
+      "semesterCode": "2024_1",
+      "score10": 8.0,
+      "gradePoint4": 3.5,
+      "letterGrade": "B+",
+      "passed": true
+    },
+    {
+      "courseCode": "DC6006",
+      "courseName": "Quân sự chung",
+      "credits": 1.5,
+      "semesterCode": "2024_1",
+      "score10": 8.7,
+      "gradePoint4": 4.0,
+      "letterGrade": "A",
+      "passed": true
+    },
+    {
+      "courseCode": "DC6007",
+      "courseName": "Kỹ thuật chiến đấu bộ binh và chiến thuật",
+      "credits": 2.0,
+      "semesterCode": "2024_1",
+      "score10": 8.7,
+      "gradePoint4": 4.0,
+      "letterGrade": "A",
+      "passed": true
+    },
+    {
+      "courseCode": "DC6004",
+      "courseName": "Đường lối QP&AN của ĐCS Việt Nam",
+      "credits": 3.0,
+      "semesterCode": "2024_1",
+      "score10": 8.2,
+      "gradePoint4": 3.5,
+      "letterGrade": "B+",
+      "passed": true
+    },
+    {
+      "courseCode": "LP6010",
+      "courseName": "Triết học Mác-Lênin",
+      "credits": 3.0,
+      "semesterCode": "2024_1",
+      "score10": 5.4,
+      "gradePoint4": 1.5,
+      "letterGrade": "D+",
+      "passed": true,
+      "isRetakeEligible": true
+    },
+    {
+      "courseCode": "LP6011",
+      "courseName": "Kinh tế chính trị Mác-Lênin",
+      "credits": 2.0,
+      "semesterCode": "2024_2",
+      "score10": 5.6,
+      "gradePoint4": 2.0,
+      "letterGrade": "C",
+      "passed": true
+    },
+    {
+      "courseCode": "LP6012",
+      "courseName": "Chủ nghĩa xã hội khoa học",
+      "credits": 2.0,
+      "semesterCode": "2024_2",
+      "score10": 5.3,
+      "gradePoint4": 1.5,
+      "letterGrade": "D+",
+      "passed": true,
+      "isRetakeEligible": true
+    },
+    {
+      "courseCode": "LP6004",
+      "courseName": "Tư tưởng Hồ Chí Minh",
+      "credits": 2.0,
+      "semesterCode": "2024_2",
+      "score10": 0.0,
+      "gradePoint4": 0.0,
+      "letterGrade": "F",
+      "passed": false,
+      "isDebt": true
+    },
+    {
+      "courseCode": "BS6018",
+      "courseName": "Giao tiếp liên văn hóa",
+      "credits": 2.0,
+      "semesterCode": "2024_2",
+      "score10": 6.4,
+      "gradePoint4": 2.5,
+      "letterGrade": "C+",
+      "passed": true
+    },
+    {
+      "courseCode": "BS6002",
+      "courseName": "Giải tích",
+      "credits": 3.0,
+      "semesterCode": "2024_1",
+      "score10": 7.0,
+      "gradePoint4": 3.0,
+      "letterGrade": "B",
+      "passed": true
+    },
+    {
+      "courseCode": "BS6001",
+      "courseName": "Đại số tuyến tính",
+      "credits": 3.0,
+      "semesterCode": "2024_1",
+      "score10": 7.0,
+      "gradePoint4": 3.0,
+      "letterGrade": "B",
+      "passed": true
+    },
+    {
+      "courseCode": "IT6015",
+      "courseName": "Kỹ thuật lập trình",
+      "credits": 3.0,
+      "semesterCode": "2024_1",
+      "score10": 9.3,
+      "gradePoint4": 4.0,
+      "letterGrade": "A",
+      "passed": true
+    },
+    {
+      "courseCode": "IT6035",
+      "courseName": "Toán rời rạc",
+      "credits": 3.0,
+      "semesterCode": "2024_2",
+      "score10": 6.6,
+      "gradePoint4": 2.5,
+      "letterGrade": "C+",
+      "passed": true
+    },
+    {
+      "courseCode": "IT6011",
+      "courseName": "Nhập môn về kỹ thuật",
+      "credits": 2.0,
+      "semesterCode": "2024_1",
+      "score10": 7.9,
+      "gradePoint4": 3.5,
+      "letterGrade": "B+",
+      "passed": true
+    },
+    {
+      "courseCode": "IT6120",
+      "courseName": "Lập trình hướng đối tượng",
+      "credits": 3.0,
+      "semesterCode": "2025_1",
+      "score10": 8.9,
+      "gradePoint4": 4.0,
+      "letterGrade": "A",
+      "passed": true
+    },
+    {
+      "courseCode": "IT6126",
+      "courseName": "Hệ thống cơ sở dữ liệu",
+      "credits": 4.0,
+      "semesterCode": "2025_1",
+      "score10": 8.5,
+      "gradePoint4": 4.0,
+      "letterGrade": "A",
+      "passed": true
+    },
+    {
+      "courseCode": "IT6067",
+      "courseName": "Kiến trúc máy tính và hệ điều hành",
+      "credits": 3.0,
+      "semesterCode": "2025_1",
+      "score10": 7.7,
+      "gradePoint4": 3.5,
+      "letterGrade": "B+",
+      "passed": true
+    },
+    {
+      "courseCode": "IT6002",
+      "courseName": "Cấu trúc dữ liệu và giải thuật",
+      "credits": 3.0,
+      "semesterCode": "2025_1",
+      "score10": 6.6,
+      "gradePoint4": 2.5,
+      "letterGrade": "C+",
+      "passed": true
+    },
+    {
+      "courseCode": "IT6082",
+      "courseName": "Nhập môn công nghệ phần mềm",
+      "credits": 3.0,
+      "semesterCode": "2025_1",
+      "score10": 8.8,
+      "gradePoint4": 4.0,
+      "letterGrade": "A",
+      "passed": true
+    },
+    {
+      "courseCode": "IT6097",
+      "courseName": "Phân tích và đặc tả yêu cầu phần mềm",
+      "credits": 3.0,
+      "semesterCode": "2025_2",
+      "score10": 8.5,
+      "gradePoint4": 4.0,
+      "letterGrade": "A",
+      "passed": true
+    },
+    {
+      "courseCode": "IT6094",
+      "courseName": "Trí tuệ nhân tạo",
+      "credits": 3.0,
+      "semesterCode": "2025_2",
+      "score10": 9.1,
+      "gradePoint4": 4.0,
+      "letterGrade": "A",
+      "passed": true
+    },
+    {
+      "courseCode": "IT6019",
+      "courseName": "Lập trình Java",
+      "credits": 3.0,
+      "semesterCode": "2025_2",
+      "score10": 8.4,
+      "gradePoint4": 3.5,
+      "letterGrade": "B+",
+      "passed": true
+    },
+    {
+      "courseCode": "IT6017",
+      "courseName": "Lập trình .NET",
+      "credits": 3.0,
+      "semesterCode": "2025_2",
+      "score10": 7.8,
+      "gradePoint4": 3.5,
+      "letterGrade": "B+",
+      "passed": true
+    }
+  ],
+  "certificates": [
+    {
+      "category": "NGOẠI NGỮ",
+      "name": "Tiếng Anh TOEIC 500+",
+      "completed": true,
+      "statusMessage": "Đã hoàn thành chuẩn đầu ra ngoại ngữ TOEIC"
+    },
+    {
+      "category": "TIN HỌC",
+      "name": "Chuẩn kỹ năng CNTT nâng cao (MOS)",
+      "completed": false,
+      "statusMessage": "Chưa nộp chứng chỉ kỹ năng CNTT"
+    },
+    {
+      "category": "GDQP_AN",
+      "name": "Chứng chỉ Giáo dục Quốc phòng - An ninh",
+      "completed": true,
+      "statusMessage": "Đã tích lũy đủ 4 học phần GDQP-AN"
+    },
+    {
+      "category": "GDTC",
+      "name": "Chứng chỉ Giáo dục Thể chất",
+      "completed": true,
+      "statusMessage": "Đã hoàn thành các học phần thể chất"
+    }
+  ],
+  "nextSemesterRecommendations": {
+    "mustRetakeCourses": [
+      {
+        "courseCode": "LP6004",
+        "courseName": "Tư tưởng Hồ Chí Minh",
+        "credits": 2.0,
+        "reason": "Môn bắt buộc bị điểm F, cần đăng ký học lại sớm để giải tỏa nợ học phần."
+      }
+    ],
+    "highRoiImprovementCourses": [
+      {
+        "courseCode": "LP6010",
+        "courseName": "Triết học Mác-Lênin",
+        "credits": 3.0,
+        "currentGrade": "D+",
+        "targetGrade": "B+",
+        "expectedCpaDelta": 0.08,
+        "roiScore": 0.85
+      },
+      {
+        "courseCode": "LP6012",
+        "courseName": "Chủ nghĩa xã hội khoa học",
+        "credits": 2.0,
+        "currentGrade": "D+",
+        "targetGrade": "A",
+        "expectedCpaDelta": 0.07,
+        "roiScore": 0.80
+      }
+    ],
+    "plannedStandardCourses": [
+      {
+        "courseCode": "IT6039",
+        "courseName": "Thiết kế Web",
+        "credits": 3.0
+      },
+      {
+        "courseCode": "IT6044",
+        "courseName": "Ứng dụng thuật toán",
+        "credits": 3.0
+      },
+      {
+        "courseCode": "IT6096",
+        "courseName": "Thiết kế phần mềm",
+        "credits": 3.0
+      },
+      {
+        "courseCode": "IT6083",
+        "courseName": "Mạng máy tính",
+        "credits": 3.0
+      }
+    ]
+  }
+}

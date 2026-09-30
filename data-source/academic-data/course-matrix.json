@@ -1,0 +1,1481 @@
+{
+  "FL6287": {
+    "courseCode": "FL6287",
+    "courseName": "Tiếng Hàn cơ bản 1",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6288": {
+    "courseCode": "FL6288",
+    "courseName": "Tiếng Hàn cơ bản 2",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6287"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6289": {
+    "courseCode": "FL6289",
+    "courseName": "Tiếng Hàn cơ bản 3",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 3,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6288"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6290": {
+    "courseCode": "FL6290",
+    "courseName": "Tiếng Hàn cơ bản 4",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 4,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6289"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6085": {
+    "courseCode": "FL6085",
+    "courseName": "Tiếng Anh Công nghệ thông tin cơ bản 1",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6086": {
+    "courseCode": "FL6086",
+    "courseName": "Tiếng Anh công nghệ thông tin cơ bản 2",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6085"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6087": {
+    "courseCode": "FL6087",
+    "courseName": "Tiếng Anh Công nghệ thông tin cơ bản 3",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 3,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6085",
+      "FL6086"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6088": {
+    "courseCode": "FL6088",
+    "courseName": "Tiếng Anh Công nghệ thông tin cơ bản 4",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 4,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6086",
+      "FL6087"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6282": {
+    "courseCode": "FL6282",
+    "courseName": "Tiếng Trung cơ bản 1",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6283": {
+    "courseCode": "FL6283",
+    "courseName": "Tiếng Trung cơ bản 2",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6282"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6284": {
+    "courseCode": "FL6284",
+    "courseName": "Tiếng Trung cơ bản 3",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 3,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6282",
+      "FL6283"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6285": {
+    "courseCode": "FL6285",
+    "courseName": "Tiếng Trung cơ bản 4",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 4,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6283",
+      "FL6284"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6292": {
+    "courseCode": "FL6292",
+    "courseName": "Tiếng Nhật cơ bản 1",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6293": {
+    "courseCode": "FL6293",
+    "courseName": "Tiếng Nhật cơ bản 2",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6292"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6294": {
+    "courseCode": "FL6294",
+    "courseName": "Tiếng Nhật cơ bản 3",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 3,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6293"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6295": {
+    "courseCode": "FL6295",
+    "courseName": "Tiếng Nhật cơ bản 4",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 4,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6293",
+      "FL6294"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "LP6010": {
+    "courseCode": "LP6010",
+    "courseName": "Triết học Mác-Lênin",
+    "credits": 3.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "LP6011": {
+    "courseCode": "LP6011",
+    "courseName": "Kinh tế chính trị Mác-Lênin",
+    "credits": 2.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [
+      "LP6010"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "LP6012": {
+    "courseCode": "LP6012",
+    "courseName": "Chủ nghĩa xã hội khoa học",
+    "credits": 2.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 3,
+    "isMandatory": false,
+    "priorCourses": [
+      "LP6010",
+      "LP6011"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "LP6013": {
+    "courseCode": "LP6013",
+    "courseName": "Lịch sử Đảng Cộng sản Việt Nam",
+    "credits": 2.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 5,
+    "isMandatory": false,
+    "priorCourses": [
+      "LP6011"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "LP6004": {
+    "courseCode": "LP6004",
+    "courseName": "Tư tưởng Hồ Chí Minh",
+    "credits": 2.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 6,
+    "isMandatory": false,
+    "priorCourses": [
+      "LP6010",
+      "LP6011"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "BS6018": {
+    "courseCode": "BS6018",
+    "courseName": "Giao tiếp liên văn hóa",
+    "credits": 2.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "LP6003": {
+    "courseCode": "LP6003",
+    "courseName": "Pháp luật đại cương",
+    "credits": 2.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 7,
+    "isMandatory": false,
+    "priorCourses": [
+      "LP6004",
+      "LP6011"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "BS6021": {
+    "courseCode": "BS6021",
+    "courseName": "Con người và môi trường",
+    "credits": 2.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "AA6040": {
+    "courseCode": "AA6040",
+    "courseName": "Đổi mới sáng tạo và tư duy khởi nghiệp",
+    "credits": 2.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "BS6019": {
+    "courseCode": "BS6019",
+    "courseName": "Nhập môn nghiên cứu khoa học",
+    "credits": 2.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "BS6020": {
+    "courseCode": "BS6020",
+    "courseName": "Quan hệ lao động và việc làm",
+    "credits": 2.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "BM6091": {
+    "courseCode": "BM6091",
+    "courseName": "Quản lý dự án",
+    "credits": 2.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "BS6022": {
+    "courseCode": "BS6022",
+    "courseName": "Âm nhạc đại cương",
+    "credits": 2.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "BS6024": {
+    "courseCode": "BS6024",
+    "courseName": "Mỹ thuật đại cương",
+    "credits": 2.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "BS6023": {
+    "courseCode": "BS6023",
+    "courseName": "Nghệ thuật học đại cương",
+    "credits": 2.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6335": {
+    "courseCode": "FL6335",
+    "courseName": "Tiếng Hàn 1",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 5,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6290",
+      "FL6564",
+      "FL6565"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6336": {
+    "courseCode": "FL6336",
+    "courseName": "Tiếng Hàn 2",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 6,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6335",
+      "FL6564",
+      "FL6565"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6343": {
+    "courseCode": "FL6343",
+    "courseName": "Tiếng Anh Công nghệ thông tin 1",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 5,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6087",
+      "FL6088"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6344": {
+    "courseCode": "FL6344",
+    "courseName": "Tiếng Anh Công nghệ thông tin 2",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 6,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6088",
+      "FL6343"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6339": {
+    "courseCode": "FL6339",
+    "courseName": "Tiếng Trung 1",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 5,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6284",
+      "FL6285",
+      "FL6560",
+      "FL6561"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6340": {
+    "courseCode": "FL6340",
+    "courseName": "Tiếng Trung 2",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 6,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6285",
+      "FL6339",
+      "FL6561"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6337": {
+    "courseCode": "FL6337",
+    "courseName": "Tiếng Nhật 1",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 5,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6295",
+      "FL6562",
+      "FL6563"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "FL6338": {
+    "courseCode": "FL6338",
+    "courseName": "Tiếng Nhật 2",
+    "credits": 5.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 6,
+    "isMandatory": false,
+    "priorCourses": [
+      "FL6295",
+      "FL6337",
+      "FL6562",
+      "FL6563"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "BS6002": {
+    "courseCode": "BS6002",
+    "courseName": "Giải tích",
+    "credits": 3.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "BS6001": {
+    "courseCode": "BS6001",
+    "courseName": "Đại số tuyến tính",
+    "credits": 3.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6015": {
+    "courseCode": "IT6015",
+    "courseName": "Kỹ thuật lập trình",
+    "credits": 3.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [
+      "ME6042"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6035": {
+    "courseCode": "IT6035",
+    "courseName": "Toán rời rạc",
+    "credits": 3.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [
+      "BS6001"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6095": {
+    "courseCode": "IT6095",
+    "courseName": "Tối ưu hóa",
+    "credits": 3.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 5,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "BS6008": {
+    "courseCode": "BS6008",
+    "courseName": "Xác suất thống kê",
+    "credits": 3.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 5,
+    "isMandatory": false,
+    "priorCourses": [
+      "BS6002",
+      "BS6036"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6001": {
+    "courseCode": "PE6001",
+    "courseName": "Aerobic 1",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6005": {
+    "courseCode": "PE6005",
+    "courseName": "Bơi 1",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6017": {
+    "courseCode": "PE6017",
+    "courseName": "Bóng bàn 1",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6003": {
+    "courseCode": "PE6003",
+    "courseName": "Bóng chuyền 1",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6027": {
+    "courseCode": "PE6027",
+    "courseName": "Bóng đá 1",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6023": {
+    "courseCode": "PE6023",
+    "courseName": "Bóng ném 1",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6021": {
+    "courseCode": "PE6021",
+    "courseName": "Bóng rổ 1",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6025": {
+    "courseCode": "PE6025",
+    "courseName": "Cầu lông 1",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6031": {
+    "courseCode": "PE6031",
+    "courseName": "Cầu mây 1",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6029": {
+    "courseCode": "PE6029",
+    "courseName": "Đá cầu 1",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6035": {
+    "courseCode": "PE6035",
+    "courseName": "Futsal 1",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6011": {
+    "courseCode": "PE6011",
+    "courseName": "Karate 1",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6013": {
+    "courseCode": "PE6013",
+    "courseName": "Khiêu vũ 1",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6015": {
+    "courseCode": "PE6015",
+    "courseName": "Pencak Silat 1",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6019": {
+    "courseCode": "PE6019",
+    "courseName": "Tennis 1",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6002": {
+    "courseCode": "PE6002",
+    "courseName": "Aerobic 2",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6006": {
+    "courseCode": "PE6006",
+    "courseName": "Bơi 2",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6018": {
+    "courseCode": "PE6018",
+    "courseName": "Bóng bàn 2",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6004": {
+    "courseCode": "PE6004",
+    "courseName": "Bóng chuyền 2",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6028": {
+    "courseCode": "PE6028",
+    "courseName": "Bóng đá 2",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6024": {
+    "courseCode": "PE6024",
+    "courseName": "Bóng ném 2",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6022": {
+    "courseCode": "PE6022",
+    "courseName": "Bóng rổ 2",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6026": {
+    "courseCode": "PE6026",
+    "courseName": "Cầu lông 2",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6032": {
+    "courseCode": "PE6032",
+    "courseName": "Cầu mây 2",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6030": {
+    "courseCode": "PE6030",
+    "courseName": "Đá cầu 2",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6036": {
+    "courseCode": "PE6036",
+    "courseName": "Futsal 2",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6012": {
+    "courseCode": "PE6012",
+    "courseName": "Karate 2",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6014": {
+    "courseCode": "PE6014",
+    "courseName": "Khiêu vũ 2",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6016": {
+    "courseCode": "PE6016",
+    "courseName": "Pencak Silat 2",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "PE6020": {
+    "courseCode": "PE6020",
+    "courseName": "Tennis 2",
+    "credits": 1.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "DC6005": {
+    "courseCode": "DC6005",
+    "courseName": "Công tác quốc phòng và an ninh",
+    "credits": 2.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 8,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "DC6004": {
+    "courseCode": "DC6004",
+    "courseName": "Đường lối QP&AN của ĐCS Việt Nam",
+    "credits": 3.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 8,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "DC6007": {
+    "courseCode": "DC6007",
+    "courseName": "Kỹ thuật chiến đấu bộ binh và chiến thuật",
+    "credits": 2.0,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 4,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "DC6006": {
+    "courseCode": "DC6006",
+    "courseName": "Quân sự chung",
+    "credits": 1.5,
+    "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6011": {
+    "courseCode": "IT6011",
+    "courseName": "Nhập môn về kỹ thuật",
+    "credits": 2.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 1,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6002": {
+    "courseCode": "IT6002",
+    "courseName": "Cấu trúc dữ liệu và giải thuật",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 3,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6015",
+      "SC6208"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6126": {
+    "courseCode": "IT6126",
+    "courseName": "Hệ thống cơ sở dữ liệu",
+    "credits": 4.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 3,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6067": {
+    "courseCode": "IT6067",
+    "courseName": "Kiến trúc máy tính và hệ điều hành",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 3,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6015"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6120": {
+    "courseCode": "IT6120",
+    "courseName": "Lập trình hướng đối tượng",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 3,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT5008",
+      "IT6015"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6082": {
+    "courseCode": "IT6082",
+    "courseName": "Nhập môn công nghệ phần mềm",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 4,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6015"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6097": {
+    "courseCode": "IT6097",
+    "courseName": "Phân tích và đặc tả yêu cầu phần mềm",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 4,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6126"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6039": {
+    "courseCode": "IT6039",
+    "courseName": "Thiết kế Web",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 4,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6015",
+      "IT6018",
+      "IT6027"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6044": {
+    "courseCode": "IT6044",
+    "courseName": "Ứng dụng thuật toán",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 4,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6002",
+      "IT6015"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6083": {
+    "courseCode": "IT6083",
+    "courseName": "Mạng máy tính",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 5,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6067",
+      "IT6203"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6151": {
+    "courseCode": "IT6151",
+    "courseName": "Phát triển phần mềm hướng dịch vụ",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 5,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6019"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6096": {
+    "courseCode": "IT6096",
+    "courseName": "Thiết kế phần mềm",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 5,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6097"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6040": {
+    "courseCode": "IT6040",
+    "courseName": "Thực tập cơ sở ngành",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 5,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6094": {
+    "courseCode": "IT6094",
+    "courseName": "Trí tuệ nhân tạo",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 5,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6015"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6123": {
+    "courseCode": "IT6123",
+    "courseName": "Tương tác người máy",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 6,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6033": {
+    "courseCode": "IT6033",
+    "courseName": "Quản lý dự án công nghệ thông tin",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 7,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6016": {
+    "courseCode": "IT6016",
+    "courseName": "Kỹ thuật số",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 2,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6010": {
+    "courseCode": "IT6010",
+    "courseName": "Đồ họa máy tính",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 5,
+    "isMandatory": false,
+    "priorCourses": [
+      "BS6001",
+      "IT6015"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6057": {
+    "courseCode": "IT6057",
+    "courseName": "Phát triển ứng dụng thương mại điện tử",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 5,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6015",
+      "IT6126"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6047": {
+    "courseCode": "IT6047",
+    "courseName": "Học máy",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 6,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6043",
+      "IT6094"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6019": {
+    "courseCode": "IT6019",
+    "courseName": "Lập trình Java",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 4,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6018",
+      "IT6120"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6084": {
+    "courseCode": "IT6084",
+    "courseName": "Kiểm thử phần mềm",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 6,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6002",
+      "IT6082"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6017": {
+    "courseCode": "IT6017",
+    "courseName": "Lập trình .NET",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 6,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6018",
+      "IT6120"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6085": {
+    "courseCode": "IT6085",
+    "courseName": "Đảm bảo chất lượng phần mềm",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 7,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6150": {
+    "courseCode": "IT6150",
+    "courseName": "Đồ án chuyên ngành",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 7,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6040"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6029": {
+    "courseCode": "IT6029",
+    "courseName": "Phát triển ứng dụng trên thiết bị di động",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 7,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6015",
+      "IT6016",
+      "IT6018",
+      "IT6120"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6004": {
+    "courseCode": "IT6004",
+    "courseName": "Công nghệ đa phương tiện",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 7,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6061": {
+    "courseCode": "IT6061",
+    "courseName": "Hệ quản trị doanh nghiệp điện tử",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 7,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6060": {
+    "courseCode": "IT6060",
+    "courseName": "Lập trình hệ thống nhúng và Internet vạn vật",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 7,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6015",
+      "IT6016"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6021": {
+    "courseCode": "IT6021",
+    "courseName": "Lập trình Web bằng ASP.NET",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 7,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6017"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6024": {
+    "courseCode": "IT6024",
+    "courseName": "Một số công nghệ phát triển phần mềm",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 7,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6030": {
+    "courseCode": "IT6030",
+    "courseName": "Phần mềm mã nguồn mở",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 7,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6082"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6077": {
+    "courseCode": "IT6077",
+    "courseName": "Phân tích dữ liệu lớn",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 7,
+    "isMandatory": false,
+    "priorCourses": [
+      "SC6019"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6028": {
+    "courseCode": "IT6028",
+    "courseName": "Phát triển ứng dụng Game",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 7,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6017",
+      "IT6018"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6127": {
+    "courseCode": "IT6127",
+    "courseName": "Quản trị mạng trên hệ điều hành mã nguồn mở",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 7,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6020": {
+    "courseCode": "IT6020",
+    "courseName": "Lập trình Java nâng cao",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 6,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6019",
+      "IT6120"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6080": {
+    "courseCode": "IT6080",
+    "courseName": "Lập trình Web bằng Java",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 7,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6019",
+      "IT6020"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6130": {
+    "courseCode": "IT6130",
+    "courseName": "Lập trình Python cơ bản",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 6,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6015"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6131": {
+    "courseCode": "IT6131",
+    "courseName": "Lập trình Python nâng cao",
+    "credits": 3.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 7,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6130"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6009": {
+    "courseCode": "IT6009",
+    "courseName": "Đồ án tốt nghiệp (Kỹ thuật phần mềm)",
+    "credits": 9.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 8,
+    "isMandatory": false,
+    "priorCourses": [
+      "IT6026",
+      "IT6150"
+    ],
+    "prerequisites": [],
+    "corequisites": []
+  },
+  "IT6042": {
+    "courseCode": "IT6042",
+    "courseName": "Thực tập doanh nghiệp (Kỹ thuật phần mềm)",
+    "credits": 6.0,
+    "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+    "suggestedSemester": 8,
+    "isMandatory": false,
+    "priorCourses": [],
+    "prerequisites": [],
+    "corequisites": []
+  }
+}
