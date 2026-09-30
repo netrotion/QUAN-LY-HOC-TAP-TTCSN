@@ -13,11 +13,11 @@ public class StudentProfileFixture implements Serializable {
     private String studentId;
     private String fullName;
     private String majorCode;
-    private Integer cohort;
+    private String cohort;
     private Integer currentSemester;
     private BigDecimal cpa;
     private BigDecimal gpa;
-    private Integer accumulatedCredits;
+    private Double accumulatedCredits;
     private Integer totalCreditsRequired;
     private AcademicRiskLevel riskLevel;
     private List<String> warningMessages;
@@ -37,8 +37,8 @@ public class StudentProfileFixture implements Serializable {
     public String getMajorCode() { return majorCode; }
     public void setMajorCode(String majorCode) { this.majorCode = majorCode; }
 
-    public Integer getCohort() { return cohort; }
-    public void setCohort(Integer cohort) { this.cohort = cohort; }
+    public String getCohort() { return cohort; }
+    public void setCohort(String cohort) { this.cohort = cohort; }
 
     public Integer getCurrentSemester() { return currentSemester; }
     public void setCurrentSemester(Integer currentSemester) { this.currentSemester = currentSemester; }
@@ -49,8 +49,9 @@ public class StudentProfileFixture implements Serializable {
     public BigDecimal getGpa() { return gpa; }
     public void setGpa(BigDecimal gpa) { this.gpa = gpa; }
 
-    public Integer getAccumulatedCredits() { return accumulatedCredits; }
-    public void setAccumulatedCredits(Integer accumulatedCredits) { this.accumulatedCredits = accumulatedCredits; }
+    public Integer getAccumulatedCredits() { return accumulatedCredits != null ? (int) Math.round(accumulatedCredits) : null; }
+    public Double getAccumulatedCreditsRaw() { return accumulatedCredits; }
+    public void setAccumulatedCredits(Double accumulatedCredits) { this.accumulatedCredits = accumulatedCredits; }
 
     public Integer getTotalCreditsRequired() { return totalCreditsRequired; }
     public void setTotalCreditsRequired(Integer totalCreditsRequired) { this.totalCreditsRequired = totalCreditsRequired; }
@@ -77,7 +78,7 @@ public class StudentProfileFixture implements Serializable {
     public static class CourseAttempt implements Serializable {
         private String courseCode;
         private String courseName;
-        private Integer credits;
+        private Double credits;
         private String semesterCode;
         private String letterGrade;
         private Double gradePoint4;
@@ -92,8 +93,9 @@ public class StudentProfileFixture implements Serializable {
         public String getCourseName() { return courseName; }
         public void setCourseName(String courseName) { this.courseName = courseName; }
 
-        public Integer getCredits() { return credits; }
-        public void setCredits(Integer credits) { this.credits = credits; }
+        public Integer getCredits() { return credits != null ? (int) Math.round(credits) : null; }
+        public Double getCreditsRaw() { return credits; }
+        public void setCredits(Double credits) { this.credits = credits; }
 
         public String getSemesterCode() { return semesterCode; }
         public void setSemesterCode(String semesterCode) { this.semesterCode = semesterCode; }

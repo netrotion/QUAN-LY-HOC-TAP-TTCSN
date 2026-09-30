@@ -48,23 +48,35 @@ public final class RuleEvaluator {
         }
 
         // BR-01: Kiểm tra môn tiên quyết
-        for (String prereqCode : courseDef.getPrerequisites()) {
-            StudentProfileFixture.CourseAttempt attempt = latestAttempts.get(prereqCode.toUpperCase());
-            if (attempt == null) {
-                missingPrereqs.add(prereqCode + " (chưa đăng ký học)");
-            } else {
-                Boolean passed = attempt.getPassed();
-                if (passed == null) {
-                    passed = GradeCalculator.isPassed(attempt.getLetterGrade());
-                }
+        if (courseDef.getPrerequisites() != null) {
+            for (String prereqCode : courseDef.getPrerequisites()) {
+                StudentProfileFixture.CourseAttempt attempt = latestAttempts.get(prereqCode.toUpperCase());
+                if (attempt == null) {
+                    missingPrereqs.add(prereqCode + " (chưa đăng ký học)");
+                } else {
+                    Boolean passed = attempt.getPassed();
+                    if (passed == null) {
+                        passed = GradeCalculator.isPassed(attempt.getLetterGrade());
+                    }
 
-                if (passed == null) {
-                    // RÀNG BUỘC: Missing/unknown data KHÔNG ĐƯỢC tự động gán điểm = 0 hoặc mặc định là Đã đạt
-                    missingPrereqs.add(prereqCode + " (kết quả chưa xác định / UNKNOWN)");
-                    warnings.add("Dữ liệu môn tiên quyết " + prereqCode + " chưa có kết quả kết chuyển, không thể coi là đã đạt");
-                } else if (!passed) {
-                    missingPrereqs.add(prereqCode + " (chưa đạt, điểm: " +
-                            (attempt.getLetterGrade() != null ? attempt.getLetterGrade() : "F") + ")");
+                    if (passed == null) {
+                        // RÀNG BUỘC: Missing/unknown data KHÔNG ĐƯỢC tự động gán điểm = 0 hoặc mặc định là Đã đạt
+                        missingPrereqs.add(prereqCode + " (kết quả chưa xác định / UNKNOWN)");
+                        warnings.add("Dữ liệu môn tiên quyết " + prereqCode + " chưa có kết quả kết chuyển, không thể coi là đã đạt");
+                    } else if (!passed) {
+                        missingPrereqs.add(prereqCode + " (chưa đạt, điểm: " +
+                                (attempt.getLetterGrade() != null ? attempt.getLetterGrade() : "F") + ")");
+                    }
+                }
+            }
+        }
+
+        // BR-01b: Kiểm tra môn học trước (prior courses)
+        if (courseDef.getPriorCourses() != null) {
+            for (String priorCode : courseDef.getPriorCourses()) {
+                StudentProfileFixture.CourseAttempt attempt = latestAttempts.get(priorCode.toUpperCase());
+                if (attempt == null) {
+                    missingPrereqs.add(priorCode + " (chưa đăng ký học phần học trước)");
                 }
             }
         }
@@ -78,6 +90,14 @@ public final class RuleEvaluator {
                 missingPrereqs.add("Cần tích lũy tối thiểu " + courseDef.getMinCreditsRequiredToEnroll()
                         + " TC (hiện có " + earnedCredits + " TC)");
             }
+        } else if ("IT6130".equalsIgnoreCase(courseCode) || (courseDef.getCourseName() != null && courseDef.getCourseName().toLowerCase().contains("khóa luận tốt nghiệp"))) {
+            int minCredits = 128; // 85% của 150 TC = 127.5 -> 128 TC
+            int earnedCredits = profile != null && profile.getAccumulatedCredits() != null
+                    ? profile.getAccumulatedCredits()
+                    : 0;
+            if (earnedCredits < minCredits) {
+                missingPrereqs.add("Cần tích lũy tối thiểu " + minCredits + " TC (>= 85% CTĐT) để làm đồ án tốt nghiệp (hiện có " + earnedCredits + " TC)");
+            }
         }
 
         boolean eligible = missingPrereqs.isEmpty();
@@ -85,7 +105,15 @@ public final class RuleEvaluator {
     }
 
     public static List<String> validateCreditLimits(int credits, boolean isSummer, boolean isGraduationSemester) {
+        return validateCreditLimits(credits, isSummer, isGraduationSemester, false);
+    }
+
+    public static List<String> validateCreditLimits(int credits, boolean isSummer, boolean isGraduationSemester, boolean isAcademicWarning) {
         List<String> violations = new ArrayList<>();
+
+        if (isAcademicWarning && credits > 14) {
+            violations.add("Sinh viên đang bị cảnh báo học tập chỉ được phép đăng ký tối đa 14 tín chỉ (hiện tại: " + credits + " TC)");
+        }
 
         if (!isGraduationSemester && !isSummer && credits < 10) {
             violations.add("Tổng số tín chỉ học kỳ (" + credits + " TC) nhỏ hơn hạn mức tối thiểu theo quy chế (10 TC)");
@@ -111,7 +139,8 @@ public final class RuleEvaluator {
         BigDecimal threshold = switch (year) {
             case 1 -> new BigDecimal("1.20");
             case 2 -> new BigDecimal("1.40");
-            default -> new BigDecimal("1.60");
+            case 3 -> new BigDecimal("1.60");
+            default -> new BigDecimal("1.80");
         };
 
         if (debtCredits != null && debtCredits > 24) {

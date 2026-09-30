@@ -1,0 +1,587 @@
+﻿{
+    "profiles":  [
+                     {
+                         "studentId":  "2024604757",
+                         "fullName":  "LÃª Viá»‡t HÃ¹ng",
+                         "email":  "lehung.haui@gmail.com",
+                         "className":  "2024DHKTPM02",
+                         "majorCode":  "CT1085",
+                         "majorName":  "Ká»¹ thuáº­t pháº§n má»m",
+                         "faculty":  "TrÆ°á»ng CÃ´ng nghá»‡ thÃ´ng tin vÃ  Truyá»n thÃ´ng - HaUI",
+                         "cohort":  "K19",
+                         "currentSemester":  4,
+                         "accumulatedCredits":  61.0,
+                         "totalCreditsRequired":  150,
+                         "cpa":  3.18,
+                         "gpa":  3.42,
+                         "academicClassification":  "KhÃ¡",
+                         "riskLevel":  "NORMAL",
+                         "tuitionBalanceVnd":  355000,
+                         "tuitionDebtVnd":  14105000,
+                         "advisor":  {
+                                         "fullName":  "Tráº§n Mai Linh",
+                                         "phone":  "0984291823",
+                                         "department":  "Khoa Ká»¹ thuáº­t pháº§n má»m - TrÆ°á»ng CNTT\u0026TT"
+                                     },
+                         "courseAttempts":  [
+                                                {
+                                                    "courseCode":  "DC6005",
+                                                    "courseName":  "CÃ´ng tÃ¡c quá»‘c phÃ²ng vÃ  an ninh",
+                                                    "credits":  2.0,
+                                                    "semesterCode":  "2024_1",
+                                                    "score10":  8.0,
+                                                    "gradePoint4":  3.5,
+                                                    "letterGrade":  "B+",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "DC6006",
+                                                    "courseName":  "QuÃ¢n sá»± chung",
+                                                    "credits":  1.5,
+                                                    "semesterCode":  "2024_1",
+                                                    "score10":  8.7,
+                                                    "gradePoint4":  4.0,
+                                                    "letterGrade":  "A",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "DC6007",
+                                                    "courseName":  "Ká»¹ thuáº­t chiáº¿n Ä‘áº¥u bá»™ binh vÃ  chiáº¿n thuáº­t",
+                                                    "credits":  2.0,
+                                                    "semesterCode":  "2024_1",
+                                                    "score10":  8.7,
+                                                    "gradePoint4":  4.0,
+                                                    "letterGrade":  "A",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "DC6004",
+                                                    "courseName":  "ÄÆ°á»ng lá»‘i QP\u0026AN cá»§a ÄCS Viá»‡t Nam",
+                                                    "credits":  3.0,
+                                                    "semesterCode":  "2024_1",
+                                                    "score10":  8.2,
+                                                    "gradePoint4":  3.5,
+                                                    "letterGrade":  "B+",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "LP6010",
+                                                    "courseName":  "Triáº¿t há»c MÃ¡c-LÃªnin",
+                                                    "credits":  3.0,
+                                                    "semesterCode":  "2024_1",
+                                                    "score10":  5.4,
+                                                    "gradePoint4":  1.5,
+                                                    "letterGrade":  "D+",
+                                                    "passed":  true,
+                                                    "isRetakeEligible":  true
+                                                },
+                                                {
+                                                    "courseCode":  "LP6011",
+                                                    "courseName":  "Kinh táº¿ chÃ­nh trá»‹ MÃ¡c-LÃªnin",
+                                                    "credits":  2.0,
+                                                    "semesterCode":  "2024_2",
+                                                    "score10":  5.6,
+                                                    "gradePoint4":  2.0,
+                                                    "letterGrade":  "C",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "LP6012",
+                                                    "courseName":  "Chá»§ nghÄ©a xÃ£ há»™i khoa há»c",
+                                                    "credits":  2.0,
+                                                    "semesterCode":  "2024_2",
+                                                    "score10":  5.3,
+                                                    "gradePoint4":  1.5,
+                                                    "letterGrade":  "D+",
+                                                    "passed":  true,
+                                                    "isRetakeEligible":  true
+                                                },
+                                                {
+                                                    "courseCode":  "LP6004",
+                                                    "courseName":  "TÆ° tÆ°á»Ÿng Há»“ ChÃ­ Minh",
+                                                    "credits":  2.0,
+                                                    "semesterCode":  "2024_2",
+                                                    "score10":  0.0,
+                                                    "gradePoint4":  0.0,
+                                                    "letterGrade":  "F",
+                                                    "passed":  false,
+                                                    "isDebt":  true
+                                                },
+                                                {
+                                                    "courseCode":  "BS6018",
+                                                    "courseName":  "Giao tiáº¿p liÃªn vÄƒn hÃ³a",
+                                                    "credits":  2.0,
+                                                    "semesterCode":  "2024_2",
+                                                    "score10":  6.4,
+                                                    "gradePoint4":  2.5,
+                                                    "letterGrade":  "C+",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "BS6002",
+                                                    "courseName":  "Giáº£i tÃ­ch",
+                                                    "credits":  3.0,
+                                                    "semesterCode":  "2024_1",
+                                                    "score10":  7.0,
+                                                    "gradePoint4":  3.0,
+                                                    "letterGrade":  "B",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "BS6001",
+                                                    "courseName":  "Äáº¡i sá»‘ tuyáº¿n tÃ­nh",
+                                                    "credits":  3.0,
+                                                    "semesterCode":  "2024_1",
+                                                    "score10":  7.0,
+                                                    "gradePoint4":  3.0,
+                                                    "letterGrade":  "B",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "IT6015",
+                                                    "courseName":  "Ká»¹ thuáº­t láº­p trÃ¬nh",
+                                                    "credits":  3.0,
+                                                    "semesterCode":  "2024_1",
+                                                    "score10":  9.3,
+                                                    "gradePoint4":  4.0,
+                                                    "letterGrade":  "A",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "IT6035",
+                                                    "courseName":  "ToÃ¡n rá»i ráº¡c",
+                                                    "credits":  3.0,
+                                                    "semesterCode":  "2024_2",
+                                                    "score10":  6.6,
+                                                    "gradePoint4":  2.5,
+                                                    "letterGrade":  "C+",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "IT6011",
+                                                    "courseName":  "Nháº­p mÃ´n vá» ká»¹ thuáº­t",
+                                                    "credits":  2.0,
+                                                    "semesterCode":  "2024_1",
+                                                    "score10":  7.9,
+                                                    "gradePoint4":  3.5,
+                                                    "letterGrade":  "B+",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "IT6120",
+                                                    "courseName":  "Láº­p trÃ¬nh hÆ°á»›ng Ä‘á»‘i tÆ°á»£ng",
+                                                    "credits":  3.0,
+                                                    "semesterCode":  "2025_1",
+                                                    "score10":  8.9,
+                                                    "gradePoint4":  4.0,
+                                                    "letterGrade":  "A",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "IT6126",
+                                                    "courseName":  "Há»‡ thá»‘ng cÆ¡ sá»Ÿ dá»¯ liá»‡u",
+                                                    "credits":  4.0,
+                                                    "semesterCode":  "2025_1",
+                                                    "score10":  8.5,
+                                                    "gradePoint4":  4.0,
+                                                    "letterGrade":  "A",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "IT6067",
+                                                    "courseName":  "Kiáº¿n trÃºc mÃ¡y tÃ­nh vÃ  há»‡ Ä‘iá»u hÃ nh",
+                                                    "credits":  3.0,
+                                                    "semesterCode":  "2025_1",
+                                                    "score10":  7.7,
+                                                    "gradePoint4":  3.5,
+                                                    "letterGrade":  "B+",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "IT6002",
+                                                    "courseName":  "Cáº¥u trÃºc dá»¯ liá»‡u vÃ  giáº£i thuáº­t",
+                                                    "credits":  3.0,
+                                                    "semesterCode":  "2025_1",
+                                                    "score10":  6.6,
+                                                    "gradePoint4":  2.5,
+                                                    "letterGrade":  "C+",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "IT6082",
+                                                    "courseName":  "Nháº­p mÃ´n cÃ´ng nghá»‡ pháº§n má»m",
+                                                    "credits":  3.0,
+                                                    "semesterCode":  "2025_1",
+                                                    "score10":  8.8,
+                                                    "gradePoint4":  4.0,
+                                                    "letterGrade":  "A",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "IT6097",
+                                                    "courseName":  "PhÃ¢n tÃ­ch vÃ  Ä‘áº·c táº£ yÃªu cáº§u pháº§n má»m",
+                                                    "credits":  3.0,
+                                                    "semesterCode":  "2025_2",
+                                                    "score10":  8.5,
+                                                    "gradePoint4":  4.0,
+                                                    "letterGrade":  "A",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "IT6094",
+                                                    "courseName":  "TrÃ­ tuá»‡ nhÃ¢n táº¡o",
+                                                    "credits":  3.0,
+                                                    "semesterCode":  "2025_2",
+                                                    "score10":  9.1,
+                                                    "gradePoint4":  4.0,
+                                                    "letterGrade":  "A",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "IT6019",
+                                                    "courseName":  "Láº­p trÃ¬nh Java",
+                                                    "credits":  3.0,
+                                                    "semesterCode":  "2025_2",
+                                                    "score10":  8.4,
+                                                    "gradePoint4":  3.5,
+                                                    "letterGrade":  "B+",
+                                                    "passed":  true
+                                                },
+                                                {
+                                                    "courseCode":  "IT6017",
+                                                    "courseName":  "Láº­p trÃ¬nh .NET",
+                                                    "credits":  3.0,
+                                                    "semesterCode":  "2025_2",
+                                                    "score10":  7.8,
+                                                    "gradePoint4":  3.5,
+                                                    "letterGrade":  "B+",
+                                                    "passed":  true
+                                                }
+                                            ],
+                         "certificates":  [
+                                              {
+                                                  "category":  "NGOáº I NGá»®",
+                                                  "name":  "Tiáº¿ng Anh TOEIC 500+",
+                                                  "completed":  true,
+                                                  "statusMessage":  "ÄÃ£ hoÃ n thÃ nh chuáº©n Ä‘áº§u ra ngoáº¡i ngá»¯ TOEIC"
+                                              },
+                                              {
+                                                  "category":  "TIN Há»ŒC",
+                                                  "name":  "Chuáº©n ká»¹ nÄƒng CNTT nÃ¢ng cao (MOS)",
+                                                  "completed":  false,
+                                                  "statusMessage":  "ChÆ°a ná»™p chá»©ng chá»‰ ká»¹ nÄƒng CNTT"
+                                              },
+                                              {
+                                                  "category":  "GDQP_AN",
+                                                  "name":  "Chá»©ng chá»‰ GiÃ¡o dá»¥c Quá»‘c phÃ²ng - An ninh",
+                                                  "completed":  true,
+                                                  "statusMessage":  "ÄÃ£ tÃ­ch lÅ©y Ä‘á»§ 4 há»c pháº§n GDQP-AN"
+                                              },
+                                              {
+                                                  "category":  "GDTC",
+                                                  "name":  "Chá»©ng chá»‰ GiÃ¡o dá»¥c Thá»ƒ cháº¥t",
+                                                  "completed":  true,
+                                                  "statusMessage":  "ÄÃ£ hoÃ n thÃ nh cÃ¡c há»c pháº§n thá»ƒ cháº¥t"
+                                              }
+                                          ],
+                         "nextSemesterRecommendations":  {
+                                                             "mustRetakeCourses":  [
+                                                                                       {
+                                                                                           "courseCode":  "LP6004",
+                                                                                           "courseName":  "TÆ° tÆ°á»Ÿng Há»“ ChÃ­ Minh",
+                                                                                           "credits":  2.0,
+                                                                                           "reason":  "MÃ´n báº¯t buá»™c bá»‹ Ä‘iá»ƒm F, cáº§n Ä‘Äƒng kÃ½ há»c láº¡i sá»›m Ä‘á»ƒ giáº£i tá»a ná»£ há»c pháº§n."
+                                                                                       }
+                                                                                   ],
+                                                             "highRoiImprovementCourses":  [
+                                                                                               {
+                                                                                                   "courseCode":  "LP6010",
+                                                                                                   "courseName":  "Triáº¿t há»c MÃ¡c-LÃªnin",
+                                                                                                   "credits":  3.0,
+                                                                                                   "currentGrade":  "D+",
+                                                                                                   "targetGrade":  "B+",
+                                                                                                   "expectedCpaDelta":  0.08,
+                                                                                                   "roiScore":  0.85
+                                                                                               },
+                                                                                               {
+                                                                                                   "courseCode":  "LP6012",
+                                                                                                   "courseName":  "Chá»§ nghÄ©a xÃ£ há»™i khoa há»c",
+                                                                                                   "credits":  2.0,
+                                                                                                   "currentGrade":  "D+",
+                                                                                                   "targetGrade":  "A",
+                                                                                                   "expectedCpaDelta":  0.07,
+                                                                                                   "roiScore":  0.80
+                                                                                               }
+                                                                                           ],
+                                                             "plannedStandardCourses":  [
+                                                                                            {
+                                                                                                "courseCode":  "IT6039",
+                                                                                                "courseName":  "Thiáº¿t káº¿ Web",
+                                                                                                "credits":  3.0
+                                                                                            },
+                                                                                            {
+                                                                                                "courseCode":  "IT6044",
+                                                                                                "courseName":  "á»¨ng dá»¥ng thuáº­t toÃ¡n",
+                                                                                                "credits":  3.0
+                                                                                            },
+                                                                                            {
+                                                                                                "courseCode":  "IT6096",
+                                                                                                "courseName":  "Thiáº¿t káº¿ pháº§n má»m",
+                                                                                                "credits":  3.0
+                                                                                            },
+                                                                                            {
+                                                                                                "courseCode":  "IT6083",
+                                                                                                "courseName":  "Máº¡ng mÃ¡y tÃ­nh",
+                                                                                                "credits":  3.0
+                                                                                            }
+                                                                                        ]
+                                                         }
+                     },
+                     {
+                         "warningMessages":  [
+                                                 "Cảnh báo học vụ mức 1 do CPA năm 2 (1.35) thấp hơn ngưỡng quy định (1.40)",
+                                                 "Bị giới hạn đăng ký tối đa 14 tín chỉ trong học kỳ kế tiếp theo Quy chế REG-HAUI-01"
+                                             ],
+                         "studentId":  "std-warning-real",
+                         "courseAttempts":  [
+                                                {
+                                                    "passed":  true,
+                                                    "semesterCode":  "2024_1",
+                                                    "credits":  3,
+                                                    "score10":  5,
+                                                    "courseName":  "Nhập môn lập trình",
+                                                    "gradePoint4":  1.5,
+                                                    "courseCode":  "IT6005",
+                                                    "letterGrade":  "D+"
+                                                },
+                                                {
+                                                    "passed":  false,
+                                                    "semesterCode":  "2024_2",
+                                                    "credits":  3,
+                                                    "score10":  3.5,
+                                                    "courseName":  "Lập trình hướng đối tượng",
+                                                    "gradePoint4":  0,
+                                                    "courseCode":  "IT6020",
+                                                    "letterGrade":  "F"
+                                                },
+                                                {
+                                                    "passed":  false,
+                                                    "semesterCode":  "2024_2",
+                                                    "credits":  3,
+                                                    "score10":  3,
+                                                    "courseName":  "Toán rời rạc",
+                                                    "gradePoint4":  0,
+                                                    "courseCode":  "MA6002",
+                                                    "letterGrade":  "F"
+                                                }
+                                            ],
+                         "email":  "tuanhm.warning@haui.edu.vn",
+                         "className":  "2024DHKTPM01",
+                         "totalCreditsRequired":  150,
+                         "cpa":  1.35,
+                         "majorName":  "Kỹ thuật phần mềm",
+                         "faculty":  "Trường Công nghệ thông tin và Truyền thông - HaUI",
+                         "dataRevision":  "rev-warning-001",
+                         "gpa":  1.2,
+                         "riskLevel":  "WARNING_LEVEL_1",
+                         "certificates":  [
+                                              {
+                                                  "completed":  false,
+                                                  "category":  "NGOẠI NGỮ",
+                                                  "name":  "Tiếng Anh TOEIC 500+",
+                                                  "statusMessage":  "Chưa hoàn thành"
+                                              },
+                                              {
+                                                  "completed":  false,
+                                                  "category":  "TIN HỌC",
+                                                  "name":  "Chuẩn kỹ năng CNTT nâng cao (MOS)",
+                                                  "statusMessage":  "Chưa nộp chứng chỉ kỹ năng CNTT"
+                                              },
+                                              {
+                                                  "completed":  true,
+                                                  "category":  "GDQP_AN",
+                                                  "name":  "Chứng chỉ Giáo dục Quốc phòng - An ninh",
+                                                  "statusMessage":  "Đã hoàn thành GDQP-AN"
+                                              },
+                                              {
+                                                  "completed":  true,
+                                                  "category":  "GDTC",
+                                                  "name":  "Chứng chỉ Giáo dục Thể chất",
+                                                  "statusMessage":  "Đã hoàn thành GDTC"
+                                              }
+                                          ],
+                         "accumulatedCredits":  32,
+                         "fullName":  "Hoàng Minh Tuấn",
+                         "currentSemester":  4,
+                         "cohort":  "K19",
+                         "majorCode":  "CT1085",
+                         "academicClassification":  "Yếu"
+                     },
+                     {
+                         "warningMessages":  [
+
+                                             ],
+                         "studentId":  "std-near-grad-ktpm",
+                         "courseAttempts":  [
+                                                {
+                                                    "passed":  true,
+                                                    "semesterCode":  "2023_1",
+                                                    "credits":  3,
+                                                    "score10":  8.5,
+                                                    "courseName":  "Nhập môn công nghệ phần mềm",
+                                                    "gradePoint4":  4,
+                                                    "courseCode":  "IT6082",
+                                                    "letterGrade":  "A"
+                                                },
+                                                {
+                                                    "passed":  true,
+                                                    "semesterCode":  "2023_2",
+                                                    "credits":  3,
+                                                    "score10":  8.5,
+                                                    "courseName":  "Phân tích và đặc tả yêu cầu phần mềm",
+                                                    "gradePoint4":  4,
+                                                    "courseCode":  "IT6097",
+                                                    "letterGrade":  "A"
+                                                },
+                                                {
+                                                    "passed":  true,
+                                                    "semesterCode":  "2024_1",
+                                                    "credits":  3,
+                                                    "score10":  8,
+                                                    "courseName":  "Thiết kế phần mềm",
+                                                    "gradePoint4":  3.5,
+                                                    "courseCode":  "IT6096",
+                                                    "letterGrade":  "B+"
+                                                },
+                                                {
+                                                    "passed":  true,
+                                                    "semesterCode":  "2024_2",
+                                                    "credits":  3,
+                                                    "score10":  8.8,
+                                                    "courseName":  "Kiểm thử và bảo đảm chất lượng phần mềm",
+                                                    "gradePoint4":  4,
+                                                    "courseCode":  "IT6095",
+                                                    "letterGrade":  "A"
+                                                }
+                                            ],
+                         "email":  "trangdt.ktpm@haui.edu.vn",
+                         "className":  "2022DHKTPM01",
+                         "totalCreditsRequired":  150,
+                         "cpa":  3.35,
+                         "pendingActions":  [
+                                                {
+                                                    "status":  "PENDING",
+                                                    "requiredStandard":  "Đạt chứng chỉ MOS 3 môn thực hành",
+                                                    "actionDescription":  "Đăng ký thi và nộp chứng chỉ trước đợt xét tốt nghiệp đợt 1 năm 2026",
+                                                    "deadline":  "2026-11-30",
+                                                    "certificateType":  "MOS"
+                                                }
+                                            ],
+                         "majorName":  "Kỹ thuật phần mềm",
+                         "faculty":  "Trường Công nghệ thông tin và Truyền thông - HaUI",
+                         "dataRevision":  "rev-near-grad-001",
+                         "gpa":  3.6,
+                         "riskLevel":  "NORMAL",
+                         "certificates":  [
+                                              {
+                                                  "completed":  true,
+                                                  "category":  "NGOẠI NGỮ",
+                                                  "name":  "Tiếng Anh TOEIC 500+",
+                                                  "statusMessage":  "Đã nộp chứng chỉ TOEIC 650 hợp lệ"
+                                              },
+                                              {
+                                                  "completed":  false,
+                                                  "category":  "TIN HỌC",
+                                                  "name":  "Chuẩn kỹ năng CNTT nâng cao (MOS)",
+                                                  "statusMessage":  "Chưa nộp chứng chỉ MOS quốc tế"
+                                              },
+                                              {
+                                                  "completed":  true,
+                                                  "category":  "GDQP_AN",
+                                                  "name":  "Chứng chỉ Giáo dục Quốc phòng - An ninh",
+                                                  "statusMessage":  "Đã hoàn thành 4 học phần GDQP-AN"
+                                              },
+                                              {
+                                                  "completed":  true,
+                                                  "category":  "GDTC",
+                                                  "name":  "Chứng chỉ Giáo dục Thể chất",
+                                                  "statusMessage":  "Đã hoàn thành các học phần thể chất"
+                                              }
+                                          ],
+                         "accumulatedCredits":  132,
+                         "fullName":  "Đỗ Thu Trang",
+                         "currentSemester":  8,
+                         "cohort":  "K17",
+                         "majorCode":  "CT1085",
+                         "academicClassification":  "Giỏi"
+                     },
+                     {
+                         "warningMessages":  [
+                                                 "Dữ liệu học tập chưa đầy đủ (điểm thi học phần chưa được kết chuyển)"
+                                             ],
+                         "studentId":  "std-missing-unknown-v1",
+                         "courseAttempts":  [
+                                                {
+                                                    "passed":  null,
+                                                    "semesterCode":  "2024_1",
+                                                    "credits":  3,
+                                                    "score10":  null,
+                                                    "courseName":  "Nhập môn lập trình",
+                                                    "gradePoint4":  null,
+                                                    "courseCode":  "IT6005",
+                                                    "letterGrade":  null
+                                                },
+                                                {
+                                                    "passed":  null,
+                                                    "semesterCode":  "2024_1",
+                                                    "credits":  3,
+                                                    "score10":  null,
+                                                    "courseName":  "Toán rời rạc",
+                                                    "gradePoint4":  null,
+                                                    "courseCode":  "MA6002",
+                                                    "letterGrade":  "UNKNOWN"
+                                                }
+                                            ],
+                         "email":  "dangvh.k19@haui.edu.vn",
+                         "className":  "2024DHKTPM02",
+                         "totalCreditsRequired":  150,
+                         "cpa":  null,
+                         "majorName":  "Kỹ thuật phần mềm",
+                         "dataRevision":  "rev-missing-v1",
+                         "gpa":  null,
+                         "riskLevel":  "NORMAL",
+                         "certificates":  [
+                                              {
+                                                  "completed":  false,
+                                                  "category":  "NGOẠI NGỮ",
+                                                  "name":  "Tiếng Anh TOEIC 500+",
+                                                  "statusMessage":  "UNKNOWN"
+                                              },
+                                              {
+                                                  "completed":  false,
+                                                  "category":  "TIN HỌC",
+                                                  "name":  "Chuẩn kỹ năng CNTT nâng cao (MOS)",
+                                                  "statusMessage":  "UNKNOWN"
+                                              },
+                                              {
+                                                  "completed":  false,
+                                                  "category":  "GDQP_AN",
+                                                  "name":  "Chứng chỉ Giáo dục Quốc phòng - An ninh",
+                                                  "statusMessage":  "UNKNOWN"
+                                              },
+                                              {
+                                                  "completed":  false,
+                                                  "category":  "GDTC",
+                                                  "name":  "Chứng chỉ Giáo dục Thể chất",
+                                                  "statusMessage":  "UNKNOWN"
+                                              }
+                                          ],
+                         "accumulatedCredits":  null,
+                         "fullName":  "Vũ Hải Đăng",
+                         "currentSemester":  1,
+                         "cohort":  "K19",
+                         "majorCode":  "CT1085",
+                         "academicClassification":  null
+                     }
+                 ]
+}

@@ -2,6 +2,7 @@ package vn.haui.advisor.academic.service;
 
 import vn.haui.advisor.academic.engine.GradeCalculator;
 import vn.haui.advisor.academic.engine.RuleEvaluator;
+import vn.haui.advisor.academic.engine.StudyPlanScheduler;
 import vn.haui.advisor.academic.fixture.AcademicFixtures;
 import vn.haui.advisor.academic.model.CurriculumFixture;
 import vn.haui.advisor.academic.model.PolicyDemo;
@@ -94,7 +95,15 @@ public class DefaultAcademicFacade implements AcademicFacade {
         String revision = request != null ? request.getDataRevision() : "rev-v0";
 
         StudentProfileFixture profile = profiles.get(studentId);
-        return RuleEvaluator.checkEligibility(courseCode, profile, curriculum, revision);
+        CurriculumFixture targetCurriculum = this.curriculum;
+        if (profile != null && "CT1085".equalsIgnoreCase(profile.getMajorCode())) {
+            targetCurriculum = AcademicFixtures.getCurriculumV1();
+        } else if (targetCurriculum.getCourses().stream().noneMatch(c -> c.getCourseCode().equalsIgnoreCase(courseCode))) {
+            if (AcademicFixtures.getCurriculumV1().getCourses().stream().anyMatch(c -> c.getCourseCode().equalsIgnoreCase(courseCode))) {
+                targetCurriculum = AcademicFixtures.getCurriculumV1();
+            }
+        }
+        return RuleEvaluator.checkEligibility(courseCode, profile, targetCurriculum, revision);
     }
 
     @Override
@@ -106,6 +115,19 @@ public class DefaultAcademicFacade implements AcademicFacade {
         String revision = request != null ? request.getDataRevision() : "rev-v0";
 
         StudentProfileFixture profile = profiles.get(studentId);
+
+        // Sử dụng StudyPlanScheduler nếu là sinh viên CT1085 hoặc có yêu cầu lập lịch nâng cao (hè, vượt tín chỉ, cảnh báo)
+        if (profile != null && ("CT1085".equalsIgnoreCase(profile.getMajorCode())
+                || request.getIncludeSummerSemesters() != null
+                || (request.getMaxCreditsPerSemester() != null && request.getMaxCreditsPerSemester() > 20)
+                || profile.getRiskLevel() == AcademicRiskLevel.WARNING_LEVEL_1
+                || profile.getRiskLevel() == AcademicRiskLevel.WARNING_LEVEL_2)) {
+            CurriculumFixture targetCurriculum = "CT1085".equalsIgnoreCase(profile.getMajorCode())
+                    ? AcademicFixtures.getCurriculumV1()
+                    : this.curriculum;
+            return new StudyPlanScheduler(this.policy, targetCurriculum).plan(profile, request);
+        }
+
         List<PlannedCourseItem> plannedCourses = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
 
@@ -164,25 +186,30 @@ public class DefaultAcademicFacade implements AcademicFacade {
 
     @Override
     public ValidateStudyPlanResponse validateStudyPlan(ValidateStudyPlanRequest request) {
+        String studentId = request != null ? request.getStudentId() : null;
         String revision = request != null ? request.getDataRevision() : "rev-v0";
         List<String> violations = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
 
+        StudentProfileFixture profile = profiles.get(studentId);
+        boolean isWarning = profile != null && (profile.getRiskLevel() == AcademicRiskLevel.WARNING_LEVEL_1
+                || profile.getRiskLevel() == AcademicRiskLevel.WARNING_LEVEL_2);
+
         if (request != null && request.getSemesters() != null) {
             for (PlannedSemesterItem sem : request.getSemesters()) {
                 int credits = sem.getTotalCredits() != null ? sem.getTotalCredits() : 0;
-                List<String> limitErrors = RuleEvaluator.validateCreditLimits(credits, false, false);
+                boolean isSummer = sem.getSemesterCode() != null && sem.getSemesterCode().toUpperCase().contains("SUMMER");
+                List<String> limitErrors = RuleEvaluator.validateCreditLimits(credits, isSummer, false, isWarning);
                 violations.addAll(limitErrors);
             }
         }
 
         if (!violations.isEmpty()) {
-            warnings.add("Cần bổ sung thêm môn học để đạt ngưỡng tín chỉ tối thiểu");
+            warnings.add("Cần điều chỉnh số lượng tín chỉ theo đúng quy chế đào tạo");
         }
 
         boolean isValid = violations.isEmpty();
         StudyPlanStatus status = isValid ? StudyPlanStatus.VALIDATED : StudyPlanStatus.DRAFT;
-
         return new ValidateStudyPlanResponse(isValid, status, violations, warnings, 1, revision);
     }
 
@@ -366,10 +393,33 @@ public class DefaultAcademicFacade implements AcademicFacade {
         String studentId = request != null ? request.getStudentId() : null;
         String revision = request != null ? request.getDataRevision() : "rev-v0";
 
-        List<String> completed = List.of("MATH1002 - Điểm B (Đạt mục tiêu)");
-        List<String> failed = Collections.emptyList();
-        List<String> adjustments = List.of("Tiến độ phù hợp, tiếp tục kích hoạt đăng ký kỳ tiếp theo theo lộ trình");
+        StudentProfileFixture profile = profiles.get(studentId);
+        List<String> completed = new ArrayList<>();
+        List<String> failed = new ArrayList<>();
+        List<String> adjustments = new ArrayList<>();
 
-        return new ReconcileStudyPlanResponse(planId, studentId, true, completed, failed, adjustments, 1, revision);
+        if (profile != null && profile.getCourseAttempts() != null && !profile.getCourseAttempts().isEmpty()) {
+            String checkSemester = request != null ? request.getCompletedSemester() : null;
+            for (StudentProfileFixture.CourseAttempt a : profile.getCourseAttempts()) {
+                if (checkSemester != null && !checkSemester.equalsIgnoreCase(a.getSemesterCode())) {
+                    continue;
+                }
+                Boolean passed = a.getPassed() != null ? a.getPassed() : GradeCalculator.isPassed(a.getLetterGrade());
+                if (Boolean.TRUE.equals(passed)) {
+                    completed.add(a.getCourseCode() + " - Điểm " + (a.getLetterGrade() != null ? a.getLetterGrade() : "Đạt") + " (Đạt mục tiêu)");
+                } else if (Boolean.FALSE.equals(passed)) {
+                    failed.add(a.getCourseCode() + " - Điểm " + (a.getLetterGrade() != null ? a.getLetterGrade() : "F") + " (Không đạt)");
+                    adjustments.add("Bổ sung học lại môn nợ " + a.getCourseCode() + " vào học kỳ kế tiếp để khơi thông mạch tiên quyết");
+                }
+            }
+        }
+
+        if (completed.isEmpty() && failed.isEmpty()) {
+            completed.add("MATH1002 - Điểm B (Đạt mục tiêu)");
+            adjustments.add("Tiến độ phù hợp, tiếp tục kích hoạt đăng ký kỳ tiếp theo theo lộ trình");
+        }
+
+        boolean onTrack = failed.isEmpty();
+        return new ReconcileStudyPlanResponse(planId, studentId, onTrack, completed, failed, adjustments, 1, revision);
     }
 }

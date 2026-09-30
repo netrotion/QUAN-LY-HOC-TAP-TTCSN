@@ -102,6 +102,7 @@ public class PolicyDemo implements Serializable {
         private Integer minCreditsMainSemester;
         private Integer maxCreditsMainSemester;
         private Integer maxCreditsSummerSemester;
+        private Integer maxCreditsWarningSemester = 14;
         private Integer minCreditsGraduationSemester;
         private String rationale;
         public CreditLimitsConfig() {}
@@ -113,6 +114,8 @@ public class PolicyDemo implements Serializable {
         public void setMaxCreditsMainSemester(Integer maxCreditsMainSemester) { this.maxCreditsMainSemester = maxCreditsMainSemester; }
         public Integer getMaxCreditsSummerSemester() { return maxCreditsSummerSemester; }
         public void setMaxCreditsSummerSemester(Integer maxCreditsSummerSemester) { this.maxCreditsSummerSemester = maxCreditsSummerSemester; }
+        public Integer getMaxCreditsWarningSemester() { return maxCreditsWarningSemester; }
+        public void setMaxCreditsWarningSemester(Integer maxCreditsWarningSemester) { this.maxCreditsWarningSemester = maxCreditsWarningSemester; }
         public Integer getMinCreditsGraduationSemester() { return minCreditsGraduationSemester; }
         public void setMinCreditsGraduationSemester(Integer minCreditsGraduationSemester) { this.minCreditsGraduationSemester = minCreditsGraduationSemester; }
         public String getRationale() { return rationale; }
@@ -125,6 +128,7 @@ public class PolicyDemo implements Serializable {
         private BigDecimal year1MinCpa;
         private BigDecimal year2MinCpa;
         private BigDecimal year3MinCpa;
+        private BigDecimal year4PlusMinCpa = new BigDecimal("1.80");
         private Integer maxDebtCredits;
         private Integer consecutiveWarningsForCritical;
         private String rationale;
@@ -137,6 +141,8 @@ public class PolicyDemo implements Serializable {
         public void setYear2MinCpa(BigDecimal year2MinCpa) { this.year2MinCpa = year2MinCpa; }
         public BigDecimal getYear3MinCpa() { return year3MinCpa; }
         public void setYear3MinCpa(BigDecimal year3MinCpa) { this.year3MinCpa = year3MinCpa; }
+        public BigDecimal getYear4PlusMinCpa() { return year4PlusMinCpa; }
+        public void setYear4PlusMinCpa(BigDecimal year4PlusMinCpa) { this.year4PlusMinCpa = year4PlusMinCpa; }
         public Integer getMaxDebtCredits() { return maxDebtCredits; }
         public void setMaxDebtCredits(Integer maxDebtCredits) { this.maxDebtCredits = maxDebtCredits; }
         public Integer getConsecutiveWarningsForCritical() { return consecutiveWarningsForCritical; }
