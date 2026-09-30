@@ -1,0 +1,917 @@
+{
+  "$schema": "./chat-eval.schema.json",
+  "eval_version": "1.0.0",
+  "description": "Bộ benchmark đánh giá hành vi Chatbot Cố vấn Học vụ HaUI Advisor (Task 2.2e) bao phủ 8 kịch bản nghiệp vụ chính và các ca biên.",
+  "cases": [
+    {
+      "id": "EVAL-REG-001",
+      "category": "REGULATION",
+      "description": "Case A: Quy chế tín chỉ - Hỏi giới hạn số tín chỉ được đăng ký trong học kỳ chính và kỳ hè",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Một học kỳ chính tại HaUI tôi được đăng ký tối đa bao nhiêu tín chỉ? Kỳ hè thì sao?"
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [],
+        "sources": [
+          {
+            "source_id": "REG-HAUI-01",
+            "section_contains": "Giới hạn Đăng ký Tín chỉ (Credit Limits)"
+          }
+        ],
+        "answer_must_contain_any": [
+          "24 tín chỉ",
+          "tối đa 24",
+          "kỳ hè tối đa 12 tín chỉ",
+          "12 tín chỉ"
+        ],
+        "answer_must_not_contain": [
+          "SRC-MOCK-POLICY",
+          "SRC_CTDT_DEMO",
+          "2024-FIXTURE"
+        ],
+        "should_ask_clarification": false,
+        "warnings": [],
+        "actions": []
+      }
+    },
+    {
+      "id": "EVAL-REG-002",
+      "category": "REGULATION",
+      "description": "Case B: Khái niệm GPA và CPA - Phân biệt công thức và phạm vi tính điểm",
+      "turns": [
+        {
+          "role": "user",
+          "content": "CPA và GPA khác nhau như thế nào trong quy chế của trường?"
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [],
+        "sources": [
+          {
+            "source_id": "REG-HAUI-02",
+            "section_contains": "Công thức Tính Điểm Trung bình"
+          }
+        ],
+        "answer_must_contain_any": [
+          "GPA",
+          "học kỳ",
+          "CPA",
+          "tích lũy",
+          "toàn khóa"
+        ],
+        "answer_must_not_contain": [
+          "SRC-MOCK-POLICY",
+          "DEMO_UNVERIFIED"
+        ],
+        "should_ask_clarification": false,
+        "warnings": [],
+        "actions": []
+      }
+    },
+    {
+      "id": "EVAL-REG-003",
+      "category": "REGULATION",
+      "description": "Quy chế học cải thiện - Nghiêm cấm cải thiện môn đã đạt điểm B trở lên",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Môn Kỹ thuật lập trình tôi được điểm A (hoặc B), tôi có được đăng ký học cải thiện không?"
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [],
+        "sources": [
+          {
+            "source_id": "REG-HAUI-03",
+            "section_contains": "Quy định Học cải thiện Điểm (Nâng hạng CPA)"
+          }
+        ],
+        "answer_must_contain_any": [
+          "không được phép",
+          "tuyệt đối không",
+          "chỉ áp dụng cho D, D+, C",
+          "từ B trở lên không được học cải thiện"
+        ],
+        "answer_must_not_contain": [
+          "được phép học cải thiện điểm A",
+          "được phép học cải thiện điểm B"
+        ],
+        "should_ask_clarification": false,
+        "warnings": [],
+        "actions": []
+      }
+    },
+    {
+      "id": "EVAL-REG-004",
+      "category": "REGULATION",
+      "description": "Ngưỡng cảnh báo học vụ theo năm đào tạo",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Sinh viên năm thứ 2 cần đạt CPA tối thiểu bao nhiêu để không bị cảnh báo học vụ?"
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [],
+        "sources": [
+          {
+            "source_id": "REG-HAUI-04",
+            "section_contains": "Các Tiêu chí và Ngưỡng Cảnh báo Học vụ"
+          }
+        ],
+        "answer_must_contain_any": [
+          "1.40",
+          "1.4"
+        ],
+        "answer_must_not_contain": [
+          "1.20 cho năm 2",
+          "1.60 cho năm 2"
+        ],
+        "should_ask_clarification": false,
+        "warnings": [],
+        "actions": []
+      }
+    },
+    {
+      "id": "EVAL-REG-005",
+      "category": "REGULATION",
+      "description": "Quy chế tốt nghiệp - Tiêu chuẩn xếp hạng và điều kiện hạ hạng bằng",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Nếu tôi nợ học lại quá 5% tổng số tín chỉ thì bằng tốt nghiệp có bị ảnh hưởng gì không?"
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [],
+        "sources": [
+          {
+            "source_id": "REG-HAUI-05",
+            "section_contains": "Phân hạng Bằng Tốt nghiệp"
+          }
+        ],
+        "answer_must_contain_any": [
+          "giảm đi một mức",
+          "hạ một bậc",
+          "hạ hạng tốt nghiệp",
+          "vượt quá 5%"
+        ],
+        "answer_must_not_contain": [
+          "không bị ảnh hưởng gì",
+          "bị buộc thôi học"
+        ],
+        "should_ask_clarification": false,
+        "warnings": [],
+        "actions": []
+      }
+    },
+    {
+      "id": "EVAL-DEBT-001",
+      "category": "DEBT_COURSES",
+      "description": "Case C: Nợ môn F - Tra cứu môn nợ cá nhân của sinh viên demo",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Hiện tại tôi đang nợ môn nào và quy định học lại môn đó ra sao?"
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [
+          {
+            "tool_name": "getAcademicStatus",
+            "tool_availability": "EXPOSED_IN_ADAPTER"
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "REG-HAUI-03",
+            "section_contains": "Quy định Học lại (Môn bắt buộc bị điểm F)"
+          }
+        ],
+        "answer_must_contain_any": [
+          "LP6004",
+          "Tư tưởng Hồ Chí Minh",
+          "bắt buộc học lại",
+          "điểm F"
+        ],
+        "answer_must_not_contain": [
+          "không nợ môn nào",
+          "nợ môn Toán rời rạc",
+          "nợ môn Giải tích"
+        ],
+        "should_ask_clarification": false,
+        "warnings": [],
+        "actions": [
+          {
+            "action_type": "NAVIGATE",
+            "target_route": "/academic/transcript"
+          }
+        ]
+      }
+    },
+    {
+      "id": "EVAL-DEBT-002",
+      "category": "DEBT_COURSES",
+      "description": "Case D: Ảnh hưởng môn sau - Kiểm tra môn học trước LP6004 đối với môn Pháp luật đại cương (LP6003)",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Tôi đang nợ môn Tư tưởng Hồ Chí Minh (LP6004) thì có đăng ký học môn Pháp luật đại cương (LP6003) được không?"
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [
+          {
+            "tool_name": "getAcademicStatus",
+            "tool_availability": "EXPOSED_IN_ADAPTER"
+          },
+          {
+            "tool_name": "checkCourseEligibility",
+            "tool_availability": "CONTRACT_EXISTS_NOT_EXPOSED_YET"
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "REG-HAUI-01",
+            "section_contains": "Quy trình Đăng ký Học phần và Lớp học phần"
+          },
+          {
+            "source_id": "REG-HAUI-03",
+            "section_contains": "Quy định Học lại (Môn bắt buộc bị điểm F)"
+          }
+        ],
+        "answer_must_contain_any": [
+          "LP6004",
+          "LP6003",
+          "môn học trước",
+          "chưa đủ điều kiện",
+          "học lại"
+        ],
+        "answer_must_not_contain": [
+          "được đăng ký bình thường",
+          "không có môn học trước"
+        ],
+        "should_ask_clarification": false,
+        "warnings": [],
+        "actions": []
+      }
+    },
+    {
+      "id": "EVAL-PLAN-001",
+      "category": "STUDY_PLAN",
+      "description": "Case E: Lập kế hoạch học tập kỳ tới nhằm nâng CPA",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Hãy lập lộ trình học kỳ tới để tôi cải thiện CPA lên mức 3.30."
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [
+          {
+            "tool_name": "getAcademicStatus",
+            "tool_availability": "EXPOSED_IN_ADAPTER"
+          },
+          {
+            "tool_name": "generateStudyPlan",
+            "tool_availability": "EXPOSED_IN_ADAPTER"
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "REG-HAUI-01",
+            "section_contains": "Giới hạn Đăng ký Tín chỉ (Credit Limits)"
+          }
+        ],
+        "answer_must_contain_any": [
+          "kế hoạch học tập",
+          "lộ trình",
+          "CPA dự kiến",
+          "đề xuất"
+        ],
+        "answer_must_not_contain": [
+          "đã lưu chính thức",
+          "đã kích hoạt kế hoạch",
+          "SRC-MOCK-PLAN"
+        ],
+        "should_ask_clarification": false,
+        "warnings": [],
+        "actions": [
+          {
+            "action_type": "OPEN_PLANNER",
+            "target_route": "/planner"
+          }
+        ]
+      }
+    },
+    {
+      "id": "EVAL-ACCL-001",
+      "category": "ACCELERATED_STUDY",
+      "description": "Case F: Học vượt - Thiếu thông tin học kỳ đích cụ thể nên hệ thống phải hỏi lại làm rõ",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Tôi muốn học vượt để tốt nghiệp sớm, hãy lên lịch cho tôi."
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [
+          {
+            "tool_name": "getAcademicStatus",
+            "tool_availability": "EXPOSED_IN_ADAPTER"
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "REG-HAUI-01",
+            "section_contains": "Giới hạn Đăng ký Tín chỉ (Credit Limits)"
+          }
+        ],
+        "answer_must_contain_any": [
+          "sớm bao nhiêu kỳ",
+          "kỳ đích",
+          "học kỳ nào",
+          "mục tiêu tốt nghiệp"
+        ],
+        "answer_must_not_contain": [
+          "đã lên lịch tốt nghiệp vào kỳ 6",
+          "đã chốt kế hoạch học vượt"
+        ],
+        "should_ask_clarification": true,
+        "warnings": [
+          "INCOMPLETE_TARGET: Missing target graduation semester"
+        ],
+        "actions": []
+      }
+    },
+    {
+      "id": "EVAL-ACCL-002",
+      "category": "ACCELERATED_STUDY",
+      "description": "Case F2: Học vượt có học kỳ đích cụ thể (sớm 1 kỳ so với chuẩn)",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Tôi muốn tốt nghiệp sớm vào học kỳ 7 (2026_1). Hãy kiểm tra tính khả thi và lập lộ trình giúp tôi."
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [
+          {
+            "tool_name": "generateStudyPlan",
+            "tool_availability": "EXPOSED_IN_ADAPTER"
+          },
+          {
+            "tool_name": "validateStudyPlan",
+            "tool_availability": "EXPOSED_IN_ADAPTER"
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "REG-HAUI-01",
+            "section_contains": "Giới hạn Đăng ký Tín chỉ (Credit Limits)"
+          }
+        ],
+        "answer_must_contain_any": [
+          "tính khả thi",
+          "tải tín chỉ",
+          "kỳ hè",
+          "tối đa 24 tín chỉ"
+        ],
+        "answer_must_not_contain": [],
+        "should_ask_clarification": false,
+        "warnings": [],
+        "actions": [
+          {
+            "action_type": "OPEN_PLANNER",
+            "target_route": "/planner"
+          }
+        ]
+      }
+    },
+    {
+      "id": "EVAL-WHATIF-001",
+      "category": "WHAT_IF",
+      "description": "Case G: What-if - Mô phỏng điểm CPA nếu các môn kỳ tới đều đạt B+",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Nếu kỳ tới tôi đăng ký 18 tín chỉ và tất cả đều đạt B+ (3.5) thì CPA của tôi sẽ tăng lên bao nhiêu?"
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [
+          {
+            "tool_name": "simulateGrades",
+            "tool_availability": "CONTRACT_EXISTS_NOT_EXPOSED_YET"
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "REG-HAUI-02",
+            "section_contains": "Công thức Tính Điểm Trung bình"
+          }
+        ],
+        "answer_must_contain_any": [
+          "mô phỏng",
+          "CPA dự kiến",
+          "trung bình gia quyền"
+        ],
+        "answer_must_not_contain": [
+          "tự nhẩm điểm chắc chắn là 4.0",
+          "SRC-MOCK-POLICY"
+        ],
+        "should_ask_clarification": false,
+        "warnings": [],
+        "actions": [
+          {
+            "action_type": "OPEN_WHAT_IF",
+            "target_route": "/simulator"
+          }
+        ]
+      }
+    },
+    {
+      "id": "EVAL-ROI-001",
+      "category": "RETAKE_IMPROVEMENT",
+      "description": "Case H: Xếp hạng môn học cải thiện có ROI cao nhất cho sinh viên demo",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Tôi nên học cải thiện môn nào trong số các môn điểm D/D+ để kéo CPA lên nhanh nhất?"
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [
+          {
+            "tool_name": "getAcademicStatus",
+            "tool_availability": "EXPOSED_IN_ADAPTER"
+          },
+          {
+            "tool_name": "rankRetakeCourses",
+            "tool_availability": "CONTRACT_EXISTS_NOT_EXPOSED_YET"
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "REG-HAUI-03",
+            "section_contains": "Chiến lược ROI Tối ưu hóa Lộ trình Học cải thiện (HaUI Advisor Strategy)"
+          }
+        ],
+        "answer_must_contain_any": [
+          "LP6010",
+          "Triết học Mác-Lênin",
+          "LP6012",
+          "Chủ nghĩa xã hội khoa học",
+          "ROI",
+          "3 tín chỉ"
+        ],
+        "answer_must_not_contain": [
+          "học cải thiện môn Kỹ thuật lập trình điểm A",
+          "học cải thiện môn điểm B"
+        ],
+        "should_ask_clarification": false,
+        "warnings": [],
+        "actions": [
+          {
+            "action_type": "OPEN_PLANNER",
+            "target_route": "/planner"
+          }
+        ]
+      }
+    },
+    {
+      "id": "EVAL-AUDIT-001",
+      "category": "GRADUATION_AUDIT",
+      "description": "Case I: Rà soát tốt nghiệp - Xác định các tiêu chí còn thiếu dựa trên hồ sơ sinh viên thực tế",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Tôi còn thiếu những điều kiện gì để được xét tốt nghiệp?"
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [
+          {
+            "tool_name": "runGraduationAudit",
+            "tool_availability": "CONTRACT_EXISTS_NOT_EXPOSED_YET"
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "REG-HAUI-05",
+            "section_contains": "Điều kiện Xét và Công nhận Tốt nghiệp"
+          },
+          {
+            "source_id": "REG-HAUI-05",
+            "section_contains": "Các Chuẩn Đầu ra Bắt buộc (Chứng chỉ Không tính Tín chỉ)"
+          }
+        ],
+        "answer_must_contain_any": [
+          "chứng chỉ tin học",
+          "MOS",
+          "tín chỉ tích lũy",
+          "61",
+          "150",
+          "đồ án tốt nghiệp"
+        ],
+        "answer_must_not_contain": [
+          "bạn đã đủ điều kiện tốt nghiệp",
+          "thiếu chứng chỉ TOEIC",
+          "thiếu chứng chỉ GDQP-AN"
+        ],
+        "should_ask_clarification": false,
+        "warnings": [],
+        "actions": [
+          {
+            "action_type": "OPEN_AUDIT",
+            "target_route": "/academic/audit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "EVAL-GOAL-001",
+      "category": "GOAL_CHANGE",
+      "description": "Case J: Đổi mục tiêu trong hội thoại nhiều lượt (Multi-turn) từ CPA 3.3 lên 3.5",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Lập kế hoạch để tôi đạt CPA 3.30 vào lúc tốt nghiệp."
+        },
+        {
+          "role": "assistant",
+          "content": "Tôi đã tạo dự thảo lộ trình với mục tiêu CPA 3.30, yêu cầu điểm trung bình mỗi kỳ đạt tối thiểu 3.38."
+        },
+        {
+          "role": "user",
+          "content": "Thôi, tôi muốn đổi mục tiêu thành tốt nghiệp bằng Giỏi với CPA 3.50. Tính lại cho tôi."
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [
+          {
+            "tool_name": "calculateTargetGrades",
+            "tool_availability": "CONTRACT_EXISTS_NOT_EXPOSED_YET"
+          },
+          {
+            "tool_name": "generateStudyPlan",
+            "tool_availability": "EXPOSED_IN_ADAPTER"
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "REG-HAUI-02",
+            "section_contains": "Phân loại Học lực theo CPA Toàn khóa"
+          }
+        ],
+        "answer_must_contain_any": [
+          "3.5",
+          "mục tiêu mới",
+          "tính lại",
+          "bằng Giỏi"
+        ],
+        "answer_must_not_contain": [
+          "xin chào sinh viên mới",
+          "bạn chưa hỏi câu nào trước đó"
+        ],
+        "should_ask_clarification": false,
+        "warnings": [],
+        "actions": [
+          {
+            "action_type": "OPEN_PLANNER",
+            "target_route": "/planner"
+          }
+        ]
+      }
+    },
+    {
+      "id": "EVAL-MISS-001",
+      "category": "MISSING_TRANSCRIPT",
+      "description": "Case K: Thiếu bảng điểm - Không có dữ liệu transcript nhưng người dùng yêu cầu tư vấn cá nhân hóa",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Hãy lên lộ trình học tập tối ưu kỳ tới cho tôi."
+        }
+      ],
+      "context": {
+        "transcript": "MISSING",
+        "student_id": "STU_ANONYMOUS",
+        "cpa": null,
+        "risk_level": "UNKNOWN"
+      },
+      "expected": {
+        "tools": [],
+        "sources": [],
+        "answer_must_contain_any": [
+          "chưa có thông tin bảng điểm",
+          "vui lòng nhập bảng điểm",
+          "tải lên bảng điểm",
+          "import bảng điểm"
+        ],
+        "answer_must_not_contain": [
+          "CPA của bạn là 3.18",
+          "bạn đang nợ môn LP6004",
+          "kế hoạch học tập 18 tín chỉ đã tạo"
+        ],
+        "should_ask_clarification": true,
+        "warnings": [
+          "TRANSCRIPT_REQUIRED: Student academic transcript is missing or incomplete"
+        ],
+        "actions": [
+          {
+            "action_type": "OPEN_TRANSCRIPT_IMPORT",
+            "target_route": "/academic/import"
+          }
+        ]
+      }
+    },
+    {
+      "id": "EVAL-NOEV-001",
+      "category": "NO_EVIDENCE",
+      "description": "Case L: RAG No Evidence - Câu hỏi ngoài phạm vi tài liệu hiện hành của trường",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Chi phí thuê phòng ký túc xá khu B năm học này là bao nhiêu và hạn đóng tiền khi nào?"
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [],
+        "sources": [],
+        "answer_must_contain_any": [
+          "chưa có thông tin",
+          "không nằm trong phạm vi",
+          "liên hệ Ban quản lý ký túc xá",
+          "phòng Công tác sinh viên"
+        ],
+        "answer_must_not_contain": [
+          "REG-HAUI-01",
+          "REG-HAUI-02",
+          "REG-HAUI-99",
+          "giá phòng là 500.000đ"
+        ],
+        "should_ask_clarification": false,
+        "warnings": [
+          "POLICY_SOURCE_UNAVAILABLE: No grounded evidence found in knowledge base"
+        ],
+        "actions": []
+      }
+    },
+    {
+      "id": "EVAL-INTEG-001",
+      "category": "SOURCE_INTEGRITY",
+      "description": "Case M: Kiểm tra tính toàn vẹn trích dẫn - Nguồn trích dẫn phải chính xác tuyệt đối từ Catalog",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Cho tôi biết quy định về thời gian rút học phần và học phí rút học phần."
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [],
+        "sources": [
+          {
+            "source_id": "REG-HAUI-01",
+            "section_contains": "Rút và Hủy Học phần"
+          }
+        ],
+        "answer_must_contain_any": [
+          "02 tuần đầu",
+          "2 tuần",
+          "không được hoàn lại học phí"
+        ],
+        "answer_must_not_contain": [
+          "REG-HAUI-99",
+          "SRC-MOCK-POLICY",
+          "URL_GIA",
+          "hoàn lại 100% học phí"
+        ],
+        "should_ask_clarification": false,
+        "warnings": [],
+        "actions": []
+      }
+    },
+    {
+      "id": "EVAL-TOOLERR-001",
+      "category": "TOOL_ERROR",
+      "description": "Case N: Công cụ học vụ trả lỗi hoặc chưa sẵn sàng - Giữ nguyên cảnh báo, không tự bịa kết quả",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Hãy đồng bộ lại kế hoạch học tập của tôi với trạng thái học vụ mới nhất."
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [
+          {
+            "tool_name": "reconcileStudyPlan",
+            "tool_availability": "CONTRACT_EXISTS_NOT_EXPOSED_YET"
+          }
+        ],
+        "sources": [],
+        "answer_must_contain_any": [
+          "chưa thể thực hiện",
+          "tạm thời gián đoạn",
+          "thử lại sau",
+          "công cụ đang được nâng cấp"
+        ],
+        "answer_must_not_contain": [
+          "kế hoạch đã được đồng bộ thành công",
+          "đã cập nhật vào cơ sở dữ liệu"
+        ],
+        "should_ask_clarification": false,
+        "warnings": [
+          "TOOL_UNAVAILABLE: Capability reconcileStudyPlan is not currently exposed in ToolAdapter"
+        ],
+        "actions": []
+      }
+    },
+    {
+      "id": "EVAL-REG-006",
+      "category": "REGULATION",
+      "description": "Điều kiện dự thi kết thúc học phần - Tỷ lệ chuyên cần và điểm thường xuyên",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Tôi cần đáp ứng những điều kiện gì để được dự thi kết thúc môn học?"
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [],
+        "sources": [
+          {
+            "source_id": "REG-HAUI-01",
+            "section_contains": "Điều kiện Dự thi Kết thúc Học phần"
+          }
+        ],
+        "answer_must_contain_any": [
+          "80%",
+          "thực hành",
+          "4.0",
+          "thường xuyên"
+        ],
+        "answer_must_not_contain": [
+          "nghỉ bao nhiêu buổi cũng được",
+          "50% thời lượng"
+        ],
+        "should_ask_clarification": false,
+        "warnings": [],
+        "actions": []
+      }
+    },
+    {
+      "id": "EVAL-WARN-001",
+      "category": "REGULATION",
+      "description": "Xử lý học vụ - Mức cảnh báo 1 và giới hạn đăng ký tín chỉ học kỳ tiếp theo",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Nếu bị cảnh báo học vụ mức 1 thì kỳ sau tôi chỉ được đăng ký tối đa bao nhiêu tín chỉ?"
+        }
+      ],
+      "context": {
+        "transcript": "AVAILABLE",
+        "student_id": "2024604757",
+        "cpa": 3.18,
+        "risk_level": "NORMAL"
+      },
+      "expected": {
+        "tools": [],
+        "sources": [
+          {
+            "source_id": "REG-HAUI-04",
+            "section_contains": "Các Mức Xử lý Cảnh báo Học vụ"
+          },
+          {
+            "source_id": "REG-HAUI-01",
+            "section_contains": "Giới hạn Đăng ký Tín chỉ (Credit Limits)"
+          }
+        ],
+        "answer_must_contain_any": [
+          "14 tín chỉ",
+          "tối đa 14",
+          "cảnh báo mức 1"
+        ],
+        "answer_must_not_contain": [
+          "24 tín chỉ",
+          "bị buộc thôi học ngay lập tức"
+        ],
+        "should_ask_clarification": false,
+        "warnings": [],
+        "actions": []
+      }
+    }
+  ]
+}

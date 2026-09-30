@@ -1,0 +1,83 @@
+{
+  "$schema": "./source-catalog.schema.json",
+  "catalog_version": "1.0.0",
+  "description": "Danh mục các tài liệu quy chế học vụ chính thức của HaUI làm cơ sở Ground-Truth cho hệ thống AI RAG (HaUI Advisor).",
+  "sources": [
+    {
+      "source_id": "REG-HAUI-01",
+      "title": "Quy chế đào tạo theo hệ thống tín chỉ — Trường Đại học Công nghiệp Hà Nội (HaUI)",
+      "path": "../../../data-source/documents/01_quy_che_dao_tao_tin_chi_haui.md",
+      "version": "gitblob:cab439dd3364",
+      "source_status": "PROJECT_GROUND_TRUTH",
+      "rag_enabled": true,
+      "reference_url": "https://sv.haui.edu.vn/quy-che/reg-haui-01",
+      "sections": [
+        "1. Tổ chức Đào tạo và Kế hoạch Học tập > 1. Năm học và Học kỳ",
+        "1. Tổ chức Đào tạo và Kế hoạch Học tập > 2. Giới hạn Đăng ký Tín chỉ (Credit Limits)",
+        "2. Quy trình Đăng ký Học phần và Lớp học phần > 1. Khảo sát và Đăng ký trước",
+        "2. Quy trình Đăng ký Học phần và Lớp học phần > 2. Rút và Hủy Học phần",
+        "3. Điều kiện Dự thi Kết thúc Học phần"
+      ]
+    },
+    {
+      "source_id": "REG-HAUI-02",
+      "title": "Thang điểm đánh giá và phương pháp tính điểm GPA / CPA tại HaUI",
+      "path": "../../../data-source/documents/02_thang_diem_va_cach_tinh_gpa_cpa.md",
+      "version": "gitblob:0a22d0023279",
+      "source_status": "PROJECT_GROUND_TRUTH",
+      "rag_enabled": true,
+      "reference_url": "https://sv.haui.edu.vn/quy-che/reg-haui-02",
+      "sections": [
+        "1. Thang điểm Đánh giá và Bảng Quy đổi Chuẩn",
+        "2. Công thức Tính Điểm Trung bình > 2.1. Điểm Trung bình Chung Học kỳ (GPA - Grade Point Average)",
+        "2. Công thức Tính Điểm Trung bình > 2.2. Điểm Trung bình Chung Tích lũy (CPA - Cumulative Point Average)",
+        "3. Phân loại Học lực theo CPA Toàn khóa"
+      ]
+    },
+    {
+      "source_id": "REG-HAUI-03",
+      "title": "Quy định học lại và học cải thiện điểm — Đại học Công nghiệp Hà Nội",
+      "path": "../../../data-source/documents/03_quy_dinh_hoc_lai_va_hoc_cai_thien.md",
+      "version": "gitblob:b7e379af2bf7",
+      "source_status": "PROJECT_GROUND_TRUTH",
+      "rag_enabled": true,
+      "reference_url": "https://sv.haui.edu.vn/quy-che/reg-haui-03",
+      "sections": [
+        "1. Quy định Học lại (Môn bắt buộc bị điểm F) > 1. Đối tượng và Điều kiện",
+        "1. Quy định Học lại (Môn bắt buộc bị điểm F) > 2. Cách tính điểm sau khi học lại",
+        "2. Quy định Học cải thiện Điểm (Nâng hạng CPA) > 1. Điều kiện được học cải thiện",
+        "2. Quy định Học cải thiện Điểm (Nâng hạng CPA) > 2. Nguyên tắc tính điểm CPA khi học cải thiện",
+        "3. Chiến lược ROI Tối ưu hóa Lộ trình Học cải thiện (HaUI Advisor Strategy)"
+      ]
+    },
+    {
+      "source_id": "REG-HAUI-04",
+      "title": "Quy định cảnh báo học vụ và buộc thôi học — Đại học Công nghiệp Hà Nội",
+      "path": "../../../data-source/documents/04_quy_dinh_canh_bao_hoc_vu_va_buoc_thoi_hoc.md",
+      "version": "gitblob:f5f1503d4179",
+      "source_status": "PROJECT_GROUND_TRUTH",
+      "rag_enabled": true,
+      "reference_url": "https://sv.haui.edu.vn/quy-che/reg-haui-04",
+      "sections": [
+        "1. Mục đích Cảnh báo Học vụ",
+        "2. Các Tiêu chí và Ngưỡng Cảnh báo Học vụ",
+        "3. Các Mức Xử lý Cảnh báo Học vụ",
+        "4. Quy định Buộc Thôi học (Dismissal)"
+      ]
+    },
+    {
+      "source_id": "REG-HAUI-05",
+      "title": "Chuẩn đầu ra và điều kiện xét công nhận tốt nghiệp — Đại học Công nghiệp Hà Nội",
+      "path": "../../../data-source/documents/05_chuan_dau_ra_va_dieu_kien_tot_nghiep.md",
+      "version": "gitblob:f45ea177a03d",
+      "source_status": "PROJECT_GROUND_TRUTH",
+      "rag_enabled": true,
+      "reference_url": "https://sv.haui.edu.vn/quy-che/reg-haui-05",
+      "sections": [
+        "1. Điều kiện Xét và Công nhận Tốt nghiệp",
+        "2. Các Chuẩn Đầu ra Bắt buộc (Chứng chỉ Không tính Tín chỉ)",
+        "3. Phân hạng Bằng Tốt nghiệp"
+      ]
+    }
+  ]
+}
