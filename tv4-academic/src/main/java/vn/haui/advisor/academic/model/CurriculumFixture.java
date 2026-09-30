@@ -60,7 +60,7 @@ public class CurriculumFixture implements Serializable {
     public static class CourseDefinitionItem implements Serializable {
         private String courseCode;
         private String courseName;
-        private Integer credits;
+        private Double credits;
         private String knowledgeBlock;
         private boolean isMandatory;
         private Integer suggestedSemester;
@@ -77,8 +77,9 @@ public class CurriculumFixture implements Serializable {
         public String getCourseName() { return courseName; }
         public void setCourseName(String courseName) { this.courseName = courseName; }
 
-        public Integer getCredits() { return credits; }
-        public void setCredits(Integer credits) { this.credits = credits; }
+        public Integer getCredits() { return credits != null ? (int) Math.round(credits) : null; }
+        public Double getCreditsRaw() { return credits; }
+        public void setCredits(Double credits) { this.credits = credits; }
 
         public String getKnowledgeBlock() { return knowledgeBlock; }
         public void setKnowledgeBlock(String knowledgeBlock) { this.knowledgeBlock = knowledgeBlock; }

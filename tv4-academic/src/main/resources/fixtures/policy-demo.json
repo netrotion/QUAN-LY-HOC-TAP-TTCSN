@@ -23,17 +23,19 @@
     "minCreditsMainSemester": 10,
     "maxCreditsMainSemester": 24,
     "maxCreditsSummerSemester": 12,
+    "maxCreditsWarningSemester": 14,
     "minCreditsGraduationSemester": 1,
-    "rationale": "BR-03: Kỳ chính tối thiểu 10 TC (trừ kỳ cuối). BR-04: Kỳ chính tối đa 24 TC, kỳ hè tối đa 12 TC."
+    "rationale": "BR-03: Kỳ chính tối thiểu 10 TC (trừ kỳ cuối). BR-04: Kỳ chính tối đa 24 TC, kỳ hè tối đa 12 TC. Sinh viên bị cảnh báo học tập chỉ được đăng ký tối đa 14 TC (REG-HAUI-02)."
   },
   "academicRiskThresholds": {
     "status": "DEMO_UNVERIFIED",
     "year1MinCpa": 1.20,
     "year2MinCpa": 1.40,
     "year3MinCpa": 1.60,
+    "year4PlusMinCpa": 1.80,
     "maxDebtCredits": 24,
     "consecutiveWarningsForCritical": 2,
-    "rationale": "BR-07: Cảnh báo học tập nếu CPA < 1.20 (Năm 1), < 1.40 (Năm 2), < 1.60 (Năm 3) hoặc nợ > 24 TC. Buộc thôi học nếu cảnh báo 2 lần liên tiếp."
+    "rationale": "BR-07: Cảnh báo học tập nếu CPA < 1.20 (Năm 1), < 1.40 (Năm 2), < 1.60 (Năm 3), < 1.80 (Năm 4 trở đi) hoặc nợ > 24 TC. Buộc thôi học nếu cảnh báo 2 lần liên tiếp (REG-HAUI-01)."
   },
   "retakeOptimizationRules": {
     "status": "DEMO_UNVERIFIED",
