@@ -43,6 +43,12 @@ jobs:
       - name: Install dependencies via npm ci
         run: npm ci
 
+      - name: Scan Secrets & Credentials
+        run: npm run check:secrets
+
+      - name: Run Ownership & Changed Paths Check
+        run: npm run check:ownership
+
       - name: Run Architecture Boundaries Check
         run: npm run check:architecture
 
