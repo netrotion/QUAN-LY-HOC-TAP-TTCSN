@@ -3,26 +3,55 @@ import { NavLink } from 'react-router-dom';
 
 const NAV_GROUPS = Object.freeze([
   {
-    section: 'Nền tảng & Học vụ (TV2)',
+    section: 'Học vụ & Kế hoạch (Core Academic)',
     items: [
       {
         to: '/',
         end: true,
-        label: 'Màn 1: Dashboard SV',
+        label: 'Dashboard (Tổng quan học tập)',
         icon: '📊',
-        tag: 'TV2'
-      },
-      {
-        to: '/curriculum',
-        label: 'Màn 4: Sơ đồ Cây CTĐT',
-        icon: '🌳',
-        tag: 'CTĐT'
+        tag: 'Màn 1'
       },
       {
         to: '/progress',
-        label: 'Màn 9: Audit Tốt nghiệp',
+        label: 'Bảng điểm & Học vụ',
+        icon: '📑',
+        tag: 'Hồ sơ'
+      },
+      {
+        to: '/curriculum',
+        label: 'CTĐT & Cây môn học',
+        icon: '🌳',
+        tag: 'Màn 4'
+      },
+      {
+        to: '/planner',
+        label: 'Kế hoạch học tập (Study Planner)',
+        icon: '📅',
+        tag: 'TV3'
+      }
+    ]
+  },
+  {
+    section: 'Cố vấn AI & Giả lập (Smart Advisory)',
+    items: [
+      {
+        to: '/chat',
+        label: 'Cố vấn AI (AI Chatbot)',
+        icon: '💬',
+        tag: 'TV3'
+      },
+      {
+        to: '/what-if',
+        label: 'Mô phỏng & Cải thiện điểm (What-if)',
+        icon: '🧮',
+        tag: 'TV3'
+      },
+      {
+        to: '/audit',
+        label: 'Kiểm toán tốt nghiệp',
         icon: '🎓',
-        tag: '100%'
+        tag: 'Màn 9'
       },
       {
         to: '/demo-ui',
@@ -31,64 +60,53 @@ const NAV_GROUPS = Object.freeze([
         tag: 'V0'
       }
     ]
-  },
-  {
-    section: 'Lộ trình & Cố vấn AI (TV3)',
-    items: [
-      {
-        to: '/chat',
-        label: 'Màn 2: AI Advisor Chat',
-        icon: '💬',
-        tag: 'AI'
-      },
-      {
-        to: '/recommendations',
-        label: 'Màn 3: Đề xuất Lộ trình',
-        icon: '✨',
-        tag: 'TV3'
-      },
-      {
-        to: '/planner',
-        label: 'Màn 5: Xác nhận Kế hoạch',
-        icon: '📅',
-        tag: 'TV3'
-      },
-      {
-        to: '/what-if',
-        label: 'Màn 6-8: Giả lập What-if',
-        icon: '🧮',
-        tag: 'TV3'
-      }
-    ]
   }
 ]);
 
 /**
- * Sidebar điều hướng chính của Web Host (TV2)
- * Ánh xạ đầy đủ 9 Màn hình trong Tài liệu Thiết kế UI Flow (Màn 1..9) + Trang Demo UI & Mock API V0.
+ * Sidebar Navigation Component của Web Host (TV2 — design-base-v1)
+ * Hỗ trợ chế độ thu gọn (collapsed 72px) / mở rộng (expanded 268px)
+ * và ánh xạ đầy đủ 7 hạng mục học vụ theo đặc tả Task 2.1:
+ * 1. Dashboard (Tổng quan học tập)
+ * 2. Bảng điểm & Học vụ (Hồ sơ, nhập bảng điểm, lịch sử kết quả)
+ * 3. CTĐT & Cây môn học (Course Dependency Tree)
+ * 4. Kế hoạch học tập (Study Planner)
+ * 5. Cố vấn AI (AI Chatbot)
+ * 6. Mô phỏng & Cải thiện điểm (What-if & Retake Calculator)
+ * 7. Kiểm toán tốt nghiệp (Graduation Audit)
+ *
+ * @param {{ collapsed?: boolean }} props
  */
-export function Sidebar() {
+export function Sidebar({ collapsed = false }) {
   return (
-    <aside className="haui-sidebar" aria-label="Điều hướng chính HaUI Advisor">
+    <aside
+      className={`haui-sidebar ${collapsed ? 'haui-sidebar--collapsed' : ''}`}
+      aria-label="Điều hướng chính HaUI Advisor"
+    >
       <div className="haui-sidebar__brand">
-        <div className="haui-sidebar__logo" aria-hidden="true">
+        <div className="haui-sidebar__logo" title="HaUI Advisor" aria-hidden="true">
           H
         </div>
-        <div>
-          <h1 className="haui-sidebar__title">HaUI Advisor</h1>
-          <p className="haui-sidebar__subtitle">Trợ lý Cố vấn Lộ trình Học tập</p>
-        </div>
+        {!collapsed && (
+          <div className="haui-sidebar__brand-text">
+            <h1 className="haui-sidebar__title">HaUI Advisor</h1>
+            <p className="haui-sidebar__subtitle">Trợ lý Cố vấn Lộ trình Học tập</p>
+          </div>
+        )}
       </div>
 
       <nav className="haui-sidebar__nav">
         {NAV_GROUPS.map((group) => (
           <div key={group.section}>
-            <div className="haui-sidebar__section-label">{group.section}</div>
+            <div className="haui-sidebar__section-label" title={group.section}>
+              {group.section}
+            </div>
             {group.items.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.end}
+                title={collapsed ? item.label : undefined}
                 className={({ isActive }) =>
                   `haui-sidebar__link ${isActive ? 'haui-sidebar__link--active' : ''}`.trim()
                 }
@@ -97,21 +115,27 @@ export function Sidebar() {
                   <span className="haui-sidebar__icon" aria-hidden="true">
                     {item.icon}
                   </span>
-                  <span>{item.label}</span>
+                  {!collapsed && (
+                    <span className="haui-sidebar__link-text">{item.label}</span>
+                  )}
                 </span>
-                {item.tag && <span className="haui-sidebar__tag">{item.tag}</span>}
+                {!collapsed && item.tag && (
+                  <span className="haui-sidebar__tag">{item.tag}</span>
+                )}
               </NavLink>
             ))}
           </div>
         ))}
       </nav>
 
-      <div className="haui-sidebar__footer">
-        <div style={{ fontWeight: 600, color: '#e2e8f0', marginBottom: '4px' }}>
-          Hợp đồng: ui-api-v0
+      {!collapsed && (
+        <div className="haui-sidebar__footer">
+          <div style={{ fontWeight: 600, color: '#e2e8f0', marginBottom: '4px' }}>
+            Hệ thống: design-base-v1
+          </div>
+          <div>Student-Centric &bull; 9 Màn hình UI Flow</div>
         </div>
-        <div>Student-Centric &bull; 9 Màn hình UI Flow</div>
-      </div>
+      )}
     </aside>
   );
 }

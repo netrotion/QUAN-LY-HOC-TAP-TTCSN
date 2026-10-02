@@ -10,15 +10,19 @@ const ROUTE_TITLES = Object.freeze({
   '/curriculum': 'Màn hình 4: Chi tiết & Sơ đồ Cây Quan hệ Môn học (Course Dependency Tree)',
   '/planner': 'Màn hình 5: Tùy chỉnh & Xác nhận Kế hoạch Học tập (Plan Finalization — TV3)',
   '/what-if': 'Màn hình 6, 7, 8: Giả lập Điểm số, Tối ưu Học cải thiện & Tính điểm ngược (TV3)',
-  '/progress': 'Màn hình 9: Bảng Kiểm toán Tốt nghiệp 100% (Graduation Degree Audit)',
+  '/progress': 'Màn hình 9: Bảng Điểm & Học vụ / Kiểm toán Tốt nghiệp (Degree Audit)',
+  '/audit': 'Màn hình 9: Bảng Kiểm toán Tốt nghiệp 100% (Graduation Degree Audit)',
   '/demo-ui': 'Showcase Shared UI Library V0 & Singleton Mock API Client (ui-api-v0)'
 });
 
 /**
- * Header / Topbar của Web Host (TV2)
- * Hiển thị tiêu đề màn hình theo UI Flow, công tắc chế độ Mock API (FIXTURE_ONLY) và thông tin sinh viên từ Session Context.
+ * Header / Topbar của Web Host (TV2 — design-base-v1)
+ * Hiển thị nút thu gọn sidebar, tiêu đề màn hình, huy hiệu trạng thái học tập (Academic Status),
+ * công tắc chế độ Mock API (FIXTURE_ONLY) và tóm tắt thông tin sinh viên từ Session Context.
+ *
+ * @param {{ collapsed?: boolean, onToggleCollapse?: () => void }} props
  */
-export function Topbar() {
+export function Topbar({ collapsed = false, onToggleCollapse }) {
   const location = useLocation();
   const [apiConfig, setApiConfig] = useState(() => api.getConfig());
 
@@ -44,11 +48,30 @@ export function Topbar() {
   return (
     <header className="haui-topbar">
       <div className="haui-topbar__left">
+        {typeof onToggleCollapse === 'function' && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleCollapse}
+            title={collapsed ? 'Mở rộng menu (268px)' : 'Thu gọn menu (72px)'}
+            style={{ fontSize: '15px', padding: '0 8px', minWidth: '32px' }}
+          >
+            {collapsed ? '☰' : '⇤'}
+          </Button>
+        )}
         <h2 className="haui-topbar__heading">{pageTitle}</h2>
-        <span className="haui-badge haui-badge--primary">ui-api-v0</span>
+        <span className="haui-badge haui-badge--primary">design-base-v1</span>
       </div>
 
       <div className="haui-topbar__right">
+        {/* Academic Status Badge (BR-07 / US-12) */}
+        <span
+          className="haui-badge haui-badge--warning"
+          title="Quy chế BR-07: Sinh viên có CPA 2.45 và đang nợ môn tiên quyết (MATH1002)"
+        >
+          ⚠️ Cảnh báo học vụ: Mức 1
+        </span>
+
         {!apiConfig.isProduction && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
             <span
@@ -74,6 +97,7 @@ export function Topbar() {
           </div>
         )}
 
+        {/* Student Profile Capsule (Session Identity) */}
         <div
           className="haui-student-pill"
           title="Danh tính sinh viên được trích xuất từ Server Session Context (Quy tắc 6 AGENTS.md)"

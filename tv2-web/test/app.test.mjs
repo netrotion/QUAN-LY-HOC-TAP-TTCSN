@@ -257,3 +257,52 @@ test('5. Kiểm tra cấu trúc Design Tokens, Shared UI Library V0, trang /demo
     assert.equal(tokensCss.includes(token), true, `tokens.css thiếu biến CSS: ${token}`);
   }
 });
+
+test('6. Kiểm tra mốc bàn giao design-base-v1 (Task 2.1): tokens.json, design-base-v1.md, UI Shell và Dashboard States', () => {
+  const tv2Root = path.resolve(__dirname, '..');
+
+  // 1. Kiểm tra tokens.json
+  const tokensJsonPath = path.join(tv2Root, 'design/tokens.json');
+  assert.equal(fs.existsSync(tokensJsonPath), true, 'Thiếu file design/tokens.json');
+  const tokensData = JSON.parse(fs.readFileSync(tokensJsonPath, 'utf-8'));
+  assert.equal(tokensData.milestone, 'design-base-v1');
+  assert.equal(tokensData.radii.buttons, '18px', 'Quy tắc bo góc: nút tương tác phải 18px');
+  assert.equal(tokensData.radii.cards, '24px', 'Quy tắc bo góc: container card phải 24px');
+  assert.equal(tokensData.colors.brand.primary, '#0052cc');
+  assert.equal(tokensData.colors.brand.primaryScale['600'], '#0052cc');
+  assert.equal(tokensData.colors.brand.slateScale['900'], '#0f172a');
+  assert.equal(tokensData.colors.status.academicAliases.passed, '#16a34a');
+  assert.equal(tokensData.layout.sidebarWidth, '268px');
+  assert.equal(tokensData.layout.sidebarWidthCollapsed, '72px');
+
+  // 2. Kiểm tra tài liệu bàn giao design-base-v1.md
+  const designDocPath = path.join(tv2Root, 'design/design-base-v1.md');
+  assert.equal(fs.existsSync(designDocPath), true, 'Thiếu file design/design-base-v1.md');
+  const designDoc = fs.readFileSync(designDocPath, 'utf-8');
+  assert.ok(designDoc.includes('Clinical Blueprint on Frosted Paper'));
+  assert.ok(designDoc.includes('18px'));
+  assert.ok(designDoc.includes('24px'));
+  assert.ok(designDoc.includes('Study Planner'));
+
+  // 3. Kiểm tra UI Shell: Sidebar có đủ 7 menu items và hỗ trợ collapse
+  const sidebarCode = fs.readFileSync(path.join(tv2Root, 'src/components/layout/Sidebar.jsx'), 'utf-8');
+  assert.ok(sidebarCode.includes('collapsed'), 'Sidebar phải hỗ trợ prop collapsed');
+  assert.ok(sidebarCode.includes('haui-sidebar--collapsed'));
+  for (const itemRoute of ['/', '/progress', '/curriculum', '/planner', '/chat', '/what-if', '/audit']) {
+    assert.ok(sidebarCode.includes(`'${itemRoute}'`), `Sidebar thiếu route: ${itemRoute}`);
+  }
+
+  // 4. Kiểm tra UI Shell: Topbar có nút thu gọn sidebar và badge Cảnh báo học vụ
+  const topbarCode = fs.readFileSync(path.join(tv2Root, 'src/components/layout/Topbar.jsx'), 'utf-8');
+  assert.ok(topbarCode.includes('onToggleCollapse'));
+  assert.ok(topbarCode.includes('Cảnh báo học vụ'));
+
+  // 5. Kiểm tra Dashboard: Đủ 4 component states và các widget học vụ cốt lõi
+  const dashboardCode = fs.readFileSync(path.join(tv2Root, 'src/pages/DashboardPage.jsx'), 'utf-8');
+  assert.ok(dashboardCode.includes('haui-state-switcher'), 'Dashboard phải có thanh State Switcher');
+  assert.ok(dashboardCode.includes('haui-skeleton-box'), 'Dashboard phải có Skeleton Shimmer layout');
+  assert.ok(dashboardCode.includes('EmptyState'), 'Dashboard phải sử dụng EmptyState');
+  assert.ok(dashboardCode.includes('MATH1002'), 'Dashboard phải nêu bật môn nợ tiên quyết MATH1002');
+  assert.ok(dashboardCode.includes('18 Tín chỉ'), 'Dashboard phải có lộ trình đề xuất kế tiếp 18 TC');
+});
+

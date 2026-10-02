@@ -27,6 +27,7 @@ export function AppRoutes() {
           element={<DashboardPage mountedRouteSummary={mountedRouteSummary} />}
         />
         <Route path="/progress" element={<AcademicProgressPage />} />
+        <Route path="/academic" element={<Navigate to="/progress" replace />} />
         <Route path="/audit" element={<Navigate to="/progress" replace />} />
         <Route path="/curriculum" element={<CurriculumTreePage />} />
         <Route path="/demo-ui" element={<DemoUiPage />} />

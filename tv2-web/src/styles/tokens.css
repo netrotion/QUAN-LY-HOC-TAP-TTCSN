@@ -1,32 +1,28 @@
 /**
- * HaUI Advisor — Design System Tokens (ui-api-v0)
+ * HaUI Advisor — Design System Tokens (design-base-v1)
  * Owner: TV2 (Frontend Platform & Academic Engineer)
  *
- * Hệ thống biến CSS dùng chung cho toàn bộ Web Host (TV2) và Feature Package (TV3).
+ * Theme: Clinical Blueprint on Frosted Paper (Light Theme)
+ * Kết hợp triết lý monochromatic developer-tool (shadcn/Geist aesthetic)
+ * cùng bản sắc học thuật đặc trưng của Trường Đại học Công nghiệp Hà Nội (HaUI).
  */
 
 :root {
-  /* 1. Brand & Primary Palette (HaUI Academic Blue & Amber Gold) */
-  --color-primary: #0052cc;
-  --color-primary-hover: #003d99;
-  --color-primary-active: #002b6b;
-  --color-primary-light: #e6f0ff;
-  --color-primary-subtle: #f0f6ff;
-  --color-primary-border: #b3d1ff;
+  /* ==========================================================================
+     1. Surface & Canvas Colors (Three-tone Surface Stack)
+     ========================================================================== */
+  --color-canvas: #f5f5f5;          /* Page background, muted surface fills */
+  --color-paper: #ffffff;           /* Card surfaces, popover backgrounds, modals */
+  --color-surface-alt: #fafafa;     /* Sidebar background, subtle card variants, input rest */
+  --color-surface-card: #ffffff;    /* Primary card surface */
+  --color-bg-app: #f5f5f5;          /* Alias for canvas */
+  --color-bg-surface: #ffffff;      /* Alias for paper */
+  --color-bg-elevated: #ffffff;     /* Elevated popups */
+  --color-bg-muted: #fafafa;        /* Secondary panel fills */
+  --color-bg-subtle: #f0f0f0;       /* Tonal division without borders */
+  --color-bg-code: #0a0a0a;         /* High-contrast code container */
 
-  --color-accent: #d97706;
-  --color-accent-hover: #b45309;
-  --color-accent-light: #fef3c7;
-
-  /* 2. Neutral & Surface Colors */
-  --color-bg-app: #f4f6f9;
-  --color-bg-surface: #ffffff;
-  --color-bg-elevated: #ffffff;
-  --color-bg-muted: #f8fafc;
-  --color-bg-subtle: #f1f5f9;
-  --color-bg-code: #1e293b;
-
-  /* Sidebar Dark Navy Theme */
+  /* Sidebar Dark Slate Theme */
   --color-bg-sidebar: #0f172a;
   --color-bg-sidebar-hover: #1e293b;
   --color-bg-sidebar-active: #0052cc;
@@ -34,15 +30,65 @@
   --color-text-sidebar-active: #ffffff;
   --color-border-sidebar: #1e293b;
 
-  /* 3. Typography Colors */
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-muted: #64748b;
-  --color-text-disabled: #94a3b8;
-  --color-text-inverse: #ffffff;
-  --color-text-code: #f8fafc;
+  /* ==========================================================================
+     2. Neutral & Ink Typography Colors
+     ========================================================================== */
+  --color-ink: #0a0a0a;             /* Primary text, headings, button labels */
+  --color-ink-soft: #171717;        /* Filled button backgrounds, secondary text */
+  --color-mid-gray: #737373;        /* Muted body text, placeholders, helper labels */
+  --color-hairline: #e5e5e5;        /* Borders, input outlines, card hairline edges */
 
-  /* 4. Status Colors (Success, Warning, Error/Danger, Info) */
+  --color-text-primary: #0a0a0a;    /* Primary body/heading text */
+  --color-text-secondary: #404040;  /* Secondary text */
+  --color-text-muted: #737373;      /* Muted captions */
+  --color-text-disabled: #a3a3a3;   /* Disabled controls */
+  --color-text-inverse: #fafafa;    /* High contrast inverted text on dark fills */
+  --color-text-code: #f5f5f5;
+
+  /* ==========================================================================
+     3. HaUI Brand Identity (Primary 50–900) & Supporting Accents
+     ========================================================================== */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #0052cc;      /* Canonical HaUI Academic Navy Blue */
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+  --color-primary-950: #172554;
+
+  --color-primary: var(--color-primary-600);
+  --color-primary-hover: var(--color-primary-700);
+  --color-primary-active: var(--color-primary-800);
+  --color-primary-light: var(--color-primary-50);
+  --color-primary-subtle: #f0f6ff;
+  --color-primary-border: var(--color-primary-200);
+
+  /* Slate / Neutral Scale (50–900) */
+  --color-slate-50: #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+  --color-slate-950: #020617;
+
+  --color-accent: #d97706;          /* HaUI Amber Gold */
+  --color-accent-hover: #b45309;
+  --color-accent-light: #fef3c7;
+
+  --color-ember: #e7000b;           /* Destructive red accent - reserved for errors */
+
+  /* ==========================================================================
+     4. Status Colors (Success, Warning, Error/Destructive, Info)
+     ========================================================================== */
   --color-success: #16a34a;
   --color-success-hover: #15803d;
   --color-success-bg: #f0fdf4;
@@ -67,65 +113,147 @@
   --color-info-border: #bae6fd;
   --color-info-text: #075985;
 
-  /* 5. Borders & Dividers */
+  /* Academic Contextual Aliases */
+  --color-passed: var(--color-success);
+  --color-passed-bg: var(--color-success-bg);
+  --color-passed-text: var(--color-success-text);
+
+  --color-at-risk: var(--color-warning);
+  --color-at-risk-bg: var(--color-warning-bg);
+  --color-at-risk-text: var(--color-warning-text);
+
+  --color-failed: var(--color-error);
+  --color-failed-bg: var(--color-error-bg);
+  --color-failed-text: var(--color-error-text);
+  --color-danger: var(--color-error);
+
+  /* ==========================================================================
+     5. Borders & Hairlines
+     ========================================================================== */
   --border-width: 1px;
   --border-width-thick: 2px;
-  --color-border: #e2e8f0;
-  --color-border-strong: #cbd5e1;
-  --color-border-focus: #0052cc;
+  --color-border: #e5e5e5;          /* Canonical hairline */
+  --color-border-strong: #d4d4d4;
+  --color-border-focus: #0a0a0a;
 
-  /* 6. Border Radius */
+  /* ==========================================================================
+     6. Border Radius (Radius defines Hierarchy: 18px interactive, 24px cards)
+     ========================================================================== */
+  --radius-cards: 24px;             /* Container cards, modal shells, major panels */
+  --radius-buttons: 18px;           /* Interactive pill geometry */
+  --radius-inputs: 18px;            /* Text inputs, search trigger, select fields */
+  --radius-badges: 18px;            /* Pill badges and status capsules */
+  --radius-nested: 10px;            /* Nested card elements, sub-containers */
+  --radius-small: 6px;              /* Checkboxes, small tooltips, micro-indicators */
+  --radius-full: 9999px;            /* Avatars, round icons, circular buttons */
+
+  /* Aliases for general-purpose components */
   --radius-xs: 4px;
   --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-full: 9999px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
 
-  /* 7. Spacing Scale */
+  /* ==========================================================================
+     7. Spacing Scale (Base Unit: 4px, Compact Density)
+     ========================================================================== */
+  --spacing-unit: 4px;
   --space-0: 0px;
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
+  --space-1: 4px;                   /* --spacing-4 */
+  --space-2: 8px;                   /* --spacing-8 */
+  --space-3: 12px;                  /* --spacing-12 */
+  --space-4: 16px;                  /* --spacing-16 */
+  --space-5: 20px;                  /* --spacing-20 */
+  --space-6: 24px;                  /* --spacing-24 */
+  --space-8: 32px;                  /* --spacing-32 */
+  --space-10: 40px;                 /* --spacing-40 */
+  --space-12: 48px;                 /* --spacing-48 */
+  --space-16: 64px;                 /* --spacing-64 */
 
-  /* 8. Typography Scale */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, 'Liberation Mono', Menlo, monospace;
+  /* ==========================================================================
+     8. Typography Scale (Geist / Inter Geometric Neutrality)
+     ========================================================================== */
+  --font-geist: 'Geist', 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: var(--font-geist);
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Geist Mono', Consolas, Menlo, monospace;
 
-  --text-xs: 0.75rem;     /* 12px */
-  --text-sm: 0.875rem;    /* 14px */
-  --text-base: 1rem;      /* 16px */
-  --text-lg: 1.125rem;    /* 18px */
-  --text-xl: 1.25rem;     /* 20px */
-  --text-2xl: 1.5rem;     /* 24px */
-  --text-3xl: 1.875rem;   /* 30px */
+  /* Type Scale */
+  --text-caption: 12px;
+  --leading-caption: 1.33;
+  --tracking-caption: 0.6px;
+
+  --text-body: 14px;
+  --leading-body: 1.43;
+
+  --text-body-lg: 16px;
+  --leading-body-lg: 1.5;
+
+  --text-subheading: 18px;
+  --leading-subheading: 1.56;
+
+  --text-heading-sm: 24px;
+  --leading-heading-sm: 1.33;
+  --tracking-heading-sm: -0.6px;
+
+  --text-heading: 30px;
+  --leading-heading: 1.2;
+  --tracking-heading: -0.75px;
+
+  --text-heading-lg: 36px;
+  --leading-heading-lg: 1.11;
+  --tracking-heading-lg: -0.9px;
+
+  --text-display: 48px;
+  --leading-display: 1.1;
+  --tracking-display: -2.4px;
+
+  /* Typography Font Weights */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
 
   --font-normal: 400;
   --font-medium: 500;
   --font-semibold: 600;
   --font-bold: 700;
 
+  /* Rem Aliases */
+  --text-xs: 0.75rem;               /* 12px */
+  --text-sm: 0.875rem;              /* 14px */
+  --text-base: 1rem;                /* 16px */
+  --text-lg: 1.125rem;              /* 18px */
+  --text-xl: 1.5rem;                /* 24px */
+  --text-2xl: 1.875rem;             /* 30px */
+  --text-3xl: 2.25rem;              /* 36px */
+
   --leading-tight: 1.25;
   --leading-normal: 1.5;
   --leading-relaxed: 1.625;
 
-  /* 9. Shadows & Elevation */
-  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
-  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.06);
-  --shadow-modal: 0 20px 25px -5px rgba(15, 23, 42, 0.18), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+  /* ==========================================================================
+     9. Elevation & Shadows (Whisper-quiet Layering)
+     ========================================================================== */
+  --shadow-subtle: 0 0 0 1px rgba(23, 23, 23, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+  --shadow-card: 0 0 0 1px rgba(23, 23, 23, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+  --shadow-dropdown: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
 
-  /* 10. Layout Dimensions & Transitions */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-sm: var(--shadow-subtle);
+  --shadow-md: var(--shadow-dropdown);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.06);
+
+  /* ==========================================================================
+     10. Layout Dimensions & Transitions
+     ========================================================================== */
   --sidebar-width: 268px;
+  --sidebar-width-collapsed: 72px;
   --topbar-height: 64px;
-  --content-max-width: 1360px;
+  --page-max-width: 1280px;
+  --content-max-width: 1280px;
+  --card-padding: 20px;
+  --element-gap: 8px;
 
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-base: 220ms cubic-bezier(0.4, 0, 0.2, 1);
