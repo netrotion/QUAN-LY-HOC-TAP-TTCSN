@@ -1,0 +1,10 @@
+{
+  "targetGraduationSemester": "2028_1",
+  "targetCpa": 3.20,
+  "maxCreditsPerSemester": 20,
+  "includeSummerSemesters": true,
+  "selectedRetakeCourseCodes": [
+    "BS6001"
+  ],
+  "dataRevision": "REV-2024-001"
+}

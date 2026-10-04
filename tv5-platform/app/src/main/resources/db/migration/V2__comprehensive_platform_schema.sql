@@ -1,50 +1,20 @@
 -- ==============================================================================
--- HaUI Advisor Platform - Database Initialization Script for Docker Compose
--- Module: tv5-platform/infra/migrations
--- Complete Unified Schema: V1 (Bootstrap) + V2 (Comprehensive Platform Domain)
+-- HaUI Advisor Platform - V2 Schema Migration (Task 2.2d)
+-- Module: tv5-platform (Backend / Database / Platform Runtime)
+-- Scope: Users, Student Context, Curriculum/Versions, Courses/Relations/Offerings,
+--        Enrollment Attempts, Audit Requirements, Import Sessions,
+--        Study Plans/Semesters/Courses/Actions, Chat & Knowledge Sources
+-- Compatible with: PostgreSQL 16 (+ pgvector) & H2 (PostgreSQL Mode)
 -- ==============================================================================
 
--- 1. Kích hoạt extension pgvector
-CREATE EXTENSION IF NOT EXISTS vector;
-
--- 2. Bảng cấu hình hệ thống
-CREATE TABLE IF NOT EXISTS system_settings (
-    setting_key VARCHAR(100) PRIMARY KEY,
-    setting_value TEXT NOT NULL,
-    description TEXT,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-INSERT INTO system_settings (setting_key, setting_value, description)
-VALUES
-    ('system.version', '0.0.1-SNAPSHOT', 'Current version of HaUI Advisor Platform'),
-    ('system.maintenance', 'false', 'Maintenance mode status'),
-    ('academic.policy.version', '2024-QĐ/ĐHCN', 'HaUI Academic Policy Standard Reference')
-ON CONFLICT (setting_key) DO NOTHING;
-
--- 3. Bảng nhật ký kiểm toán hệ thống (Audit Logs)
-CREATE TABLE IF NOT EXISTS audit_logs (
-    id BIGSERIAL PRIMARY KEY,
-    action VARCHAR(100) NOT NULL,
-    actor_id VARCHAR(100),
-    entity_type VARCHAR(100),
-    entity_id VARCHAR(100),
-    details JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON audit_logs(actor_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
-
--- 4. Bảng quản lý người dùng (Users & Auth)
+-- 1. Bảng quản lý người dùng & định danh hệ thống (Users & Identity)
 CREATE TABLE IF NOT EXISTS users (
     user_id VARCHAR(50) PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     email VARCHAR(100) UNIQUE,
-    role VARCHAR(20) NOT NULL DEFAULT 'STUDENT',
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    role VARCHAR(20) NOT NULL DEFAULT 'STUDENT', -- 'STUDENT', 'ADVISOR', 'ADMIN'
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE', -- 'ACTIVE', 'LOCKED', 'SUSPENDED'
     last_login_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -53,34 +23,18 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
 
--- 5. Bảng quản lý hồ sơ sinh viên (Trusted Student Context)
-CREATE TABLE IF NOT EXISTS student_records (
-    student_id VARCHAR(50) PRIMARY KEY,
-    user_id VARCHAR(50) REFERENCES users(user_id),
-    full_name VARCHAR(150) NOT NULL,
-    email VARCHAR(100),
-    major VARCHAR(100) NOT NULL,
-    cohort VARCHAR(20) NOT NULL,
-    current_semester INTEGER DEFAULT 1,
-    accumulated_credits INTEGER DEFAULT 0,
-    gpa NUMERIC(4, 2) DEFAULT 0.00,
-    cpa NUMERIC(4, 2) DEFAULT 0.00,
-    warning_level VARCHAR(20) DEFAULT 'NORMAL',
-    data_revision VARCHAR(100) DEFAULT 'REV-2024-001',
-    version INTEGER DEFAULT 1,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+-- Bổ sung liên kết người dùng và quản lý phiên bản dữ liệu vào student_records
+ALTER TABLE student_records ADD COLUMN IF NOT EXISTS user_id VARCHAR(50);
+ALTER TABLE student_records ADD COLUMN IF NOT EXISTS data_revision VARCHAR(100) DEFAULT 'REV-2024-001';
+ALTER TABLE student_records ADD COLUMN IF NOT EXISTS version INTEGER DEFAULT 1;
 
-CREATE INDEX IF NOT EXISTS idx_student_records_cohort ON student_records(cohort);
-CREATE INDEX IF NOT EXISTS idx_student_records_major ON student_records(major);
 CREATE INDEX IF NOT EXISTS idx_student_records_user ON student_records(user_id);
 CREATE INDEX IF NOT EXISTS idx_student_records_revision ON student_records(data_revision);
 
--- 6. Bảng Chương trình đào tạo & Phiên bản (Curriculum & Versions)
+-- 2. Bảng Chương trình đào tạo & Phiên bản (Curriculum & Versions)
 CREATE TABLE IF NOT EXISTS curricula (
-    curriculum_id VARCHAR(50) PRIMARY KEY,
-    curriculum_code VARCHAR(50) NOT NULL UNIQUE,
+    curriculum_id VARCHAR(50) PRIMARY KEY, -- e.g. 'CT1085'
+    curriculum_code VARCHAR(50) NOT NULL UNIQUE, -- e.g. 'KTPM-2024'
     curriculum_name VARCHAR(255) NOT NULL,
     major_code VARCHAR(50) NOT NULL,
     total_credits INTEGER NOT NULL DEFAULT 150,
@@ -92,11 +46,11 @@ CREATE TABLE IF NOT EXISTS curricula (
 CREATE INDEX IF NOT EXISTS idx_curricula_major ON curricula(major_code);
 
 CREATE TABLE IF NOT EXISTS curriculum_versions (
-    version_id VARCHAR(50) PRIMARY KEY,
+    version_id VARCHAR(50) PRIMARY KEY, -- e.g. 'CV-KTPM-2024-V1'
     curriculum_id VARCHAR(50) NOT NULL REFERENCES curricula(curriculum_id) ON DELETE CASCADE,
-    version_code VARCHAR(50) NOT NULL,
-    effective_cohort VARCHAR(20) NOT NULL,
-    approval_decision VARCHAR(100),
+    version_code VARCHAR(50) NOT NULL, -- e.g. '2024.1'
+    effective_cohort VARCHAR(20) NOT NULL, -- e.g. 'K19'
+    approval_decision VARCHAR(100), -- e.g. 'QĐ 1085/QĐ-ĐHCN'
     is_current BOOLEAN DEFAULT TRUE,
     metadata JSONB,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -105,13 +59,13 @@ CREATE TABLE IF NOT EXISTS curriculum_versions (
 CREATE INDEX IF NOT EXISTS idx_curriculum_versions_curr ON curriculum_versions(curriculum_id);
 CREATE INDEX IF NOT EXISTS idx_curriculum_versions_cohort ON curriculum_versions(effective_cohort);
 
--- 7. Bảng Học phần, Quan hệ môn học & Đợt mở lớp (Courses, Relations & Offerings)
+-- 3. Bảng Học phần, Quan hệ môn học & Đợt mở lớp (Courses, Relations & Offerings)
 CREATE TABLE IF NOT EXISTS courses (
-    course_id VARCHAR(50) PRIMARY KEY,
+    course_id VARCHAR(50) PRIMARY KEY, -- e.g. 'IT6015'
     course_code VARCHAR(50) NOT NULL UNIQUE,
     course_name VARCHAR(255) NOT NULL,
     credits INTEGER NOT NULL DEFAULT 3,
-    knowledge_block VARCHAR(50) NOT NULL,
+    knowledge_block VARCHAR(50) NOT NULL, -- 'DAI_CUONG', 'CO_SO_NGANH', 'CHUYEN_NGANH', 'TOT_NGHIEP'
     is_mandatory BOOLEAN DEFAULT TRUE,
     suggested_semester INTEGER,
     department VARCHAR(100) DEFAULT 'KHOA_CNTT',
@@ -126,7 +80,7 @@ CREATE TABLE IF NOT EXISTS course_relations (
     relation_id VARCHAR(50) PRIMARY KEY,
     target_course_id VARCHAR(50) NOT NULL REFERENCES courses(course_id) ON DELETE CASCADE,
     required_course_id VARCHAR(50) NOT NULL REFERENCES courses(course_id) ON DELETE CASCADE,
-    relation_type VARCHAR(30) NOT NULL,
+    relation_type VARCHAR(30) NOT NULL, -- 'PREREQUISITE', 'PRIOR', 'COREQUISITE'
     min_grade_required VARCHAR(5) DEFAULT 'D',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_course_relation UNIQUE (target_course_id, required_course_id, relation_type)
@@ -138,16 +92,16 @@ CREATE INDEX IF NOT EXISTS idx_course_relations_required ON course_relations(req
 CREATE TABLE IF NOT EXISTS course_offerings (
     offering_id VARCHAR(50) PRIMARY KEY,
     course_id VARCHAR(50) NOT NULL REFERENCES courses(course_id) ON DELETE CASCADE,
-    semester_code VARCHAR(30) NOT NULL,
+    semester_code VARCHAR(30) NOT NULL, -- e.g. '2024_1', '2024_2', '2024_SUMMER'
     max_capacity INTEGER DEFAULT 60,
-    class_type VARCHAR(20) DEFAULT 'STANDARD',
-    status VARCHAR(20) DEFAULT 'OPEN',
+    class_type VARCHAR(20) DEFAULT 'STANDARD', -- 'STANDARD', 'PRACTICE', 'EVENING'
+    status VARCHAR(20) DEFAULT 'OPEN', -- 'OPEN', 'CLOSED', 'CANCELLED'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_offerings_course_semester ON course_offerings(course_id, semester_code);
 
--- 8. Bảng Lịch sử các lần học & Điểm số (Enrollment Attempts)
+-- 4. Bảng Lịch sử các lần học & Điểm số (Enrollment Attempts - PRD §8)
 CREATE TABLE IF NOT EXISTS enrollment_attempts (
     attempt_id VARCHAR(50) PRIMARY KEY,
     student_id VARCHAR(50) NOT NULL REFERENCES student_records(student_id) ON DELETE CASCADE,
@@ -157,7 +111,7 @@ CREATE TABLE IF NOT EXISTS enrollment_attempts (
     score_10 NUMERIC(4, 2),
     letter_grade VARCHAR(5),
     score_4 NUMERIC(3, 2),
-    status VARCHAR(20) NOT NULL DEFAULT 'PASSED',
+    status VARCHAR(20) NOT NULL DEFAULT 'PASSED', -- 'PASSED', 'FAILED', 'IN_PROGRESS', 'EXEMPTED'
     is_retake BOOLEAN DEFAULT FALSE,
     is_excluded_from_gpa BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -169,12 +123,12 @@ CREATE INDEX IF NOT EXISTS idx_attempts_course ON enrollment_attempts(course_id)
 CREATE INDEX IF NOT EXISTS idx_attempts_semester ON enrollment_attempts(semester_code);
 CREATE INDEX IF NOT EXISTS idx_attempts_status ON enrollment_attempts(status);
 
--- 9. Bảng Chuẩn đầu ra & Rà soát Tốt nghiệp (Audit Requirements)
+-- 5. Bảng Chuẩn đầu ra & Rà soát Tốt nghiệp (Audit Requirements)
 CREATE TABLE IF NOT EXISTS audit_requirements (
-    requirement_id VARCHAR(50) PRIMARY KEY,
+    requirement_id VARCHAR(50) PRIMARY KEY, -- e.g. 'REQ_TOEIC_450', 'REQ_MOS', 'REQ_GDQP', 'REQ_GDTC'
     requirement_code VARCHAR(50) NOT NULL UNIQUE,
     requirement_name VARCHAR(150) NOT NULL,
-    category VARCHAR(30) NOT NULL,
+    category VARCHAR(30) NOT NULL, -- 'CREDITS', 'CERTIFICATE', 'PHYSICAL_ED', 'DEFENSE_ED'
     condition_rule JSONB NOT NULL,
     is_mandatory BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -184,7 +138,7 @@ CREATE TABLE IF NOT EXISTS student_audit_checklists (
     checklist_id VARCHAR(50) PRIMARY KEY,
     student_id VARCHAR(50) NOT NULL REFERENCES student_records(student_id) ON DELETE CASCADE,
     requirement_id VARCHAR(50) NOT NULL REFERENCES audit_requirements(requirement_id) ON DELETE CASCADE,
-    status VARCHAR(20) NOT NULL DEFAULT 'MISSING',
+    status VARCHAR(20) NOT NULL DEFAULT 'MISSING', -- 'SATISFIED', 'MISSING', 'PENDING_APPROVAL'
     evidence_info JSONB,
     verified_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -194,13 +148,13 @@ CREATE TABLE IF NOT EXISTS student_audit_checklists (
 
 CREATE INDEX IF NOT EXISTS idx_audit_checklists_student ON student_audit_checklists(student_id);
 
--- 10. Bảng Phiên nhập dữ liệu bảng điểm (Import Sessions)
+-- 6. Bảng Phiên nhập dữ liệu bảng điểm (Import Sessions)
 CREATE TABLE IF NOT EXISTS import_sessions (
     session_id VARCHAR(50) PRIMARY KEY,
     student_id VARCHAR(50) NOT NULL REFERENCES student_records(student_id) ON DELETE CASCADE,
     file_name VARCHAR(255) NOT NULL,
-    file_type VARCHAR(20) NOT NULL DEFAULT 'PDF',
-    status VARCHAR(30) NOT NULL DEFAULT 'UPLOADED',
+    file_type VARCHAR(20) NOT NULL DEFAULT 'PDF', -- 'PDF', 'EXCEL', 'MANUAL'
+    status VARCHAR(30) NOT NULL DEFAULT 'UPLOADED', -- 'UPLOADED', 'PARSED', 'CONFIRMED', 'REJECTED'
     parsed_payload JSONB,
     error_message TEXT,
     uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -210,25 +164,12 @@ CREATE TABLE IF NOT EXISTS import_sessions (
 CREATE INDEX IF NOT EXISTS idx_import_sessions_student ON import_sessions(student_id);
 CREATE INDEX IF NOT EXISTS idx_import_sessions_status ON import_sessions(status);
 
--- 11. Bảng kế hoạch học tập (Study Plans & State Machine)
-CREATE TABLE IF NOT EXISTS study_plans (
-    plan_id VARCHAR(100) PRIMARY KEY,
-    student_id VARCHAR(50) NOT NULL,
-    plan_name VARCHAR(150) DEFAULT 'Kế hoạch học tập',
-    status VARCHAR(30) NOT NULL DEFAULT 'DRAFT', -- 'DRAFT', 'VALIDATED', 'ACTIVE', 'COMPLETED', 'ARCHIVED'
-    version INTEGER DEFAULT 1,
-    data_revision VARCHAR(100) DEFAULT 'REV-2024-001',
-    target_cpa NUMERIC(4, 2),
-    target_graduation_semester VARCHAR(30) DEFAULT '2028_1',
-    max_credits_per_semester INTEGER DEFAULT 20,
-    plan_payload JSONB NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_study_plan_student FOREIGN KEY (student_id) REFERENCES student_records(student_id) ON DELETE CASCADE
-);
+-- 7. Nâng cấp Bảng Kế hoạch học tập & Chi tiết (Study Plans, Semesters, Courses, Actions)
+ALTER TABLE study_plans ADD COLUMN IF NOT EXISTS plan_name VARCHAR(150) DEFAULT 'Kế hoạch học tập';
+ALTER TABLE study_plans ADD COLUMN IF NOT EXISTS version INTEGER DEFAULT 1;
+ALTER TABLE study_plans ADD COLUMN IF NOT EXISTS data_revision VARCHAR(100) DEFAULT 'REV-2024-001';
+ALTER TABLE study_plans ADD COLUMN IF NOT EXISTS target_graduation_semester VARCHAR(30) DEFAULT '2028_1';
 
-CREATE INDEX IF NOT EXISTS idx_study_plans_student ON study_plans(student_id);
-CREATE INDEX IF NOT EXISTS idx_study_plans_status ON study_plans(status);
 CREATE INDEX IF NOT EXISTS idx_study_plans_revision ON study_plans(data_revision);
 
 CREATE TABLE IF NOT EXISTS plan_semesters (
@@ -249,7 +190,7 @@ CREATE TABLE IF NOT EXISTS planned_courses (
     plan_semester_id VARCHAR(50) NOT NULL REFERENCES plan_semesters(plan_semester_id) ON DELETE CASCADE,
     course_id VARCHAR(50) NOT NULL REFERENCES courses(course_id) ON DELETE CASCADE,
     target_grade VARCHAR(5) DEFAULT 'B',
-    course_type VARCHAR(30) DEFAULT 'STANDARD',
+    course_type VARCHAR(30) DEFAULT 'STANDARD', -- 'STANDARD', 'RETAKE', 'ELECTIVE', 'SUMMER', 'ADVANCED'
     status VARCHAR(20) DEFAULT 'PLANNED',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -260,7 +201,7 @@ CREATE INDEX IF NOT EXISTS idx_planned_courses_course ON planned_courses(course_
 CREATE TABLE IF NOT EXISTS plan_actions (
     action_id VARCHAR(50) PRIMARY KEY,
     plan_id VARCHAR(100) NOT NULL REFERENCES study_plans(plan_id) ON DELETE CASCADE,
-    action_type VARCHAR(50) NOT NULL,
+    action_type VARCHAR(50) NOT NULL, -- 'UNBLOCK_PREREQUISITE', 'RETAKE_IMPROVEMENT', 'SUMMER_ACCELERATION', 'WORKLOAD_WARNING'
     description TEXT NOT NULL,
     target_course_id VARCHAR(50),
     priority INTEGER DEFAULT 1,
@@ -269,40 +210,12 @@ CREATE TABLE IF NOT EXISTS plan_actions (
 
 CREATE INDEX IF NOT EXISTS idx_plan_actions_plan ON plan_actions(plan_id);
 
--- 12. Bảng quản lý lịch sử hội thoại (Conversation Store)
-CREATE TABLE IF NOT EXISTS conversations (
-    conversation_id VARCHAR(100) PRIMARY KEY,
-    student_id VARCHAR(50) NOT NULL,
-    title VARCHAR(255) NOT NULL DEFAULT 'Hội thoại tư vấn mới',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_conversation_student FOREIGN KEY (student_id) REFERENCES student_records(student_id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_conversations_student ON conversations(student_id);
-
--- 13. Bảng tin nhắn trong hội thoại
-CREATE TABLE IF NOT EXISTS conversation_messages (
-    message_id VARCHAR(100) PRIMARY KEY,
-    conversation_id VARCHAR(100) NOT NULL,
-    role VARCHAR(20) NOT NULL,
-    content TEXT NOT NULL,
-    sources JSONB,
-    action_items JSONB,
-    plan_proposals JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_message_conversation FOREIGN KEY (conversation_id) REFERENCES conversations(conversation_id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_messages_conversation ON conversation_messages(conversation_id);
-CREATE INDEX IF NOT EXISTS idx_messages_created_at ON conversation_messages(created_at);
-
--- 14. Bảng Nguồn tri thức RAG & Quy chế đào tạo (Knowledge Sources)
+-- 8. Bảng Nguồn tri thức RAG & Quy chế đào tạo (Knowledge Sources)
 CREATE TABLE IF NOT EXISTS knowledge_sources (
-    source_id VARCHAR(50) PRIMARY KEY,
-    document_code VARCHAR(50) NOT NULL,
+    source_id VARCHAR(50) PRIMARY KEY, -- e.g. 'SRC-HAUI-REG-01'
+    document_code VARCHAR(50) NOT NULL, -- e.g. '01_QUY_CHE_TIN_CHI'
     title VARCHAR(255) NOT NULL,
-    category VARCHAR(50) NOT NULL,
+    category VARCHAR(50) NOT NULL, -- 'REGULATION', 'CURRICULUM', 'POLICY'
     section VARCHAR(100),
     version VARCHAR(50) NOT NULL DEFAULT '2024.1',
     file_path VARCHAR(255),

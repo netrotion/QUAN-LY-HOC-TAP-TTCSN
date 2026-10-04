@@ -1,0 +1,34 @@
+{
+  "planName": "Đề xuất lộ trình học tập tối ưu HaUI K19",
+  "status": "DRAFT",
+  "targetCpa": 3.20,
+  "estimatedFinalCpa": 3.25,
+  "totalPlannedCredits": 105,
+  "semesters": [
+    {
+      "semesterOrder": 3,
+      "semesterCode": "2025_1",
+      "plannedCredits": 18,
+      "estimatedGpa": 3.20,
+      "courses": [
+        {
+          "courseCode": "IT6015",
+          "courseName": "Cấu trúc dữ liệu và giải thuật",
+          "credits": 3,
+          "targetGrade": "A",
+          "courseType": "STANDARD",
+          "status": "PLANNED"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "actionType": "RETAKE_IMPROVEMENT",
+      "description": "Học cải thiện môn Giải tích 1 từ D lên B+ giúp tăng CPA thêm 0.08",
+      "priority": 1
+    }
+  ],
+  "warnings": [],
+  "dataRevision": "REV-2024-001"
+}

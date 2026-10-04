@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public class PlannedSemesterItem implements Serializable {
+    private Integer semesterOrder;
     private String semesterCode;
     private String semesterName;
     private List<PlannedCourseItem> courses;
@@ -21,6 +22,24 @@ public class PlannedSemesterItem implements Serializable {
         this.courses = courses;
         this.totalCredits = totalCredits;
         this.expectedGpa = expectedGpa;
+    }
+
+    public PlannedSemesterItem(Integer semesterOrder, String semesterCode, String semesterName,
+                               List<PlannedCourseItem> courses, Integer totalCredits, BigDecimal expectedGpa) {
+        this.semesterOrder = semesterOrder;
+        this.semesterCode = semesterCode;
+        this.semesterName = semesterName;
+        this.courses = courses;
+        this.totalCredits = totalCredits;
+        this.expectedGpa = expectedGpa;
+    }
+
+    public Integer getSemesterOrder() {
+        return semesterOrder;
+    }
+
+    public void setSemesterOrder(Integer semesterOrder) {
+        this.semesterOrder = semesterOrder;
     }
 
     public String getSemesterCode() {
@@ -55,11 +74,27 @@ public class PlannedSemesterItem implements Serializable {
         this.totalCredits = totalCredits;
     }
 
+    public Integer getPlannedCredits() {
+        return totalCredits;
+    }
+
+    public void setPlannedCredits(Integer plannedCredits) {
+        this.totalCredits = plannedCredits;
+    }
+
     public BigDecimal getExpectedGpa() {
         return expectedGpa;
     }
 
     public void setExpectedGpa(BigDecimal expectedGpa) {
         this.expectedGpa = expectedGpa;
+    }
+
+    public BigDecimal getEstimatedGpa() {
+        return expectedGpa;
+    }
+
+    public void setEstimatedGpa(BigDecimal estimatedGpa) {
+        this.expectedGpa = estimatedGpa;
     }
 }
