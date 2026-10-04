@@ -8,6 +8,8 @@ public class PlannedCourseItem implements Serializable {
     private Integer credits;
     private String targetGrade;
     private String rationale;
+    private String courseType;
+    private String status;
 
     public PlannedCourseItem() {
     }
@@ -18,6 +20,33 @@ public class PlannedCourseItem implements Serializable {
         this.credits = credits;
         this.targetGrade = targetGrade;
         this.rationale = rationale;
+    }
+
+    public PlannedCourseItem(String courseCode, String courseName, Integer credits, String targetGrade,
+                             String rationale, String courseType, String status) {
+        this.courseCode = courseCode;
+        this.courseName = courseName;
+        this.credits = credits;
+        this.targetGrade = targetGrade;
+        this.rationale = rationale;
+        this.courseType = courseType;
+        this.status = status;
+    }
+
+    public String getCourseType() {
+        return courseType;
+    }
+
+    public void setCourseType(String courseType) {
+        this.courseType = courseType;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public String getCourseCode() {

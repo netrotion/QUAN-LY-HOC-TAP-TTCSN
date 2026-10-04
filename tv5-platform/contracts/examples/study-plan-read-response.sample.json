@@ -1,0 +1,47 @@
+{
+  "planId": "plan-2024-k19-001",
+  "studentId": "2024604757",
+  "planName": "Kế hoạch học tập KTPM K19 - Mục tiêu CPA 3.20",
+  "status": "VALIDATED",
+  "version": 1,
+  "dataRevision": "REV-2024-001",
+  "targetCpa": 3.20,
+  "targetGraduationSemester": "2028_1",
+  "maxCreditsPerSemester": 20,
+  "semesters": [
+    {
+      "semesterOrder": 1,
+      "semesterCode": "2024_1",
+      "plannedCredits": 18,
+      "estimatedGpa": 3.15,
+      "courses": [
+        {
+          "courseCode": "BS6001",
+          "courseName": "Giải tích 1",
+          "credits": 3,
+          "targetGrade": "B+",
+          "courseType": "STANDARD",
+          "status": "PLANNED"
+        },
+        {
+          "courseCode": "IT6012",
+          "courseName": "Cơ sở lập trình",
+          "credits": 4,
+          "targetGrade": "A",
+          "courseType": "STANDARD",
+          "status": "PLANNED"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "actionType": "UNBLOCK_PREREQUISITE",
+      "description": "Ưu tiên đạt điểm môn Cơ sở lập trình để mở khóa môn Cấu trúc dữ liệu và giải thuật kỳ sau",
+      "priority": 1
+    }
+  ],
+  "warnings": [],
+  "createdAt": "2026-10-01T08:00:00Z",
+  "updatedAt": "2026-10-01T08:00:00Z"
+}

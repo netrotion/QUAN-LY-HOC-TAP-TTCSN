@@ -54,6 +54,25 @@
       "responseSample": "chat-response.sample.json"
     },
     {
+      "capability": "getStudyPlan",
+      "responseSample": "study-plan-read-response.sample.json"
+    },
+    {
+      "capability": "previewStudyPlan",
+      "requestSample": "study-plan-preview-request.sample.json",
+      "responseSample": "study-plan-preview-response.sample.json"
+    },
+    {
+      "capability": "saveStudyPlan",
+      "requestSample": "study-plan-save-request.sample.json",
+      "responseSample": "study-plan-save-response.sample.json"
+    },
+    {
+      "capability": "activateStudyPlan",
+      "requestSample": "study-plan-activate-request.sample.json",
+      "responseSample": "study-plan-activate-response.sample.json"
+    },
+    {
       "capability": "apiError",
       "responseSample": "api-error.sample.json"
     }

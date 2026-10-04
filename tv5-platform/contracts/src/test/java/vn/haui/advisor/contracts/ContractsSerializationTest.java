@@ -147,4 +147,73 @@ public class ContractsSerializationTest {
         assertThat(err.getCode()).isEqualTo("NOT_IMPLEMENTED");
         assertThat(err.getRequestId()).isEqualTo("req-9999-sample");
     }
+
+    @Test
+    void testStudyPlanReadSerialization() throws Exception {
+        File resFile = examplesDir.resolve("study-plan-read-response.sample.json").toFile();
+        StudyPlanDetailResponse res = objectMapper.readValue(resFile, StudyPlanDetailResponse.class);
+        assertThat(res.getPlanId()).isEqualTo("plan-2024-k19-001");
+        assertThat(res.getStudentId()).isEqualTo("2024604757");
+        assertThat(res.getStatus()).isEqualTo(StudyPlanStatus.VALIDATED);
+        assertThat(res.getVersion()).isEqualTo(1);
+        assertThat(res.getDataRevision()).isEqualTo("REV-2024-001");
+        assertThat(res.getTargetCpa()).isEqualByComparingTo(new BigDecimal("3.20"));
+        assertThat(res.getSemesters()).hasSize(1);
+        assertThat(res.getActions()).hasSize(1);
+    }
+
+    @Test
+    void testStudyPlanPreviewSerialization() throws Exception {
+        File reqFile = examplesDir.resolve("study-plan-preview-request.sample.json").toFile();
+        PreviewStudyPlanRequest req = objectMapper.readValue(reqFile, PreviewStudyPlanRequest.class);
+        assertThat(req.getTargetGraduationSemester()).isEqualTo("2028_1");
+        assertThat(req.getTargetCpa()).isEqualByComparingTo(new BigDecimal("3.20"));
+        assertThat(req.getIncludeSummerSemesters()).isTrue();
+
+        File resFile = examplesDir.resolve("study-plan-preview-response.sample.json").toFile();
+        PreviewStudyPlanResponse res = objectMapper.readValue(resFile, PreviewStudyPlanResponse.class);
+        assertThat(res.getStatus()).isEqualTo(StudyPlanStatus.DRAFT);
+        assertThat(res.getEstimatedFinalCpa()).isEqualByComparingTo(new BigDecimal("3.25"));
+        assertThat(res.getTotalPlannedCredits()).isEqualTo(105);
+    }
+
+    @Test
+    void testStudyPlanSaveSerialization() throws Exception {
+        File reqFile = examplesDir.resolve("study-plan-save-request.sample.json").toFile();
+        SaveStudyPlanRequest req = objectMapper.readValue(reqFile, SaveStudyPlanRequest.class);
+        assertThat(req.getPlanId()).isEqualTo("plan-2024-k19-001");
+        assertThat(req.getPlanVersion()).isEqualTo(1);
+        assertThat(req.getDataRevision()).isEqualTo("REV-2024-001");
+
+        File resFile = examplesDir.resolve("study-plan-save-response.sample.json").toFile();
+        SaveStudyPlanResponse res = objectMapper.readValue(resFile, SaveStudyPlanResponse.class);
+        assertThat(res.getPlanId()).isEqualTo("plan-2024-k19-001");
+        assertThat(res.getPlanVersion()).isEqualTo(2);
+        assertThat(res.getStatus()).isEqualTo(StudyPlanStatus.VALIDATED);
+    }
+
+    @Test
+    void testStudyPlanActivateSerialization() throws Exception {
+        File reqFile = examplesDir.resolve("study-plan-activate-request.sample.json").toFile();
+        ActivateStudyPlanRequest req = objectMapper.readValue(reqFile, ActivateStudyPlanRequest.class);
+        assertThat(req.getPlanId()).isEqualTo("plan-2024-k19-001");
+        assertThat(req.getExpectedVersion()).isEqualTo(2);
+
+        File resFile = examplesDir.resolve("study-plan-activate-response.sample.json").toFile();
+        ActivateStudyPlanResponse res = objectMapper.readValue(resFile, ActivateStudyPlanResponse.class);
+        assertThat(res.getPlanId()).isEqualTo("plan-2024-k19-001");
+        assertThat(res.getStatus()).isEqualTo(StudyPlanStatus.ACTIVE);
+        assertThat(res.getArchivedPlanIds()).contains("plan-2024-k19-000");
+    }
+
+    @Test
+    void testStudentDataVersionSerialization() throws Exception {
+        StudentDataVersion version = new StudentDataVersion("2024604757", "REV-2024-001", 1, "2026-10-04T10:00:00Z", false);
+        String json = objectMapper.writeValueAsString(version);
+        StudentDataVersion deserialized = objectMapper.readValue(json, StudentDataVersion.class);
+        assertThat(deserialized.getStudentId()).isEqualTo("2024604757");
+        assertThat(deserialized.getDataRevision()).isEqualTo("REV-2024-001");
+        assertThat(deserialized.getVersion()).isEqualTo(1);
+        assertThat(deserialized.getStale()).isFalse();
+    }
 }
