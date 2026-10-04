@@ -5,14 +5,7 @@
 -- ==============================================================================
 
 -- 1. Kích hoạt extension pgvector (nếu môi trường hỗ trợ)
-DO $$
-BEGIN
-    CREATE EXTENSION IF NOT EXISTS vector;
-EXCEPTION
-    WHEN OTHERS THEN
-        RAISE NOTICE 'pgvector extension could not be loaded directly; continuing with standard schema.';
-END
-$$;
+${pgvector_init}
 
 -- 2. Bảng cấu hình hệ thống
 CREATE TABLE IF NOT EXISTS system_settings (
@@ -23,11 +16,16 @@ CREATE TABLE IF NOT EXISTS system_settings (
 );
 
 INSERT INTO system_settings (setting_key, setting_value, description)
-VALUES
-    ('system.version', '0.0.1-SNAPSHOT', 'Current version of HaUI Advisor Platform'),
-    ('system.maintenance', 'false', 'Maintenance mode status'),
-    ('academic.policy.version', '2024-QĐ/ĐHCN', 'HaUI Academic Policy Standard Reference')
-ON CONFLICT (setting_key) DO NOTHING;
+SELECT 'system.version', '0.0.1-SNAPSHOT', 'Current version of HaUI Advisor Platform'
+WHERE NOT EXISTS (SELECT 1 FROM system_settings WHERE setting_key = 'system.version');
+
+INSERT INTO system_settings (setting_key, setting_value, description)
+SELECT 'system.maintenance', 'false', 'Maintenance mode status'
+WHERE NOT EXISTS (SELECT 1 FROM system_settings WHERE setting_key = 'system.maintenance');
+
+INSERT INTO system_settings (setting_key, setting_value, description)
+SELECT 'academic.policy.version', '2024-QĐ/ĐHCN', 'HaUI Academic Policy Standard Reference'
+WHERE NOT EXISTS (SELECT 1 FROM system_settings WHERE setting_key = 'academic.policy.version');
 
 -- 3. Bảng nhật ký kiểm toán hệ thống (Audit Logs)
 CREATE TABLE IF NOT EXISTS audit_logs (

@@ -77,6 +77,51 @@ paths:
         '501':
           $ref: '#/components/responses/NotImplemented'
 
+  /planner/plan:
+    get:
+      tags: [Planner]
+      summary: Lấy chi tiết kế hoạch học tập (read)
+      operationId: getStudyPlan
+      x-implementation-status: NOT_IMPLEMENTED
+      parameters:
+        - name: planId
+          in: query
+          required: false
+          schema:
+            type: string
+          description: ID kế hoạch cần đọc; nếu để trống sẽ đọc kế hoạch ACTIVE hiện hành của sinh viên
+      responses:
+        '200':
+          description: Chi tiết kế hoạch học tập
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudyPlanDetailResponse'
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+
+  /planner/preview:
+    post:
+      tags: [Planner]
+      summary: Xem trước kế hoạch học tập tối ưu trước khi lưu (preview)
+      operationId: previewStudyPlan
+      x-implementation-status: NOT_IMPLEMENTED
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreviewStudyPlanRequest'
+      responses:
+        '200':
+          description: Kết quả xem trước kế hoạch học tập
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreviewStudyPlanResponse'
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+
   /planner/generate:
     post:
       tags: [Planner]
@@ -90,10 +135,54 @@ paths:
   /planner/validate:
     post:
       tags: [Planner]
-      summary: Thẩm định kế hoạch học tập theo quy chế
+      summary: Thẩm định kế hoạch học tập theo quy chế (validate)
       operationId: validateStudyPlan
       x-implementation-status: NOT_IMPLEMENTED
       responses:
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+
+  /planner/save:
+    post:
+      tags: [Planner]
+      summary: Lưu kế hoạch học tập (save)
+      operationId: saveStudyPlan
+      x-implementation-status: NOT_IMPLEMENTED
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveStudyPlanRequest'
+      responses:
+        '200':
+          description: Kế hoạch học tập đã được lưu thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaveStudyPlanResponse'
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+
+  /planner/activate:
+    post:
+      tags: [Planner]
+      summary: Kích hoạt kế hoạch học tập sang trạng thái ACTIVE (activate)
+      operationId: activateStudyPlan
+      x-implementation-status: NOT_IMPLEMENTED
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivateStudyPlanRequest'
+      responses:
+        '200':
+          description: Kế hoạch học tập đã được kích hoạt thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivateStudyPlanResponse'
         '501':
           $ref: '#/components/responses/NotImplemented'
 
@@ -220,3 +309,302 @@ components:
           type: array
           items:
             type: string
+
+    StudyPlanDetailResponse:
+      type: object
+      properties:
+        planId:
+          type: string
+          example: "plan-2024-k19-001"
+        studentId:
+          type: string
+          example: "2024604757"
+        planName:
+          type: string
+          example: "Kế hoạch học tập KTPM K19"
+        status:
+          type: string
+          enum: [DRAFT, VALIDATED, ACTIVE, COMPLETED, ARCHIVED]
+          example: "VALIDATED"
+        version:
+          type: integer
+          example: 1
+        dataRevision:
+          type: string
+          example: "REV-2024-001"
+        targetCpa:
+          type: number
+          format: float
+          example: 3.20
+        targetGraduationSemester:
+          type: string
+          example: "2028_1"
+        maxCreditsPerSemester:
+          type: integer
+          example: 20
+        semesters:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlannedSemesterItem'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatActionItem'
+        warnings:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PreviewStudyPlanRequest:
+      type: object
+      properties:
+        targetGraduationSemester:
+          type: string
+          example: "2028_1"
+        targetCpa:
+          type: number
+          format: float
+          example: 3.20
+        maxCreditsPerSemester:
+          type: integer
+          example: 20
+        includeSummerSemesters:
+          type: boolean
+          example: true
+        selectedRetakeCourseCodes:
+          type: array
+          items:
+            type: string
+        dataRevision:
+          type: string
+          example: "REV-2024-001"
+
+    PreviewStudyPlanResponse:
+      type: object
+      properties:
+        planName:
+          type: string
+          example: "Đề xuất lộ trình học tập tối ưu"
+        status:
+          type: string
+          example: "DRAFT"
+        targetCpa:
+          type: number
+          format: float
+          example: 3.20
+        estimatedFinalCpa:
+          type: number
+          format: float
+          example: 3.25
+        totalPlannedCredits:
+          type: integer
+          example: 105
+        semesters:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlannedSemesterItem'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatActionItem'
+        warnings:
+          type: array
+          items:
+            type: string
+        dataRevision:
+          type: string
+          example: "REV-2024-001"
+
+    SaveStudyPlanRequest:
+      type: object
+      required:
+        - planName
+        - semesters
+      properties:
+        planId:
+          type: string
+          nullable: true
+          example: "plan-2024-k19-001"
+        planName:
+          type: string
+          example: "Kế hoạch học tập KTPM K19"
+        planVersion:
+          type: integer
+          example: 1
+        dataRevision:
+          type: string
+          example: "REV-2024-001"
+        targetCpa:
+          type: number
+          format: float
+          example: 3.20
+        targetGraduationSemester:
+          type: string
+          example: "2028_1"
+        maxCreditsPerSemester:
+          type: integer
+          example: 20
+        semesters:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlannedSemesterItem'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatActionItem'
+
+    SaveStudyPlanResponse:
+      type: object
+      properties:
+        planId:
+          type: string
+          example: "plan-2024-k19-001"
+        planName:
+          type: string
+          example: "Kế hoạch học tập KTPM K19"
+        status:
+          type: string
+          example: "VALIDATED"
+        planVersion:
+          type: integer
+          example: 2
+        dataRevision:
+          type: string
+          example: "REV-2024-001"
+        savedAt:
+          type: string
+          format: date-time
+        message:
+          type: string
+          example: "Lưu kế hoạch học tập thành công"
+
+    ActivateStudyPlanRequest:
+      type: object
+      required:
+        - planId
+      properties:
+        planId:
+          type: string
+          example: "plan-2024-k19-001"
+        expectedVersion:
+          type: integer
+          example: 2
+        dataRevision:
+          type: string
+          example: "REV-2024-001"
+
+    ActivateStudyPlanResponse:
+      type: object
+      properties:
+        planId:
+          type: string
+          example: "plan-2024-k19-001"
+        status:
+          type: string
+          example: "ACTIVE"
+        activatedAt:
+          type: string
+          format: date-time
+        archivedPlanIds:
+          type: array
+          items:
+            type: string
+        message:
+          type: string
+          example: "Kích hoạt kế hoạch học tập thành công"
+
+    StudentDataVersion:
+      type: object
+      properties:
+        studentId:
+          type: string
+          example: "2024604757"
+        dataRevision:
+          type: string
+          example: "REV-2024-001"
+        version:
+          type: integer
+          example: 1
+        lastUpdated:
+          type: string
+          format: date-time
+        stale:
+          type: boolean
+          example: false
+
+    PlannedSemesterItem:
+      type: object
+      properties:
+        semesterOrder:
+          type: integer
+          example: 1
+        semesterCode:
+          type: string
+          example: "2024_1"
+        semesterName:
+          type: string
+          example: "Học kỳ 1 năm học 2024-2025"
+        plannedCredits:
+          type: integer
+          example: 18
+        estimatedGpa:
+          type: number
+          format: float
+          example: 3.20
+        courses:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlannedCourseItem'
+
+    PlannedCourseItem:
+      type: object
+      properties:
+        courseCode:
+          type: string
+          example: "IT6015"
+        courseName:
+          type: string
+          example: "Cấu trúc dữ liệu và giải thuật"
+        credits:
+          type: integer
+          example: 3
+        targetGrade:
+          type: string
+          example: "A"
+        rationale:
+          type: string
+          example: "Môn tiên quyết cho Lập trình nâng cao"
+        courseType:
+          type: string
+          example: "STANDARD"
+        status:
+          type: string
+          example: "PLANNED"
+
+    ChatActionItem:
+      type: object
+      properties:
+        actionType:
+          type: string
+          example: "UNBLOCK_PREREQUISITE"
+        label:
+          type: string
+          example: "Xem gợi ý môn học"
+        targetRoute:
+          type: string
+          example: "/planner"
+        payloadJson:
+          type: string
+          example: "{}"
+        description:
+          type: string
+          example: "Ưu tiên đạt điểm môn tiên quyết"
+        priority:
+          type: integer
+          example: 1

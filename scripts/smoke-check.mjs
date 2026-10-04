@@ -84,14 +84,15 @@ if (fs.existsSync(composePath)) {
 
 // 7. Database Migration Scripts Check
 const migrationV1 = path.resolve('tv5-platform/app/src/main/resources/db/migration/V1__init_platform_schema.sql');
+const migrationV2 = path.resolve('tv5-platform/app/src/main/resources/db/migration/V2__comprehensive_platform_schema.sql');
 const composeMigration = path.resolve('tv5-platform/infra/migrations/01_init_schema.sql');
-if (fs.existsSync(migrationV1) && fs.existsSync(composeMigration)) {
-  console.log(`[PASS] 10. Platform Database Migration Schemas verified.`);
-  results.push({ name: '10. Platform Database Migration Schemas', status: 'PASS', duration: '0.00' });
+if (fs.existsSync(migrationV1) && fs.existsSync(migrationV2) && fs.existsSync(composeMigration)) {
+  console.log(`[PASS] 10. Platform Database Migration Schemas (V1 & V2) verified.`);
+  results.push({ name: '10. Platform Database Migration Schemas (V1 & V2)', status: 'PASS', duration: '0.00' });
 } else {
   console.error(`[FAIL] 10. Database migration files missing!`);
   allPassed = false;
-  results.push({ name: '10. Platform Database Migration Schemas', status: 'FAIL', duration: '0.00' });
+  results.push({ name: '10. Platform Database Migration Schemas (V1 & V2)', status: 'FAIL', duration: '0.00' });
 }
 
 // Total summary

@@ -1,0 +1,34 @@
+{
+  "planId": "plan-2024-k19-001",
+  "planName": "Kế hoạch học tập KTPM K19 - Bản chỉnh sửa",
+  "planVersion": 1,
+  "dataRevision": "REV-2024-001",
+  "targetCpa": 3.25,
+  "targetGraduationSemester": "2028_1",
+  "maxCreditsPerSemester": 20,
+  "semesters": [
+    {
+      "semesterOrder": 3,
+      "semesterCode": "2025_1",
+      "plannedCredits": 18,
+      "estimatedGpa": 3.25,
+      "courses": [
+        {
+          "courseCode": "IT6015",
+          "courseName": "Cấu trúc dữ liệu và giải thuật",
+          "credits": 3,
+          "targetGrade": "A",
+          "courseType": "STANDARD",
+          "status": "PLANNED"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "actionType": "WORKLOAD_BALANCING",
+      "description": "Cân đối 18 tín chỉ trong học kỳ chính",
+      "priority": 2
+    }
+  ]
+}
