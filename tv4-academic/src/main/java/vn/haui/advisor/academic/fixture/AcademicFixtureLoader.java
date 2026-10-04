@@ -29,9 +29,24 @@ public class AcademicFixtureLoader {
         return loadObject("/fixtures/curriculum-it-v0.json", "curriculum-it-v0.json", CurriculumFixture.class);
     }
 
+    public static CurriculumFixture loadCurriculumV1() {
+        return loadObject("/fixtures/curriculum-ktpm-v1.json", "curriculum-ktpm-v1.json", CurriculumFixture.class);
+    }
+
     public static Map<String, StudentProfileFixture> loadStudentProfiles() {
+        Map<String, StudentProfileFixture> map = new LinkedHashMap<>();
+        map.putAll(loadStudentProfilesFromPath("/fixtures/student-profiles-v0.json", "student-profiles-v0.json"));
+        map.putAll(loadStudentProfilesFromPath("/fixtures/student-profiles-v1.json", "student-profiles-v1.json"));
+        return Collections.unmodifiableMap(map);
+    }
+
+    public static Map<String, StudentProfileFixture> loadStudentProfilesV1() {
+        return Collections.unmodifiableMap(loadStudentProfilesFromPath("/fixtures/student-profiles-v1.json", "student-profiles-v1.json"));
+    }
+
+    private static Map<String, StudentProfileFixture> loadStudentProfilesFromPath(String resourcePath, String fixtureFileName) {
         try {
-            byte[] bytes = readFixtureBytes("/fixtures/student-profiles-v0.json", "student-profiles-v0.json");
+            byte[] bytes = readFixtureBytes(resourcePath, fixtureFileName);
             JsonNode root = MAPPER.readTree(bytes);
             JsonNode profilesNode = root.get("profiles");
             if (profilesNode == null || !profilesNode.isArray()) {
@@ -45,9 +60,9 @@ public class AcademicFixtureLoader {
                     map.put(profile.getStudentId(), profile);
                 }
             }
-            return Collections.unmodifiableMap(map);
+            return map;
         } catch (IOException e) {
-            throw new IllegalStateException("Không thể đọc student-profiles-v0.json: " + e.getMessage(), e);
+            throw new IllegalStateException("Không thể đọc " + fixtureFileName + ": " + e.getMessage(), e);
         }
     }
 
