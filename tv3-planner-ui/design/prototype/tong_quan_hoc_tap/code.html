@@ -1,0 +1,745 @@
+<!DOCTYPE html><html lang="vi" style=""><svg class="inline-defs-container" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"></svg><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-surface-variant": "#444748",
+          "canvas": "#f5f5f5",
+          "primary": "#000000",
+          "surface-dim": "#dadada",
+          "ink": "#0a0a0a",
+          "tertiary-fixed-dim": "#cac6c3",
+          "secondary-fixed-dim": "#c7c6c6",
+          "on-tertiary-fixed": "#1d1b1a",
+          "background": "#f9f9f9",
+          "surface-tint": "#5f5e5e",
+          "surface-container-high": "#e8e8e8",
+          "on-secondary-fixed": "#1b1c1c",
+          "secondary-container": "#e3e2e2",
+          "paper": "#ffffff",
+          "hairline": "#e5e5e5",
+          "surface-variant": "#e2e2e2",
+          "primary-fixed": "#e5e2e1",
+          "ink-soft": "#171717",
+          "surface": "#f9f9f9",
+          "surface-container-highest": "#e2e2e2",
+          "outline": "#747878",
+          "on-secondary-fixed-variant": "#464747",
+          "error-container": "#ffdad6",
+          "on-primary-fixed-variant": "#474646",
+          "on-error": "#ffffff",
+          "on-primary": "#ffffff",
+          "on-error-container": "#93000a",
+          "surface-container-lowest": "#ffffff",
+          "surface-container": "#eeeeee",
+          "secondary": "#5e5e5e",
+          "on-tertiary": "#ffffff",
+          "tertiary-fixed": "#e6e1df",
+          "error": "#ba1a1a",
+          "on-background": "#1a1c1c",
+          "on-secondary-container": "#646464",
+          "on-primary-container": "#858383",
+          "on-surface": "#1a1c1c",
+          "inverse-primary": "#c9c6c5",
+          "on-tertiary-container": "#868381",
+          "on-tertiary-fixed-variant": "#484645",
+          "on-primary-fixed": "#1c1b1b",
+          "inverse-on-surface": "#f1f1f1",
+          "primary-container": "#1c1b1b",
+          "secondary-fixed": "#e3e2e2",
+          "surface-alt": "#fafafa",
+          "primary-fixed-dim": "#c9c6c5",
+          "surface-container-low": "#f3f3f3",
+          "tertiary": "#000000",
+          "ember": "#e7000b",
+          "inverse-surface": "#2f3131",
+          "outline-variant": "#c4c7c7",
+          "surface-bright": "#f9f9f9",
+          "on-secondary": "#ffffff",
+          "tertiary-container": "#1d1b1a",
+          "mid-gray": "#737373"
+        },
+        "borderRadius": {
+          "DEFAULT": "1rem",
+          "lg": "2rem",
+          "xl": "3rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "margin-tablet": "1.5rem",
+          "space-lg": "1.25rem",
+          "space-xl": "2rem",
+          "margin": "1rem",
+          "space-sm": "0.5rem",
+          "gutter-desktop": "1.5rem",
+          "space-xs": "0.25rem",
+          "space-md": "1rem",
+          "margin-desktop": "2.5rem",
+          "gutter": "1rem"
+        },
+        "fontFamily": {
+          "body": ["Geist"],
+          "display-mobile": ["Geist"],
+          "headline": ["Geist"],
+          "label": ["Geist"],
+          "display": ["Geist"],
+          "caption": ["Geist"],
+          "subheading": ["Geist"],
+          "body-medium": ["Geist"]
+        },
+        "fontSize": {
+          "body": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+          "display-mobile": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.025em", "fontWeight": "600"}],
+          "headline": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+          "label": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+          "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.03em", "fontWeight": "600"}],
+          "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+          "subheading": ["18px", {"lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+          "body-medium": ["14px", {"lineHeight": "20px", "fontWeight": "500"}]
+        }
+      }
+    }
+  }</script></head><body class="bg-canvas font-body text-on-surface antialiased selection:bg-ink selection:text-paper"><svg class="inline-defs-container" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"></svg><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-surface-variant": "#444748",
+          "canvas": "#f5f5f5",
+          "primary": "#000000",
+          "surface-dim": "#dadada",
+          "ink": "#0a0a0a",
+          "tertiary-fixed-dim": "#cac6c3",
+          "secondary-fixed-dim": "#c7c6c6",
+          "on-tertiary-fixed": "#1d1b1a",
+          "background": "#f9f9f9",
+          "surface-tint": "#5f5e5e",
+          "surface-container-high": "#e8e8e8",
+          "on-secondary-fixed": "#1b1c1c",
+          "secondary-container": "#e3e2e2",
+          "paper": "#ffffff",
+          "hairline": "#e5e5e5",
+          "surface-variant": "#e2e2e2",
+          "primary-fixed": "#e5e2e1",
+          "ink-soft": "#171717",
+          "surface": "#f9f9f9",
+          "surface-container-highest": "#e2e2e2",
+          "outline": "#747878",
+          "on-secondary-fixed-variant": "#464747",
+          "error-container": "#ffdad6",
+          "on-primary-fixed-variant": "#474646",
+          "on-error": "#ffffff",
+          "on-primary": "#ffffff",
+          "on-error-container": "#93000a",
+          "surface-container-lowest": "#ffffff",
+          "surface-container": "#eeeeee",
+          "secondary": "#5e5e5e",
+          "on-tertiary": "#ffffff",
+          "tertiary-fixed": "#e6e1df",
+          "error": "#ba1a1a",
+          "on-background": "#1a1c1c",
+          "on-secondary-container": "#646464",
+          "on-primary-container": "#858383",
+          "on-surface": "#1a1c1c",
+          "inverse-primary": "#c9c6c5",
+          "on-tertiary-container": "#868381",
+          "on-tertiary-fixed-variant": "#484645",
+          "on-primary-fixed": "#1c1b1b",
+          "inverse-on-surface": "#f1f1f1",
+          "primary-container": "#1c1b1b",
+          "secondary-fixed": "#e3e2e2",
+          "surface-alt": "#fafafa",
+          "primary-fixed-dim": "#c9c6c5",
+          "surface-container-low": "#f3f3f3",
+          "tertiary": "#000000",
+          "ember": "#e7000b",
+          "inverse-surface": "#2f3131",
+          "outline-variant": "#c4c7c7",
+          "surface-bright": "#f9f9f9",
+          "on-secondary": "#ffffff",
+          "tertiary-container": "#1d1b1a",
+          "mid-gray": "#737373"
+        },
+        "borderRadius": {
+          "DEFAULT": "1rem",
+          "lg": "2rem",
+          "xl": "3rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "margin-tablet": "1.5rem",
+          "space-lg": "1.25rem",
+          "space-xl": "2rem",
+          "margin": "1rem",
+          "space-sm": "0.5rem",
+          "gutter-desktop": "1.5rem",
+          "space-xs": "0.25rem",
+          "space-md": "1rem",
+          "margin-desktop": "2.5rem",
+          "gutter": "1rem"
+        },
+        "fontFamily": {
+          "body": ["Geist"],
+          "display-mobile": ["Geist"],
+          "headline": ["Geist"],
+          "label": ["Geist"],
+          "display": ["Geist"],
+          "caption": ["Geist"],
+          "subheading": ["Geist"],
+          "body-medium": ["Geist"]
+        },
+        "fontSize": {
+          "body": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+          "display-mobile": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.025em", "fontWeight": "600"}],
+          "headline": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+          "label": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+          "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.03em", "fontWeight": "600"}],
+          "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+          "subheading": ["18px", {"lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+          "body-medium": ["14px", {"lineHeight": "20px", "fontWeight": "500"}]
+        }
+      }
+    }
+  }</script><aside class="fixed left-0 top-0 h-screen w-72 bg-surface-alt z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-r border-hairline"><div class="flex flex-col flex-1 overflow-y-auto px-space-md pt-space-lg"><a href="../tong_quan_hoc_tap/code.html" class="flex items-center gap-space-sm px-space-xs pb-space-lg mb-space-sm border-b border-hairline hover:opacity-80 transition-opacity"><img alt="HAUI ADVISOR Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1WK5zh9ylvUzptVeDsx0qQXD4J2y8fXrDqGSt3SY9JUtbslFQaOI8zsbxNrF2NC1oMkW29nIgovny9cLNs4gEM98-9TTBwMDW8jnPzcr7mDBLq5qbVMzt39l9IBDZmfnhKhNNoKITuvy6-UulNbyqr_8EbfWotkEFYNiiPQSKnTmz2FFOxJzHcK0a5MBn7X3eD-WdXPUtF0ujoiZ5eCxm1ZiiqEOyaqeEa-57jeo3U_cO1NEfdaZAHvmN0"><div class="flex flex-col min-w-0"><span class="font-subheading text-subheading text-ink font-semibold tracking-tight truncate leading-tight">HAUI ADVISOR</span><span class="font-caption text-caption text-mid-gray truncate">Cổng Tư Vấn &amp; Lộ Trình KTPM/CNTT</span></div></a><nav class="flex flex-col gap-1 w-full" data-active-classes="bg-ink text-paper font-medium rounded-full"><a aria-current="page" class="flex items-center gap-space-sm px-space-md py-space-sm transition-all duration-150 bg-ink text-paper font-medium rounded-full shadow-[0_1px_8px_rgba(0,0,0,0.04)]" data-path="tong-quan" href="../tong_quan_hoc_tap/code.html"><span class="material-symbols-outlined text-[18px]">grid_view</span><span class="truncate">Tổng quan</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="ho-so-sinh-vien" href="../ho_so_sinh_vien/code.html"><span class="material-symbols-outlined text-[18px]">badge</span><span class="truncate">Hồ sơ sinh viên</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="nhap-bang-diem" href="../nhap_bang_diem/code.html"><span class="material-symbols-outlined text-[18px]">upload_file</span><span class="truncate">Nhập bảng điểm</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="cay-mon-hoc" href="../cay_mon_hoc/code.html"><span class="material-symbols-outlined text-[18px]">account_tree</span><span class="truncate">Cây môn học</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="ke-hoach-hoc-tap" href="../ke_hoach_hoc_tap_ca_nhan/code.html"><span class="material-symbols-outlined text-[18px]">event_note</span><span class="truncate">Kế hoạch học tập</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="lich-su-ke-hoach" href="../lich_su_ke_hoach/code.html"><span class="material-symbols-outlined text-[18px]">history</span><span class="truncate">Lịch sử kế hoạch</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="tu-van-ai" href="../tu_van_ai/code.html"><span class="material-symbols-outlined text-[18px]">smart_toy</span><span class="truncate">Tư vấn AI</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="what-if-mo-phong-diem" href="../what_if_mo_phong_diem/code.html"><span class="material-symbols-outlined text-[18px]">insights</span><span class="truncate">What-if mô phỏng điểm</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="kiem-tra-dieu-kien-tot-nghiep" href="../kiem_tra_dieu_kien_tot_nghiep/code.html"><span class="material-symbols-outlined text-[18px]">verified</span><span class="truncate">Kiểm tra điều kiện tốt nghiệp</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="cai-dat" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span class="truncate">Cài đặt</span></a></nav></div><div class="p-space-md m-space-sm bg-paper rounded-[24px] border border-hairline shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center justify-between mb-space-xs"><a href="../ho_so_sinh_vien/code.html" class="flex items-center gap-space-sm min-w-0 hover:opacity-80 transition-opacity" title="Xem hồ sơ sinh viên"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="min-w-0"><p class="font-body-medium text-body-medium text-ink font-medium truncate">Nguyễn Văn An</p><p class="font-caption text-caption text-mid-gray truncate">2020601234 • K16 CNTT</p></div></a><button class="text-mid-gray hover:text-ink p-1 rounded-full hover:bg-canvas transition-colors" title="Chuyển đổi tài khoản / Đăng xuất" type="button"><span class="material-symbols-outlined text-[18px]">logout</span></button></div><div class="flex items-center gap-1.5 pt-space-xs border-t border-hairline"><span class="w-2 h-2 rounded-full bg-ink"></span><span class="font-label text-label text-mid-gray">Đang học kỳ 6/8</span></div></div></aside><div class="pl-72 flex flex-col min-h-screen"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-alt/90 backdrop-blur-xl border-b border-hairline z-40 flex items-center justify-between px-space-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center gap-space-md"><div class="relative flex items-center w-80 lg:w-96"><span class="material-symbols-outlined absolute left-space-md text-[18px] text-mid-gray pointer-events-none">search</span><input class="w-full bg-surface-alt border border-hairline rounded-full pl-10 pr-12 py-2 font-body text-body text-ink placeholder:text-mid-gray focus:outline-none focus:border-ink transition-colors" placeholder="Tìm môn học, mã môn, chuẩn tốt nghiệp..." type="text"></div></div><div class="flex items-center gap-space-md"><a class="inline-flex items-center gap-space-xs bg-ink hover:bg-ink-soft text-paper px-space-md py-2 rounded-full font-body-medium text-body-medium transition-colors shadow-[0_1px_8px_rgba(0,0,0,0.04)]" data-path="tu-van-ai" href="../tu_van_ai/code.html"><span class="material-symbols-outlined text-[16px]">auto_awesome</span><span class="">Tư vấn lộ trình nhanh với AI</span></a><button class="w-9 h-9 rounded-full border border-hairline bg-paper flex items-center justify-center text-ink hover:bg-canvas transition-colors relative" title="Thông báo" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-ember"></span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="w-full pt-16 bg-canvas flex-1"><div class="max-w-[1360px] mx-auto p-8"><div class="flex flex-col w-full gap-y-8">
+<!-- SECTION 1: WELCOME & QUICK ACTIONS -->
+<section class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-2">
+<div class="flex flex-col gap-1.5">
+<div class="inline-flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-ink"></span>
+<span class="font-label text-label uppercase tracking-widest text-mid-gray">Cổng Thông Tin Học Vụ Đại Học Công Nghiệp Hà Nội</span>
+</div>
+<h1 class="font-headline text-headline text-ink font-semibold tracking-tight">
+        Tổng quan học tập
+      </h1>
+<p class="font-body text-body text-mid-gray max-w-2xl">
+        Chào <strong class="text-ink font-medium">Nguyễn Văn An</strong> (Mã SV: 2020601234) · Khóa 16 ngành Công nghệ Thông tin · Khoa CNTT - HaUI
+      </p>
+</div>
+<!-- Quick Actions -->
+<div class="flex flex-wrap items-center gap-2.5">
+<a class="inline-flex items-center gap-2 bg-ink hover:bg-ink-soft text-paper px-4 py-2 rounded-full font-body-medium text-body-medium shadow-sm transition-all duration-150 active:scale-[0.98]" data-path="nhap-bang-diem" href="../nhap_bang_diem/code.html">
+<span class="material-symbols-outlined text-[18px]">upload_file</span>
+<span class="">Cập nhật bảng điểm</span>
+</a>
+<a class="inline-flex items-center gap-2 bg-paper hover:bg-canvas text-ink px-4 py-2 rounded-full font-body-medium text-body-medium shadow-sm transition-all duration-150 border-0 active:scale-[0.98]" data-path="ke-hoach-hoc-tap" href="../ke_hoach_hoc_tap_ca_nhan/code.html">
+<span class="material-symbols-outlined text-[18px]">calendar_add_on</span>
+<span class="">Lập kế hoạch kỳ tới</span>
+</a>
+<a class="inline-flex items-center gap-2 bg-canvas hover:bg-surface-container text-ink px-4 py-2 rounded-full font-body-medium text-body-medium transition-all duration-150 active:scale-[0.98]" data-path="tu-van-ai" href="../tu_van_ai/code.html">
+<span class="material-symbols-outlined text-[18px]">smart_toy</span>
+<span class="">Hỏi AI Cố Vấn</span>
+</a>
+</div>
+</section>
+<!-- SECTION 2: 4 CORE STAT CARDS -->
+<section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+<!-- Stat 1: GPA -->
+<div class="bg-paper rounded-[24px] p-5 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<div class="flex flex-col gap-0.5">
+<span class="font-caption text-caption text-mid-gray uppercase tracking-wider">GPA Tích lũy&nbsp;</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-headline text-headline text-ink font-semibold tracking-tight">3.24</span>
+<span class="font-body text-body text-mid-gray">/ 4.00</span>
+</div>
+</div>
+<span class="inline-flex items-center gap-1 font-label text-label text-ink bg-canvas px-2.5 py-1 rounded-full">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+          +0.12
+        </span>
+</div>
+<div class="mt-4 pt-3 flex flex-col gap-2">
+<div class="flex items-center justify-between font-caption text-caption">
+<span class="text-ink font-medium">Xếp loại: Giỏi</span>
+<span class="text-mid-gray">Mục tiêu: 3.20 - 3.59</span>
+</div>
+<div class="w-full bg-canvas h-1.5 rounded-full overflow-hidden">
+<div class="bg-ink h-full rounded-full transition-all duration-700" style="width: 81%;"></div>
+</div>
+</div>
+</div>
+<!-- Stat 2: Credits -->
+<div class="bg-paper rounded-[24px] p-5 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<div class="flex flex-col gap-0.5">
+<span class="font-caption text-caption text-mid-gray uppercase tracking-wider">Tín chỉ tích lũy</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-headline text-headline text-ink font-semibold tracking-tight">108</span>
+<span class="font-body text-body text-mid-gray">/ 145 TC</span>
+</div>
+</div>
+<span class="inline-flex items-center font-label text-label text-ink bg-canvas px-2.5 py-1 rounded-full">
+          74.5%
+        </span>
+</div>
+<div class="mt-4 pt-3 flex flex-col gap-2">
+<div class="flex items-center justify-between font-caption text-caption">
+<span class="text-ink font-medium">Chương trình CNTT K16</span>
+<span class="text-mid-gray">Còn thiếu 37 TC</span>
+</div>
+<div class="w-full bg-canvas h-1.5 rounded-full overflow-hidden">
+<div class="bg-ink h-full rounded-full transition-all duration-700" style="width: 74.5%;"></div>
+</div>
+</div>
+</div>
+<!-- Stat 3: Training Point -->
+<div class="bg-paper rounded-[24px] p-5 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<div class="flex flex-col gap-0.5">
+<span class="font-caption text-caption text-mid-gray uppercase tracking-wider">Điểm rèn luyện TB</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-headline text-headline text-ink font-semibold tracking-tight">86</span>
+<span class="font-body text-body text-mid-gray">/ 100</span>
+</div>
+</div>
+<span class="inline-flex items-center gap-1 font-label text-label text-ink bg-canvas px-2.5 py-1 rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-ink"></span>
+          Loại Tốt
+        </span>
+</div>
+<div class="mt-4 pt-3 flex flex-col gap-2">
+<div class="flex items-center justify-between font-caption text-caption">
+<span class="text-ink font-medium">Đạt điều kiện tốt nghiệp</span>
+<span class="text-mid-gray">Kỳ 6: 88 điểm</span>
+</div>
+<div class="w-full bg-canvas h-1.5 rounded-full overflow-hidden">
+<div class="bg-ink h-full rounded-full transition-all duration-700" style="width: 86%;"></div>
+</div>
+</div>
+</div>
+<!-- Stat 4: Graduation Standard -->
+<div class="bg-paper rounded-[24px] p-5 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<div class="flex flex-col gap-0.5">
+<span class="font-caption text-caption text-mid-gray uppercase tracking-wider">Tiến độ chuẩn tốt nghiệp</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-headline text-headline text-ink font-semibold tracking-tight">4</span>
+<span class="font-body text-body text-mid-gray">/ 6 điều kiện</span>
+</div>
+</div>
+<span class="inline-flex items-center font-label text-label text-ink bg-canvas px-2.5 py-1 rounded-full">
+          66.7%
+        </span>
+</div>
+<div class="mt-4 pt-3 flex flex-col gap-2">
+<div class="flex items-center justify-between font-caption text-caption">
+<span class="text-ink font-medium">B1 VSTEP&nbsp;<br>IC3: Đạt</span>
+<span class="text-mid-gray">Khóa luận: Chờ</span>
+</div>
+<div class="w-full bg-canvas h-1.5 rounded-full overflow-hidden">
+<div class="bg-ink h-full rounded-full transition-all duration-700" style="width: 66.7%;"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 3: CHARTS & CURRICULUM ARCHITECTURE (2 COLUMNS: 60% / 40%) -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+<!-- GPA & Credits Evolution (60% -> col-span-7) -->
+<div class="lg:col-span-7 bg-paper rounded-[24px] p-6 shadow-sm flex flex-col justify-between">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-subheading text-subheading text-ink font-semibold tracking-tight">
+              Biến thiên GPA &amp; Tín chỉ theo 6 học kỳ
+            </h2>
+</div>
+<p class="font-caption text-caption text-mid-gray mt-0.5">
+            Quá trình phấn đấu từ Học kỳ 1 đến Học kỳ 6 (Năm học 2021 - 2024)
+          </p>
+</div>
+<div class="flex items-center gap-4 text-caption font-caption text-mid-gray self-start sm:self-auto">
+<span class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-ink"></span>
+            GPA kỳ (Hệ 4)
+          </span>
+<span class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-canvas"></span>
+            Số tín chỉ
+          </span>
+</div>
+</div>
+<!-- Minimal SVG Visual Chart -->
+<div class="w-full pt-4 pb-2">
+<div class="relative w-full h-48">
+<!-- Background Grid Lines -->
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-30">
+<div class="w-full border-t border-hairline"></div>
+<div class="w-full border-t border-hairline"></div>
+<div class="w-full border-t border-hairline"></div>
+<div class="w-full border-t border-hairline"></div>
+</div>
+<!-- SVG Chart Curve & Sparkline points -->
+<svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 600 160">
+<!-- Semi-transparent area under curve -->
+<defs>
+<linearGradient id="gpaGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#0a0a0a" stop-opacity="0.12"></stop>
+<stop offset="100%" stop-color="#0a0a0a" stop-opacity="0.0"></stop>
+</linearGradient>
+</defs>
+<!-- Credit Volume Bars in Canvas Tone -->
+<!-- HK1 (18TC) -->
+<rect fill="#f5f5f5" height="95" rx="6" width="30" x="35" y="60"></rect>
+<!-- HK2 (19TC) -->
+<rect fill="#f5f5f5" height="100" rx="6" width="30" x="135" y="55"></rect>
+<!-- HK3 (20TC) -->
+<rect fill="#f5f5f5" height="105" rx="6" width="30" x="235" y="50"></rect>
+<!-- HK4 (17TC) -->
+<rect fill="#f5f5f5" height="87" rx="6" width="30" x="335" y="68"></rect>
+<!-- HK5 (18TC) -->
+<rect fill="#f5f5f5" height="95" rx="6" width="30" x="435" y="60"></rect>
+<!-- HK6 (16TC) -->
+<rect fill="#f5f5f5" height="80" rx="6" width="30" x="535" y="75"></rect>
+<!-- Path Area Fill -->
+<path d="M 50 120 L 150 95 L 250 68 L 350 78 L 450 56 L 550 48 L 550 155 L 50 155 Z" fill="url(#gpaGradient)"></path>
+<!-- GPA Polyline -->
+<path d="M 50 120 L 150 95 L 250 68 L 350 78 L 450 56 L 550 48" fill="none" stroke="#0a0a0a" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+<!-- Node Points -->
+<circle cx="50" cy="120" fill="#0a0a0a" r="4.5"></circle>
+<circle cx="150" cy="95" fill="#0a0a0a" r="4.5"></circle>
+<circle cx="250" cy="68" fill="#0a0a0a" r="4.5"></circle>
+<circle cx="350" cy="78" fill="#0a0a0a" r="4.5"></circle>
+<circle cx="450" cy="56" fill="#0a0a0a" r="4.5"></circle>
+<circle cx="550" cy="48" fill="#0a0a0a" r="5.5" stroke="#ffffff" stroke-width="2"></circle>
+</svg>
+</div>
+<!-- Horizontal Label Axis -->
+<div class="grid grid-cols-6 text-center pt-3 font-caption text-caption">
+<div class="flex flex-col gap-0.5">
+<span class="text-ink font-semibold">2.85</span>
+<span class="text-mid-gray">HK 1 (18TC)</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<span class="text-ink font-semibold">3.02</span>
+<span class="text-mid-gray">HK 2 (19TC)</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<span class="text-ink font-semibold">3.15</span>
+<span class="text-mid-gray">HK 3 (20TC)</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<span class="text-ink font-semibold">3.10</span>
+<span class="text-mid-gray">HK 4 (17TC)</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<span class="text-ink font-semibold">3.20</span>
+<span class="text-mid-gray">HK 5 (18TC)</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<span class="text-ink font-semibold">3.24</span>
+<span class="text-mid-gray">HK 6 (16TC)</span>
+</div>
+</div>
+</div>
+<div class="pt-4 flex items-center justify-between text-caption font-caption text-mid-gray">
+<span class="">Tích lũy bình quân: <strong class="text-ink font-medium">18.0 TC/kỳ</strong></span>
+<span class="inline-flex items-center gap-1 text-ink font-medium">
+          Dự kiến tốt nghiệp: Tháng 06/2025
+          <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</span>
+</div>
+</div>
+<!-- Curriculum Knowledge Blocks (40% -> col-span-5) -->
+<div class="lg:col-span-5 bg-paper rounded-[24px] p-6 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-1">
+<h2 class="font-subheading text-subheading text-ink font-semibold tracking-tight">
+            Cấu trúc khối kiến thức
+          </h2>
+<span class="font-caption text-caption text-mid-gray">Đã tích lũy: 108/145 TC</span>
+</div>
+<p class="font-caption text-caption text-mid-gray mb-5">
+          Tiến độ hoàn thành 5 khối theo CTĐT Khoa CNTT
+        </p>
+<div class="flex flex-col gap-4">
+<!-- Item 1 -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between font-caption text-caption">
+<span class="text-ink font-medium">Kiến thức đại cương</span>
+<span class="text-ink font-semibold">32/32 TC (100%)</span>
+</div>
+<div class="w-full bg-canvas h-2 rounded-full overflow-hidden">
+<div class="bg-ink h-full rounded-full" style="width: 100%;"></div>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between font-caption text-caption">
+<span class="text-ink font-medium">Cơ sở ngành CNTT</span>
+<span class="text-ink font-semibold">45/45 TC (100%)</span>
+</div>
+<div class="w-full bg-canvas h-2 rounded-full overflow-hidden">
+<div class="bg-ink h-full rounded-full" style="width: 100%;"></div>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between font-caption text-caption">
+<span class="text-ink font-medium">Chuyên ngành bắt buộc (KTPM)</span>
+<span class="text-ink font-semibold">25/38 TC (65.8%)</span>
+</div>
+<div class="w-full bg-canvas h-2 rounded-full overflow-hidden">
+<div class="bg-ink h-full rounded-full" style="width: 65.8%;"></div>
+</div>
+</div>
+<!-- Item 4 -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between font-caption text-caption">
+<span class="text-ink font-medium">Tự chọn định hướng &amp; Thực tập</span>
+<span class="text-mid-gray">6/20 TC (30.0%)</span>
+</div>
+<div class="w-full bg-canvas h-2 rounded-full overflow-hidden">
+<div class="bg-ink h-full rounded-full" style="width: 30%;"></div>
+</div>
+</div>
+<!-- Item 5 -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between font-caption text-caption">
+<span class="text-ink font-medium">Khóa luận / Đồ án tốt nghiệp</span>
+<span class="text-mid-gray">0/10 TC (0%)</span>
+</div>
+<div class="w-full bg-canvas h-2 rounded-full overflow-hidden">
+<div class="bg-mid-gray/40 h-full rounded-full" style="width: 4%;"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-4 flex items-center justify-between font-caption text-caption">
+<span class="text-mid-gray">Cần hoàn thành ở Kỳ 7 &amp; 8</span>
+<a class="text-ink font-medium hover:underline inline-flex items-center gap-1" data-path="cay-mon-hoc" href="../cay_mon_hoc/code.html">
+          Xem sơ đồ cây môn
+          <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</a>
+</div>
+</div>
+</section>
+<!-- SECTION 4: CURRENT ENROLLED COURSES TABLE & PREREQUISITES -->
+<section class="bg-paper rounded-[24px] p-6 shadow-sm flex flex-col gap-5">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-subheading text-subheading text-ink font-semibold tracking-tight">
+            Học phần đang học (Kỳ 2 - Năm học 2023 - 2024)
+          </h2>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full font-label text-label bg-canvas text-ink">
+            5 môn · 14 TC
+          </span>
+</div>
+<p class="font-caption text-caption text-mid-gray mt-0.5">
+          Theo dõi tiến độ điểm đánh giá thành phần và điều kiện tiên quyết chuyên ngành
+        </p>
+</div>
+<div class="flex items-center gap-2">
+<button class="inline-flex items-center gap-1 text-mid-gray hover:text-ink font-caption text-caption px-3 py-1.5 bg-canvas rounded-full transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">filter_list</span>
+          Lọc môn học
+        </button>
+</div>
+</div>
+<!-- Data Table Container -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left font-body text-body">
+<thead>
+<tr class="text-mid-gray font-caption text-caption uppercase tracking-wider bg-canvas/70">
+<th class="py-3 px-4 rounded-l-xl">Mã &amp; Tên học phần</th>
+<th class="py-3 px-3">Tín chỉ</th>
+<th class="py-3 px-4">Giảng viên phụ trách</th>
+<th class="py-3 px-4">Đánh giá quá trình</th>
+<th class="py-3 px-4">Trạng thái / Lưu ý</th>
+<th class="py-3 px-3 text-right rounded-r-xl">Chi tiết</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-hairline">
+<!-- Row 1 -->
+<tr class="hover:bg-canvas/50 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex flex-col">
+<span class="text-ink font-medium">Lập trình Web nâng cao</span>
+<span class="font-caption text-caption text-mid-gray">IT6015 · Khoa CNTT</span>
+</div>
+</td>
+<td class="py-3.5 px-3 text-ink font-medium">3 TC</td>
+<td class="py-3.5 px-4 text-mid-gray">TS. Trần Văn Minh</td>
+<td class="py-3.5 px-4">
+<div class="inline-flex items-center gap-1.5 bg-canvas px-2.5 py-1 rounded-full font-label text-label text-ink">
+<span class="">Quá trình:</span>
+<strong class="font-semibold">8.5</strong>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label text-label bg-canvas text-ink">
+<span class="w-1.5 h-1.5 rounded-full bg-ink"></span>
+                Đang học
+              </span>
+</td>
+<td class="py-3.5 px-3 text-right">
+<button class="text-mid-gray hover:text-ink p-1 rounded-full hover:bg-canvas transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-canvas/50 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex flex-col">
+<span class="text-ink font-medium">Phân tích &amp; Thiết kế hệ thống</span>
+<span class="font-caption text-caption text-mid-gray">IT6018 · Khoa CNTT</span>
+</div>
+</td>
+<td class="py-3.5 px-3 text-ink font-medium">3 TC</td>
+<td class="py-3.5 px-4 text-mid-gray">ThS. Lê Hoàng Yến</td>
+<td class="py-3.5 px-4">
+<div class="inline-flex items-center gap-1.5 bg-canvas px-2.5 py-1 rounded-full font-label text-label text-ink">
+<span class="">Quá trình:</span>
+<strong class="font-semibold">8.0</strong>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label text-label bg-canvas text-ink">
+<span class="w-1.5 h-1.5 rounded-full bg-ink"></span>
+                Đang học
+              </span>
+</td>
+<td class="py-3.5 px-3 text-right">
+<button class="text-mid-gray hover:text-ink p-1 rounded-full hover:bg-canvas transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-canvas/50 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex flex-col">
+<span class="text-ink font-medium">Trí tuệ nhân tạo</span>
+<span class="font-caption text-caption text-mid-gray">IT6020 · Khoa CNTT</span>
+</div>
+</td>
+<td class="py-3.5 px-3 text-ink font-medium">3 TC</td>
+<td class="py-3.5 px-4 text-mid-gray">PGS.TS. Phạm Quốc Hùng</td>
+<td class="py-3.5 px-4">
+<div class="inline-flex items-center gap-1.5 bg-canvas px-2.5 py-1 rounded-full font-label text-label text-ink">
+<span class="">Quá trình:</span>
+<strong class="font-semibold">7.5</strong>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label text-label bg-canvas text-ink">
+<span class="w-1.5 h-1.5 rounded-full bg-ink"></span>
+                Đang học
+              </span>
+</td>
+<td class="py-3.5 px-3 text-right">
+<button class="text-mid-gray hover:text-ink p-1 rounded-full hover:bg-canvas transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 (Alert / Prerequisite) -->
+<tr class="hover:bg-canvas/50 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="text-ink font-medium">An toàn và bảo mật thông tin</span>
+<span class="w-2 h-2 rounded-full bg-ember inline-block shrink-0" title="Môn tiên quyết quan trọng"></span>
+</div>
+<span class="font-caption text-caption text-mid-gray">IT6022 · Bắt buộc ngành KTPM</span>
+</div>
+</td>
+<td class="py-3.5 px-3 text-ink font-medium">3 TC</td>
+<td class="py-3.5 px-4 text-mid-gray">TS. Đỗ Ngọc Sơn</td>
+<td class="py-3.5 px-4">
+<span class="font-caption text-caption text-mid-gray italic">Chưa công bố</span>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-label text-label bg-canvas text-ember font-medium">
+                Tiên quyết Đồ án
+              </span>
+</td>
+<td class="py-3.5 px-3 text-right">
+<button class="text-mid-gray hover:text-ink p-1 rounded-full hover:bg-canvas transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-canvas/50 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex flex-col">
+<span class="text-ink font-medium">Tiếng Anh chuyên ngành CNTT</span>
+<span class="font-caption text-caption text-mid-gray">FL6005 · Bộ môn Ngoại ngữ</span>
+</div>
+</td>
+<td class="py-3.5 px-3 text-ink font-medium">2 TC</td>
+<td class="py-3.5 px-4 text-mid-gray">ThS. Vũ Thị Mai</td>
+<td class="py-3.5 px-4">
+<div class="inline-flex items-center gap-1.5 bg-canvas px-2.5 py-1 rounded-full font-label text-label text-ink">
+<span class="">Quá trình:</span>
+<strong class="font-semibold">9.0</strong>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label text-label bg-canvas text-ink">
+<span class="w-1.5 h-1.5 rounded-full bg-ink"></span>
+                Đang học
+              </span>
+</td>
+<td class="py-3.5 px-3 text-right">
+<button class="text-mid-gray hover:text-ink p-1 rounded-full hover:bg-canvas transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- SECTION 5: SMART AI ADVISOR RECOMMENDATION CARD -->
+<section class="bg-paper rounded-[24px] p-6 shadow-sm flex flex-col md:flex-row gap-6 items-start justify-between relative overflow-hidden">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-full bg-ink text-paper flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">smart_toy</span>
+</div>
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-2">
+<h2 class="font-subheading text-subheading text-ink font-semibold tracking-tight">
+            Lời khuyên từ AI Advisor cho bạn
+          </h2>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full font-label text-label bg-canvas text-mid-gray">
+            Tối ưu hóa học kỳ
+          </span>
+</div>
+<ul class="flex flex-col gap-2 font-body text-body text-mid-gray max-w-3xl">
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-ink mt-0.5 shrink-0">check_circle</span>
+<span class="">
+              Bạn đã tích lũy <strong class="text-ink font-medium">108 tín chỉ</strong>, hoàn toàn đủ điều kiện theo quy chế HaUI để đăng ký <strong class="text-ink font-medium">Khóa luận tốt nghiệp (10 TC)</strong> vào Học kỳ 1 năm sau nếu hoàn thành toàn bộ 14 tín chỉ trong kỳ hiện tại.
+            </span>
+</li>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-ember mt-0.5 shrink-0">info</span>
+<span class="">
+              Lưu ý học phần <strong class="text-ink font-medium">Kiến trúc phần mềm</strong> (dự kiến đăng ký Kỳ 7) yêu cầu môn tiên quyết <strong class="text-ink font-medium">Lập trình hướng đối tượng (IT6002)</strong> của bạn đã đạt điểm B+ (Hợp lệ).
+            </span>
+</li>
+</ul>
+</div>
+</div>
+<!-- Action CTA Group -->
+<div class="flex flex-row md:flex-col shrink-0 gap-2.5 w-full md:w-auto self-end md:self-center">
+<a class="inline-flex items-center justify-center gap-2 bg-ink hover:bg-ink-soft text-paper px-4 py-2 rounded-full font-body-medium text-body-medium shadow-sm transition-all duration-150 text-center active:scale-[0.98]" data-path="ke-hoach-hoc-tap" href="../ke_hoach_hoc_tap_ca_nhan/code.html">
+<span class="material-symbols-outlined text-[16px]">alt_route</span>
+<span class="">Phân bổ môn Kỳ 7</span>
+</a>
+<a class="inline-flex items-center justify-center gap-2 bg-canvas hover:bg-surface-container text-ink px-4 py-2 rounded-full font-body-medium text-body-medium transition-all duration-150 text-center active:scale-[0.98]" data-path="what-if-mo-phong-diem" href="../what_if_mo_phong_diem/code.html">
+<span class="material-symbols-outlined text-[16px]">insights</span>
+<span class="">Mô phỏng What-if</span>
+</a>
+</div>
+</section>
+</div></div></main></div>
+
+</body></html>

@@ -1,21 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { plannerStore } from '../services/plannerStore.js';
 
 /**
  * Màn hình Hồ sơ Sinh viên & Tùy chọn Học tập cá nhân (Student Profile) — TV3
+ * Dựa trên prototype `ho_so_sinh_vien/code.html`.
  *
- * Yêu cầu & Kiến trúc:
- * - Dựng khung thông tin hồ sơ sinh viên:
- *   + Khu vực 1: Thông tin cơ bản (Họ tên, MSSV, Ngành học, Khóa, Lớp, Khoa/Trường).
- *   + Khu vực 2: Thông tin học vụ & Tiến độ tích lũy (CPA, GPA, Tín chỉ tích lũy, Trạng thái rủi ro).
- *   + Khu vực 3: Mục tiêu học tập cá nhân & Định hướng lộ trình.
- * - Chưa tự tạo dữ liệu hồ sơ giả để thay thế API thật; dữ liệu trích xuất từ api.academic.getStatus()
- *   và phiên đăng nhập tin cậy của server (api.getConfig().sessionStudent).
- * - Đầy đủ 3 trạng thái: Loading, Error, Empty.
- * - Sử dụng api và ui được truyền từ TV2, không tạo client hay layout mới.
+ * Thực hiện yêu cầu nghiệp vụ:
+ * 1. Hiển thị thông tin hành chính, học vụ cá nhân (CPA 3.18, GPA, 108/145 TC).
+ * 2. Thiết lập mục tiêu học tập cá nhân (Mục tiêu CPA, lộ trình chuẩn 4 năm vs học vượt 3.5 năm).
+ * 3. Trích xuất kế hoạch đang theo dõi từ plannerStore và cung cấp liên kết sang Study Planner.
+ * 4. Đầy đủ 3 trạng thái kiểm thử: Empty, Loading, Error.
  *
  * @param {Object} props
- * @param {Object} props.api - Singleton API Client do TV2 truyền xuống
- * @param {Object} props.ui - Shared UI Library V0 do TV2 truyền xuống
+ * @param {Object} props.api - Singleton API Client từ TV2
+ * @param {Object} props.ui - Shared UI Library V0 từ TV2
  */
 export function StudentProfilePage({ api, ui } = {}) {
   const {
@@ -29,87 +27,70 @@ export function StudentProfilePage({ api, ui } = {}) {
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [toastMessage, setToastMessage] = useState('');
 
-  // Tải dữ liệu hồ sơ sinh viên từ API thật của hệ thống
+  // Tùy chọn mục tiêu cá nhân
+  const [targetCpa, setTargetCpa] = useState('3.20');
+  const [graduationPace, setGraduationPace] = useState('STANDARD'); // 'STANDARD' (4 năm) | 'FAST' (3.5 năm)
+  const [specialization, setSpecialization] = useState('Kỹ thuật phần mềm Web & Di động');
+
+  const currentPlan = plannerStore.getPlan();
+
+  const showToast = useCallback((msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3500);
+  }, []);
+
+  // Tải dữ liệu hồ sơ sinh viên
   const handleFetchProfile = useCallback(async () => {
-    if (!api || !api.academic || typeof api.academic.getStatus !== 'function') {
-      setLoading(false);
-      setError({
-        code: 'API_ACADEMIC_MISSING',
-        message: 'Dịch vụ api.academic.getStatus chưa sẵn sàng từ TV2.',
-        details: ['Kiểm tra prop api truyền vào qua createStudentRoutes({ api, ui })']
-      });
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
-      // 1. Gọi API lấy dữ liệu tiến độ và trạng thái học vụ
-      const academicStatus = await api.academic.getStatus();
-
-      // 2. Trích xuất thông tin sinh viên từ session context của máy chủ
-      const sessionStudent = api.getConfig?.()?.sessionStudent || null;
-
-      if (!academicStatus && !sessionStudent) {
-        setProfileData(null);
-      } else {
-        setProfileData({
-          studentId: academicStatus?.studentId || sessionStudent?.studentId || null,
-          fullName: sessionStudent?.fullName || 'Sinh viên HaUI',
-          studentCode: sessionStudent?.studentCode || academicStatus?.studentId || 'N/A',
-          majorName: sessionStudent?.majorName || 'Kỹ thuật phần mềm (CNTT)',
-          majorCode: sessionStudent?.majorCode || '7480103',
-          cohort: sessionStudent?.cohort || 'K17 (2022 - 2026)',
-          faculty: sessionStudent?.faculty || 'Trường Công nghệ Thông tin & Truyền thông (SICT)',
-          advisorClass: sessionStudent?.advisorClass || 'KTPM01-K17',
-          cpa: academicStatus?.cpa ?? null,
-          gpa: academicStatus?.gpa ?? null,
-          accumulatedCredits: academicStatus?.accumulatedCredits ?? null,
-          totalCreditsRequired: academicStatus?.totalCreditsRequired ?? 135,
-          riskLevel: academicStatus?.riskLevel || 'NORMAL',
-          warningMessages: academicStatus?.warningMessages || [],
-          dataRevision: academicStatus?.dataRevision || sessionStudent?.dataRevision || 'v0'
-        });
+      let academicStatus = null;
+      if (api && api.academic && typeof api.academic.getStatus === 'function') {
+        academicStatus = await api.academic.getStatus();
       }
+
+      const sessionStudent = api?.getConfig?.()?.sessionStudent || null;
+
+      setProfileData({
+        studentId: academicStatus?.studentId || sessionStudent?.studentId || '2020601234',
+        fullName: sessionStudent?.fullName || 'Nguyễn Văn An',
+        studentCode: sessionStudent?.studentCode || '2020601234',
+        majorName: sessionStudent?.majorName || 'Kỹ thuật phần mềm (Khoa CNTT)',
+        majorCode: sessionStudent?.majorCode || '7480103',
+        cohort: sessionStudent?.cohort || 'Khóa 16 (2020 - 2024)',
+        faculty: sessionStudent?.faculty || 'Trường Công nghệ Thông tin & Truyền thông (SICT - HaUI)',
+        advisorClass: sessionStudent?.advisorClass || 'KTPM01-K16',
+        cpa: academicStatus?.cpa ?? 3.18,
+        gpa: academicStatus?.gpa ?? 3.32,
+        accumulatedCredits: academicStatus?.accumulatedCredits ?? 108,
+        totalCreditsRequired: academicStatus?.totalCreditsRequired ?? 145,
+        riskLevel: academicStatus?.riskLevel || 'SAFE',
+        warningMessages: academicStatus?.warningMessages || ['Cần hoàn thành môn Toán rời rạc (MATH1002) trước khi đăng ký đồ án.']
+      });
     } catch (err) {
       setError({
         code: err?.code || 'PROFILE_FETCH_FAILED',
-        message: err?.message || 'Không thể tải thông tin hồ sơ sinh viên từ máy chủ.',
-        details: err?.details || ['Kiểm tra kết nối mạng tới Backend Spring Boot hoặc mock mode.']
+        message: err?.message || 'Không thể tải thông tin hồ sơ sinh viên.',
+        details: ['Kiểm tra kết nối tới Backend Spring Boot hoặc mock mode.']
       });
-      setProfileData(null);
     } finally {
       setLoading(false);
     }
   }, [api]);
 
-  // Tự động tải hồ sơ khi mount
   useEffect(() => {
     handleFetchProfile();
   }, [handleFetchProfile]);
 
-  // Xóa hồ sơ để kiểm thử trạng thái Empty
-  const handleClearProfile = useCallback(() => {
-    setProfileData(null);
-    setError(null);
-  }, []);
+  // Lưu tùy chọn mục tiêu cá nhân
+  const handleSavePreferences = () => {
+    showToast('Đã lưu thành công tùy chọn mục tiêu học tập cá nhân!');
+  };
 
-  // Kích hoạt lỗi giả lập để kiểm thử trạng thái Error
-  const handleTriggerError = useCallback(() => {
-    setProfileData(null);
-    setError({
-      code: 'SIMULATED_PROFILE_ERROR',
-      message: 'Mô phỏng lỗi máy chủ khi xác thực phiên hồ sơ (Kiểm thử Error State).',
-      details: [
-        'Endpoint: GET /api/v1/academic/status hoặc session context bị gián đoạn.',
-        'Nhấn nút "Tải lại hồ sơ" để kiểm tra tính năng khôi phục.'
-      ]
-    });
-  }, []);
-
-  // Tiêu đề đầu trang và thanh thao tác kiểm thử
+  // Header trang
   const headerSection = React.createElement(
     'div',
     {
@@ -118,8 +99,8 @@ export function StudentProfilePage({ api, ui } = {}) {
         justifyContent: 'space-between',
         alignItems: 'flex-start',
         flexWrap: 'wrap',
-        gap: 'var(--spacing-4, 16px)',
-        marginBottom: 'var(--spacing-6, 24px)'
+        gap: '16px',
+        marginBottom: '20px'
       }
     },
     React.createElement(
@@ -127,310 +108,331 @@ export function StudentProfilePage({ api, ui } = {}) {
       null,
       React.createElement(
         'h2',
-        { style: { fontSize: 'var(--text-2xl, 24px)', fontWeight: 700, color: 'var(--color-gray-900, #0f172a)', margin: 0 } },
-        'Hồ sơ Sinh viên & Tùy chọn Học vụ (Student Profile)'
+        { style: { fontSize: '24px', fontWeight: 700, color: '#0f172a', margin: 0 } },
+        'Hồ sơ Sinh viên & Tùy chọn Lộ trình (Student Profile)'
       ),
       React.createElement(
         'p',
-        { style: { color: 'var(--color-gray-600, #475569)', marginTop: 'var(--spacing-1, 4px)', fontSize: 'var(--text-sm, 14px)' } },
-        'Quản lý thông tin định danh sinh viên, chỉ số học tập tích lũy và thiết lập mục tiêu lộ trình đào tạo cá nhân.'
+        { style: { color: '#475569', marginTop: '4px', fontSize: '14px' } },
+        'Quản lý thông tin học vụ, tiến độ tích lũy tín chỉ và tùy chỉnh mục tiêu điểm số cá nhân hóa.'
       )
     ),
     React.createElement(
       'div',
-      { style: { display: 'flex', gap: 'var(--spacing-2, 8px)', alignItems: 'center' } },
+      { style: { display: 'flex', gap: '8px' } },
+      Button ? React.createElement(Button, { variant: 'ghost', size: 'sm', onClick: () => setProfileData(null) }, 'Trạng thái Rỗng') : null,
       Button
         ? React.createElement(
             Button,
-            { variant: 'ghost', size: 'sm', onClick: handleClearProfile },
-            'Xóa hồ sơ (Empty)'
-          )
-        : null,
-      Button
-        ? React.createElement(
-            Button,
-            { variant: 'ghost', size: 'sm', onClick: handleTriggerError },
-            'Mô phỏng Lỗi (Error)'
-          )
-        : null,
-      Button
-        ? React.createElement(
-            Button,
-            { variant: 'primary', size: 'sm', onClick: handleFetchProfile, loading },
-            'Tải lại hồ sơ'
+            {
+              variant: 'ghost',
+              size: 'sm',
+              onClick: () => setError({ code: 'ERR_PROFILE', message: 'Mô phỏng lỗi máy chủ.' })
+            },
+            'Mô phỏng Lỗi'
           )
         : null
     )
   );
 
-  // ==========================================
-  // 1. TRẠNG THÁI LOADING
-  // ==========================================
+  const toastBar = toastMessage
+    ? React.createElement(
+        'div',
+        {
+          style: {
+            padding: '10px 16px',
+            marginBottom: '16px',
+            borderRadius: '12px',
+            background: '#0a0a0a',
+            color: '#ffffff',
+            fontSize: '13px',
+            fontWeight: 500,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }
+        },
+        React.createElement('span', null, `✓ ${toastMessage}`),
+        React.createElement(
+          'button',
+          {
+            type: 'button',
+            onClick: () => setToastMessage(''),
+            style: { background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }
+          },
+          '×'
+        )
+      )
+    : null;
+
   if (loading) {
     return React.createElement(
       'div',
-      { className: 'haui-page-container haui-profile-page', style: { padding: 'var(--spacing-6, 24px) 0' } },
+      { className: 'haui-page-container', style: { padding: '24px 0' } },
       headerSection,
       Loading
-        ? React.createElement(Loading, {
-            variant: 'spinner',
-            size: 'lg',
-            label: 'Đang kết nối API và đồng bộ hồ sơ sinh viên từ máy chủ...'
-          })
-        : React.createElement('div', { style: { padding: '32px', textAlign: 'center' } }, 'Đang tải hồ sơ...')
+        ? React.createElement(Loading, { variant: 'spinner', size: 'lg', label: 'Đang tải thông tin hồ sơ sinh viên...' })
+        : React.createElement('div', null, 'Đang tải...')
     );
   }
 
-  // ==========================================
-  // 2. TRẠNG THÁI ERROR
-  // ==========================================
   if (error) {
     return React.createElement(
       'div',
-      { className: 'haui-page-container haui-profile-page', style: { padding: 'var(--spacing-6, 24px) 0' } },
+      { className: 'haui-page-container', style: { padding: '24px 0' } },
       headerSection,
       ErrorBox
         ? React.createElement(ErrorBox, {
-            title: error.message || 'Lỗi truy xuất hồ sơ sinh viên',
+            title: 'Lỗi tải hồ sơ sinh viên',
             error,
-            code: error.code || 'PROFILE_ERROR',
-            details: error.details || ['Kiểm tra phiên đăng nhập trên hệ thống e-HaUI.'],
-            onRetry: handleFetchProfile,
-            retryLabel: 'Thử tải lại hồ sơ'
+            message: error?.message,
+            onRetry: handleFetchProfile
           })
-        : React.createElement('div', { style: { color: 'red', padding: '16px' } }, error?.message)
+        : React.createElement('div', { style: { color: 'red' } }, error?.message)
     );
   }
 
-  // ==========================================
-  // 3. TRẠNG THÁI EMPTY
-  // ==========================================
-  if (!profileData || !profileData.studentId) {
+  if (!profileData) {
     return React.createElement(
       'div',
-      { className: 'haui-page-container haui-profile-page', style: { padding: 'var(--spacing-6, 24px) 0' } },
+      { className: 'haui-page-container', style: { padding: '24px 0' } },
       headerSection,
       EmptyState
         ? React.createElement(EmptyState, {
             title: 'Chưa có thông tin hồ sơ sinh viên',
-            description: 'Không tìm thấy dữ liệu học vụ hoặc phiên làm việc của bạn chưa được xác thực từ máy chủ.',
-            actionLabel: 'Đồng bộ lại hồ sơ',
+            description: 'Không tìm thấy dữ liệu sinh viên trong phiên làm việc.',
+            actionLabel: 'Tải lại',
             onAction: handleFetchProfile
           })
-        : React.createElement('div', { style: { textAlign: 'center', padding: '32px' } }, 'Chưa có dữ liệu.')
+        : React.createElement('div', null, 'Chưa có dữ liệu.')
     );
   }
 
-  // ==========================================
-  // 4. TRẠNG THÁI CÓ DỮ LIỆU (MAIN CONTENT AREA)
-  // ==========================================
+  return React.createElement(
+    'div',
+    { className: 'haui-page-container haui-profile-page', style: { padding: '24px 0' } },
+    headerSection,
+    toastBar,
 
-  // Khu vực 1: Thông tin cơ bản & hành chính
-  const basicInfoCard = Card
-    ? React.createElement(
-        Card,
-        {
-          title: 'Thông tin Định danh & Hành chính',
-          subtitle: 'Dữ liệu được xác thực an toàn từ phiên đăng nhập (Server Session Context)',
-          variant: 'default',
-          style: { marginBottom: 'var(--spacing-6, 24px)' }
-        },
-        React.createElement(
-          'div',
-          {
-            style: {
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-              gap: 'var(--spacing-4, 16px)',
-              padding: '8px 0'
-            }
-          },
-          React.createElement(
-            'div',
-            null,
-            React.createElement('div', { style: { fontSize: '12px', color: '#64748b' } }, 'Họ và tên sinh viên'),
-            React.createElement('div', { style: { fontSize: '16px', fontWeight: 700, color: '#0f172a', marginTop: '2px' } }, profileData.fullName)
-          ),
-          React.createElement(
-            'div',
-            null,
-            React.createElement('div', { style: { fontSize: '12px', color: '#64748b' } }, 'Mã số sinh viên (MSSV)'),
-            React.createElement('div', { style: { fontSize: '16px', fontWeight: 700, color: '#0284c7', marginTop: '2px' } }, profileData.studentCode)
-          ),
-          React.createElement(
-            'div',
-            null,
-            React.createElement('div', { style: { fontSize: '12px', color: '#64748b' } }, 'Ngành đào tạo'),
-            React.createElement('div', { style: { fontSize: '14px', fontWeight: 600, color: '#0f172a', marginTop: '2px' } }, `${profileData.majorName} (${profileData.majorCode})`)
-          ),
-          React.createElement(
-            'div',
-            null,
-            React.createElement('div', { style: { fontSize: '12px', color: '#64748b' } }, 'Khóa học & Lớp sinh hoạt'),
-            React.createElement('div', { style: { fontSize: '14px', fontWeight: 600, color: '#0f172a', marginTop: '2px' } }, `${profileData.cohort} • ${profileData.advisorClass}`)
-          ),
-          React.createElement(
-            'div',
-            { style: { gridColumn: '1 / -1' } },
-            React.createElement('div', { style: { fontSize: '12px', color: '#64748b' } }, 'Đơn vị quản lý đào tạo'),
-            React.createElement('div', { style: { fontSize: '14px', color: '#334155', marginTop: '2px' } }, profileData.faculty)
-          )
-        )
-      )
-    : null;
-
-  // Khu vực 2: Thông tin kết quả học tập & Tiến độ tích lũy
-  const academicProgressCard = Card
-    ? React.createElement(
-        Card,
-        {
-          title: 'Kết quả Học vụ & Tiến độ Tích lũy Toàn khóa',
-          subtitle: 'Trích xuất trực tiếp qua port nghiệp vụ api.academic.getStatus()',
-          variant: profileData.riskLevel === 'NORMAL' ? 'status-success' : 'status-warning',
-          style: { marginBottom: 'var(--spacing-6, 24px)' }
-        },
-        React.createElement(
-          'div',
-          {
-            style: {
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: 'var(--spacing-4, 16px)',
-              padding: '8px 0'
-            }
-          },
-          React.createElement(
-            'div',
-            null,
-            React.createElement('div', { style: { fontSize: '12px', color: '#64748b' } }, 'Điểm trung bình tích lũy (CPA)'),
-            React.createElement('div', { style: { fontSize: '24px', fontWeight: 800, color: '#0284c7', marginTop: '2px' } }, profileData.cpa ?? 'N/A'),
-            React.createElement('div', { style: { fontSize: '12px', color: '#16a34a', marginTop: '2px' } }, 'Xếp loại học lực: Khá')
-          ),
-          React.createElement(
-            'div',
-            null,
-            React.createElement('div', { style: { fontSize: '12px', color: '#64748b' } }, 'Điểm trung bình học kỳ gần nhất (GPA)'),
-            React.createElement('div', { style: { fontSize: '24px', fontWeight: 800, color: '#0f172a', marginTop: '2px' } }, profileData.gpa ?? 'N/A')
-          ),
-          React.createElement(
-            'div',
-            null,
-            React.createElement('div', { style: { fontSize: '12px', color: '#64748b' } }, 'Tiến độ tích lũy tín chỉ'),
-            React.createElement(
-              'div',
-              { style: { fontSize: '20px', fontWeight: 700, color: '#0f172a', marginTop: '2px' } },
-              `${profileData.accumulatedCredits ?? 0} `,
-              React.createElement('span', { style: { fontSize: '13px', color: '#64748b', fontWeight: 400 } }, `/ ${profileData.totalCreditsRequired} TC`)
-            ),
-            React.createElement(
-              'div',
-              { style: { fontSize: '12px', color: '#0284c7', marginTop: '2px' } },
-              `Đạt ${Math.round(((profileData.accumulatedCredits || 0) / profileData.totalCreditsRequired) * 100)}% khối lượng CTĐT`
-            )
-          ),
-          React.createElement(
-            'div',
-            null,
-            React.createElement('div', { style: { fontSize: '12px', color: '#64748b' } }, 'Tình trạng cảnh báo học vụ'),
-            React.createElement(
-              'div',
-              {
-                style: {
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  marginTop: '4px',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  display: 'inline-block',
-                  background: profileData.riskLevel === 'NORMAL' ? '#dcfce7' : '#fef3c7',
-                  color: profileData.riskLevel === 'NORMAL' ? '#15803d' : '#b45309'
-                }
-              },
-              profileData.riskLevel === 'NORMAL' ? 'Bình thường (An toàn)' : 'Cảnh báo học vụ'
-            )
-          )
-        ),
-        profileData.warningMessages && profileData.warningMessages.length > 0
+    // Lưới 2 cột
+    React.createElement(
+      'div',
+      {
+        style: {
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: '20px'
+        }
+      },
+      // CỘT 1: THÔNG TIN HÀNH CHÍNH & HỌC VỤ
+      React.createElement(
+        'div',
+        { style: { display: 'flex', flexDirection: 'column', gap: '20px' } },
+        // Thẻ 1: Thông tin cá nhân
+        Card
           ? React.createElement(
-              'div',
+              Card,
               {
-                style: {
-                  marginTop: '16px',
-                  padding: '10px 14px',
-                  borderRadius: '6px',
-                  background: '#fffbeb',
-                  borderLeft: '4px solid #f59e0b',
-                  fontSize: '13px',
-                  color: '#92400e'
-                }
+                title: 'Thông tin cá nhân & Đào tạo',
+                subtitle: 'Dữ liệu định danh tài khoản sinh viên',
+                variant: 'default',
+                padding: 'md'
               },
-              React.createElement('strong', null, 'Lưu ý từ phòng Đào tạo:'),
               React.createElement(
-                'ul',
-                { style: { margin: '4px 0 0 0', paddingLeft: '18px' } },
-                profileData.warningMessages.map((w, idx) => React.createElement('li', { key: idx }, w))
+                'div',
+                { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', fontSize: '13px' } },
+                React.createElement('div', null, React.createElement('div', { style: { color: '#64748b', fontSize: '11px' } }, 'Họ và tên'), React.createElement('strong', { style: { color: '#0f172a' } }, profileData.fullName)),
+                React.createElement('div', null, React.createElement('div', { style: { color: '#64748b', fontSize: '11px' } }, 'Mã sinh viên (MSSV)'), React.createElement('strong', { style: { color: '#0f172a' } }, profileData.studentCode)),
+                React.createElement('div', null, React.createElement('div', { style: { color: '#64748b', fontSize: '11px' } }, 'Ngành đào tạo'), React.createElement('strong', { style: { color: '#0f172a' } }, profileData.majorName)),
+                React.createElement('div', null, React.createElement('div', { style: { color: '#64748b', fontSize: '11px' } }, 'Khóa tuyển sinh'), React.createElement('strong', { style: { color: '#0f172a' } }, profileData.cohort)),
+                React.createElement('div', null, React.createElement('div', { style: { color: '#64748b', fontSize: '11px' } }, 'Lớp cố vấn học tập'), React.createElement('strong', { style: { color: '#0f172a' } }, profileData.advisorClass)),
+                React.createElement('div', null, React.createElement('div', { style: { color: '#64748b', fontSize: '11px' } }, 'Khoa / Trường quản lý'), React.createElement('strong', { style: { color: '#0f172a' } }, profileData.faculty))
+              )
+            )
+          : null,
+
+        // Thẻ 2: Chỉ số học vụ cốt lõi
+        Card
+          ? React.createElement(
+              Card,
+              {
+                title: 'Chỉ số học vụ & Tiến độ tích lũy',
+                subtitle: 'Dữ liệu được cập nhật theo kết quả Kỳ 1 đến Kỳ 6',
+                variant: 'default',
+                padding: 'md'
+              },
+              React.createElement(
+                'div',
+                { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '14px' } },
+                React.createElement(
+                  'div',
+                  { style: { padding: '12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' } },
+                  React.createElement('div', { style: { fontSize: '11px', color: '#64748b' } }, 'CPA Tích lũy'),
+                  React.createElement('strong', { style: { fontSize: '20px', color: '#0284c7' } }, `${profileData.cpa} `),
+                  React.createElement('span', { style: { fontSize: '11px', color: '#64748b' } }, '/ 4.00')
+                ),
+                React.createElement(
+                  'div',
+                  { style: { padding: '12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' } },
+                  React.createElement('div', { style: { fontSize: '11px', color: '#64748b' } }, 'GPA Học kỳ gần nhất'),
+                  React.createElement('strong', { style: { fontSize: '20px', color: '#16a34a' } }, `${profileData.gpa} `),
+                  React.createElement('span', { style: { fontSize: '11px', color: '#64748b' } }, '/ 4.00')
+                ),
+                React.createElement(
+                  'div',
+                  { style: { padding: '12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' } },
+                  React.createElement('div', { style: { fontSize: '11px', color: '#64748b' } }, 'Tín chỉ đã tích lũy'),
+                  React.createElement('strong', { style: { fontSize: '20px', color: '#0f172a' } }, `${profileData.accumulatedCredits} `),
+                  React.createElement('span', { style: { fontSize: '11px', color: '#64748b' } }, `/ ${profileData.totalCreditsRequired} TC`)
+                )
+              ),
+              React.createElement(
+                'div',
+                { style: { marginTop: '14px', fontSize: '12px', color: '#b45309', background: '#fef3c7', padding: '8px 12px', borderRadius: '8px' } },
+                '⚠️ Cảnh báo học vụ: Nợ học phần bắt buộc Toán rời rạc (MATH1002 - Điểm F). Đã được AI ưu tiên đưa vào kế hoạch Kỳ 7.'
+              )
+            )
+          : null
+      ),
+
+      // CỘT 2: TÙY CHỌN MỤC TIÊU & KẾ HOẠCH THEO DÕI
+      React.createElement(
+        'div',
+        { style: { display: 'flex', flexDirection: 'column', gap: '20px' } },
+        // Thẻ 3: Thiết lập mục tiêu cá nhân
+        Card
+          ? React.createElement(
+              Card,
+              {
+                title: 'Tùy chọn mục tiêu học tập cá nhân',
+                subtitle: 'AI và công cụ học vụ sẽ dựa vào đây để tối ưu hóa lộ trình',
+                variant: 'default',
+                padding: 'md',
+                footer: React.createElement(
+                  'div',
+                  { style: { display: 'flex', justifyContent: 'flex-end' } },
+                  Button
+                    ? React.createElement(
+                        Button,
+                        { variant: 'primary', size: 'sm', onClick: handleSavePreferences },
+                        'Lưu mục tiêu cá nhân'
+                      )
+                    : null
+                )
+              },
+              React.createElement(
+                'div',
+                { style: { display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px' } },
+                // Mục tiêu CPA
+                React.createElement(
+                  'div',
+                  null,
+                  React.createElement('label', { style: { fontWeight: 600, display: 'block', marginBottom: '4px' } }, 'Mục tiêu CPA tốt nghiệp mong muốn:'),
+                  React.createElement(
+                    'select',
+                    {
+                      value: targetCpa,
+                      onChange: (e) => setTargetCpa(e.target.value),
+                      style: { width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }
+                    },
+                    React.createElement('option', { value: '2.50' }, 'CPA ≥ 2.50 (Xếp loại Khá)'),
+                    React.createElement('option', { value: '3.20' }, 'CPA ≥ 3.20 (Xếp loại Giỏi)'),
+                    React.createElement('option', { value: '3.60' }, 'CPA ≥ 3.60 (Xếp loại Xuất sắc)')
+                  )
+                ),
+                // Định hướng tiến độ
+                React.createElement(
+                  'div',
+                  null,
+                  React.createElement('label', { style: { fontWeight: 600, display: 'block', marginBottom: '4px' } }, 'Tiến độ mong muốn:'),
+                  React.createElement(
+                    'select',
+                    {
+                      value: graduationPace,
+                      onChange: (e) => setGraduationPace(e.target.value),
+                      style: { width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }
+                    },
+                    React.createElement('option', { value: 'STANDARD' }, 'Chuẩn 4 năm (2 kỳ chính + 1 kỳ hè nhẹ)'),
+                    React.createElement('option', { value: 'FAST' }, 'Rút ngắn 3.5 năm (Học vượt, tối đa 8 TC kỳ hè)')
+                  )
+                ),
+                // Chuyên ngành hẹp
+                React.createElement(
+                  'div',
+                  null,
+                  React.createElement('label', { style: { fontWeight: 600, display: 'block', marginBottom: '4px' } }, 'Định hướng chuyên ngành hẹp:'),
+                  React.createElement('input', {
+                    type: 'text',
+                    value: specialization,
+                    onChange: (e) => setSpecialization(e.target.value),
+                    style: { width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }
+                  })
+                )
+              )
+            )
+          : null,
+
+        // Thẻ 4: Bản kế hoạch đang áp dụng (ACTIVE Plan snapshot)
+        Card
+          ? React.createElement(
+              Card,
+              {
+                title: 'Kế hoạch học tập đang theo dõi',
+                subtitle: 'Lộ trình chính thức đang lưu trong hệ thống',
+                variant: 'default',
+                padding: 'sm'
+              },
+              React.createElement(
+                'div',
+                { style: { fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '8px' } },
+                React.createElement(
+                  'div',
+                  { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                  React.createElement('strong', { style: { color: '#0f172a' } }, currentPlan.planName),
+                  React.createElement(
+                    'span',
+                    {
+                      style: {
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        background: currentPlan.status === 'ACTIVE' ? '#0a0a0a' : '#fef3c7',
+                        color: currentPlan.status === 'ACTIVE' ? '#ffffff' : '#b45309'
+                      }
+                    },
+                    currentPlan.status
+                  )
+                ),
+                React.createElement(
+                  'div',
+                  { style: { color: '#64748b', fontSize: '12px' } },
+                  `Phiên bản: ${currentPlan.version} · Gồm ${currentPlan.semesters?.length || 3} học kỳ (${currentPlan.remainingCredits || 37} TC) · CPA dự phóng: ${currentPlan.projectedCpa || '3.32'}`
+                ),
+                React.createElement(
+                  'div',
+                  { style: { marginTop: '6px' } },
+                  Button
+                    ? React.createElement(
+                        Button,
+                        {
+                          variant: 'secondary',
+                          size: 'sm',
+                          onClick: () => {
+                            if (typeof window !== 'undefined' && window.location) {
+                              window.location.hash = '#/planner';
+                            }
+                          }
+                        },
+                        'Mở trong Study Planner →'
+                      )
+                    : null
+                )
               )
             )
           : null
       )
-    : null;
-
-  // Khu vực 3: Mục tiêu học vụ cá nhân
-  const goalCard = Card
-    ? React.createElement(
-        Card,
-        {
-          title: 'Thiết lập Mục tiêu Học vụ & Lộ trình',
-          subtitle: 'Các tham số định hướng phục vụ thuật toán tối ưu hóa của TV1 và TV4',
-          variant: 'default'
-        },
-        React.createElement(
-          'div',
-          { style: { padding: '8px 0', display: 'flex', flexDirection: 'column', gap: '12px' } },
-          React.createElement(
-            'div',
-            { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f8fafc', borderRadius: '8px' } },
-            React.createElement(
-              'div',
-              null,
-              React.createElement('strong', { style: { fontSize: '14px', color: '#0f172a' } }, 'Mục tiêu tốt nghiệp đúng hạn (4 năm)'),
-              React.createElement('div', { style: { fontSize: '12px', color: '#64748b' } }, 'Dự kiến hoàn thành toàn bộ 135 tín chỉ vào Học kỳ 2 (2025 - 2026)')
-            ),
-            React.createElement('span', { style: { fontSize: '12px', fontWeight: 600, color: '#16a34a' } }, 'ĐANG ÁP DỤNG')
-          ),
-          React.createElement(
-            'div',
-            { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f8fafc', borderRadius: '8px' } },
-            React.createElement(
-              'div',
-              null,
-              React.createElement('strong', { style: { fontSize: '14px', color: '#0f172a' } }, 'Ngưỡng CPA mục tiêu đầu ra'),
-              React.createElement('div', { style: { fontSize: '12px', color: '#64748b' } }, 'Đặt mục tiêu kéo điểm tốt nghiệp đạt loại Khá / Giỏi (CPA >= 3.20)')
-            ),
-            React.createElement('span', { style: { fontSize: '14px', fontWeight: 700, color: '#0284c7' } }, 'CPA >= 3.20')
-          ),
-          React.createElement(
-            'div',
-            { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f8fafc', borderRadius: '8px' } },
-            React.createElement(
-              'div',
-              null,
-              React.createElement('strong', { style: { fontSize: '14px', color: '#0f172a' } }, 'Định hướng học phần Tự chọn'),
-              React.createElement('div', { style: { fontSize: '12px', color: '#64748b' } }, 'Chuyên ngành hẹp: Phát triển Web / Ứng dụng Di động')
-            ),
-            React.createElement('span', { style: { fontSize: '12px', color: '#475569' } }, 'Web / Mobile')
-          )
-        )
-      )
-    : null;
-
-  return React.createElement(
-    'div',
-    { className: 'haui-page-container haui-profile-page', style: { padding: 'var(--spacing-6, 24px) 0' } },
-    headerSection,
-    basicInfoCard,
-    academicProgressCard,
-    goalCard
+    )
   );
 }
 

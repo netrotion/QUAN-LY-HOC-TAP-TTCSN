@@ -1,0 +1,471 @@
+<!DOCTYPE html><html lang="vi" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-surface-variant": "#444748",
+          "canvas": "#f5f5f5",
+          "primary": "#000000",
+          "surface-dim": "#dadada",
+          "ink": "#0a0a0a",
+          "tertiary-fixed-dim": "#cac6c3",
+          "secondary-fixed-dim": "#c7c6c6",
+          "on-tertiary-fixed": "#1d1b1a",
+          "background": "#f9f9f9",
+          "surface-tint": "#5f5e5e",
+          "surface-container-high": "#e8e8e8",
+          "on-secondary-fixed": "#1b1c1c",
+          "secondary-container": "#e3e2e2",
+          "paper": "#ffffff",
+          "hairline": "#e5e5e5",
+          "surface-variant": "#e2e2e2",
+          "primary-fixed": "#e5e2e1",
+          "ink-soft": "#171717",
+          "surface": "#f9f9f9",
+          "surface-container-highest": "#e2e2e2",
+          "outline": "#747878",
+          "on-secondary-fixed-variant": "#464747",
+          "error-container": "#ffdad6",
+          "on-primary-fixed-variant": "#474646",
+          "on-error": "#ffffff",
+          "on-primary": "#ffffff",
+          "on-error-container": "#93000a",
+          "surface-container-lowest": "#ffffff",
+          "surface-container": "#eeeeee",
+          "secondary": "#5e5e5e",
+          "on-tertiary": "#ffffff",
+          "tertiary-fixed": "#e6e1df",
+          "error": "#ba1a1a",
+          "on-background": "#1a1c1c",
+          "on-secondary-container": "#646464",
+          "on-primary-container": "#858383",
+          "on-surface": "#1a1c1c",
+          "inverse-primary": "#c9c6c5",
+          "on-tertiary-container": "#868381",
+          "on-tertiary-fixed-variant": "#484645",
+          "on-primary-fixed": "#1c1b1b",
+          "inverse-on-surface": "#f1f1f1",
+          "primary-container": "#1c1b1b",
+          "secondary-fixed": "#e3e2e2",
+          "surface-alt": "#fafafa",
+          "primary-fixed-dim": "#c9c6c5",
+          "surface-container-low": "#f3f3f3",
+          "tertiary": "#000000",
+          "ember": "#e7000b",
+          "inverse-surface": "#2f3131",
+          "outline-variant": "#c4c7c7",
+          "surface-bright": "#f9f9f9",
+          "on-secondary": "#ffffff",
+          "tertiary-container": "#1d1b1a",
+          "mid-gray": "#737373"
+        },
+        "borderRadius": {
+          "DEFAULT": "1rem",
+          "lg": "2rem",
+          "xl": "3rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "margin-tablet": "1.5rem",
+          "space-lg": "1.25rem",
+          "space-xl": "2rem",
+          "margin": "1rem",
+          "space-sm": "0.5rem",
+          "gutter-desktop": "1.5rem",
+          "space-xs": "0.25rem",
+          "space-md": "1rem",
+          "margin-desktop": "2.5rem",
+          "gutter": "1rem"
+        },
+        "fontFamily": {
+          "body": ["Geist"],
+          "display-mobile": ["Geist"],
+          "headline": ["Geist"],
+          "label": ["Geist"],
+          "display": ["Geist"],
+          "caption": ["Geist"],
+          "subheading": ["Geist"],
+          "body-medium": ["Geist"]
+        },
+        "fontSize": {
+          "body": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+          "display-mobile": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.025em", "fontWeight": "600"}],
+          "headline": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+          "label": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+          "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.03em", "fontWeight": "600"}],
+          "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+          "subheading": ["18px", {"lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+          "body-medium": ["14px", {"lineHeight": "20px", "fontWeight": "500"}]
+        }
+      }
+    }
+  }</script></head><body class="bg-canvas font-body text-on-surface antialiased selection:bg-ink selection:text-paper"><aside class="fixed left-0 top-0 h-screen w-72 bg-surface-alt z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-r border-hairline"><div class="flex flex-col flex-1 overflow-y-auto px-space-md pt-space-lg"><a href="../tong_quan_hoc_tap/code.html" class="flex items-center gap-space-sm px-space-xs pb-space-lg mb-space-sm border-b border-hairline hover:opacity-80 transition-opacity"><img alt="HAUI ADVISOR Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1WK5zh9ylvUzptVeDsx0qQXD4J2y8fXrDqGSt3SY9JUtbslFQaOI8zsbxNrF2NC1oMkW29nIgovny9cLNs4gEM98-9TTBwMDW8jnPzcr7mDBLq5qbVMzt39l9IBDZmfnhKhNNoKITuvy6-UulNbyqr_8EbfWotkEFYNiiPQSKnTmz2FFOxJzHcK0a5MBn7X3eD-WdXPUtF0ujoiZ5eCxm1ZiiqEOyaqeEa-57jeo3U_cO1NEfdaZAHvmN0"><div class="flex flex-col min-w-0"><span class="font-subheading text-subheading text-ink font-semibold tracking-tight truncate leading-tight">HAUI ADVISOR</span><span class="font-caption text-caption text-mid-gray truncate">Cổng Tư Vấn &amp; Lộ Trình KTPM/CNTT</span></div></a><nav class="flex flex-col gap-1 w-full" data-active-classes="bg-ink text-paper font-medium rounded-full"><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="tong-quan" href="../tong_quan_hoc_tap/code.html"><span class="material-symbols-outlined text-[18px]">grid_view</span><span class="truncate">Tổng quan</span></a><a aria-current="page" class="flex items-center gap-space-sm px-space-md py-space-sm transition-all duration-150 bg-ink text-paper font-medium rounded-full shadow-[0_1px_8px_rgba(0,0,0,0.04)]" data-path="ho-so-sinh-vien" href="../ho_so_sinh_vien/code.html"><span class="material-symbols-outlined text-[18px]">badge</span><span class="truncate">Hồ sơ sinh viên</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="nhap-bang-diem" href="../nhap_bang_diem/code.html"><span class="material-symbols-outlined text-[18px]">upload_file</span><span class="truncate">Nhập bảng điểm</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="cay-mon-hoc" href="../cay_mon_hoc/code.html"><span class="material-symbols-outlined text-[18px]">account_tree</span><span class="truncate">Cây môn học</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="ke-hoach-hoc-tap" href="../ke_hoach_hoc_tap_ca_nhan/code.html"><span class="material-symbols-outlined text-[18px]">event_note</span><span class="truncate">Kế hoạch học tập</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="lich-su-ke-hoach" href="../lich_su_ke_hoach/code.html"><span class="material-symbols-outlined text-[18px]">history</span><span class="truncate">Lịch sử kế hoạch</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="tu-van-ai" href="../tu_van_ai/code.html"><span class="material-symbols-outlined text-[18px]">smart_toy</span><span class="truncate">Tư vấn AI</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="what-if-mo-phong-diem" href="../what_if_mo_phong_diem/code.html"><span class="material-symbols-outlined text-[18px]">insights</span><span class="truncate">What-if mô phỏng điểm</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="kiem-tra-dieu-kien-tot-nghiep" href="../kiem_tra_dieu_kien_tot_nghiep/code.html"><span class="material-symbols-outlined text-[18px]">verified</span><span class="truncate">Kiểm tra điều kiện tốt nghiệp</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="cai-dat" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span class="truncate">Cài đặt</span></a></nav></div><div class="p-space-md m-space-sm bg-paper rounded-[24px] border border-hairline shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center justify-between mb-space-xs"><a href="../ho_so_sinh_vien/code.html" class="flex items-center gap-space-sm min-w-0 hover:opacity-80 transition-opacity" title="Xem hồ sơ sinh viên"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="min-w-0"><p class="font-body-medium text-body-medium text-ink font-medium truncate">Nguyễn Văn An</p><p class="font-caption text-caption text-mid-gray truncate">2020601234 • K16 CNTT</p></div></a><button class="text-mid-gray hover:text-ink p-1 rounded-full hover:bg-canvas transition-colors" title="Chuyển đổi tài khoản / Đăng xuất" type="button"><span class="material-symbols-outlined text-[18px]">logout</span></button></div><div class="flex items-center gap-1.5 pt-space-xs border-t border-hairline"><span class="w-2 h-2 rounded-full bg-ink"></span><span class="font-label text-label text-mid-gray">Đang học kỳ 6/8</span></div></div></aside><div class="pl-72 flex flex-col min-h-screen"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-alt/90 backdrop-blur-xl border-b border-hairline z-40 flex items-center justify-between px-space-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center gap-space-md"><div class="relative flex items-center w-80 lg:w-96"><span class="material-symbols-outlined absolute left-space-md text-[18px] text-mid-gray pointer-events-none">search</span><input class="w-full bg-surface-alt border border-hairline rounded-full pl-10 pr-12 py-2 font-body text-body text-ink placeholder:text-mid-gray focus:outline-none focus:border-ink transition-colors" placeholder="Tìm môn học, mã môn, chuẩn tốt nghiệp..." type="text"></div></div><div class="flex items-center gap-space-md"><a class="inline-flex items-center gap-space-xs bg-ink hover:bg-ink-soft text-paper px-space-md py-2 rounded-full font-body-medium text-body-medium transition-colors shadow-[0_1px_8px_rgba(0,0,0,0.04)]" data-path="tu-van-ai" href="../tu_van_ai/code.html"><span class="material-symbols-outlined text-[16px]">auto_awesome</span><span class="">Tư vấn lộ trình nhanh với AI</span></a><button class="w-9 h-9 rounded-full border border-hairline bg-paper flex items-center justify-center text-ink hover:bg-canvas transition-colors relative" title="Thông báo" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-ember"></span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="w-full pt-16 bg-canvas flex-1"><div class="flex flex-col w-full">
+<div class="w-full max-w-7xl mx-auto px-space-md lg:px-space-xl py-space-lg flex flex-col gap-space-xl">
+<!-- Header Section -->
+<header class="flex flex-col gap-space-sm pb-space-md">
+<!-- Breadcrumb -->
+<nav aria-label="Breadcrumb" class="flex items-center gap-space-xs text-mid-gray font-caption text-caption">
+<a class="hover:text-ink transition-colors flex items-center gap-1" href="../tong_quan_hoc_tap/code.html">
+<span class="material-symbols-outlined text-[16px]">home</span>
+<span class="">Trang chủ</span>
+</a>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-ink font-body-medium text-body-medium">Hồ sơ sinh viên</span>
+</nav>
+<!-- Title Bar -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md pt-space-xs">
+<div class="flex flex-col gap-1.5">
+<div class="flex flex-wrap items-center gap-space-sm"><h1 class="font-headline text-headline text-ink tracking-tight font-semibold">Hồ sơ sinh viên</h1><span class="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container text-ink rounded-full font-label text-label border border-hairline shadow-sm"><span class="w-1.5 h-1.5 rounded-full bg-ink"></span>Đang theo học - Kỳ 6/8</span><span class="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-alt text-mid-gray rounded-full font-label text-label border border-hairline"><span class="material-symbols-outlined text-[14px] text-ink">verified</span>Dữ liệu hồ sơ gốc (Chính thức)</span><span class="inline-flex items-center gap-1.5 px-3 py-1 bg-paper text-on-surface-variant rounded-full font-label text-label border border-hairline"><span class="w-1.5 h-1.5 rounded-full bg-ember"></span>Dữ liệu hiệu chỉnh cục bộ (Chưa đồng bộ sv.haui)</span></div>
+<p class="font-body text-body text-mid-gray max-w-3xl leading-relaxed">
+            Quản lý và cập nhật thông tin cá nhân, định hướng ngành và chương trình đào tạo tại Trường Đại học Công nghiệp Hà Nội.
+          </p>
+</div>
+<!-- Desktop Action Buttons -->
+<div class="flex items-center gap-space-sm shrink-0">
+<button class="inline-flex items-center justify-center px-4 py-2 bg-canvas hover:bg-surface-variant text-ink rounded-full font-body-medium text-body-medium transition-colors border border-hairline" id="btn-cancel-top" type="button">
+            Hủy thay đổi
+          </button>
+<button class="inline-flex items-center justify-center gap-1.5 px-5 py-2 bg-ink hover:bg-ink-soft text-paper rounded-full font-body-medium text-body-medium shadow-sm transition-all" id="btn-save-top" type="button">
+<span class="material-symbols-outlined text-[18px]">check</span>
+<span class="">Lưu thay đổi</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
+<!-- Left Column / Profile Overview Card -->
+<aside class="lg:col-span-4 flex flex-col gap-space-lg">
+<!-- Summary Card -->
+<div class="bg-paper border border-hairline rounded-[24px] p-space-lg shadow-sm flex flex-col gap-space-lg">
+<!-- Profile Identity Header -->
+<div class="flex flex-col items-center text-center">
+<div class="relative group mb-space-md">
+<div class="w-24 h-24 rounded-full bg-ink text-paper font-display text-headline flex items-center justify-center font-bold tracking-tight shadow-md">
+                NA
+              </div>
+<button class="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-paper border border-hairline shadow-sm flex items-center justify-center text-ink hover:bg-canvas transition-colors" title="Thay đổi ảnh đại diện" type="button">
+<span class="material-symbols-outlined text-[16px]">photo_camera</span>
+</button>
+</div>
+<h2 class="font-subheading text-subheading text-ink font-semibold">Nguyễn Văn An</h2>
+<p class="font-body text-body text-mid-gray mt-0.5">2020601234</p>
+<div class="mt-space-sm inline-flex items-center gap-1 px-3 py-1 bg-surface-container-low rounded-full font-label text-label text-on-surface-variant border border-hairline">
+<span class="material-symbols-outlined text-[14px]">school</span>
+<span class="">ĐH CNTT 2 - K16</span>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-px bg-hairline w-full"></div>
+<!-- Quick Metrics & Status -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between text-caption font-caption">
+<span class="text-mid-gray font-medium">Tiến độ hoàn thành hồ sơ</span>
+<span class="font-body-medium text-body-medium text-ink font-semibold">100%</span>
+</div>
+<div class="w-full bg-surface-container rounded-full h-1.5 overflow-hidden">
+<div class="bg-ink h-full rounded-full transition-all duration-500" style="width: 100%;"></div>
+</div>
+<p class="font-caption text-caption text-mid-gray pt-1">Hồ sơ chuẩn hóa đã sẵn sàng cho cổng thẩm định tốt nghiệp và What-if.</p>
+</div>
+<!-- Divider -->
+<div class="h-px bg-hairline w-full"></div>
+<!-- Compact Bio Metadata -->
+<div class="flex flex-col gap-space-md font-body text-body">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-8 h-8 rounded-full bg-surface-alt border border-hairline flex items-center justify-center shrink-0 text-mid-gray">
+<span class="material-symbols-outlined text-[18px]">domain</span>
+</div>
+<div class="min-w-0 flex flex-col">
+<span class="font-caption text-caption text-mid-gray">Khoa / Viện</span>
+<span class="text-ink font-body-medium text-body-medium truncate">Khoa Công nghệ thông tin</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-8 h-8 rounded-full bg-surface-alt border border-hairline flex items-center justify-center shrink-0 text-mid-gray">
+<span class="material-symbols-outlined text-[18px]">mail</span>
+</div>
+<div class="min-w-0 flex flex-col">
+<span class="font-caption text-caption text-mid-gray">Email trường</span>
+<span class="text-ink font-body-medium text-body-medium truncate">annv@haui.edu.vn</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-8 h-8 rounded-full bg-surface-alt border border-hairline flex items-center justify-center shrink-0 text-mid-gray">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+</div>
+<div class="min-w-0 flex flex-col">
+<span class="font-caption text-caption text-mid-gray">Trạng thái định danh</span>
+<span class="text-ink font-body-medium text-body-medium">Đã đồng bộ HaUI Portal</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-space-xs inline-flex items-center justify-center gap-space-xs px-4 py-2.5 bg-canvas hover:bg-surface-variant text-ink rounded-full font-body-medium text-body-medium transition-colors border border-hairline" type="button">
+<span class="material-symbols-outlined text-[16px]">file_download</span>
+<span class="">Tải bản sơ yếu lý lịch (.pdf)</span>
+</button>
+</div>
+<!-- Academic Advisor Mini Card -->
+<div class="bg-paper border border-hairline rounded-[24px] p-space-lg shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-center justify-between pb-space-xs">
+<span class="font-label text-label uppercase tracking-wider text-mid-gray">Cố vấn học tập</span>
+<span class="material-symbols-outlined text-mid-gray text-[18px]">supervised_user_circle</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-ink font-subheading text-subheading shrink-0 font-semibold border border-hairline">
+              TM
+            </div>
+<div class="min-w-0">
+<p class="font-body-medium text-body-medium text-ink font-semibold truncate">TS. Trần Văn Minh</p>
+<p class="font-caption text-caption text-mid-gray truncate">Khoa Công nghệ Thông tin</p>
+</div>
+</div>
+<div class="pt-2 text-caption font-caption text-mid-gray flex flex-col gap-1 border-t border-hairline mt-1">
+<a class="hover:text-ink transition-colors flex items-center gap-1.5 truncate" href="mailto:minhtv@haui.edu.vn">
+<span class="material-symbols-outlined text-[14px]">alternate_email</span>
+<span class="">minhtv@haui.edu.vn</span>
+</a>
+<span class="flex items-center gap-1.5 text-mid-gray">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span class="">Lịch hẹn tư vấn: Thứ 4 (09:00 - 11:30)</span>
+</span>
+</div>
+</div>
+</aside>
+<!-- Right Column / Detail Profile Edit Forms -->
+<main class="lg:col-span-8 flex flex-col gap-space-xl">
+<form class="flex flex-col gap-space-xl" id="student-profile-form" onsubmit="event.preventDefault();">
+<!-- Section 1: Personal & Contact Information -->
+<div class="bg-paper border border-hairline rounded-[24px] p-space-lg shadow-sm flex flex-col gap-space-lg">
+<div class="flex items-center justify-between border-b border-hairline pb-space-md">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-ink text-[22px]">id_card</span>
+<div class="flex flex-col">
+<h3 class="font-subheading text-subheading text-ink font-semibold">Thông tin cá nhân &amp; Liên hệ</h3>
+<p class="font-caption text-caption text-mid-gray">Thông tin phục vụ liên lạc trực tiếp và lưu trữ học bạ</p>
+</div>
+</div>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full font-label text-label bg-canvas text-mid-gray border border-hairline">Nhóm 01</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Student ID (Readonly) -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<label class="font-body-medium text-body-medium text-ink font-medium" for="student-id">Mã sinh viên</label>
+<span class="font-caption text-caption text-mid-gray">Cố định</span>
+</div>
+<div class="relative">
+<input class="w-full bg-surface-alt border border-hairline rounded-full px-4 py-2 font-body text-body text-on-surface-variant cursor-not-allowed focus:outline-none select-all" id="student-id" readonly="" type="text" value="2020601234">
+<span class="material-symbols-outlined absolute right-3.5 top-2.5 text-[18px] text-mid-gray">lock</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Được cấp cố định bởi Phòng Đào tạo HaUI</p>
+</div>
+<!-- Full Name -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-medium text-body-medium text-ink font-medium" for="student-fullname">Họ và tên</label>
+<input class="w-full bg-surface-alt border border-hairline rounded-full px-4 py-2 font-body text-body text-ink placeholder:text-mid-gray focus:outline-none focus:border-ink transition-colors" id="student-fullname" type="text" value="Nguyễn Văn An"><p class="font-caption text-caption text-ember hidden" id="student-fullname-error">Vui lòng nhập họ và tên của sinh viên</p>
+<p class="font-caption text-caption text-mid-gray">Khớp chính xác với thẻ CCCD gắn chip</p>
+</div>
+<!-- Date of Birth -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-medium text-body-medium text-ink font-medium" for="student-dob">Ngày sinh</label>
+<div class="relative">
+<input class="w-full bg-surface-alt border border-hairline rounded-full px-4 py-2 font-body text-body text-ink focus:outline-none focus:border-ink transition-colors" id="student-dob" type="date" value="2002-08-15">
+</div>
+<p class="font-caption text-caption text-mid-gray">Định dạng Ngày/Tháng/Năm</p>
+</div>
+<!-- Gender -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-medium text-body-medium text-ink font-medium">Giới tính</label>
+<div class="grid grid-cols-3 gap-2">
+<label class="flex items-center justify-center gap-2 p-2 rounded-full border border-hairline bg-surface-alt hover:bg-canvas cursor-pointer transition-colors has-[:checked]:bg-ink has-[:checked]:text-paper has-[:checked]:border-ink">
+<input checked="" class="hidden" name="gender" type="radio" value="Nam">
+<span class="font-body text-body font-medium">Nam</span>
+</label>
+<label class="flex items-center justify-center gap-2 p-2 rounded-full border border-hairline bg-surface-alt hover:bg-canvas cursor-pointer transition-colors has-[:checked]:bg-ink has-[:checked]:text-paper has-[:checked]:border-ink">
+<input class="hidden" name="gender" type="radio" value="Nữ">
+<span class="font-body text-body font-medium">Nữ</span>
+</label>
+<label class="flex items-center justify-center gap-2 p-2 rounded-full border border-hairline bg-surface-alt hover:bg-canvas cursor-pointer transition-colors has-[:checked]:bg-ink has-[:checked]:text-paper has-[:checked]:border-ink">
+<input class="hidden" name="gender" type="radio" value="Khác">
+<span class="font-body text-body font-medium">Khác</span>
+</label>
+</div>
+<p class="font-caption text-caption text-mid-gray">Thông tin hồ sơ bảo hiểm y tế</p>
+</div>
+<!-- University Email (Readonly) -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<label class="font-body-medium text-body-medium text-ink font-medium" for="university-email">Email trường cấp</label>
+<span class="font-caption text-caption text-mid-gray">Office 365</span>
+</div>
+<div class="relative">
+<input class="w-full bg-surface-alt border border-hairline rounded-full px-4 py-2 font-body text-body text-on-surface-variant cursor-not-allowed focus:outline-none" id="university-email" readonly="" type="email" value="2020601234@sv.haui.edu.vn">
+<span class="material-symbols-outlined absolute right-3.5 top-2.5 text-[18px] text-mid-gray">lock</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Dùng để nhận thông báo đào tạo và xác thực</p>
+</div>
+<!-- Personal Email -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-medium text-body-medium text-ink font-medium" for="personal-email">Email cá nhân</label>
+<input class="w-full bg-surface-alt border border-hairline rounded-full px-4 py-2 font-body text-body text-ink placeholder:text-mid-gray focus:outline-none focus:border-ink transition-colors" id="personal-email" type="email" value="vanan.dev@gmail.com">
+<p class="font-caption text-caption text-mid-gray">Nhận thông báo khẩn cấp và kết nối tuyển dụng</p>
+</div>
+<!-- Phone Number -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-medium text-body-medium text-ink font-medium" for="student-phone">Số điện thoại</label>
+<input class="w-full bg-surface-alt border border-hairline rounded-full px-4 py-2 font-body text-body text-ink placeholder:text-mid-gray focus:outline-none focus:border-ink transition-colors" id="student-phone" type="tel" value="0987 654 321"><p class="font-caption text-caption text-ember hidden" id="student-phone-error">Vui lòng nhập số điện thoại hợp lệ</p>
+<p class="font-caption text-caption text-mid-gray">Số di động đăng ký nhận mã OTP</p>
+</div>
+<!-- Address / Hometown -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-medium text-body-medium text-ink font-medium" for="student-address">Địa chỉ liên hệ / Quê quán</label>
+<input class="w-full bg-surface-alt border border-hairline rounded-full px-4 py-2 font-body text-body text-ink placeholder:text-mid-gray focus:outline-none focus:border-ink transition-colors" id="student-address" type="text" value="Bắc Ninh, Việt Nam">
+<p class="font-caption text-caption text-mid-gray">Địa chỉ thường trú theo sổ hộ khẩu/CCCD</p>
+</div>
+</div>
+</div>
+<!-- Section 2: Academic Program & Curriculum -->
+<div class="bg-paper border border-hairline rounded-[24px] p-space-lg shadow-sm flex flex-col gap-space-lg">
+<div class="flex items-center justify-between border-b border-hairline pb-space-md">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-ink text-[22px]">account_tree</span>
+<div class="flex flex-col">
+<h3 class="font-subheading text-subheading text-ink font-semibold">Thông tin chương trình đào tạo &amp; Ngành học</h3>
+<p class="font-caption text-caption text-mid-gray">Cấu trúc quy chuẩn của Khóa 16 - Trường Đại học Công nghiệp Hà Nội</p>
+</div>
+</div>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full font-label text-label bg-canvas text-mid-gray border border-hairline">Nhóm 02</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Campus Location -->
+<div class="flex flex-col gap-1.5 md:col-span-2">
+<label class="font-body-medium text-body-medium text-ink font-medium" for="campus">Cơ sở đào tạo</label>
+<div class="relative">
+<input class="w-full bg-surface-alt border border-hairline rounded-full px-4 py-2 font-body text-body text-on-surface-variant cursor-not-allowed focus:outline-none" id="campus" readonly="" type="text" value="Trường Đại học Công nghiệp Hà Nội - Cơ sở 1 (Nhổn, Bắc Từ Liêm, Hà Nội)">
+<span class="material-symbols-outlined absolute right-3.5 top-2.5 text-[18px] text-mid-gray">apartment</span>
+</div>
+</div>
+<!-- Faculty -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-medium text-body-medium text-ink font-medium" for="faculty">Khoa / Viện đào tạo</label>
+<input class="w-full bg-surface-alt border border-hairline rounded-full px-4 py-2 font-body text-body text-on-surface-variant cursor-not-allowed focus:outline-none" id="faculty" readonly="" type="text" value="Khoa Công nghệ Thông tin">
+</div>
+<!-- Major / Major Code -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-medium text-body-medium text-ink font-medium" for="major">Ngành đào tạo &amp; Mã ngành</label>
+<input class="w-full bg-surface-alt border border-hairline rounded-full px-4 py-2 font-body text-body text-on-surface-variant cursor-not-allowed focus:outline-none" id="major" readonly="" type="text" value="Công nghệ Thông tin (Mã ngành: 7480201)">
+</div>
+<!-- Cohort -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-medium text-body-medium text-ink font-medium" for="cohort">Khóa học</label>
+<input class="w-full bg-surface-alt border border-hairline rounded-full px-4 py-2 font-body text-body text-on-surface-variant cursor-not-allowed focus:outline-none" id="cohort" readonly="" type="text" value="Khóa 16 (Niên khóa 2020 - 2024 / 2025)">
+</div>
+<!-- Administrative Class -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-medium text-body-medium text-ink font-medium" for="class-name">Lớp sinh hoạt hành chính</label>
+<input class="w-full bg-surface-alt border border-hairline rounded-full px-4 py-2 font-body text-body text-ink focus:outline-none focus:border-ink transition-colors" id="class-name" type="text" value="ĐH CNTT 2 - K16">
+</div>
+<!-- Major Track / Specialization (Editable selector) -->
+<div class="flex flex-col gap-1.5 md:col-span-2">
+<label class="font-body-medium text-body-medium text-ink font-medium" for="track-direction">Chuyên ngành định hướng</label>
+<select class="w-full bg-surface-alt border border-hairline rounded-full px-4 py-2 font-body text-body text-ink focus:outline-none focus:border-ink transition-colors cursor-pointer" id="track-direction">
+<option selected="" value="ktpm-httt">Kỹ thuật phần mềm &amp; Hệ thống thông tin (SE &amp; IS Track)</option>
+<option value="khmt-ai">Khoa học máy tính &amp; Trí tuệ nhân tạo (CS &amp; AI Track)</option>
+<option value="mmt-attt">Mạng máy tính &amp; An toàn không gian số (Network &amp; Security)</option>
+</select>
+<p class="font-caption text-caption text-mid-gray">Định hướng này quyết định các nhóm học phần tự chọn khuyến nghị trên Cây môn học và AI Advisor</p>
+</div>
+<!-- Credit System / Curriculum -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-medium text-body-medium text-ink font-medium" for="curriculum">Chương trình đào tạo (CTĐT)</label>
+<input class="w-full bg-surface-alt border border-hairline rounded-full px-4 py-2 font-body text-body text-on-surface-variant cursor-not-allowed focus:outline-none" id="curriculum" readonly="" type="text" value="145 Tín chỉ (Hệ đào tạo Kỹ sư)">
+<p class="font-caption text-caption text-mid-gray">Khung kỹ sư định hướng ứng dụng POHE</p>
+</div>
+<!-- Academic Advisor in form -->
+<div class="flex flex-col gap-1.5">
+<label class="font-body-medium text-body-medium text-ink font-medium" for="advisor">Cố vấn học tập chủ nhiệm</label>
+<input class="w-full bg-surface-alt border border-hairline rounded-full px-4 py-2 font-body text-body text-on-surface-variant cursor-not-allowed focus:outline-none" id="advisor" readonly="" type="text" value="TS. Trần Văn Minh (minhtv@haui.edu.vn)">
+<p class="font-caption text-caption text-mid-gray">Liên hệ đổi cố vấn qua VP Khoa CNTT (Tầng 5 - A1)</p>
+</div>
+</div>
+</div>
+<!-- Section 3: Legal & System Notice Callout -->
+<div class="bg-surface-alt border border-hairline rounded-[24px] p-space-lg flex items-start gap-space-md shadow-sm">
+<span class="material-symbols-outlined text-ink text-[24px] shrink-0 mt-0.5">info</span>
+<div class="flex flex-col gap-1 min-w-0">
+<span class="font-body-medium text-body-medium text-ink font-semibold">Lưu ý về quy chế cập nhật dữ liệu</span>
+<p class="font-body text-body text-mid-gray leading-relaxed">
+                Dữ liệu này được lưu trữ cục bộ phục vụ việc tư vấn môn học, tự động xếp lịch và tính toán mô phỏng What-if trên HAUI ADVISOR. 
+                Để thay đổi các thông tin định danh pháp lý (Họ tên, Ngày sinh, CCCD, Điểm thi), sinh viên vui lòng liên hệ trực tiếp <span class="text-ink font-medium">Phòng Đào tạo HaUI (Tầng 1, Nhà A1)</span> hoặc cổng quản trị <a class="underline text-ink hover:text-mid-gray" href="#">sv.haui.edu.vn</a>.
+              </p>
+</div>
+</div>
+<!-- Action Footer & Status Toast Bar -->
+<div class="bg-paper border border-hairline rounded-[24px] p-space-md lg:p-space-lg flex flex-col sm:flex-row items-center justify-between gap-space-md shadow-sm">
+<div class="flex items-center gap-space-sm text-mid-gray font-caption text-caption">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container rounded-full text-ink font-label text-label border border-hairline">
+<span class="w-2 h-2 rounded-full bg-ink"></span>
+                Dữ liệu lưu trữ cục bộ trên trình duyệt
+              </span>
+<span class="hidden md:inline">• Đồng bộ lần cuối: Hôm nay, 14:32</span>
+</div>
+<div class="flex items-center gap-space-sm w-full sm:w-auto justify-end">
+<button class="px-5 py-2 bg-canvas hover:bg-surface-variant text-ink rounded-full font-body-medium text-body-medium transition-colors border border-hairline" id="btn-cancel-bottom" type="reset">
+                Hủy bỏ
+              </button>
+<button class="inline-flex items-center justify-center gap-1.5 px-6 py-2 bg-ink hover:bg-ink-soft text-paper rounded-full font-body-medium text-body-medium shadow-sm transition-all" id="btn-save-bottom" type="button">
+<span class="material-symbols-outlined text-[18px]">save</span>
+<span class="">Lưu thay đổi</span>
+</button>
+</div>
+</div>
+</form>
+</main>
+</div>
+</div>
+<!-- Notification Toast Modal (Hidden by default, triggered on save) -->
+<div class="fixed inset-0 z-50 bg-ink/40 backdrop-blur-xl flex items-center justify-center p-space-md opacity-0 pointer-events-none transition-all duration-300" id="confirm-modal"><div class="bg-paper border border-hairline rounded-[24px] max-w-md w-full p-space-lg shadow-xl flex flex-col gap-space-md"><div class="flex items-center gap-space-sm"><div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[22px] text-ink">help_outline</span></div><div class="flex flex-col"><h3 class="font-subheading text-subheading text-ink font-semibold">Xác nhận lưu thay đổi</h3><span class="font-caption text-caption text-mid-gray">Cập nhật hồ sơ sinh viên cục bộ</span></div></div><p class="font-body text-body text-mid-gray leading-relaxed">Bạn có chắc chắn muốn lưu các thông tin hiệu chỉnh này? Dữ liệu này sẽ được dùng cho mô phỏng tiến độ và kế hoạch học tập cá nhân.</p><div class="flex items-center justify-end gap-space-sm pt-2"><button class="px-4 py-2 bg-canvas hover:bg-surface-variant text-ink rounded-full font-body-medium text-body-medium transition-colors border border-hairline" id="btn-confirm-cancel" type="button">Xem lại</button><button class="inline-flex items-center justify-center gap-1.5 px-5 py-2 bg-ink hover:bg-ink-soft text-paper rounded-full font-body-medium text-body-medium shadow-sm transition-all" id="btn-confirm-submit" type="button"><span class="material-symbols-outlined text-[16px]">check</span><span class="">Xác nhận lưu</span></button></div></div></div><div class="fixed bottom-6 right-6 z-50 transform translate-y-16 opacity-0 pointer-events-none transition-all duration-300" id="save-toast"><div class="bg-ink text-paper px-space-md py-3 rounded-full shadow-xl flex items-center gap-space-sm border border-hairline"><span class="material-symbols-outlined text-[20px] text-paper" id="toast-icon">task_alt</span><span class="font-body-medium text-body-medium text-paper" id="toast-message">Đã lưu cập nhật thông tin hồ sơ sinh viên thành công!</span><button class="ml-2 text-mid-gray hover:text-paper" id="close-toast" type="button"><span class="material-symbols-outlined text-[16px]">close</span></button></div></div>
+<script>
+    (function initProfilePage() {
+      const saveBtnTop = document.getElementById('btn-save-top');
+      const saveBtnBottom = document.getElementById('btn-save-bottom');
+      const cancelBtnTop = document.getElementById('btn-cancel-top');
+      const cancelBtnBottom = document.getElementById('btn-cancel-bottom');
+      const profileForm = document.getElementById('student-profile-form');
+      const toast = document.getElementById('save-toast');
+      const closeToast = document.getElementById('close-toast');
+
+      function showNotification() {
+        if (!toast) return;
+        toast.classList.remove('translate-y-16', 'opacity-0', 'pointer-events-none');
+        toast.classList.add('translate-y-0', 'opacity-100');
+
+        setTimeout(() => {
+          hideNotification();
+        }, 3500);
+      }
+
+      function hideNotification() {
+        if (!toast) return;
+        toast.classList.add('translate-y-16', 'opacity-0', 'pointer-events-none');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }
+
+      if (saveBtnTop) saveBtnTop.addEventListener('click', showNotification);
+      if (saveBtnBottom) saveBtnBottom.addEventListener('click', showNotification);
+      if (closeToast) closeToast.addEventListener('click', hideNotification);
+
+      if (cancelBtnTop && profileForm) {
+        cancelBtnTop.addEventListener('click', () => {
+          profileForm.reset();
+        });
+      }
+    })();
+  </script>
+</div></main></div>
+
+</body></html>

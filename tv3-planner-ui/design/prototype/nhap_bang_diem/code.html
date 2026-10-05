@@ -1,0 +1,554 @@
+<!DOCTYPE html><html lang="vi" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-surface-variant": "#444748",
+          "canvas": "#f5f5f5",
+          "primary": "#000000",
+          "surface-dim": "#dadada",
+          "ink": "#0a0a0a",
+          "tertiary-fixed-dim": "#cac6c3",
+          "secondary-fixed-dim": "#c7c6c6",
+          "on-tertiary-fixed": "#1d1b1a",
+          "background": "#f9f9f9",
+          "surface-tint": "#5f5e5e",
+          "surface-container-high": "#e8e8e8",
+          "on-secondary-fixed": "#1b1c1c",
+          "secondary-container": "#e3e2e2",
+          "paper": "#ffffff",
+          "hairline": "#e5e5e5",
+          "surface-variant": "#e2e2e2",
+          "primary-fixed": "#e5e2e1",
+          "ink-soft": "#171717",
+          "surface": "#f9f9f9",
+          "surface-container-highest": "#e2e2e2",
+          "outline": "#747878",
+          "on-secondary-fixed-variant": "#464747",
+          "error-container": "#ffdad6",
+          "on-primary-fixed-variant": "#474646",
+          "on-error": "#ffffff",
+          "on-primary": "#ffffff",
+          "on-error-container": "#93000a",
+          "surface-container-lowest": "#ffffff",
+          "surface-container": "#eeeeee",
+          "secondary": "#5e5e5e",
+          "on-tertiary": "#ffffff",
+          "tertiary-fixed": "#e6e1df",
+          "error": "#ba1a1a",
+          "on-background": "#1a1c1c",
+          "on-secondary-container": "#646464",
+          "on-primary-container": "#858383",
+          "on-surface": "#1a1c1c",
+          "inverse-primary": "#c9c6c5",
+          "on-tertiary-container": "#868381",
+          "on-tertiary-fixed-variant": "#484645",
+          "on-primary-fixed": "#1c1b1b",
+          "inverse-on-surface": "#f1f1f1",
+          "primary-container": "#1c1b1b",
+          "secondary-fixed": "#e3e2e2",
+          "surface-alt": "#fafafa",
+          "primary-fixed-dim": "#c9c6c5",
+          "surface-container-low": "#f3f3f3",
+          "tertiary": "#000000",
+          "ember": "#e7000b",
+          "inverse-surface": "#2f3131",
+          "outline-variant": "#c4c7c7",
+          "surface-bright": "#f9f9f9",
+          "on-secondary": "#ffffff",
+          "tertiary-container": "#1d1b1a",
+          "mid-gray": "#737373"
+        },
+        "borderRadius": {
+          "DEFAULT": "1rem",
+          "lg": "2rem",
+          "xl": "3rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "margin-tablet": "1.5rem",
+          "space-lg": "1.25rem",
+          "space-xl": "2rem",
+          "margin": "1rem",
+          "space-sm": "0.5rem",
+          "gutter-desktop": "1.5rem",
+          "space-xs": "0.25rem",
+          "space-md": "1rem",
+          "margin-desktop": "2.5rem",
+          "gutter": "1rem"
+        },
+        "fontFamily": {
+          "body": ["Geist"],
+          "display-mobile": ["Geist"],
+          "headline": ["Geist"],
+          "label": ["Geist"],
+          "display": ["Geist"],
+          "caption": ["Geist"],
+          "subheading": ["Geist"],
+          "body-medium": ["Geist"]
+        },
+        "fontSize": {
+          "body": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+          "display-mobile": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.025em", "fontWeight": "600"}],
+          "headline": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+          "label": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+          "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.03em", "fontWeight": "600"}],
+          "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+          "subheading": ["18px", {"lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+          "body-medium": ["14px", {"lineHeight": "20px", "fontWeight": "500"}]
+        }
+      }
+    }
+  }</script></head><body class="bg-canvas font-body text-on-surface antialiased selection:bg-ink selection:text-paper"><aside class="fixed left-0 top-0 h-screen w-72 bg-surface-alt z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-r border-hairline"><div class="flex flex-col flex-1 overflow-y-auto px-space-md pt-space-lg"><a href="../tong_quan_hoc_tap/code.html" class="flex items-center gap-space-sm px-space-xs pb-space-lg mb-space-sm border-b border-hairline hover:opacity-80 transition-opacity"><img alt="HAUI ADVISOR Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1WK5zh9ylvUzptVeDsx0qQXD4J2y8fXrDqGSt3SY9JUtbslFQaOI8zsbxNrF2NC1oMkW29nIgovny9cLNs4gEM98-9TTBwMDW8jnPzcr7mDBLq5qbVMzt39l9IBDZmfnhKhNNoKITuvy6-UulNbyqr_8EbfWotkEFYNiiPQSKnTmz2FFOxJzHcK0a5MBn7X3eD-WdXPUtF0ujoiZ5eCxm1ZiiqEOyaqeEa-57jeo3U_cO1NEfdaZAHvmN0"><div class="flex flex-col min-w-0"><span class="font-subheading text-subheading text-ink font-semibold tracking-tight truncate leading-tight">HAUI ADVISOR</span><span class="font-caption text-caption text-mid-gray truncate">Cổng Tư Vấn &amp; Lộ Trình KTPM/CNTT</span></div></a><nav class="flex flex-col gap-1 w-full" data-active-classes="bg-ink text-paper font-medium rounded-full"><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="tong-quan" href="../tong_quan_hoc_tap/code.html"><span class="material-symbols-outlined text-[18px]">grid_view</span><span class="truncate">Tổng quan</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="ho-so-sinh-vien" href="../ho_so_sinh_vien/code.html"><span class="material-symbols-outlined text-[18px]">badge</span><span class="truncate">Hồ sơ sinh viên</span></a><a aria-current="page" class="flex items-center gap-space-sm px-space-md py-space-sm transition-all duration-150 bg-ink text-paper font-medium rounded-full shadow-[0_1px_8px_rgba(0,0,0,0.04)]" data-path="nhap-bang-diem" href="../nhap_bang_diem/code.html"><span class="material-symbols-outlined text-[18px]">upload_file</span><span class="truncate">Nhập bảng điểm</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="cay-mon-hoc" href="../cay_mon_hoc/code.html"><span class="material-symbols-outlined text-[18px]">account_tree</span><span class="truncate">Cây môn học</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="ke-hoach-hoc-tap" href="../ke_hoach_hoc_tap_ca_nhan/code.html"><span class="material-symbols-outlined text-[18px]">event_note</span><span class="truncate">Kế hoạch học tập</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="lich-su-ke-hoach" href="../lich_su_ke_hoach/code.html"><span class="material-symbols-outlined text-[18px]">history</span><span class="truncate">Lịch sử kế hoạch</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="tu-van-ai" href="../tu_van_ai/code.html"><span class="material-symbols-outlined text-[18px]">smart_toy</span><span class="truncate">Tư vấn AI</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="what-if-mo-phong-diem" href="../what_if_mo_phong_diem/code.html"><span class="material-symbols-outlined text-[18px]">insights</span><span class="truncate">What-if mô phỏng điểm</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="kiem-tra-dieu-kien-tot-nghiep" href="../kiem_tra_dieu_kien_tot_nghiep/code.html"><span class="material-symbols-outlined text-[18px]">verified</span><span class="truncate">Kiểm tra điều kiện tốt nghiệp</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="cai-dat" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span class="truncate">Cài đặt</span></a></nav></div><div class="p-space-md m-space-sm bg-paper rounded-[24px] border border-hairline shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center justify-between mb-space-xs"><a href="../ho_so_sinh_vien/code.html" class="flex items-center gap-space-sm min-w-0 hover:opacity-80 transition-opacity" title="Xem hồ sơ sinh viên"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="min-w-0"><p class="font-body-medium text-body-medium text-ink font-medium truncate">Nguyễn Văn An</p><p class="font-caption text-caption text-mid-gray truncate">2020601234 • K16 CNTT</p></div></a><button class="text-mid-gray hover:text-ink p-1 rounded-full hover:bg-canvas transition-colors" title="Chuyển đổi tài khoản / Đăng xuất" type="button"><span class="material-symbols-outlined text-[18px]">logout</span></button></div><div class="flex items-center gap-1.5 pt-space-xs border-t border-hairline"><span class="w-2 h-2 rounded-full bg-ink"></span><span class="font-label text-label text-mid-gray">Đang học kỳ 6/8</span></div></div></aside><div class="pl-72 flex flex-col min-h-screen"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-alt/90 backdrop-blur-xl border-b border-hairline z-40 flex items-center justify-between px-space-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center gap-space-md"><div class="relative flex items-center w-80 lg:w-96"><span class="material-symbols-outlined absolute left-space-md text-[18px] text-mid-gray pointer-events-none">search</span><input class="w-full bg-surface-alt border border-hairline rounded-full pl-10 pr-12 py-2 font-body text-body text-ink placeholder:text-mid-gray focus:outline-none focus:border-ink transition-colors" placeholder="Tìm môn học, mã môn, chuẩn tốt nghiệp..." type="text"></div></div><div class="flex items-center gap-space-md"><a class="inline-flex items-center gap-space-xs bg-ink hover:bg-ink-soft text-paper px-space-md py-2 rounded-full font-body-medium text-body-medium transition-colors shadow-[0_1px_8px_rgba(0,0,0,0.04)]" data-path="tu-van-ai" href="../tu_van_ai/code.html"><span class="material-symbols-outlined text-[16px]">auto_awesome</span><span class="">Tư vấn lộ trình nhanh với AI</span></a><button class="w-9 h-9 rounded-full border border-hairline bg-paper flex items-center justify-center text-ink hover:bg-canvas transition-colors relative" title="Thông báo" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-ember"></span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="w-full pt-16 bg-canvas flex-1"><div class="flex flex-col w-full">
+<div class="p-space-lg lg:p-space-xl flex flex-col gap-space-lg max-w-[1440px] mx-auto w-full">
+<!-- Header Block -->
+<header class="flex flex-col lg:flex-row lg:items-end justify-between gap-space-md pb-space-sm"><div class="flex flex-col gap-1.5 min-w-0"><div class="flex items-center gap-2 flex-wrap"><nav class="flex items-center gap-1.5 font-caption text-caption text-mid-gray"><a class="hover:text-ink transition-colors" href="#">Trang chủ</a><span class="material-symbols-outlined text-[14px]">chevron_right</span><span class="text-ink font-medium">Nhập bảng điểm</span></nav><span class="inline-flex items-center gap-1 bg-surface-container px-2.5 py-0.5 rounded-full font-label text-label text-ink"><span class="w-1.5 h-1.5 rounded-full bg-ink"></span>Dữ liệu thực tế tải lên / nhập tay</span><span class="inline-flex items-center gap-1 bg-surface-alt border border-hairline px-2.5 py-0.5 rounded-full font-label text-label text-mid-gray"><span class="material-symbols-outlined text-[14px]">science</span>Mô phỏng Sandbox</span></div><h1 class="font-headline text-headline text-ink tracking-tight">Nhập &amp; Quản lý bảng điểm</h1><p class="font-body text-body text-mid-gray max-w-3xl">Tải lên tệp bảng điểm cá nhân hoặc nhập điểm thủ công để hệ thống kiểm tra tính hợp lệ, tính toán GPA/CPA và tư vấn điều kiện học phần.</p></div><div class="flex items-center flex-wrap gap-2 shrink-0"><button id="btn-download-template" class="inline-flex items-center gap-1.5 bg-paper hover:bg-canvas text-ink px-4 py-2 rounded-full font-body-medium text-body-medium shadow-sm transition-all duration-150" type="button"><span class="material-symbols-outlined text-[18px] text-mid-gray">download</span><span class="">Tải file mẫu Excel</span></button><button id="btn-validate-data" class="inline-flex items-center gap-1.5 bg-surface-alt hover:bg-surface-container-high text-ink px-4 py-2 rounded-full font-body-medium text-body-medium shadow-sm transition-all duration-150" type="button"><span class="material-symbols-outlined text-[18px]">fact_check</span><span class="">Kiểm tra dữ liệu</span></button><button id="btn-save-transcript" class="inline-flex items-center gap-1.5 bg-ink hover:bg-ink-soft text-paper px-5 py-2 rounded-full font-body-medium text-body-medium shadow-sm transition-all duration-150" type="button"><span class="material-symbols-outlined text-[18px]">check_circle</span><span class="">Lưu bảng điểm</span></button></div></header>
+<!-- Computed Summary Metric Stats -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Metric 1: GPA -->
+<div class="bg-paper p-space-lg rounded-[24px] shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="flex items-start justify-between">
+<div>
+<span class="font-caption text-caption uppercase tracking-wider text-mid-gray font-semibold">GPA Học kỳ gần nhất</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-headline text-headline text-ink font-semibold">3.24</span>
+<span class="font-caption text-caption text-mid-gray">/ 4.00</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-ink">
+<span class="material-symbols-outlined text-[20px]">trending_up</span>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-4 pt-3">
+<span class="inline-flex items-center gap-0.5 text-ink font-caption text-caption bg-surface-container px-2 py-0.5 rounded-full font-medium">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+            +0.12
+          </span>
+<span class="font-caption text-caption text-mid-gray">so với Học kỳ 5 (3.12)</span>
+</div>
+</div>
+<!-- Metric 2: CPA -->
+<div class="bg-paper p-space-lg rounded-[24px] shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="flex items-start justify-between">
+<div>
+<span class="font-caption text-caption uppercase tracking-wider text-mid-gray font-semibold">CPA Tích lũy toàn khóa</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-headline text-headline text-ink font-semibold">3.18</span>
+<span class="font-caption text-caption text-mid-gray">/ 4.00</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-ink">
+<span class="material-symbols-outlined text-[20px]">workspace_premium</span>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-4 pt-3">
+<span class="inline-flex items-center gap-1 text-ink font-caption text-caption bg-surface-container px-2 py-0.5 rounded-full font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-ink"></span>
+            Hạng Khá / Giỏi
+          </span>
+<span class="font-caption text-caption text-mid-gray">Tiếp cận ngưỡng 3.20 (Giỏi)</span>
+</div>
+</div>
+<!-- Metric 3: Credits Completed -->
+<div class="bg-paper p-space-lg rounded-[24px] shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="flex items-start justify-between">
+<div>
+<span class="font-caption text-caption uppercase tracking-wider text-mid-gray font-semibold">Tín chỉ hợp lệ tích lũy</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-headline text-headline text-ink font-semibold">108</span>
+<span class="font-caption text-caption text-mid-gray">/ 145 tín chỉ</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-ink">
+<span class="material-symbols-outlined text-[20px]">pie_chart</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5 mt-4 pt-3">
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-ink h-full rounded-full transition-all duration-500" style="width: 74.5%"></div>
+</div>
+<div class="flex justify-between items-center text-mid-gray font-caption text-caption">
+<span class="">Tiến độ chương trình</span>
+<span class="font-medium text-ink">74.5%</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Upload & Entry Methods Grid -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-space-md items-start">
+<!-- Method 1: File Uploader (7 cols) -->
+<div class="lg:col-span-7 bg-paper p-space-lg rounded-[24px] shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-ink"></span>
+<h2 class="font-subheading text-subheading text-ink font-medium">Phương thức 1: Tải lên tệp bảng điểm</h2>
+</div>
+<span class="font-label text-label text-mid-gray bg-canvas px-2.5 py-1 rounded-full">Hỗ trợ .xlsx, .csv, .pdf</span>
+</div>
+<!-- Dropzone Area with Drag Feedback -->
+<div class="rounded-[20px] p-6 flex flex-col items-center justify-center text-center cursor-pointer bg-surface-alt hover:bg-canvas transition-colors" id="dropzone">
+<div class="w-12 h-12 rounded-full bg-paper flex items-center justify-center text-ink shadow-sm mb-3">
+<span class="material-symbols-outlined text-[24px]">cloud_upload</span>
+</div>
+<p class="font-body-medium text-body-medium text-ink font-medium">Kéo thả tệp tin hoặc nhấn để chọn</p>
+<p class="font-caption text-caption text-mid-gray mt-1 max-w-sm">Tự động nhận diện bảng điểm từ Cổng thông tin đào tạo HaUI (e-learning/sinhvien.haui.edu.vn)</p>
+<input accept=".xlsx,.xls,.csv,.pdf" class="hidden" id="file-input" type="file">
+</div>
+<!-- Upload Simulated Status -->
+<div class="bg-surface-alt rounded-[18px] p-3.5 flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-full bg-paper flex items-center justify-center shrink-0 shadow-sm text-ink">
+<span class="material-symbols-outlined text-[20px]">description</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-body-medium text-body-medium text-ink font-medium truncate">bang_diem_ky_6_haui.xlsx</span>
+<span class="font-caption text-caption text-mid-gray shrink-0">124 KB</span>
+</div>
+<span class="font-caption text-caption text-mid-gray truncate">Đã tải lên và trích xuất thành công 28 môn học</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 shrink-0">
+<span class="w-2 h-2 rounded-full bg-ink"></span>
+<span class="font-label text-label text-ink font-medium">Sẵn sàng</span>
+<button class="ml-2 text-mid-gray hover:text-ink p-1 rounded-full hover:bg-canvas transition-colors" title="Xóa tệp" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Method 2: Manual Entry & Quick Settings (5 cols) -->
+<div class="lg:col-span-5 bg-paper p-space-lg rounded-[24px] shadow-sm flex flex-col justify-between gap-space-md min-h-full">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-ink"></span>
+<h2 class="font-subheading text-subheading text-ink font-medium">Phương thức 2: Nhập thủ công &amp; Điều chỉnh</h2>
+</div>
+</div>
+<p class="font-body text-body text-mid-gray mb-space-md">
+            Bổ sung môn học chuyển đổi điểm, môn học lại hoặc chỉnh sửa trực tiếp thông tin điểm từng học phần.
+          </p>
+<div class="grid grid-cols-2 gap-2 mb-space-md"><button id="btn-open-add-modal" class="flex items-center justify-center gap-1.5 bg-ink text-paper py-2.5 px-3 rounded-full font-body-medium text-body-medium hover:bg-ink-soft transition-colors cursor-pointer" type="button"><span class="material-symbols-outlined text-[18px]">add</span><span class="">+ Thêm môn học</span></button><button id="btn-open-convert-modal" class="flex items-center justify-center gap-1.5 bg-canvas hover:bg-surface-container-high text-ink py-2.5 px-3 rounded-full font-body-medium text-body-medium transition-colors cursor-pointer" type="button"><span class="material-symbols-outlined text-[18px]">tune</span><span class="">Quy đổi thang điểm</span></button></div>
+<div class="flex flex-col gap-2 pt-2">
+<span class="font-label text-label text-mid-gray">Xem nhanh theo giai đoạn đào tạo:</span>
+<div class="flex flex-wrap gap-1.5">
+<span class="px-3 py-1 rounded-full bg-ink text-paper font-caption text-caption font-medium cursor-pointer">Tất cả kỳ</span>
+<span class="px-3 py-1 rounded-full bg-canvas text-mid-gray hover:text-ink font-caption text-caption cursor-pointer">Học kỳ 1</span>
+<span class="px-3 py-1 rounded-full bg-canvas text-mid-gray hover:text-ink font-caption text-caption cursor-pointer">Học kỳ 2</span>
+<span class="px-3 py-1 rounded-full bg-canvas text-mid-gray hover:text-ink font-caption text-caption cursor-pointer">Học kỳ 3</span>
+<span class="px-3 py-1 rounded-full bg-canvas text-mid-gray hover:text-ink font-caption text-caption cursor-pointer">Học kỳ 4</span>
+<span class="px-3 py-1 rounded-full bg-canvas text-mid-gray hover:text-ink font-caption text-caption cursor-pointer">Học kỳ 5</span>
+<span class="px-3 py-1 rounded-full bg-canvas text-ink font-caption text-caption font-medium cursor-pointer">Học kỳ 6 (Mới)</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-alt rounded-[18px] p-3 text-mid-gray font-caption text-caption flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-ink shrink-0">info</span>
+<span class="">Dữ liệu nhập thủ công sẽ tự động gộp vào thuật toán gợi ý môn học tự chọn KTPM/CNTT.</span>
+</div>
+</div>
+</section>
+<!-- Validation Preview Banner Box -->
+<section class="bg-paper p-space-lg rounded-[24px] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+<div class="flex items-start gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center shrink-0 text-ink">
+<span class="material-symbols-outlined text-[20px]">verified</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-subheading text-subheading text-ink font-medium">Bản xem trước &amp; Kiểm tra tính hợp lệ</span>
+<span class="px-2.5 py-0.5 rounded-full bg-surface-container text-ink font-label text-label font-medium">27/28 môn hợp lệ</span>
+</div>
+<p class="font-body text-body text-mid-gray mt-0.5">
+            Cảnh báo: Môn <strong class="text-ink font-medium">An toàn và bảo mật thông tin (IT6022)</strong> chưa hoàn thành điểm thi hết môn, tạm tính theo điểm quá trình.
+          </p>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0"><button id="btn-cancel-sync" class="px-4 py-2 rounded-full font-body-medium text-body-medium text-mid-gray hover:text-ink hover:bg-canvas transition-colors" type="button">Hủy bỏ</button><button id="btn-confirm-sync" class="inline-flex items-center gap-1.5 bg-ink text-paper px-5 py-2 rounded-full font-body-medium text-body-medium hover:bg-ink-soft shadow-sm transition-all duration-150" type="button"><span class="material-symbols-outlined text-[16px]">sync</span><span class="">Xác nhận &amp; Cập nhật vào hệ thống</span></button></div>
+</section>
+<!-- Data Table Container Card -->
+<section class="bg-paper rounded-[24px] shadow-sm overflow-hidden flex flex-col">
+<!-- Table Controls Toolbar -->
+<div class="p-space-lg flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+<div class="flex items-center flex-wrap gap-2">
+<!-- Search input -->
+<div class="relative flex items-center w-64 md:w-80">
+<span class="material-symbols-outlined absolute left-3 text-[18px] text-mid-gray pointer-events-none">search</span>
+<input class="w-full bg-surface-alt rounded-full pl-9 pr-4 py-2 font-body text-body text-ink placeholder:text-mid-gray focus:outline-none focus:bg-canvas transition-colors" placeholder="Tìm theo mã hoặc tên môn..." type="text">
+</div>
+<!-- Term Select Dropdown -->
+<div class="relative">
+<select class="appearance-none bg-surface-alt rounded-full pl-3.5 pr-8 py-2 font-body text-body text-ink focus:outline-none focus:bg-canvas transition-colors cursor-pointer">
+<option>Kỳ 6 - Năm học 2023-2024</option>
+<option>Kỳ 5 - Năm học 2022-2023</option>
+<option>Kỳ 4 - Năm học 2022-2023</option>
+<option>Tất cả các học kỳ</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-[18px] text-mid-gray pointer-events-none">expand_more</span>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end md:self-auto"><button id="btn-table-add-course" class="inline-flex items-center gap-1 bg-surface-alt hover:bg-surface-container text-ink px-3.5 py-2 rounded-full font-body-medium text-body-medium transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">add</span><span class="">Thêm môn</span></button><button id="btn-table-clear-all" class="inline-flex items-center gap-1 text-mid-gray hover:text-ember px-3.5 py-2 rounded-full font-body-medium text-body-medium hover:bg-canvas transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">delete_sweep</span><span class="">Xóa tất cả</span></button></div>
+</div>
+<!-- Table Body -->
+<div class="w-full overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-alt font-caption text-caption uppercase tracking-wider text-mid-gray">
+<th class="py-3 px-5 font-medium">Mã môn</th>
+<th class="py-3 px-5 font-medium">Tên môn học</th>
+<th class="py-3 px-4 font-medium text-center">Số TC</th>
+<th class="py-3 px-4 font-medium text-center">Học kỳ</th>
+<th class="py-3 px-4 font-medium text-right">Điểm 10</th>
+<th class="py-3 px-4 font-medium text-center">Điểm chữ</th>
+<th class="py-3 px-4 font-medium text-right">Điểm 4</th>
+<th class="py-3 px-5 font-medium">Trạng thái dữ liệu</th>
+<th class="py-3 px-5 font-medium text-center">Thao tác</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-hairline font-body text-body text-ink">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-alt/70 transition-colors">
+<td class="py-3.5 px-5 font-mono text-caption font-medium">IT6015</td>
+<td class="py-3.5 px-5 font-medium">Lập trình Web nâng cao</td>
+<td class="py-3.5 px-4 text-center">3</td>
+<td class="py-3.5 px-4 text-center text-mid-gray">Kỳ 6</td>
+<td class="py-3.5 px-4 text-right font-mono font-medium">8.8</td>
+<td class="py-3.5 px-4 text-center font-semibold">A</td>
+<td class="py-3.5 px-4 text-right font-mono font-medium">4.0</td>
+<td class="py-3.5 px-5">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label text-label bg-canvas text-ink">
+<span class="w-1.5 h-1.5 rounded-full bg-ink"></span>
+                  Hợp lệ
+                </span>
+</td>
+<td class="py-3.5 px-5 text-center">
+<div class="inline-flex items-center gap-1 text-mid-gray">
+<button class="p-1 hover:text-ink rounded-full hover:bg-canvas transition-colors" title="Sửa" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+<button class="p-1 hover:text-ember rounded-full hover:bg-canvas transition-colors" title="Xóa" type="button">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-alt/70 transition-colors">
+<td class="py-3.5 px-5 font-mono text-caption font-medium">IT6018</td>
+<td class="py-3.5 px-5 font-medium">Phân tích &amp; Thiết kế hệ thống thông tin</td>
+<td class="py-3.5 px-4 text-center">3</td>
+<td class="py-3.5 px-4 text-center text-mid-gray">Kỳ 6</td>
+<td class="py-3.5 px-4 text-right font-mono font-medium">8.2</td>
+<td class="py-3.5 px-4 text-center font-semibold">B+</td>
+<td class="py-3.5 px-4 text-right font-mono font-medium">3.5</td>
+<td class="py-3.5 px-5">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label text-label bg-canvas text-ink">
+<span class="w-1.5 h-1.5 rounded-full bg-ink"></span>
+                  Hợp lệ
+                </span>
+</td>
+<td class="py-3.5 px-5 text-center">
+<div class="inline-flex items-center gap-1 text-mid-gray">
+<button class="p-1 hover:text-ink rounded-full hover:bg-canvas transition-colors" title="Sửa" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+<button class="p-1 hover:text-ember rounded-full hover:bg-canvas transition-colors" title="Xóa" type="button">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-alt/70 transition-colors">
+<td class="py-3.5 px-5 font-mono text-caption font-medium">IT6020</td>
+<td class="py-3.5 px-5 font-medium">Trí tuệ nhân tạo căn bản</td>
+<td class="py-3.5 px-4 text-center">3</td>
+<td class="py-3.5 px-4 text-center text-mid-gray">Kỳ 6</td>
+<td class="py-3.5 px-4 text-right font-mono font-medium">9.1</td>
+<td class="py-3.5 px-4 text-center font-semibold">A</td>
+<td class="py-3.5 px-4 text-right font-mono font-medium">4.0</td>
+<td class="py-3.5 px-5">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label text-label bg-canvas text-ink">
+<span class="w-1.5 h-1.5 rounded-full bg-ink"></span>
+                  Hợp lệ
+                </span>
+</td>
+<td class="py-3.5 px-5 text-center">
+<div class="inline-flex items-center gap-1 text-mid-gray">
+<button class="p-1 hover:text-ink rounded-full hover:bg-canvas transition-colors" title="Sửa" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+<button class="p-1 hover:text-ember rounded-full hover:bg-canvas transition-colors" title="Xóa" type="button">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Warning Row -->
+<tr class="bg-surface-alt/40 hover:bg-surface-alt transition-colors">
+<td class="py-3.5 px-5 font-mono text-caption font-medium">IT6022</td>
+<td class="py-3.5 px-5 font-medium">
+                An toàn và bảo mật thông tin
+                <span class="block font-caption text-caption text-mid-gray">Chưa hoàn thành điểm thi kết thúc</span>
+</td>
+<td class="py-3.5 px-4 text-center">3</td>
+<td class="py-3.5 px-4 text-center text-mid-gray">Kỳ 6</td>
+<td class="py-3.5 px-4 text-right font-mono font-medium text-mid-gray">7.0*</td>
+<td class="py-3.5 px-4 text-center font-semibold text-mid-gray">B*</td>
+<td class="py-3.5 px-4 text-right font-mono font-medium text-mid-gray">3.0*</td>
+<td class="py-3.5 px-5">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label text-label bg-surface-container text-ink">
+<span class="w-1.5 h-1.5 rounded-full bg-ember"></span>
+                  Tạm tính QT
+                </span>
+</td>
+<td class="py-3.5 px-5 text-center">
+<div class="inline-flex items-center gap-1 text-mid-gray">
+<button class="p-1 hover:text-ink rounded-full hover:bg-canvas transition-colors" title="Sửa" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+<button class="p-1 hover:text-ember rounded-full hover:bg-canvas transition-colors" title="Xóa" type="button">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-alt/70 transition-colors">
+<td class="py-3.5 px-5 font-mono text-caption font-medium">FL6005</td>
+<td class="py-3.5 px-5 font-medium">Tiếng Anh chuyên ngành CNTT</td>
+<td class="py-3.5 px-4 text-center">2</td>
+<td class="py-3.5 px-4 text-center text-mid-gray">Kỳ 6</td>
+<td class="py-3.5 px-4 text-right font-mono font-medium">8.0</td>
+<td class="py-3.5 px-4 text-center font-semibold">B+</td>
+<td class="py-3.5 px-4 text-right font-mono font-medium">3.5</td>
+<td class="py-3.5 px-5">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label text-label bg-canvas text-ink">
+<span class="w-1.5 h-1.5 rounded-full bg-ink"></span>
+                  Hợp lệ
+                </span>
+</td>
+<td class="py-3.5 px-5 text-center">
+<div class="inline-flex items-center gap-1 text-mid-gray">
+<button class="p-1 hover:text-ink rounded-full hover:bg-canvas transition-colors" title="Sửa" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+<button class="p-1 hover:text-ember rounded-full hover:bg-canvas transition-colors" title="Xóa" type="button">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-surface-alt/70 transition-colors">
+<td class="py-3.5 px-5 font-mono text-caption font-medium">BS6001</td>
+<td class="py-3.5 px-5 font-medium">Kỹ năng mềm và Khởi nghiệp</td>
+<td class="py-3.5 px-4 text-center">2</td>
+<td class="py-3.5 px-4 text-center text-mid-gray">Kỳ 6</td>
+<td class="py-3.5 px-4 text-right font-mono font-medium">9.5</td>
+<td class="py-3.5 px-4 text-center font-semibold">A</td>
+<td class="py-3.5 px-4 text-right font-mono font-medium">4.0</td>
+<td class="py-3.5 px-5">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label text-label bg-canvas text-ink">
+<span class="w-1.5 h-1.5 rounded-full bg-ink"></span>
+                  Hợp lệ
+                </span>
+</td>
+<td class="py-3.5 px-5 text-center">
+<div class="inline-flex items-center gap-1 text-mid-gray">
+<button class="p-1 hover:text-ink rounded-full hover:bg-canvas transition-colors" title="Sửa" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+<button class="p-1 hover:text-ember rounded-full hover:bg-canvas transition-colors" title="Xóa" type="button">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 7: GDQP Special Case -->
+<tr class="hover:bg-surface-alt/70 transition-colors">
+<td class="py-3.5 px-5 font-mono text-caption font-medium">QP6002</td>
+<td class="py-3.5 px-5 font-medium">Giáo dục Quốc phòng - An ninh HP2</td>
+<td class="py-3.5 px-4 text-center">3</td>
+<td class="py-3.5 px-4 text-center text-mid-gray">Kỳ 2</td>
+<td class="py-3.5 px-4 text-right font-mono font-medium">8.0</td>
+<td class="py-3.5 px-4 text-center font-semibold text-mid-gray">Đạt</td>
+<td class="py-3.5 px-4 text-right font-mono font-medium text-mid-gray">--</td>
+<td class="py-3.5 px-5">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label text-label bg-canvas text-ink">
+<span class="w-1.5 h-1.5 rounded-full bg-ink"></span>
+                  Chứng chỉ ĐK
+                </span>
+</td>
+<td class="py-3.5 px-5 text-center">
+<div class="inline-flex items-center gap-1 text-mid-gray">
+<button class="p-1 hover:text-ink rounded-full hover:bg-canvas transition-colors" title="Sửa" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+<button class="p-1 hover:text-ember rounded-full hover:bg-canvas transition-colors" title="Xóa" type="button">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination & Footer Metadata -->
+<div class="p-space-md flex flex-col sm:flex-row items-center justify-between gap-3 bg-surface-alt font-caption text-caption text-mid-gray">
+<div class="flex items-center gap-2">
+<span class="">Hiển thị 7 trên tổng số 28 môn đã ghi nhận</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-canvas text-mid-gray hover:text-ink transition-colors disabled:opacity-40" disabled="" type="button">
+<span class="material-symbols-outlined text-[16px]">chevron_left</span>
+</button>
+<span class="w-8 h-8 rounded-full bg-ink text-paper flex items-center justify-center font-medium">1</span>
+<button class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-canvas text-mid-gray hover:text-ink transition-colors" type="button">2</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-canvas text-mid-gray hover:text-ink transition-colors" type="button">3</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-canvas text-mid-gray hover:text-ink transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+</div>
+<script>
+  (function() {
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+
+    if (dropzone && fileInput) {
+      dropzone.addEventListener('click', () => fileInput.click());
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          dropzone.classList.add('bg-canvas');
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          dropzone.classList.remove('bg-canvas');
+        }, false);
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length) {
+          fileInput.files = files;
+        }
+      });
+    }
+  })();
+</script><div id="add-course-modal" class="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm hidden flex items-center justify-center p-4"><div class="bg-paper rounded-[24px] shadow-sm max-w-lg w-full border border-hairline overflow-hidden"><div class="p-space-lg border-b border-hairline flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-ink"><span class="material-symbols-outlined text-[20px]">library_add</span></div><div class="flex flex-col"><h3 id="modal-course-title" class="font-subheading text-subheading text-ink font-medium">Thêm môn học mới</h3><span class="font-caption text-caption text-mid-gray">Nhập đầy đủ thông tin học phần để tính toán điểm số</span></div></div><button id="btn-close-course-modal" type="button" class="text-mid-gray hover:text-ink p-1 rounded-full hover:bg-canvas transition-colors"><span class="material-symbols-outlined text-[20px]">close</span></button></div><form id="course-form" class="p-space-lg flex flex-col gap-space-md"><div class="flex flex-col gap-1"><label class="font-label text-label text-mid-gray font-medium">Mã môn học <span class="text-ember">*</span></label><input id="input-course-code" type="text" placeholder="VD: IT6030, CN6012..." class="w-full bg-surface-alt border border-hairline rounded-[18px] px-3.5 py-2 font-body text-body text-ink placeholder:text-mid-gray focus:outline-none focus:border-ink transition-colors uppercase font-mono"><span id="err-course-code" class="font-caption text-caption text-ember hidden">Vui lòng nhập mã môn học hợp lệ.</span></div><div class="flex flex-col gap-1"><label class="font-label text-label text-mid-gray font-medium">Tên môn học <span class="text-ember">*</span></label><input id="input-course-name" type="text" placeholder="VD: Kiến trúc vi dịch vụ Microservices" class="w-full bg-surface-alt border border-hairline rounded-[18px] px-3.5 py-2 font-body text-body text-ink placeholder:text-mid-gray focus:outline-none focus:border-ink transition-colors"><span id="err-course-name" class="font-caption text-caption text-ember hidden">Vui lòng không để trống tên môn.</span></div><div class="grid grid-cols-2 gap-3"><div class="flex flex-col gap-1"><label class="font-label text-label text-mid-gray font-medium">Số tín chỉ (TC) <span class="text-ember">*</span></label><input id="input-course-credits" type="number" min="1" max="10" value="3" class="w-full bg-surface-alt border border-hairline rounded-[18px] px-3.5 py-2 font-body text-body text-ink focus:outline-none focus:border-ink transition-colors"></div><div class="flex flex-col gap-1"><label class="font-label text-label text-mid-gray font-medium">Học kỳ</label><select id="input-course-term" class="w-full bg-surface-alt border border-hairline rounded-[18px] px-3.5 py-2 font-body text-body text-ink focus:outline-none focus:border-ink transition-colors"><option value="Kỳ 6">Kỳ 6 (Hiện tại)</option><option value="Kỳ 5">Kỳ 5</option><option value="Kỳ 4">Kỳ 4</option><option value="Kỳ 3">Kỳ 3</option><option value="Kỳ 2">Kỳ 2</option><option value="Kỳ 1">Kỳ 1</option></select></div></div><div class="grid grid-cols-2 gap-3"><div class="flex flex-col gap-1"><label class="font-label text-label text-mid-gray font-medium">Điểm quá trình (QT)</label><input id="input-course-qt" type="number" step="0.1" min="0" max="10" placeholder="VD: 8.5" class="w-full bg-surface-alt border border-hairline rounded-[18px] px-3.5 py-2 font-body text-body text-ink placeholder:text-mid-gray focus:outline-none focus:border-ink transition-colors"></div><div class="flex flex-col gap-1"><label class="font-label text-label text-mid-gray font-medium">Điểm thi hết môn <span class="text-ember">*</span></label><input id="input-course-final" type="number" step="0.1" min="0" max="10" placeholder="VD: 8.0" class="w-full bg-surface-alt border border-hairline rounded-[18px] px-3.5 py-2 font-body text-body text-ink placeholder:text-mid-gray focus:outline-none focus:border-ink transition-colors"><span id="err-course-final" class="font-caption text-caption text-ember hidden">Nhập điểm hợp lệ từ 0 đến 10.</span></div></div><div class="p-3 bg-surface-alt rounded-[18px] flex items-center justify-between text-mid-gray font-caption text-caption"><span class="">Ước tính điểm chữ / hệ 4:</span><span id="calc-preview" class="font-mono font-medium text-ink">-- / --</span></div><div class="flex items-center justify-end gap-2 pt-2 border-t border-hairline"><button id="btn-cancel-modal" type="button" class="px-4 py-2 rounded-full font-body-medium text-body-medium text-mid-gray hover:text-ink hover:bg-canvas transition-colors">Hủy bỏ</button><button id="btn-submit-course" type="submit" class="inline-flex items-center gap-1.5 bg-ink text-paper px-5 py-2 rounded-full font-body-medium text-body-medium hover:bg-ink-soft transition-colors"><span class="material-symbols-outlined text-[16px]">save</span><span class="">Lưu học phần</span></button></div></form></div></div><div id="delete-confirm-modal" class="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm hidden flex items-center justify-center p-4"><div class="bg-paper rounded-[24px] shadow-sm max-w-md w-full border border-hairline p-space-lg flex flex-col gap-space-md"><div class="flex items-start gap-3"><div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center shrink-0 text-ember"><span class="material-symbols-outlined text-[22px]">warning</span></div><div class="flex flex-col"><h3 class="font-subheading text-subheading text-ink font-semibold">Xác nhận xóa học phần?</h3><p class="font-body text-body text-mid-gray mt-1">Hành động này sẽ loại bỏ học phần khỏi danh sách tính điểm tạm thời và ảnh hưởng tới GPA/CPA ước tính.</p><p id="delete-course-target" class="font-caption font-mono text-ink mt-2 bg-surface-alt p-2 rounded-[12px]">Học phần: IT6015</p></div></div><div class="flex items-center justify-end gap-2 pt-2 border-t border-hairline"><button id="btn-cancel-delete" type="button" class="px-4 py-2 rounded-full font-body-medium text-body-medium text-mid-gray hover:text-ink hover:bg-canvas transition-colors">Hủy</button><button id="btn-confirm-delete" type="button" class="inline-flex items-center gap-1.5 bg-ember text-on-error px-4 py-2 rounded-full font-body-medium text-body-medium hover:opacity-90 transition-opacity"><span class="material-symbols-outlined text-[16px]">delete</span><span class="">Xác nhận xóa</span></button></div></div></div><div id="toast-notification" class="fixed bottom-6 right-6 z-50 translate-y-20 opacity-0 pointer-events-none transition-all duration-300 max-w-md"><div class="bg-ink text-paper rounded-[20px] shadow-sm p-4 flex items-center gap-3 border border-hairline"><div id="toast-icon-wrapper" class="w-8 h-8 rounded-full bg-paper/20 flex items-center justify-center shrink-0"><span id="toast-icon" class="material-symbols-outlined text-[18px] text-paper">check</span></div><div class="flex flex-col min-w-0 flex-1"><p id="toast-title" class="font-body-medium text-body-medium font-medium leading-tight">Thông báo</p><p id="toast-desc" class="font-caption text-caption text-mid-gray leading-tight mt-0.5 truncate">Hệ thống đã cập nhật thành công</p></div><button id="toast-close" class="text-mid-gray hover:text-paper p-1"><span class="material-symbols-outlined text-[16px]">close</span></button></div></div></main></div>
+
+</body></html>

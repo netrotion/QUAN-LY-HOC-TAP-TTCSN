@@ -2,6 +2,9 @@ import { StudyPlannerPage } from './pages/StudyPlannerPage.js';
 import { ChatAdvisorPage } from './pages/ChatAdvisorPage.js';
 import { WhatIfSimulatorPage } from './pages/WhatIfSimulatorPage.js';
 import { StudentProfilePage } from './pages/StudentProfilePage.js';
+import { PlanHistoryModal } from './components/PlanHistoryModal.js';
+import { CurriculumTreeModal } from './components/CurriculumTreeModal.js';
+import { plannerStore, PLAN_STATUSES } from './services/plannerStore.js';
 
 /**
  * HaUI Advisor - Planner UI Feature Package (TV3)
@@ -61,7 +64,11 @@ export {
   StudyPlannerPage,
   ChatAdvisorPage,
   WhatIfSimulatorPage,
-  StudentProfilePage
+  StudentProfilePage,
+  PlanHistoryModal,
+  CurriculumTreeModal,
+  plannerStore,
+  PLAN_STATUSES
 };
 
 export const PACKAGE_INFO = {

@@ -7,7 +7,11 @@ import {
   StudyPlannerPage,
   ChatAdvisorPage,
   WhatIfSimulatorPage,
-  StudentProfilePage
+  StudentProfilePage,
+  PlanHistoryModal,
+  CurriculumTreeModal,
+  plannerStore,
+  PLAN_STATUSES
 } from '../src/index.js';
 
 test('createStudentRoutes returns an array of route definitions with 4 core pages', () => {
@@ -70,6 +74,7 @@ test('StudyPlannerPage is a valid React component and can be instantiated as a R
     Button: ({ children }) => children,
     Card: ({ title, children }) => children,
     Table: () => null,
+    Modal: () => null,
     Loading: () => null,
     Error: () => null,
     EmptyState: () => null
@@ -168,6 +173,80 @@ test('StudentProfilePage is a valid React component and can be instantiated as a
   assert.equal(element.type, StudentProfilePage);
   assert.equal(element.props.api, mockApi);
   assert.equal(element.props.ui, mockUi);
+});
+
+test('PlanHistoryModal and CurriculumTreeModal are exported and can be instantiated as React elements', () => {
+  assert.equal(typeof PlanHistoryModal, 'function');
+  assert.equal(typeof CurriculumTreeModal, 'function');
+
+  const mockUi = {
+    Button: ({ children }) => children,
+    Card: ({ title, children }) => children,
+    Modal: ({ children }) => children
+  };
+
+  const historyEl = React.createElement(PlanHistoryModal, { isOpen: true, onClose: () => {}, ui: mockUi });
+  assert.equal(historyEl.type, PlanHistoryModal);
+
+  const treeEl = React.createElement(CurriculumTreeModal, { isOpen: true, onClose: () => {}, ui: mockUi });
+  assert.equal(treeEl.type, CurriculumTreeModal);
+});
+
+test('plannerStore manages multi-semester plan, state machine and proposal lifecycle', () => {
+  plannerStore.resetToDefault();
+  const plan = plannerStore.getPlan();
+
+  // 1. Kiểm tra cấu trúc đa kỳ
+  assert.ok(Array.isArray(plan.semesters));
+  assert.equal(plan.semesters.length, 3, 'Kế hoạch phải có 3 học kỳ: Kỳ 7, Kỳ 8 và Kỳ hè');
+  assert.equal(plan.status, PLAN_STATUSES.DRAFT);
+
+  // 2. Kiểm tra thao tác lưu nháp (Save Draft)
+  const saveRes = plannerStore.saveDraft('Kế hoạch KTPM K16 thử nghiệm');
+  assert.equal(saveRes.success, true);
+  const historyAfterSave = plannerStore.getHistory();
+  assert.ok(historyAfterSave.length >= 4);
+
+  // 3. Kiểm tra thẩm định quy chế (Validate Plan)
+  const validRes = plannerStore.validatePlan();
+  assert.equal(validRes.valid, true);
+  assert.equal(validRes.status, PLAN_STATUSES.VALIDATED);
+
+  // 4. Kiểm tra kích hoạt kế hoạch (Activate / Bắt đầu theo dõi)
+  const activateRes = plannerStore.activatePlan();
+  assert.equal(activateRes.success, true);
+  assert.equal(plannerStore.getPlan().status, PLAN_STATUSES.ACTIVE);
+  const activeHistory = plannerStore.getHistory().filter((h) => h.status === PLAN_STATUSES.ACTIVE);
+  assert.equal(activeHistory.length, 1, 'Chỉ duy nhất 1 bản ghi có trạng thái ACTIVE');
+
+  // 5. Kiểm tra mở lại kế hoạch đã lưu trữ (Restore Plan)
+  const restoreRes = plannerStore.restorePlan('plan-haui-2026-v2.2');
+  assert.equal(restoreRes.success, true);
+  assert.equal(plannerStore.getPlan().status, PLAN_STATUSES.DRAFT, 'Bản khôi phục phải ở trạng thái DRAFT');
+
+  // 6. Kiểm tra luồng hội tụ đề xuất (Incoming Proposal from AI / What-if)
+  plannerStore.setIncomingProposal({
+    projectedCpa: 3.40,
+    semesters: [
+      {
+        semesterCode: '2026_1',
+        semesterName: 'Kỳ 7 đề xuất mới',
+        totalCredits: 18,
+        courses: []
+      }
+    ]
+  }, 'AI Advisor');
+
+  assert.ok(plannerStore.getIncomingProposal());
+  assert.equal(plannerStore.getIncomingProposal().sourceName, 'AI Advisor');
+
+  // Chấp nhận đề xuất
+  plannerStore.acceptProposal();
+  assert.equal(plannerStore.getIncomingProposal(), null);
+  assert.equal(plannerStore.getPlan().semesters[0].semesterName, 'Kỳ 7 đề xuất mới');
+
+  // Reset về ban đầu
+  plannerStore.resetToDefault();
 });
 
 test('All TV3 page components are exported and can be instantiated as React elements', () => {

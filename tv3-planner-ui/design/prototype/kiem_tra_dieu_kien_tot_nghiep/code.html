@@ -1,0 +1,676 @@
+<!DOCTYPE html><html lang="vi" style="width: 1280px; height: 2700px; overflow: hidden; position: relative;"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-surface-variant": "#444748",
+          "canvas": "#f5f5f5",
+          "primary": "#000000",
+          "surface-dim": "#dadada",
+          "ink": "#0a0a0a",
+          "tertiary-fixed-dim": "#cac6c3",
+          "secondary-fixed-dim": "#c7c6c6",
+          "on-tertiary-fixed": "#1d1b1a",
+          "background": "#f9f9f9",
+          "surface-tint": "#5f5e5e",
+          "surface-container-high": "#e8e8e8",
+          "on-secondary-fixed": "#1b1c1c",
+          "secondary-container": "#e3e2e2",
+          "paper": "#ffffff",
+          "hairline": "#e5e5e5",
+          "surface-variant": "#e2e2e2",
+          "primary-fixed": "#e5e2e1",
+          "ink-soft": "#171717",
+          "surface": "#f9f9f9",
+          "surface-container-highest": "#e2e2e2",
+          "outline": "#747878",
+          "on-secondary-fixed-variant": "#464747",
+          "error-container": "#ffdad6",
+          "on-primary-fixed-variant": "#474646",
+          "on-error": "#ffffff",
+          "on-primary": "#ffffff",
+          "on-error-container": "#93000a",
+          "surface-container-lowest": "#ffffff",
+          "surface-container": "#eeeeee",
+          "secondary": "#5e5e5e",
+          "on-tertiary": "#ffffff",
+          "tertiary-fixed": "#e6e1df",
+          "error": "#ba1a1a",
+          "on-background": "#1a1c1c",
+          "on-secondary-container": "#646464",
+          "on-primary-container": "#858383",
+          "on-surface": "#1a1c1c",
+          "inverse-primary": "#c9c6c5",
+          "on-tertiary-container": "#868381",
+          "on-tertiary-fixed-variant": "#484645",
+          "on-primary-fixed": "#1c1b1b",
+          "inverse-on-surface": "#f1f1f1",
+          "primary-container": "#1c1b1b",
+          "secondary-fixed": "#e3e2e2",
+          "surface-alt": "#fafafa",
+          "primary-fixed-dim": "#c9c6c5",
+          "surface-container-low": "#f3f3f3",
+          "tertiary": "#000000",
+          "ember": "#e7000b",
+          "inverse-surface": "#2f3131",
+          "outline-variant": "#c4c7c7",
+          "surface-bright": "#f9f9f9",
+          "on-secondary": "#ffffff",
+          "tertiary-container": "#1d1b1a",
+          "mid-gray": "#737373"
+        },
+        "borderRadius": {
+          "DEFAULT": "1rem",
+          "lg": "2rem",
+          "xl": "3rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "margin-tablet": "1.5rem",
+          "space-lg": "1.25rem",
+          "space-xl": "2rem",
+          "margin": "1rem",
+          "space-sm": "0.5rem",
+          "gutter-desktop": "1.5rem",
+          "space-xs": "0.25rem",
+          "space-md": "1rem",
+          "margin-desktop": "2.5rem",
+          "gutter": "1rem"
+        },
+        "fontFamily": {
+          "body": ["Geist"],
+          "display-mobile": ["Geist"],
+          "headline": ["Geist"],
+          "label": ["Geist"],
+          "display": ["Geist"],
+          "caption": ["Geist"],
+          "subheading": ["Geist"],
+          "body-medium": ["Geist"]
+        },
+        "fontSize": {
+          "body": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+          "display-mobile": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.025em", "fontWeight": "600"}],
+          "headline": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+          "label": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+          "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.03em", "fontWeight": "600"}],
+          "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+          "subheading": ["18px", {"lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+          "body-medium": ["14px", {"lineHeight": "20px", "fontWeight": "500"}]
+        }
+      }
+    }
+  }</script></head><body class="bg-canvas font-body text-on-surface antialiased selection:bg-ink selection:text-paper"><aside class="fixed left-0 top-0 h-screen w-72 bg-surface-alt z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-r border-hairline"><div class="flex flex-col flex-1 overflow-y-auto px-space-md pt-space-lg"><a href="../tong_quan_hoc_tap/code.html" class="flex items-center gap-space-sm px-space-xs pb-space-lg mb-space-sm border-b border-hairline hover:opacity-80 transition-opacity"><img alt="HAUI ADVISOR Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1WK5zh9ylvUzptVeDsx0qQXD4J2y8fXrDqGSt3SY9JUtbslFQaOI8zsbxNrF2NC1oMkW29nIgovny9cLNs4gEM98-9TTBwMDW8jnPzcr7mDBLq5qbVMzt39l9IBDZmfnhKhNNoKITuvy6-UulNbyqr_8EbfWotkEFYNiiPQSKnTmz2FFOxJzHcK0a5MBn7X3eD-WdXPUtF0ujoiZ5eCxm1ZiiqEOyaqeEa-57jeo3U_cO1NEfdaZAHvmN0"><div class="flex flex-col min-w-0"><span class="font-subheading text-subheading text-ink font-semibold tracking-tight truncate leading-tight">HAUI ADVISOR</span><span class="font-caption text-caption text-mid-gray truncate">Cổng Tư Vấn &amp; Lộ Trình KTPM/CNTT</span></div></a><nav class="flex flex-col gap-1 w-full" data-active-classes="bg-ink text-paper font-medium rounded-full"><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="tong-quan" href="../tong_quan_hoc_tap/code.html"><span class="material-symbols-outlined text-[18px]">grid_view</span><span class="truncate">Tổng quan</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="ho-so-sinh-vien" href="../ho_so_sinh_vien/code.html"><span class="material-symbols-outlined text-[18px]">badge</span><span class="truncate">Hồ sơ sinh viên</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="nhap-bang-diem" href="../nhap_bang_diem/code.html"><span class="material-symbols-outlined text-[18px]">upload_file</span><span class="truncate">Nhập bảng điểm</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="cay-mon-hoc" href="../cay_mon_hoc/code.html"><span class="material-symbols-outlined text-[18px]">account_tree</span><span class="truncate">Cây môn học</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="ke-hoach-hoc-tap" href="../ke_hoach_hoc_tap_ca_nhan/code.html"><span class="material-symbols-outlined text-[18px]">event_note</span><span class="truncate">Kế hoạch học tập</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="lich-su-ke-hoach" href="../lich_su_ke_hoach/code.html"><span class="material-symbols-outlined text-[18px]">history</span><span class="truncate">Lịch sử kế hoạch</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="tu-van-ai" href="../tu_van_ai/code.html"><span class="material-symbols-outlined text-[18px]">smart_toy</span><span class="truncate">Tư vấn AI</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="what-if-mo-phong-diem" href="../what_if_mo_phong_diem/code.html"><span class="material-symbols-outlined text-[18px]">insights</span><span class="truncate">What-if mô phỏng điểm</span></a><a aria-current="page" class="flex items-center gap-space-sm px-space-md py-space-sm transition-all duration-150 bg-ink text-paper font-medium rounded-full shadow-[0_1px_8px_rgba(0,0,0,0.04)]" data-path="kiem-tra-dieu-kien-tot-nghiep" href="../kiem_tra_dieu_kien_tot_nghiep/code.html"><span class="material-symbols-outlined text-[18px]">verified</span><span class="truncate">Kiểm tra điều kiện tốt nghiệp</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm text-mid-gray hover:text-ink hover:bg-canvas rounded-full transition-all duration-150 font-body text-body" data-path="cai-dat" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span class="truncate">Cài đặt</span></a></nav></div><div class="p-space-md m-space-sm bg-paper rounded-[24px] border border-hairline shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center justify-between mb-space-xs"><a href="../ho_so_sinh_vien/code.html" class="flex items-center gap-space-sm min-w-0 hover:opacity-80 transition-opacity" title="Xem hồ sơ sinh viên"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="min-w-0"><p class="font-body-medium text-body-medium text-ink font-medium truncate">Nguyễn Văn An</p><p class="font-caption text-caption text-mid-gray truncate">2020601234 • K16 CNTT</p></div></a><button class="text-mid-gray hover:text-ink p-1 rounded-full hover:bg-canvas transition-colors" title="Chuyển đổi tài khoản / Đăng xuất" type="button"><span class="material-symbols-outlined text-[18px]">logout</span></button></div><div class="flex items-center gap-1.5 pt-space-xs border-t border-hairline"><span class="w-2 h-2 rounded-full bg-ink"></span><span class="font-label text-label text-mid-gray">Đang học kỳ 6/8</span></div></div></aside><div class="pl-72 flex flex-col min-h-screen"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-alt/90 backdrop-blur-xl border-b border-hairline z-40 flex items-center justify-between px-space-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center gap-space-md"><div class="relative flex items-center w-80 lg:w-96"><span class="material-symbols-outlined absolute left-space-md text-[18px] text-mid-gray pointer-events-none">search</span><input class="w-full bg-surface-alt border border-hairline rounded-full pl-10 pr-12 py-2 font-body text-body text-ink placeholder:text-mid-gray focus:outline-none focus:border-ink transition-colors" placeholder="Tìm môn học, mã môn, chuẩn tốt nghiệp..." type="text"></div></div><div class="flex items-center gap-space-md"><a class="inline-flex items-center gap-space-xs bg-ink hover:bg-ink-soft text-paper px-space-md py-2 rounded-full font-body-medium text-body-medium transition-colors shadow-[0_1px_8px_rgba(0,0,0,0.04)]" data-path="tu-van-ai" href="../tu_van_ai/code.html"><span class="material-symbols-outlined text-[16px]">auto_awesome</span><span class="">Tư vấn lộ trình nhanh với AI</span></a><button class="w-9 h-9 rounded-full border border-hairline bg-paper flex items-center justify-center text-ink hover:bg-canvas transition-colors relative" title="Thông báo" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-ember"></span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="w-full pt-16 bg-canvas flex-1"><div class="flex flex-col w-full">
+<!-- Interactive View Container -->
+<div class="w-full max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 py-6 space-y-6">
+<!-- Top Breadcrumb & Actions Bar -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div class="space-y-1.5">
+<div class="flex items-center gap-2 font-caption text-caption text-mid-gray">
+<span class="hover:text-ink transition-colors cursor-pointer">Trang chủ</span>
+<span class="text-hairline">/</span>
+<span class="text-ink font-medium">Kiểm tra điều kiện tốt nghiệp</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-paper text-[10px] text-mid-gray tracking-wide ml-1 shadow-sm">K16 - CNTT</span>
+</div>
+<h1 class="font-headline text-headline text-ink tracking-tight font-semibold">
+          Rà soát &amp; Kiểm tra điều kiện tốt nghiệp
+        </h1>
+<p class="font-body text-body text-mid-gray max-w-3xl leading-relaxed"><br></p>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-wrap items-center gap-2.5 shrink-0">
+<button class="group inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-canvas text-ink font-body-medium text-body-medium shadow-sm hover:bg-surface-alt transition-all active:scale-95" id="btn-recheck" type="button">
+<span class="material-symbols-outlined text-[16px] text-mid-gray group-hover:rotate-180 transition-transform duration-500">sync</span>
+<span class="">Rà soát lại dữ liệu</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-canvas text-ink font-body-medium text-body-medium shadow-sm hover:bg-surface-alt transition-all active:scale-95" id="btn-export" type="button">
+<span class="material-symbols-outlined text-[16px] text-mid-gray">picture_as_pdf</span>
+<span class="">Xuất phiếu kiểm tra (.pdf)</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-ink text-paper font-body-medium text-body-medium shadow-sm hover:bg-ink-soft transition-all active:scale-95" type="button">
+<span class="material-symbols-outlined text-[16px]">menu_book</span>
+<span class="">Đối chiếu khung CTĐT gốc</span>
+</button>
+</div>
+</div>
+<!-- Notice / Legal Disclaimer Banner -->
+<div class="relative overflow-hidden rounded-[24px] bg-paper shadow-sm p-4 sm:p-5 flex items-start gap-3.5">
+<div class="w-1.5 absolute inset-y-0 left-0 bg-ink"></div>
+<div class="p-2 rounded-full bg-canvas text-ink shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">info</span>
+</div>
+<div class="flex-1 space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-body-medium text-body-medium text-ink font-semibold">Lưu ý dữ liệu minh họa &amp; Quy chế xét tốt nghiệp</span>
+<span class="px-2 py-0.5 rounded-full bg-canvas text-mid-gray font-caption text-[11px] font-medium">Tự động đối chiếu</span>
+</div>
+<p class="font-caption text-caption text-mid-gray leading-relaxed">
+          Kết quả rà soát dưới đây được tổng hợp từ dữ liệu bảng điểm tự nhập và quy chế đào tạo mẫu CNTT. Hệ thống không khẳng định các tiêu chí minh họa là quyết định công nhận tốt nghiệp chính thức của Hội đồng xét tốt nghiệp Nhà trường. Sinh viên cần theo dõi thông báo chính thức và đối chiếu hồ sơ gốc tại cổng thông tin <a class="text-ink font-medium underline underline-offset-2 hover:opacity-80" href="https://sv.haui.edu.vn" target="_blank">sv.haui.edu.vn</a>.
+        </p>
+</div>
+</div>
+<!-- Top KPI Status Summary (4 Cards in a grid) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- KPI 1 -->
+<div class="rounded-[24px] bg-paper p-5 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between">
+<span class="font-caption text-caption text-mid-gray font-medium uppercase tracking-wider">Tổng tiến độ tốt nghiệp</span>
+<span class="p-1.5 rounded-full bg-canvas text-ink">
+<span class="material-symbols-outlined text-[16px]">school</span>
+</span>
+</div>
+<div class="mt-4 mb-3 flex items-baseline gap-2">
+<span class="font-headline text-headline text-ink font-bold tracking-tight">72%</span>
+<span class="font-caption text-caption text-mid-gray">hoàn thành</span>
+</div>
+<!-- Progress Bar -->
+<div class="space-y-1.5">
+<div class="w-full bg-canvas h-2 rounded-full overflow-hidden">
+<div class="bg-ink h-full rounded-full transition-all duration-700 ease-out" style="width: 72%;"></div>
+</div>
+<div class="flex items-center justify-between font-caption text-caption text-mid-gray pt-0.5">
+<span class="">Đạt 5/7 nhóm tiêu chí</span>
+<span class="text-ink font-medium">Thiếu 2</span>
+</div>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="rounded-[24px] bg-paper p-5 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between">
+<span class="font-caption text-caption text-mid-gray font-medium uppercase tracking-wider">Tín chỉ tích lũy</span>
+<span class="p-1.5 rounded-full bg-canvas text-ink">
+<span class="material-symbols-outlined text-[16px]">fact_check</span>
+</span>
+</div>
+<div class="mt-4 mb-3 flex items-baseline gap-1.5">
+<span class="font-headline text-headline text-ink font-bold tracking-tight">108</span>
+<span class="font-subheading text-subheading text-mid-gray">/ 145</span>
+<span class="font-caption text-caption text-mid-gray ml-1">tín chỉ</span>
+</div>
+<div class="space-y-1.5">
+<div class="w-full bg-canvas h-2 rounded-full overflow-hidden">
+<div class="bg-ink h-full rounded-full transition-all duration-700 ease-out" style="width: 74.48%;"></div>
+</div>
+<div class="flex items-center justify-between font-caption text-caption text-mid-gray pt-0.5">
+<span class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-ember inline-block"></span>
+<span class="">Còn thiếu 37 TC</span>
+</span>
+<span class="text-ink font-medium">25.5% còn lại</span>
+</div>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="rounded-[24px] bg-paper p-5 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between">
+<span class="font-caption text-caption text-mid-gray font-medium uppercase tracking-wider">Điểm CPA hiện tại</span>
+<span class="p-1.5 rounded-full bg-canvas text-ink">
+<span class="material-symbols-outlined text-[16px]">grade</span>
+</span>
+</div>
+<div class="mt-4 mb-3 flex items-baseline gap-1.5">
+<span class="font-headline text-headline text-ink font-bold tracking-tight">3.18</span>
+<span class="font-subheading text-subheading text-mid-gray">/ 4.00</span>
+<span class="font-caption text-caption text-ink font-medium px-2 py-0.5 bg-canvas rounded-full ml-1">Xếp loại Khá</span>
+</div>
+<div class="space-y-1.5">
+<div class="w-full bg-canvas h-2 rounded-full overflow-hidden">
+<div class="bg-ink h-full rounded-full transition-all duration-700 ease-out" style="width: 79.5%;"></div>
+</div>
+<div class="flex items-center justify-between font-caption text-caption text-mid-gray pt-0.5">
+<span class="text-ink font-medium">Đạt điều kiện<br>&nbsp;(≥ 2.00)</span>
+<span class="text-mid-gray">Mục tiêu <br>Giỏi ≥ 3.20</span>
+</div>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="rounded-[24px] bg-paper p-5 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between">
+<span class="font-caption text-caption text-mid-gray font-medium uppercase tracking-wider">Chứng chỉ bắt buộc</span>
+<span class="p-1.5 rounded-full bg-canvas text-ink">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+</span>
+</div>
+<div class="mt-4 mb-3 flex items-baseline gap-1.5">
+<span class="font-headline text-headline text-ink font-bold tracking-tight">3</span>
+<span class="font-subheading text-subheading text-mid-gray">/ 4</span>
+<span class="font-caption text-caption text-mid-gray ml-1">đã nộp</span>
+</div>
+<div class="space-y-1.5">
+<div class="w-full bg-canvas h-2 rounded-full overflow-hidden">
+<div class="bg-ink h-full rounded-full transition-all duration-700 ease-out" style="width: 75%;"></div>
+</div>
+<div class="flex items-center justify-between font-caption text-caption text-mid-gray pt-0.5">
+<span class="flex items-center gap-1 text-ember">
+<span class="material-symbols-outlined text-[14px]">error</span>
+<span class="">Thiếu 1 chứng chỉ</span>
+</span>
+<span class="text-ink font-medium">Cần nộp hồ sơ</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Main Layout: 2 Columns (Content Checklist vs Right Sidebar) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+<!-- Left/Main Column: 4 Structured Checklist Categories (8 cols) -->
+<div class="lg:col-span-8 space-y-6">
+<!-- Category 1: Khối lượng kiến thức & Tín chỉ tích lũy -->
+<section class="rounded-[24px] bg-paper p-6 shadow-sm space-y-5">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 gap-2 bg-canvas/30 -mx-6 -mt-6 p-6 rounded-t-[24px]">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-subheading text-subheading text-ink font-semibold">1. Khối lượng kiến thức &amp; Tín chỉ tích lũy</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Yêu cầu hoàn thành tối thiểu 145 tín chỉ theo khung chuẩn K16 CNTT</p>
+</div>
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-canvas text-mid-gray font-caption text-caption font-medium self-start sm:self-center">
+<span class="w-1.5 h-1.5 rounded-full bg-ember"></span>
+<span class="">Trạng thái: Chưa hoàn thành</span>
+</div>
+</div>
+<!-- Items Breakdown -->
+<div class="space-y-3">
+<!-- Sub-item 1 -->
+<div class="p-4 rounded-[18px] bg-surface-alt shadow-sm hover:shadow transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-3">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-body-medium text-body-medium text-ink font-medium">Tín chỉ khối Đại cương</span>
+<span class="px-2 py-0.5 rounded-full bg-canvas text-mid-gray font-caption text-[11px]">32 / 32 TC</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Toán cao cấp, Vật lý, Triết học M-L, Pháp luật đại cương, Kinh tế chính trị</p>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-ink text-paper font-caption text-caption font-medium">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span class="">ĐÃ HOÀN THÀNH</span>
+</span>
+</div>
+</div>
+<!-- Sub-item 2 -->
+<div class="p-4 rounded-[18px] bg-surface-alt shadow-sm hover:shadow transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-3">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-body-medium text-body-medium text-ink font-medium">Tín chỉ Cơ sở ngành</span>
+<span class="px-2 py-0.5 rounded-full bg-canvas text-mid-gray font-caption text-[11px]">45 / 45 TC</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Cấu trúc dữ liệu &amp; giải thuật, CSDL, Mạng máy tính, Hệ điều hành, OOP</p>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-ink text-paper font-caption text-caption font-medium">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span class="">ĐÃ HOÀN THÀNH</span>
+</span>
+</div>
+</div>
+<!-- Sub-item 3 -->
+<div class="p-4 rounded-[18px] bg-surface-alt shadow-sm hover:shadow transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-3">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-body-medium text-body-medium text-ink font-medium">Tín chỉ Chuyên ngành bắt buộc (KTPM)</span>
+<span class="px-2 py-0.5 rounded-full bg-canvas text-ember font-caption text-[11px] font-semibold">25 / 38 TC</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Còn thiếu 13 TC (Kiến trúc phần mềm, Đảm bảo chất lượng &amp; Kiểm thử PM, DevOps) - Dự kiến Kỳ 7 &amp; 8</p>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-canvas text-ink font-caption text-caption font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-ember"></span>
+<span class="">CHƯA HOÀN THÀNH</span>
+</span>
+</div>
+</div>
+<!-- Sub-item 4 -->
+<div class="p-4 rounded-[18px] bg-surface-alt shadow-sm hover:shadow transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-3">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-body-medium text-body-medium text-ink font-medium">Tín chỉ Tự chọn chuyên ngành</span>
+<span class="px-2 py-0.5 rounded-full bg-canvas text-ember font-caption text-[11px] font-semibold">6 / 20 TC</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Đã tích lũy: Trí tuệ nhân tạo (3TC), Lập trình Web nâng cao (3TC). Còn thiếu 14 TC</p>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-canvas text-ink font-caption text-caption font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-ember"></span>
+<span class="">CHƯA HOÀN THÀNH</span>
+</span>
+</div>
+</div>
+<!-- Sub-item 5 -->
+<div class="p-4 rounded-[18px] bg-surface-alt shadow-sm hover:shadow transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-3">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-body-medium text-body-medium text-ink font-medium">Khóa luận tốt nghiệp / Đồ án tốt nghiệp</span>
+<span class="px-2 py-0.5 rounded-full bg-canvas text-mid-gray font-caption text-[11px]">0 / 10 TC</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Điều kiện: Tích lũy tối thiểu ≥ 115 TC và không bị cảnh báo học tập. Dự kiến thực hiện Kỳ 8</p>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-canvas text-mid-gray font-caption text-caption font-medium">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span class="">CHƯA MỞ</span>
+</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Category 2: Điểm học tập & Rèn luyện toàn khóa -->
+<section class="rounded-[24px] bg-paper p-6 shadow-sm space-y-5">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 gap-2 bg-canvas/30 -mx-6 -mt-6 p-6 rounded-t-[24px]">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-subheading text-subheading text-ink font-semibold">2. Điểm học tập &amp; Rèn luyện toàn khóa</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Căn cứ theo thang điểm 4.0 và thang rèn luyện 100 điểm của Trường ĐH Công nghiệp Hà Nội</p>
+</div>
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ink text-paper font-caption text-caption font-medium self-start sm:self-center">
+<span class="material-symbols-outlined text-[14px]">verified</span>
+<span class="">Trạng thái: Đã hoàn thành</span>
+</div>
+</div>
+<div class="space-y-3">
+<!-- Row 1 -->
+<div class="p-4 rounded-[18px] bg-surface-alt shadow-sm hover:shadow transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-3">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-body-medium text-body-medium text-ink font-medium">Điểm trung bình chung tích lũy (CPA)</span>
+<span class="px-2 py-0.5 rounded-full bg-canvas text-ink font-caption text-[11px] font-semibold">3.18 / 4.00</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Quy định: CPA ≥ 2.00 (Đạt tốt nghiệp). Hiện tại xếp loại: Khá (tiệm cận Giỏi ≥ 3.20)</p>
+</div>
+<div class="shrink-0">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-ink text-paper font-caption text-caption font-medium">
+<span class="material-symbols-outlined text-[14px]">check</span>
+<span class="">ĐÃ ĐẠT (KHÁ)</span>
+</span>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="p-4 rounded-[18px] bg-surface-alt shadow-sm hover:shadow transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-3">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-body-medium text-body-medium text-ink font-medium">Điểm rèn luyện trung bình toàn khóa</span>
+<span class="px-2 py-0.5 rounded-full bg-canvas text-ink font-caption text-[11px] font-semibold">86.5 / 100</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Quy định: ĐRL ≥ 65 điểm (Khá). Hiện tại xếp loại: Tốt (80 - 89 điểm, không vi phạm kỷ luật)</p>
+</div>
+<div class="shrink-0">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-ink text-paper font-caption text-caption font-medium">
+<span class="material-symbols-outlined text-[14px]">check</span>
+<span class="">ĐÃ ĐẠT (TỐT)</span>
+</span>
+</div>
+</div>
+<!-- Row 3 -->
+<div class="p-4 rounded-[18px] bg-surface-alt shadow-sm hover:shadow transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-3">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-body-medium text-body-medium text-ink font-medium">Tình trạng nợ môn học (Điểm F)</span>
+<span class="px-2 py-0.5 rounded-full bg-canvas text-ink font-caption text-[11px] font-semibold">0 môn nợ</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Tất cả 28 môn đã học đã hoàn thành qua điểm, không còn học phần F chưa trả</p>
+</div>
+<div class="shrink-0">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-ink text-paper font-caption text-caption font-medium">
+<span class="material-symbols-outlined text-[14px]">check</span>
+<span class="">HỢP LỆ</span>
+</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Category 3: Chuẩn đầu ra Ngoại ngữ & Tin học -->
+<section class="rounded-[24px] bg-paper p-6 shadow-sm space-y-5">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 gap-2 bg-canvas/30 -mx-6 -mt-6 p-6 rounded-t-[24px]">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-subheading text-subheading text-ink font-semibold">3. Chuẩn đầu ra Ngoại ngữ &amp; Tin học</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Chuẩn năng lực độc lập theo quy định đầu ra trường Đại học Công nghiệp Hà Nội</p>
+</div>
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-canvas text-mid-gray font-caption text-caption font-medium self-start sm:self-center">
+<span class="w-1.5 h-1.5 rounded-full bg-ember"></span>
+<span class="">Cần nộp chứng chỉ</span>
+</div>
+</div>
+<div class="space-y-3">
+<!-- Row 1: English -->
+<div class="p-4 rounded-[18px] bg-surface-alt shadow-sm hover:shadow transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-3">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-body-medium text-body-medium text-ink font-medium">Tiếng Anh: Chuẩn VSTEP B1 (hoặc TOEIC 450+)</span>
+<span class="px-2 py-0.5 rounded-full bg-canvas text-ink font-caption text-[11px]">Đã xác thực</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Đã nộp chứng chỉ VSTEP B1 ngày 12/10/2023 - Đạt điểm 6.5 (HaUI Testing Center cấp)</p>
+</div>
+<div class="shrink-0">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-ink text-paper font-caption text-caption font-medium">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span class="">ĐÃ HOÀN THÀNH</span>
+</span>
+</div>
+</div>
+<!-- Row 2: IC3 -->
+<div class="p-4 rounded-[18px] bg-surface-alt shadow-sm hover:shadow transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-3">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-body-medium text-body-medium text-ink font-medium">Tin học ứng dụng: Chuẩn IC3 GS5 / MOS</span>
+<span class="px-2 py-0.5 rounded-full bg-canvas text-ink font-caption text-[11px]">Đã xác thực</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Đạt chứng chỉ quốc tế IC3 Digital Literacy Master ngày 15/03/2022 (Certiport)</p>
+</div>
+<div class="shrink-0">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-ink text-paper font-caption text-caption font-medium">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span class="">ĐÃ HOÀN THÀNH</span>
+</span>
+</div>
+</div>
+<!-- Row 3: Advanced English -->
+<div class="p-4 rounded-[18px] bg-surface-alt shadow-sm hover:shadow transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-3">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-body-medium text-body-medium text-ink font-medium">Chuẩn Tiếng Anh chuyên ngành nâng cao (Mã FL6006)</span>
+<span class="px-2 py-0.5 rounded-full bg-canvas text-ember font-caption text-[11px] font-semibold">Thiếu kết quả</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Đang đăng ký học phần tại Học kỳ 7 (Năm học 2024 - 2025). Cần tích lũy trước Kỳ xét tốt nghiệp.</p>
+</div>
+<div class="shrink-0">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-canvas text-ink font-caption text-caption font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-ember"></span>
+<span class="">CHƯA HOÀN THÀNH</span>
+</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Category 4: Giáo dục Quốc phòng & Thể chất -->
+<section class="rounded-[24px] bg-paper p-6 shadow-sm space-y-5">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 gap-2 bg-canvas/30 -mx-6 -mt-6 p-6 rounded-t-[24px]">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-subheading text-subheading text-ink font-semibold">4. Chứng chỉ Giáo dục Quốc phòng &amp; Thể chất</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Điều kiện bắt buộc theo Luật Giáo dục Đại học (Điều kiện cần để cấp văn bằng)</p>
+</div>
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ink text-paper font-caption text-caption font-medium self-start sm:self-center">
+<span class="material-symbols-outlined text-[14px]">verified</span>
+<span class="">Trạng thái: Đã hoàn thành</span>
+</div>
+</div>
+<div class="space-y-3">
+<div class="p-4 rounded-[18px] bg-surface-alt shadow-sm hover:shadow transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-3">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-body-medium text-body-medium text-ink font-medium">Chứng chỉ Giáo dục Quốc phòng - An ninh</span>
+<span class="px-2 py-0.5 rounded-full bg-canvas text-mid-gray font-caption text-[11px]">3 học phần (QP6001, QP6002, QP6003)</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Đã hoàn thành 165 tiết tại Trung tâm GDQP-AN cơ sở Hà Nam (Cấp chứng chỉ số: QP2021-98442)</p>
+</div>
+<div class="shrink-0">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-ink text-paper font-caption text-caption font-medium">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span class="">ĐÃ HOÀN THÀNH</span>
+</span>
+</div>
+</div>
+<div class="p-4 rounded-[18px] bg-surface-alt shadow-sm hover:shadow transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-3">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-body-medium text-body-medium text-ink font-medium">Chứng chỉ Giáo dục Thể chất</span>
+<span class="px-2 py-0.5 rounded-full bg-canvas text-mid-gray font-caption text-[11px]">3 tín chỉ thể chất</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">Đã hoàn thành các học phần thể dục cơ bản, Thể thao tự chọn 1 (Bóng chuyền) &amp; Cầu lông</p>
+</div>
+<div class="shrink-0">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-ink text-paper font-caption text-caption font-medium">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span class="">ĐÃ HOÀN THÀNH</span>
+</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Sidebar / Action Drawer (4 cols) -->
+<div class="lg:col-span-4 space-y-6">
+<!-- Action Checklist Card -->
+<div class="rounded-[24px] bg-paper p-6 shadow-sm space-y-4">
+<div class="flex items-center justify-between pb-2">
+<h2 class="font-subheading text-subheading text-ink font-semibold flex items-center gap-2">
+<span class="material-symbols-outlined text-ink text-[20px]">checklist</span>
+<span class="">Tổng hợp việc cần làm</span>
+</h2>
+<span class="px-2.5 py-0.5 rounded-full bg-canvas text-ink font-caption text-caption font-bold">4 mục</span>
+</div>
+<p class="font-caption text-caption text-mid-gray">
+            Danh sách điều kiện còn thiếu cần ưu tiên hoàn tất để được đưa vào danh sách xét tốt nghiệp đợt tháng 06/2025:
+          </p>
+<div class="space-y-3 pt-1">
+<!-- Item 1 -->
+<div class="flex items-start gap-3 p-3 rounded-[18px] bg-surface-alt shadow-sm">
+<div class="w-6 h-6 rounded-full bg-ink text-paper flex items-center justify-center shrink-0 font-caption text-[11px] font-bold mt-0.5">
+                1
+              </div>
+<div class="space-y-0.5 text-left">
+<p class="font-body-medium text-body-medium text-ink font-medium leading-snug">
+                  Đăng ký &amp; học 13 TC chuyên ngành bắt buộc
+                </p>
+<p class="font-caption text-caption text-mid-gray leading-normal">
+                  Sắp xếp các học phần Kiến trúc PM, Đảm bảo chất lượng PM vào Kỳ 7.
+                </p>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex items-start gap-3 p-3 rounded-[18px] bg-surface-alt shadow-sm">
+<div class="w-6 h-6 rounded-full bg-ink text-paper flex items-center justify-center shrink-0 font-caption text-[11px] font-bold mt-0.5">
+                2
+              </div>
+<div class="space-y-0.5 text-left">
+<p class="font-body-medium text-body-medium text-ink font-medium leading-snug">
+                  Tích lũy 14 TC tự chọn &amp; 10 TC Khóa luận
+                </p>
+<p class="font-caption text-caption text-mid-gray leading-normal">
+                  Dự kiến đăng ký giảng viên hướng dẫn ĐATN vào đầu học kỳ 8.
+                </p>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="flex items-start gap-3 p-3 rounded-[18px] bg-surface-alt shadow-sm">
+<div class="w-6 h-6 rounded-full bg-ink text-paper flex items-center justify-center shrink-0 font-caption text-[11px] font-bold mt-0.5">
+                3
+              </div>
+<div class="space-y-0.5 text-left">
+<p class="font-body-medium text-body-medium text-ink font-medium leading-snug">
+                  Nộp giấy xác nhận Thực tập doanh nghiệp
+                </p>
+<p class="font-caption text-caption text-mid-gray leading-normal">
+                  Hạn chót tiếp nhận hồ sơ văn phòng khoa CNTT trước ngày <span class="text-ink font-medium">30/03/2025</span>.
+                </p>
+</div>
+</div>
+<!-- Item 4 -->
+<div class="flex items-start gap-3 p-3 rounded-[18px] bg-surface-alt shadow-sm">
+<div class="w-6 h-6 rounded-full bg-canvas text-ink flex items-center justify-center shrink-0 font-caption text-[11px] font-bold mt-0.5">
+                4
+              </div>
+<div class="space-y-0.5 text-left">
+<p class="font-body-medium text-body-medium text-ink font-medium leading-snug">
+                  Cập nhật minh chứng chứng chỉ bổ trợ
+                </p>
+<p class="font-caption text-caption text-mid-gray leading-normal">
+                  Kiểm tra trạng thái duyệt FL6006 trên cổng quản lý sinh viên.
+                </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Next Step Advisor Suggestions -->
+<div class="rounded-[24px] bg-paper p-6 shadow-sm space-y-4">
+<div class="flex items-center gap-2">
+<span class="p-1.5 rounded-full bg-canvas text-ink">
+<span class="material-symbols-outlined text-[18px]">lightbulb</span>
+</span>
+<h2 class="font-subheading text-subheading text-ink font-semibold">Gợi ý từ AI Advisor</h2>
+</div>
+<p class="font-caption text-caption text-mid-gray leading-relaxed">
+            Hồ sơ học tập của bạn đang đạt đúng tiến độ chuẩn của K16. Để đảm bảo tốt nghiệp loại Giỏi, bạn chỉ cần nâng CPA thêm 0.02 điểm qua các học phần tự chọn còn lại.
+          </p>
+<div class="space-y-2 pt-2">
+<!-- Primary Action -->
+<a class="w-full inline-flex items-center justify-between px-4 py-2.5 rounded-full bg-ink hover:bg-ink-soft text-paper font-body-medium text-body-medium transition-all shadow-sm group" data-path="ke-hoach-hoc-tap" href="../ke_hoach_hoc_tap_ca_nhan/code.html">
+<span class="truncate">Bố trí môn thiếu vào Kế hoạch học tập</span>
+<span class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+<!-- Outline Action -->
+<a class="w-full inline-flex items-center justify-between px-4 py-2.5 rounded-full bg-canvas hover:bg-surface-alt text-ink font-body-medium text-body-medium transition-all shadow-sm group" data-path="tu-van-ai" href="../tu_van_ai/code.html">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-mid-gray">auto_awesome</span>
+<span class="">Hỏi AI về thủ tục tốt nghiệp sớm</span>
+</span>
+<span class="material-symbols-outlined text-[16px] text-mid-gray group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</a>
+<!-- Ghost Action -->
+<button class="w-full inline-flex items-center justify-between px-4 py-2.5 rounded-full bg-transparent hover:bg-canvas text-mid-gray hover:text-ink font-body-medium text-body-medium transition-colors" type="button">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">download</span>
+<span class="">Tải danh mục chuẩn đầu ra K16 (.pdf)</span>
+</span>
+<span class="font-caption text-caption text-mid-gray">1.8 MB</span>
+</button>
+</div>
+</div>
+<!-- Academic Advisor Contact Note -->
+<div class="rounded-[24px] bg-canvas p-5 shadow-sm space-y-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-mid-gray">support_agent</span>
+<span class="font-body-medium text-body-medium text-ink font-medium">Cần hỗ trợ đối chiếu hồ sơ?</span>
+</div>
+<p class="font-caption text-caption text-mid-gray leading-relaxed">
+            Liên hệ Cố vấn học tập khoa CNTT hoặc phòng Đào tạo (Tầng 2 - Nhà A1, cơ sở 1) trong các ngày làm việc từ thứ 2 đến thứ 6.
+          </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Simple interactive toast feedback for demo purposes
+  document.getElementById('btn-recheck')?.addEventListener('click', function() {
+    const originalText = this.innerHTML;
+    this.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span><span>Đang đồng bộ dữ liệu...</span>';
+    this.disabled = true;
+    setTimeout(() => {
+      this.innerHTML = originalText;
+      this.disabled = false;
+    }, 900);
+  });
+
+  document.getElementById('btn-export')?.addEventListener('click', function() {
+    const originalHtml = this.innerHTML;
+    this.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-pulse">downloading</span><span>Đang tạo bản PDF...</span>';
+    setTimeout(() => {
+      this.innerHTML = originalHtml;
+    }, 1200);
+  });
+</script></main></div></body></html>
