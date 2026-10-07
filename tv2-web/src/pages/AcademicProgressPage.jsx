@@ -419,6 +419,8 @@ export function AcademicProgressPage() {
             </li>
           </ul>
         </div>
+      </Modal>
+
       {/* Khối Chữ ký dành riêng cho Chế độ in ấn (@media print) */}
       <div className="haui-print-signatures">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', textAlign: 'center', marginTop: '36px', paddingTop: '16px' }}>
