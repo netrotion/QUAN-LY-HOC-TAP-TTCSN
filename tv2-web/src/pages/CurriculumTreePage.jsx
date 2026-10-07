@@ -527,13 +527,12 @@ export function CurriculumTreePage() {
               size="sm"
               disabled={!eligibilityResult?.eligible}
               onClick={() => {
-                setAddedToPlanBanner(
-                  `Đã thêm học phần ${selectedCourse?.courseCode} (${selectedCourse?.courseName}) vào dự thảo Kế hoạch học tập!`
-                );
+                setEligibilityModalOpen(false);
+                navigate(`/planner?course_id=${selectedCourse?.courseCode}`);
               }}
             >
               {eligibilityResult?.eligible
-                ? '+ Thêm môn vào Kế hoạch học tập'
+                ? '+ Thêm môn vào Kế hoạch học tập (TV3 Planner) →'
                 : '🚫 Đã khóa nút [Thêm môn] (Vi phạm tiên quyết BR-01)'}
             </Button>
           </>

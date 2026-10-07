@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../services/apiClient.js';
 import { HAUI_BUSINESS_RULES } from '../services/mockFixtures.js';
 import { Button, Card, EmptyState, Error as ErrorBox, Loading, Modal, Table } from '../components/ui/index.js';
+import { subscribeAcademicStore } from '../services/academicStore.js';
 
 /**
  * Màn hình 9: Bảng Kiểm toán Tốt nghiệp 100% & Cảnh báo Sớm (`/progress` & `/audit`) — TV2
@@ -33,9 +34,16 @@ export function AcademicProgressPage() {
 
   useEffect(() => {
     fetchAudit();
-    return api.subscribe(() => {
+    const unsubStore = subscribeAcademicStore(() => {
       fetchAudit();
     });
+    const unsubApi = api.subscribe(() => {
+      fetchAudit();
+    });
+    return () => {
+      unsubStore();
+      unsubApi();
+    };
   }, [fetchAudit]);
 
   const checklistColumns = [
@@ -143,7 +151,34 @@ export function AcademicProgressPage() {
   const strokeDashoffset = circumference - (pct / 100) * circumference;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+    <div className="haui-audit-container" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+      {/* Khối Tiêu đề dành riêng cho Chế độ in ấn & Xuất PDF (@media print) */}
+      <div className="haui-print-header">
+        <div style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '2px solid #000', paddingBottom: '12px' }}>
+          <div style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase' }}>
+            BỘ GIÁO DỤC VÀ ĐÀO TẠO &bull; TRƯỜNG ĐẠI HỌC CÔNG NGHIỆP HÀ NỘI
+          </div>
+          <div style={{ fontSize: '12px', fontStyle: 'italic', color: '#333' }}>
+            Phòng Đào tạo &bull; Hệ thống Cố vấn Lộ trình Học tập HaUI Advisor
+          </div>
+          <h1 style={{ fontSize: '18px', fontWeight: 800, margin: '10px 0 4px', textTransform: 'uppercase', color: '#0052cc' }}>
+            BÁO CÁO KIỂM TOÁN TỐT NGHIỆP 100% TIÊU CHÍ (DEGREE AUDIT)
+          </h1>
+          <div style={{ fontSize: '11px', color: '#555' }}>
+            Mã văn bản: AUDIT-HAUI-{Date.now().toString().slice(-6)} &bull; Trạng thái: DEMO_UNVERIFIED
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px', marginBottom: '16px', padding: '10px 14px', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+          <div><strong>Họ và tên sinh viên:</strong> {api.getConfig().sessionStudent?.fullName || 'Nguyễn Văn An'}</div>
+          <div><strong>Mã số sinh viên:</strong> {api.getConfig().sessionStudent?.studentId || 'std-2026-001'}</div>
+          <div><strong>Ngành đào tạo:</strong> {api.getConfig().sessionStudent?.majorName || 'Kỹ thuật phần mềm (CNTT)'}</div>
+          <div><strong>Khóa / Lớp:</strong> {api.getConfig().sessionStudent?.cohort || 'K17'} &bull; {api.getConfig().sessionStudent?.advisorClass || 'KTPM01-K17'}</div>
+          <div><strong>Tín chỉ tích lũy:</strong> {auditData?.totalCreditsEarned ?? 112} / {auditData?.totalCreditsRequired ?? 135} TC ({pct}%)</div>
+          <div><strong>Đủ ĐK Tốt nghiệp:</strong> {auditData?.eligibleForGraduation ? '✓ ĐẠT YÊU CẦU' : 'CHƯA ĐẠT (CÒN ĐIỀU KIỆN THIẾU)'}</div>
+        </div>
+      </div>
+
       {/* Màn hình 9: Header + Vòng tròn tiến độ tổng thể 82% + Nút Lập kế hoạch bù đắp */}
       <Card
         variant={auditData?.eligibleForGraduation ? 'status-success' : 'status-warning'}
@@ -151,6 +186,14 @@ export function AcademicProgressPage() {
         subtitle="Luồng chính 3: Tự động rà soát 100% điều kiện tốt nghiệp (G7, US-11, FR-17, BR-08..BR-10, AC-05)"
         headerAction={
           <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', flexWrap: 'wrap' }}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.print()}
+              title="In báo cáo học vụ hoặc Lưu dưới dạng file PDF chuẩn A4"
+            >
+              🖨️ In Báo Cáo / Xuất PDF
+            </Button>
             <Button
               variant="primary"
               size="sm"
@@ -376,7 +419,23 @@ export function AcademicProgressPage() {
             </li>
           </ul>
         </div>
-      </Modal>
+      {/* Khối Chữ ký dành riêng cho Chế độ in ấn (@media print) */}
+      <div className="haui-print-signatures">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', textAlign: 'center', marginTop: '36px', paddingTop: '16px' }}>
+          <div>
+            <strong style={{ fontSize: '13px' }}>SINH VIÊN XÁC NHẬN</strong>
+            <div style={{ fontSize: '11px', fontStyle: 'italic', marginTop: '4px' }}>(Ký và ghi rõ họ tên)</div>
+            <div style={{ height: '70px' }} />
+            <div style={{ fontWeight: 600 }}>{api.getConfig().sessionStudent?.fullName || 'Nguyễn Văn An'}</div>
+          </div>
+          <div>
+            <strong style={{ fontSize: '13px' }}>CỐ VẤN HỌC TẬP / PHÒNG ĐÀO TẠO</strong>
+            <div style={{ fontSize: '11px', fontStyle: 'italic', marginTop: '4px' }}>(Ký, ghi rõ họ tên và đóng dấu)</div>
+            <div style={{ height: '70px' }} />
+            <div style={{ fontWeight: 600 }}>Ban Cố Vấn Học Vụ HaUI</div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

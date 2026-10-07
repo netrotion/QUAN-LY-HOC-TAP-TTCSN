@@ -5,7 +5,10 @@ import { ui } from './components/ui/index.js';
 import { MainLayout } from './components/layout/MainLayout.jsx';
 import { DashboardPage } from './pages/DashboardPage.jsx';
 import { AcademicProgressPage } from './pages/AcademicProgressPage.jsx';
+import { GraduationAuditPage } from './pages/GraduationAuditPage.jsx';
 import { CurriculumTreePage } from './pages/CurriculumTreePage.jsx';
+import { TranscriptImportPage } from './pages/TranscriptImportPage.jsx';
+import { LoginPage } from './pages/LoginPage.jsx';
 import { DemoUiPage } from './pages/DemoUiPage.jsx';
 import { mountStudentRoutes } from './routes/mountStudentRoutes.jsx';
 
@@ -20,16 +23,26 @@ export function AppRoutes() {
 
   return (
     <Routes>
+      {/* Route Đăng nhập sinh viên & Presets (Task 2.2a) */}
+      <Route path="/login" element={<LoginPage />} />
+
       <Route element={<MainLayout />}>
         {/* Các màn hình nền tảng & học vụ do TV2 phụ trách */}
         <Route
           index
           element={<DashboardPage mountedRouteSummary={mountedRouteSummary} />}
         />
+        <Route
+          path="/dashboard"
+          element={<DashboardPage mountedRouteSummary={mountedRouteSummary} />}
+        />
+        <Route path="/transcript" element={<TranscriptImportPage />} />
+        <Route path="/academic/import" element={<Navigate to="/transcript" replace />} />
         <Route path="/progress" element={<AcademicProgressPage />} />
         <Route path="/academic" element={<Navigate to="/progress" replace />} />
-        <Route path="/audit" element={<Navigate to="/progress" replace />} />
+        <Route path="/audit" element={<GraduationAuditPage />} />
         <Route path="/curriculum" element={<CurriculumTreePage />} />
+        <Route path="/curriculum/tree" element={<CurriculumTreePage />} />
         <Route path="/demo-ui" element={<DemoUiPage />} />
 
         {/* Các route của TV3 được mount qua createStudentRoutes({ api, ui }) kèm Fallback Placeholder */}

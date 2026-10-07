@@ -3,6 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/apiClient.js';
 import { STUDENT_PERSONAS } from '../services/mockFixtures.js';
 import { Button, Card, EmptyState, Error as ErrorBox, Loading, Modal, Table } from '../components/ui/index.js';
+import {
+  STUDENT_PRESETS,
+  getAcademicSnapshot,
+  selectStudentPreset,
+  subscribeAcademicStore
+} from '../services/academicStore.js';
 
 /**
  * Mẫu dữ liệu Lộ trình đề xuất học kỳ kế tiếp (18 TC — tuân thủ BR-03: 10–24 TC)
@@ -109,9 +115,16 @@ export function DashboardPage({ mountedRouteSummary }) {
 
   useEffect(() => {
     loadDashboardData();
-    return api.subscribe(() => {
+    const unsubStore = subscribeAcademicStore(() => {
       loadDashboardData();
     });
+    const unsubApi = api.subscribe(() => {
+      loadDashboardData();
+    });
+    return () => {
+      unsubStore();
+      unsubApi();
+    };
   }, [loadDashboardData]);
 
   // Xử lý Bước A2 & A3: Tải file bảng điểm PDF/Ảnh từ e-HaUI hoặc mô phỏng lỗi định dạng file
@@ -392,7 +405,15 @@ export function DashboardPage({ mountedRouteSummary }) {
 
           {/* Cụm Nút CTA nổi bật */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-            <Button variant="primary" size="sm" onClick={() => navigate('/chat')}>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => navigate('/transcript')}
+              title="Mở luồng nạp và bóc tách bảng điểm 3 bước (Task 2.2a)"
+            >
+              📑 Nhập Bảng Điểm (3 Bước) &rarr;
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => navigate('/chat')}>
               💬 Nhờ AI tư vấn kỳ mới
             </Button>
             <Button variant="secondary" size="sm" onClick={() => navigate('/what-if')}>
@@ -654,7 +675,15 @@ export function DashboardPage({ mountedRouteSummary }) {
               key={p.id}
               variant={activePersonaId === p.id ? 'primary' : 'secondary'}
               size="sm"
-              onClick={() => setActivePersonaId(p.id)}
+              onClick={() => {
+                setActivePersonaId(p.id);
+                const mappedPresetKey = p.id === 'freshman' ? 'empty' : p.id === 'high-achiever' ? 'normal' : p.id;
+                if (STUDENT_PRESETS[mappedPresetKey]) {
+                  selectStudentPreset(mappedPresetKey);
+                  const snap = getAcademicSnapshot();
+                  api.setSessionStudent(snap.student);
+                }
+              }}
             >
               {p.segment}
             </Button>

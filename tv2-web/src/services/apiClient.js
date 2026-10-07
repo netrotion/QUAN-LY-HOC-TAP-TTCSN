@@ -181,6 +181,10 @@ function resolveMockFixture(method, normalizedPath, body, options = {}) {
 
   const routeKey = `${upperMethod} ${cleanPath}`;
 
+  if (options.state?.dynamicProvider && typeof options.state.dynamicProvider[routeKey] === 'function') {
+    return options.state.dynamicProvider[routeKey](body, options);
+  }
+
   switch (routeKey) {
     case 'GET /system/bootstrap':
       return { ...MOCK_BOOTSTRAP_INFO };
@@ -254,7 +258,9 @@ export function createApiClient(customConfig = {}) {
     csrfCookieName: customConfig.csrfCookieName || 'XSRF-TOKEN',
     csrfHeaderName: customConfig.csrfHeaderName || 'X-XSRF-TOKEN',
     manualCsrfToken: customConfig.csrfToken || null,
-    fetchImpl: customConfig.fetchImpl || (typeof globalThis.fetch === 'function' ? globalThis.fetch.bind(globalThis) : null)
+    fetchImpl: customConfig.fetchImpl || (typeof globalThis.fetch === 'function' ? globalThis.fetch.bind(globalThis) : null),
+    sessionStudent: customConfig.sessionStudent || { ...MOCK_SESSION_STUDENT },
+    dynamicProvider: customConfig.dynamicProvider || null
   };
 
   if (state.isProduction) {
@@ -286,8 +292,19 @@ export function createApiClient(customConfig = {}) {
       csrfCookieName: state.csrfCookieName,
       csrfHeaderName: state.csrfHeaderName,
       fixtureLabel: state.mockEnabled ? FIXTURE_TAG : null,
-      sessionStudent: MOCK_SESSION_STUDENT
+      sessionStudent: state.sessionStudent
     });
+  }
+
+  function setSessionStudent(nextStudent) {
+    state.sessionStudent = { ...state.sessionStudent, ...nextStudent };
+    notifyListeners();
+    return state.sessionStudent;
+  }
+
+  function setDynamicProvider(provider) {
+    state.dynamicProvider = provider;
+    notifyListeners();
   }
 
   /**
@@ -405,7 +422,7 @@ export function createApiClient(customConfig = {}) {
         requestContext.method,
         requestContext.normalizedPath,
         requestContext.body,
-        { simulateError: requestContext.simulateError }
+        { simulateError: requestContext.simulateError, state }
       );
 
       let enrichedResponse = {
@@ -580,6 +597,8 @@ export function createApiClient(customConfig = {}) {
     setCsrfToken,
     getCsrfToken,
     subscribe,
+    setSessionStudent,
+    setDynamicProvider,
     addRequestInterceptor,
     addResponseInterceptor,
     system,

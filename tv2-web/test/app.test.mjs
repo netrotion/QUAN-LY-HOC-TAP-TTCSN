@@ -306,3 +306,170 @@ test('6. Kiểm tra mốc bàn giao design-base-v1 (Task 2.1): tokens.json, desi
   assert.ok(dashboardCode.includes('18 Tín chỉ'), 'Dashboard phải có lộ trình đề xuất kế tiếp 18 TC');
 });
 
+test('7. Task 2.2a: Màn hình Xác thực / Login (/login) và Chuyển đổi 3 Personas mẫu', async () => {
+  const {
+    STUDENT_PRESETS,
+    loginStudent,
+    logoutStudent,
+    selectStudentPreset,
+    getAcademicSnapshot
+  } = await import('../src/services/academicStore.js');
+
+  // 1. Kiểm tra đủ 3 preset bắt buộc theo Task 2.2a
+  assert.ok('normal' in STUDENT_PRESETS, 'Thiếu preset normal');
+  assert.ok('at-risk' in STUDENT_PRESETS, 'Thiếu preset at-risk');
+  assert.ok('empty' in STUDENT_PRESETS, 'Thiếu preset empty');
+
+  // 2. Preset 1: Sinh viên bình thường (ngành CNTT/KTPM, tiến độ chuẩn)
+  const normalSnap = selectStudentPreset('normal');
+  assert.equal(normalSnap.student.id, 'normal');
+  assert.equal(normalSnap.student.fullName, 'Nguyễn Văn An');
+  assert.equal(normalSnap.metrics.cpa, 3.20);
+  assert.equal(normalSnap.metrics.accumulatedCredits, 102);
+  assert.equal(normalSnap.metrics.failedCourses.length, 0);
+
+  // 3. Preset 2: Sinh viên có nguy cơ học vụ (CPA < 2.0, nợ môn tiên quyết)
+  const atRiskSnap = selectStudentPreset('at-risk');
+  assert.equal(atRiskSnap.student.id, 'at-risk');
+  assert.equal(atRiskSnap.student.fullName, 'Trần Thị Bình');
+  assert.equal(atRiskSnap.metrics.cpa, 1.85);
+  assert.ok(atRiskSnap.metrics.cpa < 2.0, 'Sinh viên nguy cơ học vụ phải có CPA < 2.0');
+  assert.ok(atRiskSnap.metrics.academicWarning.includes('Cảnh báo học vụ Mức 1'));
+  assert.ok(atRiskSnap.metrics.failedCourses.some((c) => c.courseCode === 'MATH1002'));
+
+  // 4. Preset 3: Sinh viên chưa có bảng điểm (tài khoản trắng K19)
+  const emptySnap = selectStudentPreset('empty');
+  assert.equal(emptySnap.student.id, 'empty');
+  assert.equal(emptySnap.student.hasTranscript, false);
+  assert.equal(emptySnap.metrics.cpa, null, 'Tài khoản trắng phải giữ CPA null (Quy tắc 5 AGENTS.md)');
+  assert.equal(emptySnap.metrics.accumulatedCredits, 0);
+  assert.equal(emptySnap.transcriptRecords.length, 0);
+
+  // 5. Kiểm tra hàm loginStudent & logoutStudent
+  loginStudent({ presetId: 'normal' });
+  assert.equal(getAcademicSnapshot().isAuthenticated, true);
+  logoutStudent();
+  assert.equal(getAcademicSnapshot().isAuthenticated, false);
+
+  // 6. Kiểm tra file LoginPage.jsx tồn tại và chứa đầy đủ 3 presets
+  const tv2Root = path.resolve(__dirname, '..');
+  const loginCode = fs.readFileSync(path.join(tv2Root, 'src/pages/LoginPage.jsx'), 'utf-8');
+  assert.ok(loginCode.includes('STUDENT_PRESETS'));
+  assert.ok(loginCode.includes('handleLogin'));
+  assert.ok(loginCode.includes('studentIdInput'));
+});
+
+test('8. Task 2.2a: Luồng Nhập & Bóc tách bảng điểm (/transcript) và Tính toán Động CPA/Tín chỉ', async () => {
+  const {
+    commitTranscriptRecords,
+    computeAcademicMetrics,
+    getDynamicAcademicStatus
+  } = await import('../src/services/academicStore.js');
+
+  const testRecords = [
+    { courseCode: 'MATH1001', courseName: 'Giải tích 1', credits: 3, letterGrade: 'A', score4: 4.0, status: 'PASSED' },
+    { courseCode: 'IT1001', courseName: 'Nhập môn lập trình', credits: 3, letterGrade: 'B+', score4: 3.5, status: 'PASSED' },
+    { courseCode: 'MATH1002', courseName: 'Toán rời rạc', credits: 3, letterGrade: 'F', score4: 0.0, status: 'FAILED' }
+  ];
+
+  // 1. Kiểm tra tính toán metrics: Tổng TC đạt = 6 (môn F không tính vào tín chỉ tích lũy), CPA = (3*4 + 3*3.5 + 3*0) / 9 = 22.5 / 9 = 2.50
+  const metrics = computeAcademicMetrics(testRecords, { totalCreditsRequired: 135 });
+  assert.equal(metrics.accumulatedCredits, 6);
+  assert.equal(metrics.cpa, 2.50);
+  assert.equal(metrics.failedCourses.length, 1);
+  assert.equal(metrics.failedCourses[0].courseCode, 'MATH1002');
+
+  // 2. Kiểm tra commit bảng điểm vào store
+  const updatedSnap = commitTranscriptRecords(testRecords);
+  assert.equal(updatedSnap.hasImportedNewTranscript, true);
+  assert.equal(updatedSnap.transcriptRecords.length, 3);
+
+  // 3. Kiểm tra phản hồi động GET /academic/status cập nhật theo kết quả mới
+  const dynamicStatus = getDynamicAcademicStatus();
+  assert.equal(dynamicStatus.cpa, 2.50);
+  assert.equal(dynamicStatus.accumulatedCredits, 6);
+
+  // 4. Kiểm tra file TranscriptImportPage.jsx có đủ 3 bước wizard và hướng dẫn Empty state
+  const tv2Root = path.resolve(__dirname, '..');
+  const transcriptCode = fs.readFileSync(path.join(tv2Root, 'src/pages/TranscriptImportPage.jsx'), 'utf-8');
+  assert.ok(transcriptCode.includes('Bước 1: Nạp Dữ Liệu'));
+  assert.ok(transcriptCode.includes('Bước 2: Xem Lại & Điều Chỉnh'));
+  assert.ok(transcriptCode.includes('Bước 3: Xác Nhận & Cập Nhật'));
+  assert.ok(transcriptCode.includes('Bang_Diem_eHaUI_Chuan_K17.pdf'));
+  assert.ok(transcriptCode.includes('Mô phỏng File Sai Định Dạng'));
+});
+
+test('9. Task 2.2a: Sơ đồ Cây môn học 4 trạng thái màu và Drawer/Modal chi tiết nối TV3 Planner', async () => {
+  const {
+    getDynamicCurriculumTree,
+    selectStudentPreset
+  } = await import('../src/services/academicStore.js');
+
+  // Kích hoạt sinh viên at-risk (nợ MATH1002)
+  selectStudentPreset('at-risk');
+  const dynamicTree = getDynamicCurriculumTree();
+
+  // Kiểm tra 4 trạng thái màu sắc theo đặc tả
+  const colors = new Set(dynamicTree.courses.map((c) => c.nodeColor));
+  assert.ok(colors.has('GREEN'), 'Cây môn học phải có node màu XANH LÁ (Đã đạt)');
+  assert.ok(colors.has('RED'), 'Cây môn học phải có node màu ĐỎ (Trượt hoặc Bị chặn tiên quyết)');
+  assert.ok(colors.has('YELLOW'), 'Cây môn học phải có node màu VÀNG CAM (Đang học / AI Đề xuất)');
+  assert.ok(colors.has('GRAY'), 'Cây môn học phải có node màu XÁM (Chưa học)');
+
+  // Kiểm tra môn IT6001 bị chặn (BLOCKED) vì tiên quyết MATH1002 bị trượt (F)
+  const it6001 = dynamicTree.courses.find((c) => c.courseCode === 'IT6001');
+  assert.ok(it6001);
+  assert.equal(it6001.nodeColor, 'RED', 'IT6001 phải chuyển màu Đỏ khi nợ môn tiên quyết MATH1002');
+  assert.equal(it6001.status, 'BLOCKED');
+
+  // Kiểm tra mã nguồn CurriculumTreePage.jsx có nút dẫn sang TV3 planner
+  const tv2Root = path.resolve(__dirname, '..');
+  const treeCode = fs.readFileSync(path.join(tv2Root, 'src/pages/CurriculumTreePage.jsx'), 'utf-8');
+  assert.ok(treeCode.includes('/planner?course_id='));
+  assert.ok(treeCode.includes('CHUỖI ẢNH HƯỞNG'));
+  assert.ok(treeCode.includes('TIÊN QUYẾT'));
+});
+
+test('10. Task 2.2a: Bảng Kiểm toán tốt nghiệp 100% tiêu chí & Bản in (@media print)', async () => {
+  const {
+    getDynamicGraduationAudit,
+    selectStudentPreset
+  } = await import('../src/services/academicStore.js');
+
+  selectStudentPreset('normal');
+  const auditRes = getDynamicGraduationAudit();
+
+  // 1. Kiểm tra đủ 7 tiêu chí chuẩn đầu ra HaUI
+  assert.equal(auditRes.checklist.length, 7);
+  const categories = auditRes.checklist.map((c) => c.category);
+  assert.ok(categories.some((c) => c.includes('TÍN CHỈ TÍCH LŨY')));
+  assert.ok(categories.some((c) => c.includes('KHỐI BẮT BUỘC')));
+  assert.ok(categories.some((c) => c.includes('TỰ CHỌN CHUYÊN NGÀNH')));
+  assert.ok(categories.some((c) => c.includes('CHUẨN NGOẠI NGỮ')));
+  assert.ok(categories.some((c) => c.includes('CHUẨN TIN HỌC')));
+  assert.ok(categories.some((c) => c.includes('GDTC & GDQP-AN')));
+  assert.ok(categories.some((c) => c.includes('ĐIỂM RÈN LUYỆN')));
+
+  // 2. Nhãn DEMO_UNVERIFIED gắn trên chuẩn ngoại ngữ/tin học
+  assert.ok(auditRes.checklist.some((c) => c.statusMessage.includes('DEMO_UNVERIFIED')));
+
+  // 3. Kiểm tra file AcademicProgressPage.jsx có nút in ấn window.print() và các khối tiêu đề/chữ ký in
+  const tv2Root = path.resolve(__dirname, '..');
+  const progressCode = fs.readFileSync(path.join(tv2Root, 'src/pages/AcademicProgressPage.jsx'), 'utf-8');
+  assert.ok(progressCode.includes('window.print()'), 'Phải có nút gọi lệnh in window.print()');
+  assert.ok(progressCode.includes('haui-print-header'), 'Phải có khối tiêu đề in ấn haui-print-header');
+  assert.ok(progressCode.includes('haui-print-signatures'), 'Phải có khối chữ ký haui-print-signatures');
+
+  // 4. Kiểm tra CSS @media print trong global.css
+  const globalCss = fs.readFileSync(path.join(tv2Root, 'src/styles/global.css'), 'utf-8');
+  assert.ok(globalCss.includes('@media print'));
+  assert.ok(globalCss.includes('.haui-sidebar'));
+  assert.ok(globalCss.includes('.haui-topbar'));
+  assert.ok(globalCss.includes('display: none !important'));
+  assert.ok(globalCss.includes('A4 portrait'));
+
+  // 5. Kiểm tra GraduationAuditPage.jsx tồn tại
+  assert.equal(fs.existsSync(path.join(tv2Root, 'src/pages/GraduationAuditPage.jsx')), true);
+});
+
+

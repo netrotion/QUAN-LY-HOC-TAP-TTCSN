@@ -19,6 +19,12 @@ const NAV_GROUPS = Object.freeze([
         tag: 'Hồ sơ'
       },
       {
+        to: '/transcript',
+        label: 'Nạp & Bóc tách bảng điểm',
+        icon: '📥',
+        tag: 'Wizard'
+      },
+      {
         to: '/curriculum',
         label: 'CTĐT & Cây môn học',
         icon: '🌳',
