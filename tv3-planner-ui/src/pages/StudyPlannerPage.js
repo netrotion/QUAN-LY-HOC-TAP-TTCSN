@@ -30,7 +30,10 @@ export function StudyPlannerPage({ api, ui } = {}) {
 
   // State kế hoạch từ plannerStore
   const [storeState, setStoreState] = useState(() => plannerStore.getState());
-  const { plan, incomingProposal } = storeState;
+  // `validationResult` do store quản lý: tự xóa khi kế hoạch bị chỉnh sửa, tránh hiển thị kết quả thẩm định cũ
+  const { plan, incomingProposal, validation: validationResult } = storeState;
+  const isValidated = plan?.status === PLAN_STATUSES.VALIDATED;
+  const activeEntry = storeState.history?.find((h) => h.status === PLAN_STATUSES.ACTIVE) || null;
 
   // Trạng thái giao diện
   const [loading, setLoading] = useState(false);
@@ -45,7 +48,6 @@ export function StudyPlannerPage({ api, ui } = {}) {
   const [selectedSemesterForAdd, setSelectedSemesterForAdd] = useState('2026_1');
 
   // Thẩm định quy chế
-  const [validationResult, setValidationResult] = useState(null);
   const [validating, setValidating] = useState(false);
 
   // Đăng ký lắng nghe thay đổi từ plannerStore
@@ -97,7 +99,6 @@ export function StudyPlannerPage({ api, ui } = {}) {
         // Khôi phục về dữ liệu chuẩn của store
         plannerStore.resetToDefault();
       }
-      setValidationResult(null);
       showToast('Đã tải lại kế hoạch học tập tối ưu!');
     } catch (err) {
       setError(err);
@@ -106,24 +107,30 @@ export function StudyPlannerPage({ api, ui } = {}) {
     }
   }, [api, showToast]);
 
-  // Hành động: Kiểm tra điều kiện (Thẩm định quy chế)
+  // Hành động: Kiểm tra điều kiện (Thẩm định quy chế): DRAFT → VALIDATED
+  // Store luôn là nơi chuyển trạng thái; kết quả backend (nếu có) chỉ được gộp thêm vi phạm/cảnh báo.
   const handleValidatePlan = useCallback(async () => {
     setValidating(true);
+    let external = {};
     try {
       if (api && api.planner && typeof api.planner.validate === 'function') {
         const firstSem = plan?.semesters?.[0];
-        const res = await api.planner.validate({ totalCredits: firstSem?.totalCredits || 18 });
-        setValidationResult(res);
-      } else {
-        const res = plannerStore.validatePlan();
-        setValidationResult(res);
+        const apiRes = await api.planner.validate({ totalCredits: Number(firstSem?.totalCredits) || 0 });
+        external = {
+          externalViolations: apiRes?.valid === false ? apiRes.violations || [] : [],
+          externalWarnings: apiRes?.warnings || []
+        };
       }
-      showToast('Đã hoàn tất kiểm tra quy chế HaUI thời gian thực!');
     } catch (err) {
-      const fallbackRes = plannerStore.validatePlan();
-      setValidationResult(fallbackRes);
+      // Backend không phản hồi: vẫn thẩm định bằng bộ quy chế cục bộ
     } finally {
+      const res = plannerStore.validatePlan(external);
       setValidating(false);
+      showToast(
+        res.valid
+          ? 'Kế hoạch hợp lệ theo quy chế HaUI — đã chuyển sang VALIDATED, có thể kích hoạt.'
+          : `Phát hiện ${res.violations.length} vi phạm quy chế — kế hoạch vẫn ở DRAFT.`
+      );
     }
   }, [api, plan, showToast]);
 
@@ -134,10 +141,11 @@ export function StudyPlannerPage({ api, ui } = {}) {
   }, [showToast]);
 
   // Hành động: Kích hoạt kế hoạch (Bắt đầu theo dõi)
+  // F23-005: store từ chối nếu kế hoạch chưa VALIDATED hoặc còn vi phạm quy chế
   const handleConfirmActivate = useCallback(() => {
     setIsActivateModalOpen(false);
     const res = plannerStore.activatePlan();
-    showToast(res.message);
+    showToast(res.success ? res.message : `⚠️ ${res.message}`);
   }, [showToast]);
 
   // Hành động: Chấp nhận đề xuất từ AI / What-if
@@ -169,18 +177,16 @@ export function StudyPlannerPage({ api, ui } = {}) {
     }
   }, [selectedSemesterForAdd, showToast]);
 
-  // Hành động: Hủy thay đổi (Reset về bản ACTIVE)
+  // Hành động: Hủy thay đổi — F23-004: chỉ hoàn tác về mốc đã lưu/kích hoạt gần nhất, giữ nguyên lịch sử
   const handleDiscardChanges = useCallback(() => {
-    plannerStore.resetToDefault();
-    setValidationResult(null);
-    showToast('Đã hoàn tác các thay đổi chưa lưu.');
+    const res = plannerStore.discardDraftChanges();
+    showToast(res.message);
   }, [showToast]);
 
   // Thao tác mô phỏng Empty & Error state để phục vụ test
   const handleClearPlan = useCallback(() => {
-    plannerStore.setPlan({ ...plan, semesters: [] });
-    setValidationResult(null);
-  }, [plan]);
+    plannerStore.setPlan({ semesters: [] });
+  }, []);
 
   const handleTriggerError = useCallback(() => {
     setError({
@@ -238,7 +244,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
               border: '1px solid var(--color-hairline, #e5e5e5)'
             }
           },
-          `Phiên bản: ${plan?.version || 'v2.4'} · Trạng thái: ${validationResult?.status || plan?.status || 'DRAFT'}`
+          `Phiên bản: ${plan?.version || 'v2.4'} · Trạng thái: ${plan?.status || 'DRAFT'}`
         ),
         React.createElement(
           'span',
@@ -304,7 +310,9 @@ export function StudyPlannerPage({ api, ui } = {}) {
             {
               variant: 'primary',
               size: 'sm',
-              onClick: () => setIsActivateModalOpen(true)
+              disabled: !isValidated,
+              title: isValidated ? undefined : 'Cần "Kiểm tra điều kiện" và đạt trạng thái VALIDATED trước khi kích hoạt',
+              onClick: () => isValidated && setIsActivateModalOpen(true)
             },
             '▶ Bắt đầu theo dõi (Kích hoạt)'
           )
@@ -774,7 +782,11 @@ export function StudyPlannerPage({ api, ui } = {}) {
               ? React.createElement(Button, { variant: 'ghost', size: 'sm', onClick: () => setIsActivateModalOpen(false) }, 'Hủy')
               : null,
             Button
-              ? React.createElement(Button, { variant: 'primary', size: 'sm', onClick: handleConfirmActivate }, 'Đồng ý Kích hoạt')
+              ? React.createElement(
+                  Button,
+                  { variant: 'primary', size: 'sm', disabled: !isValidated, onClick: handleConfirmActivate },
+                  'Đồng ý Kích hoạt'
+                )
               : null
           )
         },
@@ -787,7 +799,13 @@ export function StudyPlannerPage({ api, ui } = {}) {
             'ul',
             { style: { paddingLeft: '20px', marginTop: '8px' } },
             React.createElement('li', null, `Tổng cộng ${totalPlannedCredits} tín chỉ trong ${plan.semesters?.length || 3} học kỳ.`),
-            React.createElement('li', null, `Bản kế hoạch ACTIVE trước đó (v2.3) sẽ tự động được lưu trữ vào Lịch sử.`),
+            React.createElement(
+              'li',
+              null,
+              activeEntry
+                ? `Bản kế hoạch ACTIVE trước đó (${activeEntry.version}) sẽ tự động được lưu trữ vào Lịch sử.`
+                : 'Đây sẽ là bản kế hoạch ACTIVE đầu tiên của bạn.'
+            ),
             React.createElement('li', null, `Hệ thống sẽ dùng lộ trình này để đối chiếu cảnh báo học vụ và nhắc nhở đăng ký môn.`)
           )
         )

@@ -20,12 +20,14 @@ import { plannerStore, PLAN_STATUSES } from '../services/plannerStore.js';
 export function PlanHistoryModal({ isOpen, onClose, ui, onPlanChanged }) {
   const { Modal, Button, Card } = ui || {};
   const [filterTab, setFilterTab] = useState('ALL'); // 'ALL' | 'ACTIVE' | 'DRAFT' | 'ARCHIVED'
-  const [toastMsg, setToastMsg] = useState('');
+  const [toast, setToast] = useState(null); // { message, ok }
 
   if (!isOpen) return null;
 
   const history = plannerStore.getHistory();
   const currentPlan = plannerStore.getPlan();
+  const activeEntry = plannerStore.getActiveEntry();
+  const currentPlanCredits = (currentPlan.semesters || []).reduce((sum, s) => sum + (Number(s.totalCredits) || 0), 0);
 
   const filteredHistory = history.filter((item) => {
     if (filterTab === 'ACTIVE') return item.status === PLAN_STATUSES.ACTIVE;
@@ -34,22 +36,23 @@ export function PlanHistoryModal({ isOpen, onClose, ui, onPlanChanged }) {
     return true;
   });
 
-  const showToast = (msg) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 3000);
+  const showToast = (res) => {
+    setToast({ message: res.message, ok: res.success !== false });
+    setTimeout(() => setToast(null), 3000);
   };
 
   const handleRestore = (planId) => {
     const res = plannerStore.restorePlan(planId);
-    showToast(res.message);
+    showToast(res);
     if (typeof onPlanChanged === 'function') {
       onPlanChanged();
     }
   };
 
   const handleActivate = (planId) => {
-    const res = plannerStore.activatePlan();
-    showToast(res.message);
+    // F23-002: kích hoạt đúng bản được chọn trong lịch sử
+    const res = plannerStore.activatePlan(planId);
+    showToast(res);
     if (typeof onPlanChanged === 'function') {
       onPlanChanged();
     }
@@ -60,14 +63,14 @@ export function PlanHistoryModal({ isOpen, onClose, ui, onPlanChanged }) {
     { style: { display: 'flex', flexDirection: 'column', gap: '16px' } },
 
     // Thông báo Toast nội bộ modal nếu có
-    toastMsg
+    toast
       ? React.createElement(
           'div',
           {
             style: {
               padding: '10px 14px',
               borderRadius: '8px',
-              background: '#0a0a0a',
+              background: toast.ok ? '#0a0a0a' : '#b91c1c',
               color: '#ffffff',
               fontSize: '13px',
               fontWeight: 500,
@@ -76,7 +79,7 @@ export function PlanHistoryModal({ isOpen, onClose, ui, onPlanChanged }) {
               justifyContent: 'space-between'
             }
           },
-          React.createElement('span', null, `✓ ${toastMsg}`)
+          React.createElement('span', null, `${toast.ok ? '✓' : '⚠️'} ${toast.message}`)
         )
       : null,
 
@@ -113,7 +116,11 @@ export function PlanHistoryModal({ isOpen, onClose, ui, onPlanChanged }) {
               React.createElement(
                 'div',
                 { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-                React.createElement('strong', { style: { fontSize: '13px', color: '#0a0a0a' } }, 'Bản v2.3 (ACTIVE)'),
+                React.createElement(
+                  'strong',
+                  { style: { fontSize: '13px', color: '#0a0a0a' } },
+                  activeEntry ? `Bản ${activeEntry.version} (ACTIVE)` : 'Chưa có bản ACTIVE'
+                ),
                 React.createElement(
                   'span',
                   {
@@ -132,7 +139,9 @@ export function PlanHistoryModal({ isOpen, onClose, ui, onPlanChanged }) {
               React.createElement(
                 'p',
                 { style: { margin: '4px 0 0 0', fontSize: '12px', color: '#64748b' } },
-                '2 học kỳ chính · 33 tín chỉ · CPA dự phóng 3.25'
+                activeEntry
+                  ? `${activeEntry.totalSemesters} học kỳ · ${activeEntry.totalCredits} tín chỉ · CPA dự phóng ${activeEntry.projectedCpa}`
+                  : 'Chưa kích hoạt kế hoạch nào'
               )
             ),
             React.createElement(
@@ -167,7 +176,7 @@ export function PlanHistoryModal({ isOpen, onClose, ui, onPlanChanged }) {
               React.createElement(
                 'p',
                 { style: { margin: '4px 0 0 0', fontSize: '12px', color: '#64748b' } },
-                '3 học kỳ (có kỳ hè) · 37 tín chỉ · CPA dự phóng 3.32'
+                `${(currentPlan.semesters || []).length} học kỳ · ${currentPlanCredits} tín chỉ · CPA dự phóng ${currentPlan.projectedCpa}`
               )
             )
           )
@@ -215,6 +224,9 @@ export function PlanHistoryModal({ isOpen, onClose, ui, onPlanChanged }) {
       filteredHistory.map((item) => {
         const isCurrentActive = item.status === PLAN_STATUSES.ACTIVE;
         const isDraft = item.status === PLAN_STATUSES.DRAFT;
+        // F23-005: bản nháp đang mở trên Planner chỉ được kích hoạt sau khi đạt VALIDATED
+        const isOpenInPlanner = item.planId === currentPlan.planId;
+        const activateBlocked = isOpenInPlanner && currentPlan.status !== PLAN_STATUSES.VALIDATED;
 
         return React.createElement(
           'div',
@@ -285,6 +297,8 @@ export function PlanHistoryModal({ isOpen, onClose, ui, onPlanChanged }) {
                   {
                     variant: 'primary',
                     size: 'sm',
+                    disabled: activateBlocked,
+                    title: activateBlocked ? 'Bản nháp đang mở cần "Kiểm tra điều kiện" (VALIDATED) trước khi kích hoạt' : undefined,
                     onClick: () => handleActivate(item.planId)
                   },
                   'Kích hoạt áp dụng'
