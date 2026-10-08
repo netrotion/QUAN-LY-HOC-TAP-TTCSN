@@ -277,27 +277,27 @@ Không dùng “đã nghiệm thu” cho một hình chụp, một nhánh mock h
 
 Các số hiệu US/FR/BR/AC/NFR được giữ để truy vết về PRD. Không dùng solution này làm nguồn quy chế RAG chính thức; nó là tài liệu phát triển sản phẩm.
 
-## 10. Tiêu chí bấm thử — dành cho phase prototype, CHƯA CHẠY
+## 10. Tiêu chí bấm thử — Kết quả Thẩm định Task 2.3 (Phase 2 Review)
 
-Bảng này là kịch bản tương lai. Dữ liệu và kết quả có thể là trạng thái dựng sẵn trong prototype, nhưng phải đi đúng nhánh. Qua prototype chỉ nghiệm thu tương tác; lưu thật, tính đúng, quyền truy cập và AI thật phải kiểm thử riêng lúc có code.
+Bảng này ghi nhận kết quả thẩm định thực tế tại Task 2.3 (commit `490d5cc`). Do lệnh build Frontend (`npm run build`) gặp lỗi biên dịch cú pháp JSX tại `tv2-web/src/pages/AcademicProgressPage.jsx:439` (F23-001), toàn bộ các tương tác trình duyệt trực tiếp bị chặn (`INTERACTIVE_VERIFICATION_BLOCKED`). Các kịch bản được phân loại theo kết quả thẩm tra tĩnh (`STATIC_CONFIRMED`), kiểm thử tự động (`TEST_CONFIRMED`), hoặc phát hiện lỗi cụ thể (`FAIL`). Chi tiết đầy đủ xem tại `tv1-ai/docs/task-2.3-review.md`.
 
-| Mã | Thao tác cần thử | Kết quả mong đợi | Căn cứ | Trạng thái |
-|---|---|---|---|---|
-| P01 | Từ Dashboard mở Chat, Planner, What-if, Audit rồi quay lại. | Có đường vào trực tiếp và đường quay lại; không bắt đi hết chuỗi demo. | S04 §2; S06 | CHƯA BẤM THỬ |
-| P02 | Chưa có bảng điểm: mở CTĐT/Chat, thử chức năng cần hồ sơ. | Xem/hỏi chung được; phần cá nhân hóa hướng dẫn bổ sung hồ sơ. | S02; S06 | CHƯA BẤM THỬ |
-| P03 | Nhập bảng điểm, xem lại, sửa, thử hủy rồi xác nhận ở lần khác. | Review trước khi lưu; hủy không thay bảng điểm đã có; lỗi có nhập tay/thử lại. | S04 luồng A; S06 | CHƯA BẤM THỬ |
-| P04 | Trong Chat hỏi một câu quy chế. | Câu trả lời có chỗ xem nguồn; tiếp tục ở Chat, không buộc mở Planner. | S03 FR-05–07; S06 | CHƯA BẤM THỬ |
-| P05 | Nhờ lập lộ trình rồi yêu cầu phương án khác. | Có hỏi bổ sung/đổi tiêu chí và xem phương án; chưa tự lưu. | S04 màn 2/3; S06 | CHƯA BẤM THỬ |
-| P06 | Từ phương án đi thẳng Planner; lần khác mở tree rồi quay lại. | Cả hai đường hoạt động, giữ đúng ngữ cảnh phương án. | S04 màn 3–5 | CHƯA BẤM THỬ |
-| P07 | Mở Planner trực tiếp, chỉnh, lưu nháp và mở lại mẫu. | Thực hiện được không qua Chat; phân biệt nháp với bắt đầu theo dõi. | S03 US-13; S06 | CHƯA BẤM THỬ |
-| P08 | Chỉnh kế hoạch ACTIVE rồi hủy; lần khác áp dụng. | Hủy giữ bản cũ; áp dụng có màn xem lại và xác nhận. | S06 | CHƯA BẤM THỬ |
-| P09 | Thử What-if rồi thoát; thử lại và chọn áp dụng. | Thoát không đổi kế hoạch; áp dụng đi về đúng Planner, không sửa bảng điểm. | S04 màn 6–8; S06 | CHƯA BẤM THỬ |
-| P10 | Mở ROI hoặc mục tiêu ngược theo nhu cầu. | Không bắt đi qua toàn bộ công cụ; có quay lại/áp dụng/hủy. | S06 | CHƯA BẤM THỬ |
-| P11 | Audit chọn phần còn thiếu và lập phương án bù đắp. | Đi về Planner để xem lại; không tự biến checklist thành đã hoàn thành. | S04 màn 9; S06 | CHƯA BẤM THỬ |
-| P12 | Mở lại kế hoạch sau học kỳ, cập nhật kết quả mẫu và điều chỉnh. | Có luồng đối chiếu, biết phần cần sửa và lưu bản chỉnh; không phải tạo Chat mới. | S03 G9/US-13; S06 | CHƯA BẤM THỬ |
-| P13 | Lưu lỗi, AI lỗi, rời màn khi chưa lưu. | Giữ nội dung, có thử lại hoặc quay về; không chuyển sang thành công giả. | S06 | CHƯA BẤM THỬ |
+| Mã | Thao tác cần thử | Kết quả mong đợi | Căn cứ | Trạng thái Thẩm định Task 2.3 | Ghi chú & Bằng chứng |
+|---|---|---|---|---|---|
+| P01 | Từ Dashboard mở Chat, Planner, What-if, Audit rồi quay lại. | Có đường vào trực tiếp và đường quay lại; không bắt đi hết chuỗi demo. | S04 §2; S06 | **STATIC_CONFIRMED**<br>(BLOCKED E2E) | Code wiring điều hướng đầy đủ; bị chặn E2E do lỗi build F23-001. |
+| P02 | Chưa có bảng điểm: mở CTĐT/Chat, thử chức năng cần hồ sơ. | Xem/hỏi chung được; phần cá nhân hóa hướng dẫn bổ sung hồ sơ. | S02; S06 | **TEST_CONFIRMED**<br>(STATIC_CONFIRMED) | Persona `empty` chạy đúng trong unit test TV2 (`app.test.mjs`), hiển thị hướng dẫn nạp điểm. |
+| P03 | Nhập bảng điểm, xem lại, sửa, thử hủy rồi xác nhận ở lần khác. | Review trước khi lưu; hủy không thay bảng điểm đã có; lỗi có nhập tay/thử lại. | S04 luồng A; S06 | **TEST_CONFIRMED**<br>(STATIC_CONFIRMED) | Unit test TV2 xác nhận tính toán động và chỉ commit khi confirm ở Bước 3. |
+| P04 | Trong Chat hỏi một câu quy chế. | Câu trả lời có chỗ xem nguồn; tiếp tục ở Chat, không buộc mở Planner. | S03 FR-05–07; S06 | **STATIC_CONFIRMED** | Nguồn trích dẫn hiển thị đúng; ghi nhận lỗi phụ F23-008 mock gắn proposal. |
+| P05 | Nhờ lập lộ trình rồi yêu cầu phương án khác. | Có hỏi bổ sung/đổi tiêu chí và xem phương án; chưa tự lưu. | S04 màn 2/3; S06 | **STATIC_CONFIRMED** | Có nhánh "Phương án khác" và "Hủy đề xuất", không tự lưu kế hoạch. |
+| P06 | Từ phương án đi thẳng Planner; lần khác mở tree rồi quay lại. | Cả hai đường hoạt động, giữ đúng ngữ cảnh phương án. | S04 màn 3–5 | **STATIC_CONFIRMED** | Nạp đề xuất vào `incomingProposal` và mở Modal cây môn học độc lập. |
+| P07 | Mở Planner trực tiếp, chỉnh, lưu nháp và mở lại mẫu. | Thực hiện được không qua Chat; phân biệt nháp với bắt đầu theo dõi. | S03 US-13; S06 | **STATIC_CONFIRMED** | Planner hoạt động độc lập không phụ thuộc Chat; phân biệt nháp và kích hoạt. |
+| P08 | Chỉnh kế hoạch ACTIVE rồi hủy; lần khác áp dụng. | Hủy giữ bản cũ; áp dụng có màn xem lại và xác nhận. | S06 | **FAIL (MAJOR)** | Phát hiện lỗi F23-004 (`resetToDefault` xóa snapshot) & F23-005 (kích hoạt từ DRAFT không kiểm tra validation). |
+| P09 | Thử What-if rồi thoát; thử lại và chọn áp dụng. | Thoát không đổi kế hoạch; áp dụng đi về đúng Planner, không sửa bảng điểm. | S04 màn 6–8; S06 | **STATIC_CONFIRMED** | Thoát không ảnh hưởng store; chỉ nạp đề xuất khi bấm Áp dụng. |
+| P10 | Mở ROI hoặc mục tiêu ngược theo nhu cầu. | Không bắt đi qua toàn bộ công cụ; có quay lại/áp dụng/hủy. | S06 | **STATIC_CONFIRMED** | 4 tabs kịch bản độc lập tại What-if, vào trực tiếp không ép đi qua toàn bộ wizard. |
+| P11 | Audit chọn phần còn thiếu và lập phương án bù đắp. | Đi về Planner để xem lại; không tự biến checklist thành đã hoàn thành. | S04 màn 9; S06 | **FAIL (BLOCKER)** | Lỗi cú pháp JSX F23-001 hỏng trang Audit; lỗi F23-006 thiếu truyền payload bù đắp sang Planner. |
+| P12 | Mở lại kế hoạch sau học kỳ, cập nhật kết quả mẫu và điều chỉnh. | Có luồng đối chiếu, biết phần cần sửa và lưu bản chỉnh; không phải tạo Chat mới. | S03 G9/US-13; S06 | **FAIL (MAJOR)** | Lỗi F23-002 (`activatePlan` bỏ qua `planId`) & F23-003 (`restorePlan` hardcode nạp fixture mặc định). |
+| P13 | Lưu lỗi, AI lỗi, rời màn khi chưa lưu. | Giữ nội dung, có thử lại hoặc quay về; không chuyển sang thành công giả. | S06 | **STATIC_CONFIRMED** | Các nút mô phỏng Error/Empty và Banner cảnh báo hoạt động đúng mã nguồn. |
 
-Đo hiệu năng và tính đúng toán học, xác thực quyền trên API, persistence thực tế, build và AI live không được đánh dấu PASS từ các ca bấm thử này.
+Đo hiệu năng và tính đúng toán học, xác thực quyền trên API, persistence thực tế, build và AI live không được đánh dấu PASS từ các ca bấm thử này. Trạng thái kết luận toàn hệ thống: **`TASK_2_3_READY_FOR_OWNER_FIX`**. Chờ TV2 và TV3 khắc phục các lỗi `F23-001` đến `F23-005` trước khi xem xét ban hành `flow-approved-v1`.
 
 ## 11. Checklist tài liệu cho task 1.1
 
