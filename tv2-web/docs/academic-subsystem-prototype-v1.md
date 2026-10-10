@@ -1,13 +1,14 @@
-# HaUI Advisor — Mốc Bàn Giao `flow-approved-v1` (Task 2.2a)
+# HaUI Advisor — Mốc Bàn Giao `academic-subsystem-prototype-v1` (Task 2.2a)
 **Phân hệ:** TV2 - Frontend Platform & Academic Engineer  
-**Phiên bản bàn giao:** `flow-approved-v1`  
+**Phiên bản bàn giao:** `academic-subsystem-prototype-v1` (Sẵn sàng nội bộ phân hệ Academic, chờ TV1 Lead nghiệm thu toàn hệ thống tại Task 2.3)  
 **Ngày hoàn thiện:** 2026-10-07  
 **Phạm vi sở hữu:** Duy nhất thư mục `tv2-web/`  
 
 ---
 
 ## 1. Mục tiêu & Ranh giới (Scope & Boundaries)
-- **Mục tiêu:** Xây dựng hoàn chỉnh bộ prototype tương tác của phân hệ Học vụ (Academic Subsystem) tích hợp vào UI Shell và hệ thống design tokens `design-base-v1` để đạt mốc phê duyệt luồng người dùng **`flow-approved-v1`**.
+- **Mục tiêu:** Xây dựng hoàn chỉnh bộ prototype tương tác của phân hệ Học vụ (Academic Subsystem) tích hợp vào UI Shell và hệ thống design tokens `design-base-v1` để đạt mốc sẵn sàng phân hệ **`academic-subsystem-prototype-v1`** (chuẩn bị cho mốc phê duyệt luồng `flow-approved-v1` do TV1 Lead chủ trì tại Task 2.3).
+- **Lưu ý quản trị & Phân quyền mốc:** Tài liệu này mang ý nghĩa hoàn thiện nội bộ phân hệ Academic của TV2. Quyết định thẩm định và ban hành mốc phê duyệt toàn luồng `flow-approved-v1` thuộc thẩm quyền duy nhất của TV1 (Lead + AI Architect).
 - **Tuân thủ quy chế AGENTS.md:**
   - 100% mã nguồn nằm trong `tv2-web/`.
   - Không gọi trực tiếp LLM SDK hay database thật; quản lý dữ liệu hoàn toàn qua Reactive Frontend State / Mock Fixtures (`FIXTURE_ONLY`, `DEMO_UNVERIFIED`).
