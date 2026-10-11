@@ -1,145 +1,174 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { BrandLogo } from './BrandLogo.jsx';
+import {
+  getAcademicSnapshot,
+  logoutStudent,
+  subscribeAcademicStore
+} from '../../services/academicStore.js';
 
-const NAV_GROUPS = Object.freeze([
+/**
+ * Menu điều hướng theo prototype-v1 (tv3-planner-ui/design/prototype — sidebar dùng chung các màn).
+ * `alsoActiveFor`: các route cũ vẫn được đánh dấu active ở mục tương ứng.
+ */
+const NAV_ITEMS = Object.freeze([
+  { to: '/', end: true, label: 'Tổng quan', icon: 'grid_view', alsoActiveFor: ['/dashboard'] },
+  { to: '/profile', label: 'Hồ sơ sinh viên', icon: 'badge' },
+  { to: '/transcript', label: 'Nhập bảng điểm', icon: 'upload_file' },
+  { to: '/curriculum', label: 'Cây môn học', icon: 'account_tree' },
+  { to: '/planner', end: true, label: 'Kế hoạch học tập', icon: 'event_note' },
+  { to: '/planner/history', label: 'Lịch sử kế hoạch', icon: 'history' },
+  { to: '/chat', label: 'Tư vấn AI', icon: 'smart_toy' },
+  { to: '/what-if', label: 'What-if mô phỏng điểm', icon: 'insights' },
   {
-    section: 'Học vụ & Kế hoạch (Core Academic)',
-    items: [
-      {
-        to: '/',
-        end: true,
-        label: 'Dashboard (Tổng quan học tập)',
-        icon: '📊',
-        tag: 'Màn 1'
-      },
-      {
-        to: '/progress',
-        label: 'Bảng điểm & Học vụ',
-        icon: '📑',
-        tag: 'Hồ sơ'
-      },
-      {
-        to: '/transcript',
-        label: 'Nạp & Bóc tách bảng điểm',
-        icon: '📥',
-        tag: 'Wizard'
-      },
-      {
-        to: '/curriculum',
-        label: 'CTĐT & Cây môn học',
-        icon: '🌳',
-        tag: 'Màn 4'
-      },
-      {
-        to: '/planner',
-        label: 'Kế hoạch học tập (Study Planner)',
-        icon: '📅',
-        tag: 'TV3'
-      }
-    ]
-  },
-  {
-    section: 'Cố vấn AI & Giả lập (Smart Advisory)',
-    items: [
-      {
-        to: '/chat',
-        label: 'Cố vấn AI (AI Chatbot)',
-        icon: '💬',
-        tag: 'TV3'
-      },
-      {
-        to: '/what-if',
-        label: 'Mô phỏng & Cải thiện điểm (What-if)',
-        icon: '🧮',
-        tag: 'TV3'
-      },
-      {
-        to: '/audit',
-        label: 'Kiểm toán tốt nghiệp',
-        icon: '🎓',
-        tag: 'Màn 9'
-      },
-      {
-        to: '/demo-ui',
-        label: 'Demo UI & Mock API',
-        icon: '🧩',
-        tag: 'V0'
-      }
-    ]
+    to: '/audit',
+    label: 'Kiểm tra điều kiện tốt nghiệp',
+    icon: 'verified',
+    alsoActiveFor: ['/progress']
   }
 ]);
 
+const LINK_BASE =
+  'flex items-center gap-space-sm px-space-md py-space-sm rounded-full transition-all duration-150';
+const LINK_ACTIVE = 'bg-ink text-paper font-medium shadow-[0_1px_8px_rgba(0,0,0,0.04)]';
+const LINK_IDLE = 'text-mid-gray hover:text-ink hover:bg-canvas font-body text-body';
+
+function countStudiedSemesters(records = []) {
+  return new Set(records.map((r) => r.semesterCode).filter(Boolean)).size;
+}
+
 /**
- * Sidebar Navigation Component của Web Host (TV2 — design-base-v1)
- * Hỗ trợ chế độ thu gọn (collapsed 72px) / mở rộng (expanded 268px)
- * và ánh xạ đầy đủ 7 hạng mục học vụ theo đặc tả Task 2.1:
- * 1. Dashboard (Tổng quan học tập)
- * 2. Bảng điểm & Học vụ (Hồ sơ, nhập bảng điểm, lịch sử kết quả)
- * 3. CTĐT & Cây môn học (Course Dependency Tree)
- * 4. Kế hoạch học tập (Study Planner)
- * 5. Cố vấn AI (AI Chatbot)
- * 6. Mô phỏng & Cải thiện điểm (What-if & Retake Calculator)
- * 7. Kiểm toán tốt nghiệp (Graduation Audit)
+ * Sidebar Navigation Component của Web Host (TV2 — prototype-v1)
+ * Mở rộng w-72 theo prototype; thu gọn (collapsed 72px) chỉ còn icon.
  *
  * @param {{ collapsed?: boolean }} props
  */
 export function Sidebar({ collapsed = false }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [snapshot, setSnapshot] = useState(() => getAcademicSnapshot());
+
+  useEffect(() => subscribeAcademicStore(setSnapshot), []);
+
+  const { student, transcriptRecords } = snapshot;
+  const cohortShort = student.cohort?.split(' ')?.[0] || '';
+  const majorShort = student.advisorClass?.split(/\d/)?.[0] || '';
+  const studiedSemesters = countStudiedSemesters(transcriptRecords);
+
+  const handleLogout = () => {
+    logoutStudent();
+    navigate('/login');
+  };
+
   return (
     <aside
-      className={`haui-sidebar ${collapsed ? 'haui-sidebar--collapsed' : ''}`}
+      className={`haui-sidebar ${collapsed ? 'haui-sidebar--collapsed w-[72px]' : 'w-72'} fixed left-0 top-0 h-screen bg-surface-alt z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-r border-hairline transition-[width] duration-200 print:hidden`}
       aria-label="Điều hướng chính HaUI Advisor"
     >
-      <div className="haui-sidebar__brand">
-        <div className="haui-sidebar__logo" title="HaUI Advisor" aria-hidden="true">
-          H
-        </div>
-        {!collapsed && (
-          <div className="haui-sidebar__brand-text">
-            <h1 className="haui-sidebar__title">HaUI Advisor</h1>
-            <p className="haui-sidebar__subtitle">Trợ lý Cố vấn Lộ trình Học tập</p>
-          </div>
-        )}
-      </div>
-
-      <nav className="haui-sidebar__nav">
-        {NAV_GROUPS.map((group) => (
-          <div key={group.section}>
-            <div className="haui-sidebar__section-label" title={group.section}>
-              {group.section}
+      <div className={`flex flex-col flex-1 overflow-y-auto scrollbar-none pt-space-lg ${collapsed ? 'px-space-sm' : 'px-space-md'}`}>
+        <Link
+          to="/"
+          className={`flex items-center gap-space-sm pb-space-lg mb-space-sm border-b border-hairline hover:opacity-80 transition-opacity ${
+            collapsed ? 'justify-center' : 'px-space-xs'
+          }`}
+        >
+          <BrandLogo compact={collapsed} className="h-8 w-auto shrink-0" />
+          {!collapsed && (
+            <div className="flex flex-col min-w-0">
+              <span className="font-subheading text-subheading text-ink font-semibold tracking-tight truncate leading-tight">
+                HAUI ADVISOR
+              </span>
+              <span className="font-caption text-caption text-mid-gray truncate">
+                Cổng Tư Vấn &amp; Lộ Trình KTPM/CNTT
+              </span>
             </div>
-            {group.items.map((item) => (
+          )}
+        </Link>
+
+        <nav className="flex flex-col gap-1 w-full">
+          {NAV_ITEMS.map((item) => {
+            const aliasActive = item.alsoActiveFor?.includes(location.pathname);
+            return (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.end}
                 title={collapsed ? item.label : undefined}
                 className={({ isActive }) =>
-                  `haui-sidebar__link ${isActive ? 'haui-sidebar__link--active' : ''}`.trim()
+                  `${LINK_BASE} ${isActive || aliasActive ? LINK_ACTIVE : LINK_IDLE} ${
+                    collapsed ? 'justify-center px-0' : ''
+                  }`
                 }
               >
-                <span className="haui-sidebar__link-left">
-                  <span className="haui-sidebar__icon" aria-hidden="true">
-                    {item.icon}
-                  </span>
-                  {!collapsed && (
-                    <span className="haui-sidebar__link-text">{item.label}</span>
-                  )}
-                </span>
-                {!collapsed && item.tag && (
-                  <span className="haui-sidebar__tag">{item.tag}</span>
-                )}
+                <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
+                {!collapsed && <span className="truncate">{item.label}</span>}
               </NavLink>
-            ))}
-          </div>
-        ))}
-      </nav>
+            );
+          })}
+          <button
+            type="button"
+            title="Cài đặt (sắp ra mắt)"
+            className={`${LINK_BASE} ${LINK_IDLE} ${collapsed ? 'justify-center px-0' : ''} text-left`}
+          >
+            <span className="material-symbols-outlined text-[18px]">settings</span>
+            {!collapsed && <span className="truncate">Cài đặt</span>}
+          </button>
+        </nav>
+      </div>
 
-      {!collapsed && (
-        <div className="haui-sidebar__footer">
-          <div style={{ fontWeight: 600, color: '#e2e8f0', marginBottom: '4px' }}>
-            Hệ thống: design-base-v1
+      {collapsed ? (
+        <div className="flex flex-col items-center gap-space-sm p-space-sm pb-space-md">
+          <Link
+            to="/profile"
+            className="w-8 h-8 rounded-full bg-primary flex items-center justify-center"
+            title={`${student.fullName} — Xem hồ sơ sinh viên`}
+          >
+            <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+          </Link>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="text-mid-gray hover:text-ink p-1 rounded-full hover:bg-canvas transition-colors"
+            title="Đăng xuất"
+          >
+            <span className="material-symbols-outlined text-[18px]">logout</span>
+          </button>
+        </div>
+      ) : (
+        <div className="p-space-md m-space-sm bg-paper rounded-[24px] border border-hairline shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+          <div className="flex items-center justify-between mb-space-xs">
+            <Link
+              to="/profile"
+              className="flex items-center gap-space-sm min-w-0 hover:opacity-80 transition-opacity"
+              title="Xem hồ sơ sinh viên"
+            >
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+              </div>
+              <div className="min-w-0">
+                <p className="font-body-medium text-body-medium text-ink font-medium truncate">
+                  {student.fullName}
+                </p>
+                <p className="font-caption text-caption text-mid-gray truncate">
+                  {student.studentId} • {cohortShort} {majorShort}
+                </p>
+              </div>
+            </Link>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="text-mid-gray hover:text-ink p-1 rounded-full hover:bg-canvas transition-colors"
+              title="Chuyển đổi tài khoản / Đăng xuất"
+            >
+              <span className="material-symbols-outlined text-[18px]">logout</span>
+            </button>
           </div>
-          <div>Student-Centric &bull; 9 Màn hình UI Flow</div>
+          <div className="flex items-center gap-1.5 pt-space-xs border-t border-hairline">
+            <span className={`w-2 h-2 rounded-full ${student.academicWarning ? 'bg-ember' : 'bg-ink'}`} />
+            <span className="font-label text-label text-mid-gray">
+              {studiedSemesters > 0 ? `Đang học kỳ ${studiedSemesters}/8` : 'Chưa nạp bảng điểm'}
+            </span>
+          </div>
         </div>
       )}
     </aside>

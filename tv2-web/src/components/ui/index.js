@@ -12,11 +12,13 @@ import { Modal } from './Modal.jsx';
 import { Loading } from './Loading.jsx';
 import { Error } from './Error.jsx';
 import { EmptyState } from './EmptyState.jsx';
+import { DevSlot } from '../dev/DevTools.jsx';
 
-export { Button, Card, Table, Modal, Loading, Error, EmptyState };
+export { Button, Card, Table, Modal, Loading, Error, EmptyState, DevSlot };
 
 /**
  * Bộ UI Component V0 đóng gói theo hợp đồng Dependency Injection `createStudentRoutes({ api, ui })`
+ * `DevSlot` (tùy chọn): đưa điều khiển dev của màn hình vào panel công cụ dev, không render ở production.
  */
 export const ui = Object.freeze({
   Button,
@@ -25,7 +27,8 @@ export const ui = Object.freeze({
   Modal,
   Loading,
   Error,
-  EmptyState
+  EmptyState,
+  DevSlot
 });
 
 export default ui;

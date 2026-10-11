@@ -44,6 +44,9 @@ Khi TV3 chưa triển khai xong các màn hình thực tế (hoặc route có `s
 | `Loading` | `variant` (`spinner`, `skeleton`, `inline`), `size` (`sm`, `md`, `lg`), `label`, `lines` | Hiển thị trạng thái chờ dữ liệu. |
 | `Error` | `title`, `message` / `error`, `code`, `requestId`, `details`, `onRetry`, `retryLabel` | Hiển thị lỗi chuẩn hóa kèm nút Retry. |
 | `EmptyState` | `title`, `description`, `icon`, `action`, `actionLabel`, `onAction` | Hiển thị minh họa và thông báo khi danh sách rỗng. |
+| `DevSlot` *(tùy chọn)* | `title`, `children` | Đưa điều khiển chỉ dành cho dev/review (chuyển trạng thái Loaded/Loading/Empty/Error, kịch bản lỗi…) vào panel công cụ dev nổi ở góc phải dưới; không render gì ở production. Luôn kiểm tra `ui.DevSlot` tồn tại trước khi dùng. |
+
+> **prototype-v1:** Giao diện dựng bằng Tailwind CSS theo bộ prototype tại `tv3-planner-ui/design/prototype`. Theme Tailwind (`tv2-web/tailwind.config.js`) quét cả `tv3-planner-ui/src/**/*.js`, nên TV3 dùng trực tiếp class của prototype trong `React.createElement`. Layout (`MainLayout`) chỉ cung cấp `<main className="w-full pt-16 bg-canvas flex-1">`, mỗi màn hình tự dựng phần nội dung bên trong.
 
 ---
 

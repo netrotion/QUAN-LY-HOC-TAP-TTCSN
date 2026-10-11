@@ -2,7 +2,7 @@
  * HaUI Advisor — Design System Tokens (design-base-v1)
  * Owner: TV2 (Frontend Platform & Academic Engineer)
  *
- * Theme: Clinical Blueprint on Frosted Paper (Light Theme)
+ * Theme: Clinical Blueprint on Frosted Paper (Light Theme) — đã đồng bộ bảng màu đơn sắc của prototype-v1
  * Kết hợp triết lý monochromatic developer-tool (shadcn/Geist aesthetic)
  * cùng bản sắc học thuật đặc trưng của Trường Đại học Công nghiệp Hà Nội (HaUI).
  */
@@ -22,13 +22,13 @@
   --color-bg-subtle: #f0f0f0;       /* Tonal division without borders */
   --color-bg-code: #0a0a0a;         /* High-contrast code container */
 
-  /* Sidebar Dark Slate Theme */
-  --color-bg-sidebar: #0f172a;
-  --color-bg-sidebar-hover: #1e293b;
-  --color-bg-sidebar-active: #0052cc;
-  --color-text-sidebar: #cbd5e1;
+  /* Sidebar Surface (prototype-v1: nền sáng #fafafa, mục active nền đen) */
+  --color-bg-sidebar: #fafafa;
+  --color-bg-sidebar-hover: #f5f5f5;
+  --color-bg-sidebar-active: #0a0a0a;
+  --color-text-sidebar: #737373;
   --color-text-sidebar-active: #ffffff;
-  --color-border-sidebar: #1e293b;
+  --color-border-sidebar: #e5e5e5;
 
   /* ==========================================================================
      2. Neutral & Ink Typography Colors
@@ -48,23 +48,23 @@
   /* ==========================================================================
      3. HaUI Brand Identity (Primary 50–900) & Supporting Accents
      ========================================================================== */
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #0052cc;      /* Canonical HaUI Academic Navy Blue */
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
-  --color-primary-950: #172554;
+  --color-primary-50: #fafafa;
+  --color-primary-100: #f5f5f5;
+  --color-primary-200: #e5e5e5;
+  --color-primary-300: #d4d4d4;
+  --color-primary-400: #a3a3a3;
+  --color-primary-500: #737373;
+  --color-primary-600: #0a0a0a;      /* Ink — màu hành động chính (prototype-v1 đơn sắc) */
+  --color-primary-700: #171717;
+  --color-primary-800: #262626;
+  --color-primary-900: #171717;
+  --color-primary-950: #0a0a0a;
 
   --color-primary: var(--color-primary-600);
   --color-primary-hover: var(--color-primary-700);
   --color-primary-active: var(--color-primary-800);
   --color-primary-light: var(--color-primary-50);
-  --color-primary-subtle: #f0f6ff;
+  --color-primary-subtle: #fafafa;
   --color-primary-border: var(--color-primary-200);
 
   /* Slate / Neutral Scale (50–900) */
@@ -80,38 +80,38 @@
   --color-slate-900: #0f172a;
   --color-slate-950: #020617;
 
-  --color-accent: #d97706;          /* HaUI Amber Gold */
-  --color-accent-hover: #b45309;
-  --color-accent-light: #fef3c7;
+  --color-accent: #e7000b;          /* HaUI Amber Gold */
+  --color-accent-hover: #c10009;
+  --color-accent-light: #fff1f1;
 
-  --color-ember: #e7000b;           /* Destructive red accent - reserved for errors */
+  --color-ember: #e7000b;           /* Ember red — điểm nhấn duy nhất cho cảnh báo / lỗi */
 
   /* ==========================================================================
      4. Status Colors (Success, Warning, Error/Destructive, Info)
      ========================================================================== */
-  --color-success: #16a34a;
-  --color-success-hover: #15803d;
-  --color-success-bg: #f0fdf4;
-  --color-success-border: #bbf7d0;
-  --color-success-text: #166534;
+  --color-success: #171717;
+  --color-success-hover: #0a0a0a;
+  --color-success-bg: #f5f5f5;
+  --color-success-border: #e5e5e5;
+  --color-success-text: #0a0a0a;
 
-  --color-warning: #d97706;
-  --color-warning-hover: #b45309;
-  --color-warning-bg: #fffbeb;
-  --color-warning-border: #fde68a;
-  --color-warning-text: #92400e;
+  --color-warning: #e7000b;
+  --color-warning-hover: #c10009;
+  --color-warning-bg: #fff1f1;
+  --color-warning-border: #ffd6d6;
+  --color-warning-text: #b80009;
 
-  --color-error: #dc2626;
-  --color-error-hover: #b91c1c;
-  --color-error-bg: #fef2f2;
-  --color-error-border: #fecaca;
-  --color-error-text: #991b1b;
+  --color-error: #e7000b;
+  --color-error-hover: #c10009;
+  --color-error-bg: #fff1f1;
+  --color-error-border: #ffd6d6;
+  --color-error-text: #93000a;
 
-  --color-info: #0284c7;
-  --color-info-hover: #0369a1;
-  --color-info-bg: #f0f9ff;
-  --color-info-border: #bae6fd;
-  --color-info-text: #075985;
+  --color-info: #404040;
+  --color-info-hover: #171717;
+  --color-info-bg: #fafafa;
+  --color-info-border: #e5e5e5;
+  --color-info-text: #171717;
 
   /* Academic Contextual Aliases */
   --color-passed: var(--color-success);

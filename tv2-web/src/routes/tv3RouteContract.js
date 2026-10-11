@@ -107,19 +107,20 @@ export function verifyUiApiContract({ api, ui } = {}) {
  * @param {Object} params.api - Singleton API Client
  * @param {Object} params.ui - Bộ Shared UI V0
  * @param {Function} [params.routeFactory] - Hàm `createStudentRoutes` từ `@haui/planner-ui`
+ * @param {string} [params.status] - Trạng thái route Web Host yêu cầu TV3 dùng (vd. 'READY'); bỏ trống để TV3 tự quyết
  * @returns {{
  *   contractStatus: ReturnType<typeof verifyUiApiContract>,
  *   rawTv3Routes: Array<Object>,
  *   resolvedRoutes: Array<Object>
  * }}
  */
-export function resolveStudentRoutesWithFallback({ api, ui, routeFactory } = {}) {
+export function resolveStudentRoutesWithFallback({ api, ui, routeFactory, status } = {}) {
   const contractStatus = verifyUiApiContract({ api, ui });
 
   let rawTv3Routes = [];
   if (typeof routeFactory === 'function') {
     try {
-      const result = routeFactory({ api, ui });
+      const result = routeFactory(status ? { api, ui, status } : { api, ui });
       if (Array.isArray(result)) {
         rawTv3Routes = result;
       }

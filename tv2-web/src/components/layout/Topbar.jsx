@@ -1,163 +1,148 @@
-import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { api } from '../../services/apiClient.js';
-import { Button } from '../ui/Button.jsx';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
-  STUDENT_PRESETS,
-  logoutStudent,
-  selectStudentPreset
+  getAcademicSnapshot,
+  subscribeAcademicStore
 } from '../../services/academicStore.js';
 
-const ROUTE_TITLES = Object.freeze({
-  '/': 'Màn hình 1: Trang chủ Dashboard Sinh viên (Student Academic Dashboard)',
-  '/dashboard': 'Màn hình 1: Trang chủ Dashboard Sinh viên (Student Academic Dashboard)',
-  '/login': 'Xác thực & Đăng nhập Sinh viên (Student Authentication)',
-  '/transcript': 'Nạp & Bóc tách Bảng điểm Cá nhân (Transcript Ingestion Wizard)',
-  '/chat': 'Màn hình 2: Trợ lý ảo AI Chatbot (AI Advisor Chat Interface — TV3)',
-  '/recommendations': 'Màn hình 3: Kết quả Phân tích & Đề xuất Lộ trình Học tập (TV3)',
-  '/curriculum': 'Màn hình 4: Chi tiết & Sơ đồ Cây Quan hệ Môn học (Course Dependency Tree)',
-  '/curriculum/tree': 'Màn hình 4: Chi tiết & Sơ đồ Cây Quan hệ Môn học (Course Dependency Tree)',
-  '/planner': 'Màn hình 5: Tùy chỉnh & Xác nhận Kế hoạch Học tập (Plan Finalization — TV3)',
-  '/what-if': 'Màn hình 6, 7, 8: Giả lập Điểm số, Tối ưu Học cải thiện & Tính điểm ngược (TV3)',
-  '/progress': 'Màn hình 9: Bảng Điểm & Học vụ / Kiểm toán Tốt nghiệp (Degree Audit)',
-  '/audit': 'Màn hình 9: Bảng Kiểm toán Tốt nghiệp 100% (Graduation Degree Audit)',
-  '/demo-ui': 'Showcase Shared UI Library V0 & Singleton Mock API Client (ui-api-v0)'
-});
-
 /**
- * Header / Topbar của Web Host (TV2 — design-base-v1)
- * Hiển thị nút thu gọn sidebar, tiêu đề màn hình, huy hiệu trạng thái học tập (Academic Status),
- * công tắc chế độ Mock API (FIXTURE_ONLY) và tóm tắt thông tin sinh viên từ Session Context.
+ * Header / Topbar của Web Host (TV2 — prototype-v1)
+ * Theo prototype: ô tìm kiếm, nút "Tư vấn lộ trình nhanh với AI", chuông thông báo và avatar.
+ * Bổ sung nút thu gọn sidebar; chuông thông báo hiển thị Cảnh báo học vụ (BR-07 / US-12) khi có.
  *
  * @param {{ collapsed?: boolean, onToggleCollapse?: () => void }} props
  */
 export function Topbar({ collapsed = false, onToggleCollapse }) {
-  const location = useLocation();
   const navigate = useNavigate();
-  const [apiConfig, setApiConfig] = useState(() => api.getConfig());
+  const [snapshot, setSnapshot] = useState(() => getAcademicSnapshot());
+  const [query, setQuery] = useState('');
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notificationsRef = useRef(null);
+
+  useEffect(() => subscribeAcademicStore(setSnapshot), []);
 
   useEffect(() => {
-    return api.subscribe((nextConfig) => {
-      setApiConfig(nextConfig);
-    });
-  }, []);
+    if (!notificationsOpen) return undefined;
+    const handleClickOutside = (event) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setNotificationsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [notificationsOpen]);
 
-  const pageTitle =
-    ROUTE_TITLES[location.pathname] ||
-    (location.pathname.startsWith('/planner')
-      ? 'Màn hình 5: Tùy chỉnh & Xác nhận Kế hoạch Học tập (TV3)'
-      : 'HaUI Advisor — Hệ thống Trợ lý Ảo Tư vấn Lộ trình Học tập');
+  const { student, metrics } = snapshot;
+  const academicWarning = metrics.academicWarning;
+  const missingTranscript = !student.hasTranscript;
 
-  const student = apiConfig.sessionStudent;
-
-  const handleToggleMock = () => {
-    if (apiConfig.isProduction) return;
-    api.setMockMode(!apiConfig.mockEnabled);
+  const handleSearch = (event) => {
+    event.preventDefault();
+    const trimmed = query.trim();
+    navigate(trimmed ? `/curriculum?q=${encodeURIComponent(trimmed)}` : '/curriculum');
   };
 
   return (
-    <header className="haui-topbar">
-      <div className="haui-topbar__left">
+    <header
+      className={`haui-topbar fixed top-0 ${collapsed ? 'left-[72px]' : 'left-72'} right-0 h-16 bg-surface-alt/90 backdrop-blur-xl border-b border-hairline z-40 flex items-center justify-between px-space-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] transition-[left] duration-200 print:hidden`}
+    >
+      <div className="flex items-center gap-space-md">
         {typeof onToggleCollapse === 'function' && (
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            type="button"
             onClick={onToggleCollapse}
-            title={collapsed ? 'Mở rộng menu (268px)' : 'Thu gọn menu (72px)'}
-            style={{ fontSize: '15px', padding: '0 8px', minWidth: '32px' }}
+            className="w-9 h-9 -ml-space-sm rounded-full flex items-center justify-center text-mid-gray hover:text-ink hover:bg-canvas transition-colors"
+            title={collapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
+            aria-label={collapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
           >
-            {collapsed ? '☰' : '⇤'}
-          </Button>
+            <span className="material-symbols-outlined text-[20px]">
+              {collapsed ? 'left_panel_open' : 'left_panel_close'}
+            </span>
+          </button>
         )}
-        <h2 className="haui-topbar__heading">{pageTitle}</h2>
-        <span className="haui-badge haui-badge--primary">design-base-v1</span>
+        <form className="relative flex items-center w-80 lg:w-96" onSubmit={handleSearch} role="search">
+          <span className="material-symbols-outlined absolute left-space-md text-[18px] text-mid-gray pointer-events-none">
+            search
+          </span>
+          <input
+            className="w-full bg-surface-alt border border-hairline rounded-full pl-10 pr-12 py-2 font-body text-body text-ink placeholder:text-mid-gray focus:outline-none focus:border-ink transition-colors"
+            placeholder="Tìm môn học, mã môn, chuẩn tốt nghiệp..."
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label="Tìm môn học, mã môn, chuẩn tốt nghiệp"
+          />
+        </form>
       </div>
 
-      <div className="haui-topbar__right">
-        {/* Academic Status Badge (BR-07 / US-12) */}
-        <span
-          className={`haui-badge ${
-            student?.id === 'empty'
-              ? 'haui-badge--neutral'
-              : (student?.cpa !== null && student?.cpa < 2.0) || student?.id === 'at-risk'
-              ? 'haui-badge--warning'
-              : 'haui-badge--success'
-          }`}
-          title="Quy chế BR-07: Sinh viên có CPA 2.45 và đang nợ môn tiên quyết (MATH1002)"
+      <div className="flex items-center gap-space-md">
+        <Link
+          to="/chat"
+          className="inline-flex items-center gap-space-xs bg-ink hover:bg-ink-soft text-paper px-space-md py-2 rounded-full font-body-medium text-body-medium transition-colors shadow-[0_1px_8px_rgba(0,0,0,0.04)]"
         >
-          {student?.id === 'empty'
-            ? 'ℹ️ Chưa nạp bảng điểm'
-            : (student?.cpa !== null && student?.cpa < 2.0) || student?.id === 'at-risk'
-            ? '⚠️ Cảnh báo học vụ: Mức 1'
-            : '✓ Học vụ: Bình thường'}
-        </span>
+          <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
+          <span>Tư vấn lộ trình nhanh với AI</span>
+        </Link>
 
-        {/* Quick Persona Switcher for Reviewers */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <select
-            className="haui-input"
-            style={{ padding: '2px 8px', height: '28px', fontSize: '11px', fontWeight: 600 }}
-            value={student?.id || 'at-risk'}
-            onChange={(e) => {
-              const presetKey = e.target.value;
-              selectStudentPreset(presetKey);
-              const p = STUDENT_PRESETS[presetKey];
-              if (p) api.setSessionStudent(p);
-            }}
-            title="Chuyển nhanh tài khoản mẫu (Prototype Task 2.2a)"
+        <div className="relative" ref={notificationsRef}>
+          <button
+            type="button"
+            onClick={() => setNotificationsOpen((prev) => !prev)}
+            className="w-9 h-9 rounded-full border border-hairline bg-paper flex items-center justify-center text-ink hover:bg-canvas transition-colors relative"
+            title="Thông báo"
+            aria-expanded={notificationsOpen}
           >
-            <option value="normal">👤 Chuẩn (KTPM K17 - CPA 3.2)</option>
-            <option value="at-risk">🚨 Nguy cơ (KTPM K17 - CPA 1.85)</option>
-            <option value="empty">⚪ Trắng (CNTT K19 - 0 TC)</option>
-          </select>
+            <span className="material-symbols-outlined text-[20px]">notifications</span>
+            {(academicWarning || missingTranscript) && (
+              <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-ember" />
+            )}
+          </button>
+
+          {notificationsOpen && (
+            <div className="absolute right-0 top-11 w-80 bg-paper border border-hairline rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.08)] p-space-md flex flex-col gap-space-sm">
+              <span className="font-label text-label text-mid-gray uppercase tracking-wider">Thông báo</span>
+              {academicWarning ? (
+                <Link
+                  to="/audit"
+                  onClick={() => setNotificationsOpen(false)}
+                  className="flex items-start gap-space-sm p-space-sm rounded-2xl hover:bg-canvas transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[18px] text-ember">warning</span>
+                  <span className="flex flex-col gap-0.5">
+                    <span className="font-body-medium text-body-medium text-ink">Cảnh báo học vụ</span>
+                    <span className="font-caption text-caption text-mid-gray">{academicWarning}</span>
+                  </span>
+                </Link>
+              ) : missingTranscript ? (
+                <Link
+                  to="/transcript"
+                  onClick={() => setNotificationsOpen(false)}
+                  className="flex items-start gap-space-sm p-space-sm rounded-2xl hover:bg-canvas transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[18px] text-ink">upload_file</span>
+                  <span className="flex flex-col gap-0.5">
+                    <span className="font-body-medium text-body-medium text-ink">Chưa nạp bảng điểm</span>
+                    <span className="font-caption text-caption text-mid-gray">
+                      Nhập bảng điểm để hệ thống tính CPA, tín chỉ và đề xuất lộ trình.
+                    </span>
+                  </span>
+                </Link>
+              ) : (
+                <p className="font-body text-body text-mid-gray px-space-sm pb-space-xs">
+                  Học vụ bình thường — không có thông báo mới.
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
-        {!apiConfig.isProduction && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <span
-              className={`haui-badge ${
-                apiConfig.mockEnabled ? 'haui-badge--warning' : 'haui-badge--success'
-              }`}
-              title={
-                apiConfig.mockEnabled
-                  ? 'Đang sử dụng Mock Interceptor cục bộ (FIXTURE_ONLY)'
-                  : 'Đang gọi trực tiếp tới Spring Boot Backend (/api/v1)'
-              }
-            >
-              {apiConfig.mockEnabled ? 'API: MOCK (FIXTURE_ONLY)' : 'API: LIVE (/api/v1)'}
-            </span>
-          </div>
-        )}
-
-        {/* Student Profile Capsule (Session Identity) */}
-        <div
-          className="haui-student-pill"
-          title="Danh tính sinh viên được trích xuất từ Server Session Context (Quy tắc 6 AGENTS.md)"
+        <Link
+          to="/profile"
+          className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 hover:opacity-80 transition-opacity"
+          title={`${student.fullName} — Hồ sơ sinh viên`}
         >
-          <span className="haui-student-pill__avatar" aria-hidden="true">
-            {student?.avatarChar || (student?.fullName ? student.fullName.charAt(0) : 'A')}
-          </span>
-          <div>
-            <strong style={{ color: 'var(--color-text-primary)' }}>{student.fullName}</strong>
-            <span style={{ marginLeft: '6px' }}>
-              ({student.studentId} &bull; {student.cohort?.split(' ')?.[0] || 'K17'})
-            </span>
-          </div>
-        </div>
-
-        {/* Logout Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            logoutStudent();
-            navigate('/login');
-          }}
-          title="Đăng xuất khỏi phiên làm việc hiện tại"
-          style={{ fontSize: '12px', padding: '4px 8px' }}
-        >
-          Đăng xuất
-        </Button>
+          <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+        </Link>
       </div>
     </header>
   );

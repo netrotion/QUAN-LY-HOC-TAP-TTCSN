@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { api } from './services/apiClient.js';
 import { ui } from './components/ui/index.js';
 import { MainLayout } from './components/layout/MainLayout.jsx';
+import { DevToolsProvider, DevToolsPanel } from './components/dev/DevTools.jsx';
 import { DashboardPage } from './pages/DashboardPage.jsx';
 import { AcademicProgressPage } from './pages/AcademicProgressPage.jsx';
 import { GraduationAuditPage } from './pages/GraduationAuditPage.jsx';
@@ -59,11 +60,15 @@ export function AppRoutes() {
 
 /**
  * Root Application Component của Web Host (TV2 — Task 1.3a `ui-api-v0`)
+ * Panel công cụ dev (persona, API mock, trạng thái màn hình) nằm ngoài layout để dùng được cả ở /login.
  */
 export function App() {
   return (
     <BrowserRouter>
-      <AppRoutes />
+      <DevToolsProvider>
+        <AppRoutes />
+        <DevToolsPanel />
+      </DevToolsProvider>
     </BrowserRouter>
   );
 }

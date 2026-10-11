@@ -18,16 +18,19 @@ import { Tv3FallbackPage } from '../pages/Tv3FallbackPage.jsx';
  * @param {Object} [options.api] - Singleton API client
  * @param {Object} [options.ui] - Shared UI library V0
  * @param {Function} [options.routeFactory] - Hàm createStudentRoutes (mặc định từ `@haui/planner-ui`)
+ * @param {string} [options.status] - Trạng thái route yêu cầu TV3 (mặc định 'READY' để mount màn hình thật)
  */
 export function mountStudentRoutes({
   api = defaultApi,
   ui = defaultUi,
-  routeFactory = tv3CreateStudentRoutes
+  routeFactory = tv3CreateStudentRoutes,
+  status = 'READY'
 } = {}) {
   const { contractStatus, rawTv3Routes, resolvedRoutes } = resolveStudentRoutesWithFallback({
     api,
     ui,
-    routeFactory
+    routeFactory,
+    status
   });
 
   const mountedRoutes = resolvedRoutes.map((routeSpec) => {

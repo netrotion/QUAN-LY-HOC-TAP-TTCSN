@@ -1,330 +1,63 @@
 /**
- * HaUI Advisor — Global Styles, Layout & Shared UI V0 Styles
+ * HaUI Advisor — Global Styles, Tailwind layers & Shared UI V0 Styles
  * Owner: TV2 (Frontend Platform & Academic Engineer)
+ *
+ * Giao diện chính dựng bằng Tailwind theo prototype-v1 (tv3-planner-ui/design/prototype).
+ * Các class haui-* bên dưới giữ cho Shared UI V0 (Button, Card, Table, Modal...) mà TV3 nhận qua { ui }.
  */
 
 @import './tokens.css';
 
+@tailwind base;
+@tailwind components;
+
 /* ==========================================================================
-   1. Base & Reset
+   1. Base (khớp style nền của prototype)
    ========================================================================== */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+@layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    overscroll-behavior: none;
+  }
+
+  code,
+  pre {
+    font-family: var(--font-mono);
+  }
 }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-  font-family: var(--font-sans);
-  font-size: var(--text-base);
-  line-height: var(--leading-normal);
-  color: var(--color-text-primary);
-  background-color: var(--color-bg-app);
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  -webkit-font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
+  user-select: none;
 }
 
-a {
-  color: var(--color-primary);
-  text-decoration: none;
+.material-symbols-outlined.icon-fill {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-code,
-pre {
-  font-family: var(--font-mono);
+.scrollbar-none {
+  scrollbar-width: none;
 }
 
-/* ==========================================================================
-   2. Web Host Layout (Sidebar + Topbar + Main Content)
-   ========================================================================== */
-.haui-app-shell {
-  display: flex;
-  min-height: 100vh;
-  background-color: var(--color-bg-app);
-}
-
-.haui-sidebar {
-  width: var(--sidebar-width);
-  background-color: var(--color-bg-sidebar);
-  color: var(--color-text-sidebar);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  border-right: var(--border-width) solid var(--color-border-sidebar);
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow-y: auto;
-  overflow-x: hidden;
-  z-index: 20;
-  transition: width var(--transition-base), transform var(--transition-base);
-}
-
-.haui-sidebar--collapsed {
-  width: var(--sidebar-width-collapsed);
-}
-
-.haui-sidebar__brand {
-  height: var(--topbar-height);
-  padding: 0 var(--space-5);
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  border-bottom: var(--border-width) solid rgba(255, 255, 255, 0.08);
-  transition: padding var(--transition-base);
-}
-
-.haui-sidebar--collapsed .haui-sidebar__brand {
-  padding: 0;
-  justify-content: center;
-}
-
-.haui-sidebar__logo {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-nested);
-  background: linear-gradient(135deg, var(--color-primary), #2563eb);
-  color: var(--color-text-inverse);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: var(--font-bold);
-  font-size: var(--text-lg);
-  box-shadow: var(--shadow-sm);
-  flex-shrink: 0;
-}
-
-.haui-sidebar__brand-text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  transition: opacity var(--transition-fast);
-}
-
-.haui-sidebar--collapsed .haui-sidebar__brand-text {
+.scrollbar-none::-webkit-scrollbar {
   display: none;
-}
-
-.haui-sidebar__title {
-  font-size: var(--text-base);
-  font-weight: var(--font-bold);
-  color: var(--color-text-inverse);
-  margin: 0;
-  line-height: var(--leading-tight);
-}
-
-.haui-sidebar__subtitle {
-  font-size: var(--text-xs);
-  color: #94a3b8;
-  margin: 2px 0 0;
-}
-
-.haui-sidebar__section-label {
-  padding: var(--space-4) var(--space-5) var(--space-2);
-  font-size: 11px;
-  font-weight: var(--font-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #64748b;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: all var(--transition-fast);
-}
-
-.haui-sidebar--collapsed .haui-sidebar__section-label {
-  height: 1px;
-  margin: var(--space-3) var(--space-3);
-  padding: 0;
-  background: rgba(255, 255, 255, 0.08);
-  text-indent: -9999px;
-  overflow: hidden;
-}
-
-.haui-sidebar__nav {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 0 var(--space-3);
-  flex: 1;
-}
-
-.haui-sidebar--collapsed .haui-sidebar__nav {
-  padding: 0 var(--space-2);
-}
-
-.haui-sidebar__link {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: 10px var(--space-3);
-  border-radius: var(--radius-buttons);
-  color: var(--color-text-sidebar);
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  transition: background-color var(--transition-fast), color var(--transition-fast);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.haui-sidebar--collapsed .haui-sidebar__link {
-  justify-content: center;
-  padding: 10px 0;
-  border-radius: var(--radius-buttons);
-}
-
-.haui-sidebar__link:hover {
-  background-color: var(--color-bg-sidebar-hover);
-  color: var(--color-text-inverse);
-}
-
-.haui-sidebar__link--active {
-  background-color: var(--color-bg-sidebar-active);
-  color: var(--color-text-sidebar-active);
-  font-weight: var(--font-semibold);
-  box-shadow: var(--shadow-xs);
-}
-
-.haui-sidebar__link--disabled {
-  opacity: 0.45;
-  pointer-events: none;
-}
-
-.haui-sidebar__link-left {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
-}
-
-.haui-sidebar__icon {
-  width: 20px;
-  height: 20px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.haui-sidebar__link-text {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.haui-sidebar--collapsed .haui-sidebar__link-text {
-  display: none;
-}
-
-.haui-sidebar__tag {
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: var(--radius-full);
-  background-color: rgba(255, 255, 255, 0.12);
-  color: #e2e8f0;
-  font-weight: var(--font-semibold);
-  flex-shrink: 0;
-}
-
-.haui-sidebar--collapsed .haui-sidebar__tag {
-  display: none;
-}
-
-.haui-sidebar__footer {
-  padding: var(--space-4);
-  border-top: var(--border-width) solid rgba(255, 255, 255, 0.08);
-  font-size: var(--text-xs);
-  color: #94a3b8;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.haui-sidebar--collapsed .haui-sidebar__footer {
-  display: none;
-}
-
-/* Main Area (Topbar + Outlet) */
-.haui-main-wrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.haui-topbar {
-  height: var(--topbar-height);
-  background-color: var(--color-bg-surface);
-  border-bottom: var(--border-width) solid var(--color-border);
-  padding: 0 var(--space-6);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  position: sticky;
-  top: 0;
-  z-index: 15;
-}
-
-.haui-topbar__left {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
-}
-
-.haui-topbar__heading {
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
-  margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.haui-topbar__right {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-shrink: 0;
-}
-
-.haui-student-pill {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 6px var(--space-3);
-  border-radius: var(--radius-badges);
-  background-color: var(--color-bg-subtle);
-  border: var(--border-width) solid var(--color-border);
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-}
-
-.haui-student-pill__avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-full);
-  background-color: var(--color-primary);
-  color: var(--color-text-inverse);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: var(--font-bold);
-  font-size: 11px;
-}
-
-.haui-content {
-  flex: 1;
-  padding: var(--space-6);
-  max-width: var(--content-max-width);
-  width: 100%;
-  margin: 0 auto;
 }
 
 /* ==========================================================================
@@ -1059,26 +792,6 @@ pre {
   }
 }
 
-@media (max-width: 900px) {
-  .haui-app-shell {
-    flex-direction: column;
-  }
-
-  .haui-sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
-  }
-
-  .haui-topbar {
-    padding: 0 var(--space-4);
-  }
-
-  .haui-content {
-    padding: var(--space-4);
-  }
-}
-
 /* ==========================================================================
    12. Dashboard Prototype & State Switcher (Task 2.1)
    ========================================================================== */
@@ -1541,6 +1254,7 @@ pre {
   html,
   body,
   .haui-app-shell,
+  .haui-main-wrapper,
   .haui-main-content,
   .haui-main-content__inner,
   .haui-audit-container {
@@ -1593,3 +1307,4 @@ pre {
   }
 }
 
+@tailwind utilities;

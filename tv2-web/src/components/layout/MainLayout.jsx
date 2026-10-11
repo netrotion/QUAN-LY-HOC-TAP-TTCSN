@@ -4,8 +4,9 @@ import { Sidebar } from './Sidebar.jsx';
 import { Topbar } from './Topbar.jsx';
 
 /**
- * Main Content Layout của Web Host (TV2 — design-base-v1)
- * Quản lý trạng thái thu gọn Sidebar (72px / 268px), đồng bộ cùng Topbar và vùng nội dung chính.
+ * Main Content Layout của Web Host (TV2 — prototype-v1)
+ * Sidebar cố định bên trái (w-72 / thu gọn 72px), Topbar cố định cao 64px, vùng nội dung `main` nền canvas.
+ * Mỗi màn hình tự dựng khung nội dung bên trong `main` theo đúng prototype của màn đó.
  */
 export function MainLayout({ children }) {
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -29,13 +30,13 @@ export function MainLayout({ children }) {
   };
 
   return (
-    <div className="haui-app-shell">
+    <div className="haui-app-shell min-h-screen bg-canvas">
       <Sidebar collapsed={isCollapsed} />
-      <div className="haui-main-wrapper">
+      <div
+        className={`haui-main-wrapper ${isCollapsed ? 'pl-[72px]' : 'pl-72'} flex flex-col min-h-screen transition-[padding] duration-200 print:pl-0`}
+      >
         <Topbar collapsed={isCollapsed} onToggleCollapse={toggleSidebar} />
-        <main className="haui-content">
-          {children || <Outlet />}
-        </main>
+        <main className="w-full pt-16 bg-canvas flex-1 print:pt-0">{children || <Outlet />}</main>
       </div>
     </div>
   );
