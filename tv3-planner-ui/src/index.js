@@ -2,6 +2,7 @@ import { StudyPlannerPage } from './pages/StudyPlannerPage.js';
 import { ChatAdvisorPage } from './pages/ChatAdvisorPage.js';
 import { WhatIfSimulatorPage } from './pages/WhatIfSimulatorPage.js';
 import { StudentProfilePage } from './pages/StudentProfilePage.js';
+import { PlanHistoryPage } from './pages/PlanHistoryPage.js';
 import { PlanHistoryModal } from './components/PlanHistoryModal.js';
 import { CurriculumTreeModal } from './components/CurriculumTreeModal.js';
 import { plannerStore, PLAN_STATUSES } from './services/plannerStore.js';
@@ -37,6 +38,13 @@ export function createStudentRoutes({ api, ui, status } = {}) {
       Component: StudyPlannerPage
     },
     {
+      path: '/planner/history',
+      name: 'PlanHistoryPage',
+      title: 'Lịch sử kế hoạch học tập (Plan History)',
+      status: routeStatus,
+      Component: PlanHistoryPage
+    },
+    {
       path: '/chat',
       name: 'ChatAdvisorPage',
       title: 'Màn hình 2: Trợ lý ảo AI Chatbot Tư vấn Học vụ (AI Advisor Chat)',
@@ -65,6 +73,7 @@ export {
   ChatAdvisorPage,
   WhatIfSimulatorPage,
   StudentProfilePage,
+  PlanHistoryPage,
   PlanHistoryModal,
   CurriculumTreeModal,
   plannerStore,

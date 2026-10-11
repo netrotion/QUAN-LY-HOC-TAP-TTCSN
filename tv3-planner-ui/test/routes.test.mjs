@@ -8,23 +8,25 @@ import {
   ChatAdvisorPage,
   WhatIfSimulatorPage,
   StudentProfilePage,
+  PlanHistoryPage,
   PlanHistoryModal,
   CurriculumTreeModal,
   plannerStore,
   PLAN_STATUSES
 } from '../src/index.js';
 
-test('createStudentRoutes returns an array of route definitions with 4 core pages', () => {
+test('createStudentRoutes returns an array of route definitions with 5 core pages', () => {
   const mockApi = { get: () => {}, post: () => {} };
   const mockUi = { Button: () => null, Card: () => null };
 
   const routes = createStudentRoutes({ api: mockApi, ui: mockUi });
   assert.ok(Array.isArray(routes), 'createStudentRoutes must return an array');
-  assert.equal(routes.length, 5);
+  assert.equal(routes.length, 6);
 
   const paths = routes.map((r) => r.path);
   assert.ok(paths.includes('/planner/placeholder'));
   assert.ok(paths.includes('/planner'));
+  assert.ok(paths.includes('/planner/history'));
   assert.ok(paths.includes('/chat'));
   assert.ok(paths.includes('/what-if'));
   assert.ok(paths.includes('/profile'));
@@ -35,6 +37,9 @@ test('createStudentRoutes returns an array of route definitions with 4 core page
   const plannerRoute = routes.find((r) => r.path === '/planner');
   assert.equal(typeof plannerRoute.Component, 'function');
   assert.equal(plannerRoute.Component, StudyPlannerPage);
+
+  const historyRoute = routes.find((r) => r.path === '/planner/history');
+  assert.equal(historyRoute.Component, PlanHistoryPage);
 
   const chatRoute = routes.find((r) => r.path === '/chat');
   assert.equal(typeof chatRoute.Component, 'function');
