@@ -149,4 +149,4 @@ docker compose --env-file .env -f tv5-platform/infra/compose.yaml down
 - Giai đoạn gộp khung đã hoàn tất: ranh giới sở hữu được khóa bất khả xâm phạm.
 - **TV5** chỉ phụ trách `tv5-platform/` (app, contracts, migration, infra) và các root files (`pom.xml`, `package.json`, scripts kiểm tra...).
 - Tuyệt đối không sửa đổi file trong folder của vai trò khác (`tv1-ai/`, `tv2-web/`, `tv3-planner-ui/`, `tv4-academic/`).
-- Thư mục `tv1-ai/docs/` là **READ-ONLY** vĩnh viễn.
+- Thư mục nguồn bất biến `tv1-ai/docs/sources/` là **READ-ONLY** vĩnh viễn; các tài liệu/báo cáo khác trong `tv1-ai/docs/` thuộc quyền **TV1**.

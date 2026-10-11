@@ -6,7 +6,7 @@ import path from 'node:path';
  * Script kiểm tra ranh giới sở hữu thư mục (Ownership Boundaries & Path Change Checker)
  * Tuân thủ quy định bất khả xâm phạm tại AGENTS.md (HauI Advisor)
  *
- * TV1: tv1-ai/ (ngoại trừ tv1-ai/docs/ là READ-ONLY)
+ * TV1: tv1-ai/ (gồm tài liệu tv1-ai/docs/; riêng nguồn bất biến tv1-ai/docs/sources/ là READ-ONLY)
  * TV2: tv2-web/
  * TV3: tv3-planner-ui/
  * TV4: tv4-academic/
@@ -40,8 +40,10 @@ export function classifyFile(filePath) {
   // Chuẩn hóa đường dẫn dạng Unix
   const normalized = filePath.replace(/\\/g, '/').replace(/^\.\//, '');
 
-  if (normalized.startsWith('tv1-ai/docs/')) {
-    return { domain: 'tv1-docs-readonly', role: null, readOnly: true };
+  // Chỉ khóa cứng nguồn bất biến của Task 1.1; các báo cáo/tài liệu khác trong tv1-ai/docs/
+  // (vd. task-2.3-review.md) thuộc quyền TV1 (F23-009)
+  if (normalized.startsWith('tv1-ai/docs/sources/')) {
+    return { domain: 'tv1-docs-sources-readonly', role: null, readOnly: true };
   }
   if (normalized.startsWith('tv1-ai/')) {
     return { domain: 'tv1-ai', role: 'tv1' };
@@ -81,11 +83,11 @@ export function validateChanges(changedFiles, targetRole = null) {
     const trimmed = file.trim();
     const info = classifyFile(trimmed);
 
-    // Rule: tv1-ai/docs/ tuyệt đối READ-ONLY đối với mọi vai trò
-    if (info.domain === 'tv1-docs-readonly') {
+    // Rule: tv1-ai/docs/sources/ tuyệt đối READ-ONLY đối với mọi vai trò
+    if (info.domain === 'tv1-docs-sources-readonly') {
       violations.push({
         file: trimmed,
-        reason: 'CRITICAL VIOLATION: tv1-ai/docs/ is strictly READ-ONLY. Modifying task 1.1 documents is prohibited.'
+        reason: 'CRITICAL VIOLATION: tv1-ai/docs/sources/ is strictly READ-ONLY. Modifying immutable task 1.1 source documents is prohibited.'
       });
       continue;
     }
