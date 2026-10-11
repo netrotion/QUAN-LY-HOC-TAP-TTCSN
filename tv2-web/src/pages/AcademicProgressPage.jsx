@@ -161,7 +161,7 @@ export function AcademicProgressPage() {
           <div style={{ fontSize: '12px', fontStyle: 'italic', color: '#333' }}>
             Phòng Đào tạo &bull; Hệ thống Cố vấn Lộ trình Học tập HaUI Advisor
           </div>
-          <h1 style={{ fontSize: '18px', fontWeight: 800, margin: '10px 0 4px', textTransform: 'uppercase', color: '#0052cc' }}>
+          <h1 style={{ fontSize: '18px', fontWeight: 800, margin: '10px 0 4px', textTransform: 'uppercase', color: '#000000' }}>
             BÁO CÁO KIỂM TOÁN TỐT NGHIỆP 100% TIÊU CHÍ (DEGREE AUDIT)
           </h1>
           <div style={{ fontSize: '11px', color: '#555' }}>
@@ -169,7 +169,7 @@ export function AcademicProgressPage() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px', marginBottom: '16px', padding: '10px 14px', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px', marginBottom: '16px', padding: '10px 14px', backgroundColor: 'var(--color-bg-muted)', border: '1px solid var(--color-border)', borderRadius: '4px' }}>
           <div><strong>Họ và tên sinh viên:</strong> {api.getConfig().sessionStudent?.fullName || 'Nguyễn Văn An'}</div>
           <div><strong>Mã số sinh viên:</strong> {api.getConfig().sessionStudent?.studentId || 'std-2026-001'}</div>
           <div><strong>Ngành đào tạo:</strong> {api.getConfig().sessionStudent?.majorName || 'Kỹ thuật phần mềm (CNTT)'}</div>

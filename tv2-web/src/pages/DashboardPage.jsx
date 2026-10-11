@@ -392,12 +392,12 @@ export function DashboardPage({ mountedRouteSummary }) {
             <span style={{ fontSize: '20px' }} aria-hidden="true">
               🚨
             </span>
-            <strong style={{ fontSize: 'var(--text-base)', color: '#7c2d12' }}>
+            <strong style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-primary)' }}>
               Cảnh báo rủi ro học vụ sớm (Early Warning — US-12 / FR-18):
             </strong>
             <span className="haui-badge haui-badge--warning">BR-01 / BR-07</span>
           </div>
-          <p style={{ margin: '0 0 12px', fontSize: 'var(--text-sm)', color: '#9a3412', lineHeight: 1.5 }}>
+          <p style={{ margin: '0 0 12px', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
             Bạn đang nợ môn <strong>Toán rời rạc (3 TC — MATH1002)</strong> – Đây là môn tiên quyết trực tiếp của{' '}
             <strong>Cấu trúc dữ liệu &amp; Giải thuật (IT6001)</strong> ở học kỳ tới! Điểm CPA hiện tại là <strong>2.45</strong>,
             tiệm cận ngưỡng trung bình nguy hiểm. Nếu không học lại ngay, bạn sẽ bị hoãn dây chuyền ít nhất 3 môn chuyên ngành.

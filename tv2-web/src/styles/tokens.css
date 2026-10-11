@@ -9,109 +9,109 @@
 
 :root {
   /* ==========================================================================
-     1. Surface & Canvas Colors (Three-tone Surface Stack)
+     1. Surface & Canvas Colors (Three-tone Surface Stack - Monochrome Black & White)
      ========================================================================== */
-  --color-canvas: #f5f5f5;          /* Page background, muted surface fills */
+  --color-canvas: #f8f9fa;          /* Page background, muted surface fills */
   --color-paper: #ffffff;           /* Card surfaces, popover backgrounds, modals */
-  --color-surface-alt: #fafafa;     /* Sidebar background, subtle card variants, input rest */
+  --color-surface-alt: #f4f4f5;     /* Sidebar background, subtle card variants, input rest */
   --color-surface-card: #ffffff;    /* Primary card surface */
-  --color-bg-app: #f5f5f5;          /* Alias for canvas */
+  --color-bg-app: #f8f9fa;          /* Alias for canvas */
   --color-bg-surface: #ffffff;      /* Alias for paper */
   --color-bg-elevated: #ffffff;     /* Elevated popups */
-  --color-bg-muted: #fafafa;        /* Secondary panel fills */
-  --color-bg-subtle: #f0f0f0;       /* Tonal division without borders */
-  --color-bg-code: #0a0a0a;         /* High-contrast code container */
+  --color-bg-muted: #f4f4f5;        /* Secondary panel fills */
+  --color-bg-subtle: #f4f4f5;       /* Tonal division without borders */
+  --color-bg-code: #000000;         /* High-contrast code container */
 
-  /* Sidebar Dark Slate Theme */
-  --color-bg-sidebar: #0f172a;
-  --color-bg-sidebar-hover: #1e293b;
-  --color-bg-sidebar-active: #0052cc;
-  --color-text-sidebar: #cbd5e1;
-  --color-text-sidebar-active: #ffffff;
-  --color-border-sidebar: #1e293b;
+  /* Sidebar Minimalist Pitch Black Theme */
+  --color-bg-sidebar: #09090b;
+  --color-bg-sidebar-hover: #18181b;
+  --color-bg-sidebar-active: #ffffff;
+  --color-text-sidebar: #a1a1aa;
+  --color-text-sidebar-active: #09090b;
+  --color-border-sidebar: #27272a;
 
   /* ==========================================================================
      2. Neutral & Ink Typography Colors
      ========================================================================== */
-  --color-ink: #0a0a0a;             /* Primary text, headings, button labels */
-  --color-ink-soft: #171717;        /* Filled button backgrounds, secondary text */
-  --color-mid-gray: #737373;        /* Muted body text, placeholders, helper labels */
-  --color-hairline: #e5e5e5;        /* Borders, input outlines, card hairline edges */
+  --color-ink: #000000;             /* Primary text, headings, button labels */
+  --color-ink-soft: #18181b;        /* Filled button backgrounds, secondary text */
+  --color-mid-gray: #71717a;        /* Muted body text, placeholders, helper labels */
+  --color-hairline: #e4e4e7;        /* Borders, input outlines, card hairline edges */
 
-  --color-text-primary: #0a0a0a;    /* Primary body/heading text */
-  --color-text-secondary: #404040;  /* Secondary text */
-  --color-text-muted: #737373;      /* Muted captions */
-  --color-text-disabled: #a3a3a3;   /* Disabled controls */
-  --color-text-inverse: #fafafa;    /* High contrast inverted text on dark fills */
-  --color-text-code: #f5f5f5;
+  --color-text-primary: #09090b;    /* Primary body/heading text */
+  --color-text-secondary: #3f3f46;  /* Secondary text */
+  --color-text-muted: #71717a;      /* Muted captions */
+  --color-text-disabled: #a1a1aa;   /* Disabled controls */
+  --color-text-inverse: #ffffff;    /* High contrast inverted text on dark fills */
+  --color-text-code: #f4f4f5;
 
   /* ==========================================================================
-     3. HaUI Brand Identity (Primary 50–900) & Supporting Accents
+     3. Primary Monochrome Identity (Black & White Theme)
      ========================================================================== */
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #0052cc;      /* Canonical HaUI Academic Navy Blue */
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
-  --color-primary-950: #172554;
+  --color-primary-50: #fafafa;
+  --color-primary-100: #f4f4f5;
+  --color-primary-200: #e4e4e7;
+  --color-primary-300: #d4d4d8;
+  --color-primary-400: #a1a1aa;
+  --color-primary-500: #71717a;
+  --color-primary-600: #18181b;      /* Stark Charcoal / Black */
+  --color-primary-700: #09090b;
+  --color-primary-800: #000000;
+  --color-primary-900: #000000;
+  --color-primary-950: #000000;
 
-  --color-primary: var(--color-primary-600);
-  --color-primary-hover: var(--color-primary-700);
-  --color-primary-active: var(--color-primary-800);
-  --color-primary-light: var(--color-primary-50);
-  --color-primary-subtle: #f0f6ff;
-  --color-primary-border: var(--color-primary-200);
+  --color-primary: #000000;          /* Pure Black Primary */
+  --color-primary-hover: #27272a;    /* Dark Charcoal Hover */
+  --color-primary-active: #3f3f46;   /* Active State */
+  --color-primary-light: #f4f4f5;    /* Light Gray Tint */
+  --color-primary-subtle: #fafafa;   /* Subtle Off-white */
+  --color-primary-border: #18181b;   /* Black / Charcoal Border */
 
   /* Slate / Neutral Scale (50–900) */
-  --color-slate-50: #f8fafc;
-  --color-slate-100: #f1f5f9;
-  --color-slate-200: #e2e8f0;
-  --color-slate-300: #cbd5e1;
-  --color-slate-400: #94a3b8;
-  --color-slate-500: #64748b;
-  --color-slate-600: #475569;
-  --color-slate-700: #334155;
-  --color-slate-800: #1e293b;
-  --color-slate-900: #0f172a;
-  --color-slate-950: #020617;
+  --color-slate-50: #fafafa;
+  --color-slate-100: #f4f4f5;
+  --color-slate-200: #e4e4e7;
+  --color-slate-300: #d4d4d8;
+  --color-slate-400: #a1a1aa;
+  --color-slate-500: #71717a;
+  --color-slate-600: #52525b;
+  --color-slate-700: #3f3f46;
+  --color-slate-800: #27272a;
+  --color-slate-900: #18181b;
+  --color-slate-950: #09090b;
 
-  --color-accent: #d97706;          /* HaUI Amber Gold */
-  --color-accent-hover: #b45309;
-  --color-accent-light: #fef3c7;
+  --color-accent: #27272a;
+  --color-accent-hover: #09090b;
+  --color-accent-light: #f4f4f5;
 
-  --color-ember: #e7000b;           /* Destructive red accent - reserved for errors */
+  --color-ember: #000000;
 
   /* ==========================================================================
-     4. Status Colors (Success, Warning, Error/Destructive, Info)
+     4. Status Colors (Monochrome Contrast Scheme)
      ========================================================================== */
-  --color-success: #16a34a;
-  --color-success-hover: #15803d;
-  --color-success-bg: #f0fdf4;
-  --color-success-border: #bbf7d0;
-  --color-success-text: #166534;
+  --color-success: #18181b;
+  --color-success-hover: #27272a;
+  --color-success-bg: #f4f4f5;
+  --color-success-border: #d4d4d8;
+  --color-success-text: #09090b;
 
-  --color-warning: #d97706;
-  --color-warning-hover: #b45309;
-  --color-warning-bg: #fffbeb;
-  --color-warning-border: #fde68a;
-  --color-warning-text: #92400e;
+  --color-warning: #27272a;
+  --color-warning-hover: #3f3f46;
+  --color-warning-bg: #f4f4f5;
+  --color-warning-border: #a1a1aa;
+  --color-warning-text: #18181b;
 
-  --color-error: #dc2626;
-  --color-error-hover: #b91c1c;
-  --color-error-bg: #fef2f2;
-  --color-error-border: #fecaca;
-  --color-error-text: #991b1b;
+  --color-error: #000000;
+  --color-error-hover: #18181b;
+  --color-error-bg: #f4f4f5;
+  --color-error-border: #000000;
+  --color-error-text: #000000;
 
-  --color-info: #0284c7;
-  --color-info-hover: #0369a1;
-  --color-info-bg: #f0f9ff;
-  --color-info-border: #bae6fd;
-  --color-info-text: #075985;
+  --color-info: #3f3f46;
+  --color-info-hover: #52525b;
+  --color-info-bg: #f4f4f5;
+  --color-info-border: #d4d4d8;
+  --color-info-text: #09090b;
 
   /* Academic Contextual Aliases */
   --color-passed: var(--color-success);
@@ -132,9 +132,9 @@
      ========================================================================== */
   --border-width: 1px;
   --border-width-thick: 2px;
-  --color-border: #e5e5e5;          /* Canonical hairline */
-  --color-border-strong: #d4d4d4;
-  --color-border-focus: #0a0a0a;
+  --color-border: #e4e4e7;          /* Canonical hairline */
+  --color-border-strong: #18181b;
+  --color-border-focus: #000000;
 
   /* ==========================================================================
      6. Border Radius (Radius defines Hierarchy: 18px interactive, 24px cards)
