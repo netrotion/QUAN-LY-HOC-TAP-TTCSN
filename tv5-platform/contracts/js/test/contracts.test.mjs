@@ -14,7 +14,7 @@ import {
 
 test('phát hành đúng mốc contracts-v1', () => {
   assert.equal(CONTRACT_MILESTONE, 'contracts-v1');
-  assert.equal(CONTRACT_VERSION, '1.1.0');
+  assert.equal(CONTRACT_VERSION, '1.2.0');
   assert.equal(DEMO_STUDENT.studentId, '2024604757');
 });
 

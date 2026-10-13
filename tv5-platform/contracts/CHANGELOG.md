@@ -3,6 +3,32 @@
 Mọi thay đổi hợp đồng sau mốc `contracts-v1` phải có mục ở đây, trong cùng PR của TV5 với thay đổi.
 Quy trình: [docs/task-2.4-contracts-v1.md §6](../docs/task-2.4-contracts-v1.md).
 
+## [1.2.0] — 2026-10-13 — lưu kế hoạch, hội thoại và trạng thái công cụ học vụ (Task 3.7)
+
+Kế hoạch và hội thoại chạy trên DB; nêu rõ khi nào công cụ học vụ là "thật". Không đổi tên hay xóa trường nào của 1.1.0.
+
+### Thêm
+- 3 operation: `DELETE /planner/plans/{planId}?planVersion=` (hủy bản nháp DRAFT/VALIDATED, 204), `GET /advisor/conversations`,
+  `GET /advisor/conversations/{conversationId}`.
+- `AcademicFacade.readyCapabilities()` (method `default`, trả rỗng): implementation khai báo capability nào đã là công cụ thật.
+  Chưa khai báo `VALIDATE_STUDY_PLAN` thì validate/activate trả **503 `TOOL_NOT_READY`** và không kế hoạch nào lên VALIDATED/ACTIVE.
+- `ConversationStore.listConversations(studentId)` (fake in-memory đã cập nhật). Chỉ TV5 implement port này.
+- Trường: `ValidateStudyPlanResponse.validationMode` (`REAL` | `MOCK`), `ValidateStudyPlanResponse.policyVersion`,
+  `StudyPlanDetailResponse.validatedAt`, `BootstrapInfoResponse.academicTools`.
+- DTO/enum: `AcademicCapability`, `ValidationMode`, `AcademicToolStatus`, `AcademicToolReadinessItem`, `ConversationSummaryItem`,
+  `ConversationListResponse`; mã lỗi `TOOL_NOT_READY` (503), `CONVERSATION_NOT_FOUND` (404); response chung 503.
+- 5 file mẫu mới (tổng 70, 54 ví dụ trong manifest): thẩm định MOCK, 503 khi validate/activate, lịch sử hội thoại, hội thoại không tồn tại.
+
+### Thay đổi hành vi (không đổi schema 1.1.0)
+- Kích hoạt kiểm tra planVersion, dataRevision và thẩm định lại trên hồ sơ + quy chế hiện hành trong cùng giao dịch;
+  DB bảo đảm một ACTIVE mỗi sinh viên.
+- Bỏ `x-implementation-status: IMPLEMENTED_IN_MEMORY`: planner chạy trên PostgreSQL.
+
+### Việc cho owner khác
+- TV4: khi `validateStudyPlan` là công cụ thật, override `readyCapabilities()` trả `VALIDATE_STUDY_PLAN`; chưa khai báo thì kế hoạch không kích hoạt được.
+- TV1: lưu/đọc hội thoại qua `ConversationStore` với `studentId` từ `StudentContextProvider`.
+- TV3: xử lý 503 `TOOL_NOT_READY` (tắt "Kích hoạt", hiện lý do), nút hủy bản nháp, nhãn `validationMode=MOCK`.
+
 ## [1.1.0] — 2026-10-13 — tài khoản, dữ liệu và nhập bảng điểm (Task 3.2)
 
 Bổ sung các phần chưa có trong bản chốt 2.3 nhưng cần cho Task 3.2 (TV5) và 3.4 (TV2). Không đổi tên hay xóa trường nào của 1.0.0.

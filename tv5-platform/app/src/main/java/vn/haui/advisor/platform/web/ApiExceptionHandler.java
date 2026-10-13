@@ -6,6 +6,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -46,6 +47,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler({MissingServletRequestPartException.class, MultipartException.class})
     public ResponseEntity<ApiErrorResponse> handleMissingFile(Exception ex) {
         return handleApiException(ApiException.badRequest("Cần gửi file bảng điểm trong trường multipart 'file'."));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return handleApiException(ApiException.badRequest("Tham số " + ex.getName() + " sai kiểu dữ liệu."));
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)

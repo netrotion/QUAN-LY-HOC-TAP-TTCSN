@@ -10,6 +10,8 @@ public class ValidateStudyPlanResponse implements Serializable {
     private List<String> warnings;
     private Integer planVersion;
     private String dataRevision;
+    private ValidationMode validationMode;
+    private String policyVersion;
 
     public ValidateStudyPlanResponse() {
     }
@@ -70,5 +72,21 @@ public class ValidateStudyPlanResponse implements Serializable {
 
     public void setDataRevision(String dataRevision) {
         this.dataRevision = dataRevision;
+    }
+
+    public ValidationMode getValidationMode() {
+        return validationMode;
+    }
+
+    public void setValidationMode(ValidationMode validationMode) {
+        this.validationMode = validationMode;
+    }
+
+    public String getPolicyVersion() {
+        return policyVersion;
+    }
+
+    public void setPolicyVersion(String policyVersion) {
+        this.policyVersion = policyVersion;
     }
 }

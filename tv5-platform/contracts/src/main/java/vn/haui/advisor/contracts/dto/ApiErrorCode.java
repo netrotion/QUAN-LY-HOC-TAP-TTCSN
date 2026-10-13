@@ -45,5 +45,9 @@ public enum ApiErrorCode {
     /** 413: file vượt giới hạn dung lượng hoặc số trang. */
     UPLOAD_TOO_LARGE,
     /** 415: file không phải PDF, PNG hoặc JPEG (kiểm tra theo nội dung, không theo đuôi file). */
-    UNSUPPORTED_FILE_TYPE
+    UNSUPPORTED_FILE_TYPE,
+    /** 503: công cụ học vụ cần cho thao tác chưa là công cụ thật (stub NOT_READY); thử lại sau khi được nối. */
+    TOOL_NOT_READY,
+    /** 404: không có hội thoại thuộc sinh viên đang đăng nhập. */
+    CONVERSATION_NOT_FOUND
 }

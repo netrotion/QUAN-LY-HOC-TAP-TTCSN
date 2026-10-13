@@ -23,13 +23,14 @@ public class SystemControllerTest {
     void testBootstrapEndpointReturnsCorrectInfoWithoutSecrets() throws Exception {
         mockMvc.perform(get("/api/v1/system/bootstrap"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.contractVersion", is("1.1.0")))
+                .andExpect(jsonPath("$.contractVersion", is("1.2.0")))
                 .andExpect(jsonPath("$.contractMilestone", is("contracts-v1")))
                 .andExpect(jsonPath("$.runtimeMode", is("database")))
                 .andExpect(jsonPath("$.modules.contracts", is("READY")))
                 .andExpect(jsonPath("$.modules.academic", is("NOT_IMPLEMENTED")))
                 .andExpect(jsonPath("$.modules.advisor", is("NOT_IMPLEMENTED")))
-                .andExpect(jsonPath("$.modules.persistence", is("PARTIAL")))
+                .andExpect(jsonPath("$.modules.persistence", is("READY")))
+                .andExpect(jsonPath("$.academicTools[?(@.capability == 'VALIDATE_STUDY_PLAN')].status", contains("NOT_READY")))
                 // Tuyệt đối không để lộ secrets, passwords, env
                 .andExpect(jsonPath("$.password").doesNotExist())
                 .andExpect(jsonPath("$.secret").doesNotExist())

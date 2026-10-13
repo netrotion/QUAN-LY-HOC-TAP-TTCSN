@@ -9,19 +9,24 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import vn.haui.advisor.platform.support.AcademicToolsTestConfig;
 import vn.haui.advisor.contracts.ContractTestSupport;
 import vn.haui.advisor.contracts.OpenApiSchemaValidator;
+import vn.haui.advisor.contracts.dto.ConversationRecord;
+import vn.haui.advisor.contracts.ports.ConversationStore;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
@@ -30,6 +35,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
  * kiểm tra status code đúng OpenAPI và body response (kể cả lỗi) hợp lệ theo schema OpenAPI V1.
  */
 @SpringBootTest
+@Import(AcademicToolsTestConfig.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @WithMockUser(username = "2024604757", roles = "STUDENT")
@@ -41,6 +47,12 @@ class HttpContractConformanceTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private AcademicToolsTestConfig.ControllableAcademicFacade academicFacade;
+
+    @Autowired
+    private ConversationStore conversationStore;
 
     private OpenApiSchemaValidator validator;
 
@@ -137,6 +149,45 @@ class HttpContractConformanceTest {
         expect(get("/api/v1/academic/certificates"), null, 200, "CertificateListResponse");
         expect(get("/api/v1/academic/transcript/imports"), null, 200, "TranscriptImportListResponse");
         expect(get("/api/v1/academic/transcript/imports/imp-khong-ton-tai"), null, 404, "ApiErrorResponse");
+    }
+
+    @Test
+    @DisplayName("Contracts 1.2: hủy nháp, công cụ chưa thật (503), lịch sử hội thoại và bootstrap đúng schema")
+    void planPersistenceAndConversationEndpointsMatchSchema() throws Exception {
+        JsonNode bootstrap = expect(get("/api/v1/system/bootstrap"), null, 200, "BootstrapInfoResponse");
+        assertThat(bootstrap.get("academicTools").findValuesAsText("status")).contains("READY");
+
+        ObjectNode save = (ObjectNode) ContractTestSupport.readExample("study-plan-save-request.sample.json");
+        save.putNull("planId");
+        save.putNull("planVersion");
+        save.putNull("dataRevision");
+        String planId = expect(post("/api/v1/planner/plans"), save, 200, "SaveStudyPlanResponse").get("planId").asText();
+
+        academicFacade.setReady(false);
+        try {
+            ObjectNode validate = objectMapper.createObjectNode().put("planId", planId).put("planVersion", 1);
+            JsonNode notReady = expect(post("/api/v1/planner/validate"), validate, 503, "ApiErrorResponse");
+            assertThat(notReady.get("code").asText()).isEqualTo("TOOL_NOT_READY");
+            ObjectNode activate = objectMapper.createObjectNode().put("planVersion", 1);
+            expect(post("/api/v1/planner/plans/" + planId + "/activate"), activate, 503, "ApiErrorResponse");
+        } finally {
+            academicFacade.reset();
+        }
+
+        expect(delete("/api/v1/planner/plans/" + planId), null, 400, "ApiErrorResponse");
+        expect(delete("/api/v1/planner/plans/" + planId).param("planVersion", "9"), null, 409, "ApiErrorResponse");
+        MvcResult deleted = mockMvc.perform(delete("/api/v1/planner/plans/" + planId).param("planVersion", "1").with(csrf()))
+                .andReturn();
+        assertThat(deleted.getResponse().getStatus()).isEqualTo(204);
+        expect(get("/api/v1/planner/plans/" + planId), null, 404, "ApiErrorResponse");
+
+        conversationStore.saveConversation(new ConversationRecord("conv-contract-1", "2024604757", "Hỏi lộ trình",
+                null, null, "[{\"role\":\"user\",\"content\":\"Kỳ tới học gì?\"}]"));
+        JsonNode list = expect(get("/api/v1/advisor/conversations"), null, 200, "ConversationListResponse");
+        assertThat(list.get("conversations").findValuesAsText("conversationId")).contains("conv-contract-1");
+        expect(get("/api/v1/advisor/conversations/conv-contract-1"), null, 200, "ConversationRecord");
+        JsonNode missing = expect(get("/api/v1/advisor/conversations/conv-khong-ton-tai"), null, 404, "ApiErrorResponse");
+        assertThat(missing.get("code").asText()).isEqualTo("CONVERSATION_NOT_FOUND");
     }
 
     private JsonNode expect(MockHttpServletRequestBuilder request, JsonNode body, int status, String schema) throws Exception {

@@ -1,5 +1,5 @@
 // GENERATED — KHÔNG SỬA TAY. Sinh bởi `npm run contracts:build` từ tv5-platform/contracts (openapi-v1.yaml, examples/*.json, enum Java).
-export const CONTRACT_VERSION = "1.1.0";
+export const CONTRACT_VERSION = "1.2.0";
 export const CONTRACT_MILESTONE = "contracts-v1";
 export const API_BASE_PATH = '/api/v1';
 export const DEMO_STUDENT = Object.freeze({
@@ -35,7 +35,9 @@ export const ENUMS = Object.freeze({
     "IMPORT_HAS_BLOCKING_ISSUES",
     "IMPORT_LIMIT_REACHED",
     "UPLOAD_TOO_LARGE",
-    "UNSUPPORTED_FILE_TYPE"
+    "UNSUPPORTED_FILE_TYPE",
+    "TOOL_NOT_READY",
+    "CONVERSATION_NOT_FOUND"
   ],
   "AcademicRiskLevel": [
     "NORMAL",
@@ -73,6 +75,10 @@ export const OPERATIONS = Object.freeze({
     "method": "PUT",
     "path": "/academic/certificates/{requirementCode}"
   },
+  "deleteStudyPlan": {
+    "method": "DELETE",
+    "path": "/planner/plans/{planId}"
+  },
   "generateStudyPlan": {
     "method": "POST",
     "path": "/planner/generate"
@@ -88,6 +94,10 @@ export const OPERATIONS = Object.freeze({
   "getBootstrapInfo": {
     "method": "GET",
     "path": "/system/bootstrap"
+  },
+  "getConversation": {
+    "method": "GET",
+    "path": "/advisor/conversations/{conversationId}"
   },
   "getCsrfToken": {
     "method": "GET",
@@ -120,6 +130,10 @@ export const OPERATIONS = Object.freeze({
   "listCertificates": {
     "method": "GET",
     "path": "/academic/certificates"
+  },
+  "listConversations": {
+    "method": "GET",
+    "path": "/advisor/conversations"
   },
   "listStudyPlans": {
     "method": "GET",
@@ -2048,7 +2062,9 @@ export const FIXTURES = Object.freeze({
         "Cần điều chỉnh số lượng tín chỉ theo đúng quy chế đào tạo"
       ],
       "planVersion": null,
-      "dataRevision": "REV-2024604757-001"
+      "dataRevision": "REV-2024604757-001",
+      "validationMode": "REAL",
+      "policyVersion": "policy-haui-demo-2026@0.0.1-v0"
     },
     "consumers": [
       "TV3",
@@ -2355,7 +2371,8 @@ export const FIXTURES = Object.freeze({
       "warnings": [],
       "createdAt": "2026-09-15T08:00:00Z",
       "updatedAt": "2026-09-20T02:00:00Z",
-      "activatedAt": "2026-09-20T02:05:00Z"
+      "activatedAt": "2026-09-20T02:05:00Z",
+      "validatedAt": "2026-09-20T02:04:00Z"
     },
     "consumers": [
       "TV3",
@@ -2572,7 +2589,8 @@ export const FIXTURES = Object.freeze({
       "warnings": [],
       "createdAt": "2026-10-13T08:20:00Z",
       "updatedAt": "2026-10-13T08:20:00Z",
-      "activatedAt": null
+      "activatedAt": null,
+      "validatedAt": null
     },
     "consumers": [
       "TV3"
@@ -3002,6 +3020,149 @@ export const FIXTURES = Object.freeze({
     },
     "consumers": [
       "TV2",
+      "TV3"
+    ]
+  },
+  "validate-study-plan-mock": {
+    "operationId": "validateStudyPlan",
+    "method": "POST",
+    "path": "/planner/validate",
+    "httpStatus": 200,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "ValidateStudyPlanResponse",
+    "response": {
+      "valid": true,
+      "status": "DRAFT",
+      "violations": [],
+      "warnings": [
+        "Kết quả thẩm định thử (MOCK): công cụ thẩm định thật chưa sẵn sàng, kế hoạch chưa đủ điều kiện kích hoạt."
+      ],
+      "planVersion": 2,
+      "dataRevision": "REV-2024604757-001",
+      "validationMode": "MOCK",
+      "policyVersion": "policy-haui-demo-2026@0.0.1-v0"
+    },
+    "consumers": [
+      "TV3"
+    ]
+  },
+  "validate-study-plan-tool-not-ready": {
+    "operationId": "validateStudyPlan",
+    "method": "POST",
+    "path": "/planner/validate",
+    "httpStatus": 503,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "ApiErrorResponse",
+    "response": {
+      "code": "TOOL_NOT_READY",
+      "message": "Công cụ thẩm định kế hoạch chưa sẵn sàng. Kế hoạch được lưu nháp nhưng chưa thể kiểm tra điều kiện hay kích hoạt.",
+      "requestId": "req-2026-10-15-0001",
+      "timestamp": "2026-10-15T02:00:00Z",
+      "details": [
+        "capability: VALIDATE_STUDY_PLAN"
+      ]
+    },
+    "consumers": [
+      "TV3"
+    ]
+  },
+  "activate-study-plan-tool-not-ready": {
+    "operationId": "activateStudyPlan",
+    "method": "POST",
+    "path": "/planner/plans/{planId}/activate",
+    "httpStatus": 503,
+    "pathParams": {
+      "planId": "plan-2024604757-0003"
+    },
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "ApiErrorResponse",
+    "response": {
+      "code": "TOOL_NOT_READY",
+      "message": "Công cụ thẩm định kế hoạch chưa sẵn sàng. Kế hoạch được lưu nháp nhưng chưa thể kiểm tra điều kiện hay kích hoạt.",
+      "requestId": "req-2026-10-15-0001",
+      "timestamp": "2026-10-15T02:00:00Z",
+      "details": [
+        "capability: VALIDATE_STUDY_PLAN"
+      ]
+    },
+    "consumers": [
+      "TV3"
+    ]
+  },
+  "conversation-list": {
+    "operationId": "listConversations",
+    "method": "GET",
+    "path": "/advisor/conversations",
+    "httpStatus": 200,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "ConversationListResponse",
+    "response": {
+      "conversations": [
+        {
+          "conversationId": "6f1c2b9e-1d4a-4c55-9a51-2b7f0e8c4d21",
+          "title": "Kỳ tới em nên học những môn nào?",
+          "createdAt": "2026-10-13T07:55:00Z",
+          "updatedAt": "2026-10-13T07:56:10Z"
+        }
+      ]
+    },
+    "consumers": [
+      "TV3",
+      "TV1"
+    ]
+  },
+  "conversation-get": {
+    "operationId": "getConversation",
+    "method": "GET",
+    "path": "/advisor/conversations/{conversationId}",
+    "httpStatus": 200,
+    "pathParams": {
+      "conversationId": "6f1c2b9e-1d4a-4c55-9a51-2b7f0e8c4d21"
+    },
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "ConversationRecord",
+    "response": {
+      "conversationId": "6f1c2b9e-1d4a-4c55-9a51-2b7f0e8c4d21",
+      "studentId": "2024604757",
+      "title": "Kỳ tới em nên học những môn nào?",
+      "createdAt": "2026-10-13T07:55:00Z",
+      "updatedAt": "2026-10-13T07:56:10Z",
+      "messagesJson": "[{\"role\":\"user\",\"content\":\"Kỳ tới em nên học những môn nào để vẫn tốt nghiệp đúng hạn?\",\"at\":\"2026-10-13T07:55:00Z\"},{\"role\":\"assistant\",\"content\":\"Kỳ 2026_1 bạn nên ưu tiên học lại LP6004 - Tư tưởng Hồ Chí Minh...\",\"at\":\"2026-10-13T07:56:10Z\"}]"
+    },
+    "consumers": [
+      "TV3",
+      "TV1"
+    ]
+  },
+  "conversation-not-found": {
+    "operationId": "getConversation",
+    "method": "GET",
+    "path": "/advisor/conversations/{conversationId}",
+    "httpStatus": 404,
+    "pathParams": {
+      "conversationId": "00000000-0000-0000-0000-000000000000"
+    },
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "ApiErrorResponse",
+    "response": {
+      "code": "CONVERSATION_NOT_FOUND",
+      "message": "Không tìm thấy hội thoại.",
+      "requestId": "req-2026-10-15-0002",
+      "timestamp": "2026-10-15T02:01:00Z",
+      "details": [
+        "conversationId: 00000000-0000-0000-0000-000000000000"
+      ]
+    },
+    "consumers": [
       "TV3"
     ]
   }

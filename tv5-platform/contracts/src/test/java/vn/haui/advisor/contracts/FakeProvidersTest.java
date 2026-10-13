@@ -60,6 +60,9 @@ class FakeProvidersTest {
         assertThatThrownBy(() -> store.saveConversation(
                 new ConversationRecord("conv-1", "attacker-9999", "Chiếm hội thoại", null, null, "[]")))
                 .isInstanceOf(IllegalArgumentException.class);
+        assertThat(store.getConversation("conv-1", "2024604757").getTitle()).isEqualTo("Hỏi lộ trình");
+        assertThat(store.listConversations("2024604757")).extracting("conversationId").containsExactly("conv-1");
+        assertThat(store.listConversations("attacker-9999")).isEmpty();
     }
 
     @Test

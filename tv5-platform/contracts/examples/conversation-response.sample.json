@@ -1,0 +1,8 @@
+{
+  "conversationId": "6f1c2b9e-1d4a-4c55-9a51-2b7f0e8c4d21",
+  "studentId": "2024604757",
+  "title": "Kỳ tới em nên học những môn nào?",
+  "createdAt": "2026-10-13T07:55:00Z",
+  "updatedAt": "2026-10-13T07:56:10Z",
+  "messagesJson": "[{\"role\":\"user\",\"content\":\"Kỳ tới em nên học những môn nào để vẫn tốt nghiệp đúng hạn?\",\"at\":\"2026-10-13T07:55:00Z\"},{\"role\":\"assistant\",\"content\":\"Kỳ 2026_1 bạn nên ưu tiên học lại LP6004 - Tư tưởng Hồ Chí Minh...\",\"at\":\"2026-10-13T07:56:10Z\"}]"
+}

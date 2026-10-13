@@ -1,8 +1,11 @@
 package vn.haui.advisor.contracts.fake;
 
 import vn.haui.advisor.contracts.dto.ConversationRecord;
+import vn.haui.advisor.contracts.dto.ConversationSummaryItem;
 import vn.haui.advisor.contracts.ports.ConversationStore;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,7 +18,7 @@ public class InMemoryConversationStore implements ConversationStore {
 
     @Override
     public ConversationRecord getConversation(String conversationId, String studentId) {
-        ConversationRecord record = records.get(conversationId);
+        ConversationRecord record = conversationId == null ? null : records.get(conversationId);
         if (record == null || studentId == null || !studentId.equals(record.getStudentId())) {
             return null;
         }
@@ -24,10 +27,24 @@ public class InMemoryConversationStore implements ConversationStore {
 
     @Override
     public void saveConversation(ConversationRecord record) {
-        ConversationRecord existing = records.get(record.getConversationId());
-        if (existing != null && !existing.getStudentId().equals(record.getStudentId())) {
-            throw new IllegalArgumentException("conversationId đã thuộc sinh viên khác");
+        if (record == null || record.getConversationId() == null || record.getStudentId() == null) {
+            throw new IllegalArgumentException("conversationId và studentId là bắt buộc");
         }
-        records.put(record.getConversationId(), record);
+        records.compute(record.getConversationId(), (id, existing) -> {
+            if (existing != null && !existing.getStudentId().equals(record.getStudentId())) {
+                throw new IllegalArgumentException("conversationId đã thuộc sinh viên khác");
+            }
+            return record;
+        });
+    }
+
+    @Override
+    public List<ConversationSummaryItem> listConversations(String studentId) {
+        return records.values().stream()
+                .filter(r -> r.getStudentId().equals(studentId))
+                .sorted(Comparator.comparing((ConversationRecord r) -> r.getUpdatedAt() == null ? "" : r.getUpdatedAt())
+                        .reversed())
+                .map(r -> new ConversationSummaryItem(r.getConversationId(), r.getTitle(), r.getCreatedAt(), r.getUpdatedAt()))
+                .toList();
     }
 }

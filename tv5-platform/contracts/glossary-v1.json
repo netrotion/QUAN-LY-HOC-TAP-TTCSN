@@ -1,9 +1,13 @@
 {
   "milestone": "contracts-v1",
-  "contractVersion": "1.1.0",
+  "contractVersion": "1.2.0",
   "owner": "TV5",
   "rule": "Một dữ liệu chỉ có một tên trường; cùng tên trường thì cùng kiểu JSON ở mọi schema. Thêm trường mới phải đăng ký ở đây trong cùng PR.",
   "fields": {
+    "academicTools": {
+      "type": "array<object>",
+      "meaning": "Trạng thái công cụ học vụ trên bootstrap"
+    },
     "accumulatedCredits": {
       "type": "integer",
       "meaning": "Số tín chỉ đã tích lũy (đã đạt); dùng cho cả cấp sinh viên và từng điều kiện tốt nghiệp"
@@ -59,6 +63,10 @@
     "blockingIssueCount": {
       "type": "integer",
       "meaning": "Số vấn đề chặn trên các dòng included của phiên nhập"
+    },
+    "capability": {
+      "type": "string",
+      "meaning": "Capability của AcademicFacade"
     },
     "category": {
       "type": "string",
@@ -127,6 +135,10 @@
     "conversationId": {
       "type": "string",
       "meaning": "Mã hội thoại do client sinh (UUID)"
+    },
+    "conversations": {
+      "type": "array<object>",
+      "meaning": "Danh sách hội thoại"
     },
     "corequisiteCourseCodes": {
       "type": "array<string>",
@@ -388,6 +400,10 @@
       "type": "array<object>",
       "meaning": "Danh sách kế hoạch"
     },
+    "policyVersion": {
+      "type": "string",
+      "meaning": "Phiên bản quy chế học vụ dùng khi thẩm định"
+    },
     "prerequisiteCourseCodes": {
       "type": "array<string>",
       "meaning": "Mã học phần tiên quyết theo CTĐT"
@@ -627,6 +643,14 @@
     "valid": {
       "type": "boolean",
       "meaning": "Kế hoạch không có vi phạm"
+    },
+    "validatedAt": {
+      "type": "string",
+      "meaning": "Thời điểm thẩm định thật gần nhất còn hiệu lực"
+    },
+    "validationMode": {
+      "type": "string",
+      "meaning": "Nguồn kết quả thẩm định (REAL, MOCK)"
     },
     "verification": {
       "type": "string",

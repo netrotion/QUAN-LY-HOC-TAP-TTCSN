@@ -1,7 +1,7 @@
 {
   "manifestType": "CONTRACT_FIXTURES",
   "milestone": "contracts-v1",
-  "contractVersion": "1.1.0",
+  "contractVersion": "1.2.0",
   "openapi": "../openapi/openapi-v1.yaml",
   "purpose": "Ví dụ chuẩn của contracts-v1: mock FE (TV2/TV3), fake provider cho AI (TV1), input AcademicFacade cho TV4. Mọi fixture qua contract test (OpenAPI + DTO round-trip). Dữ liệu là sinh viên demo 2024604757 theo fixture TV4, không phải dữ liệu học vụ thật.",
   "demoStudent": {
@@ -724,6 +724,89 @@
       "responseSchema": "ApiErrorResponse",
       "consumers": [
         "TV2",
+        "TV3"
+      ]
+    },
+    {
+      "id": "validate-study-plan-mock",
+      "operationId": "validateStudyPlan",
+      "method": "POST",
+      "path": "/planner/validate",
+      "httpStatus": 200,
+      "responseSample": "validate-study-plan-mock-response.sample.json",
+      "responseSchema": "ValidateStudyPlanResponse",
+      "consumers": [
+        "TV3"
+      ]
+    },
+    {
+      "id": "validate-study-plan-tool-not-ready",
+      "operationId": "validateStudyPlan",
+      "method": "POST",
+      "path": "/planner/validate",
+      "httpStatus": 503,
+      "responseSample": "error-tool-not-ready.sample.json",
+      "responseSchema": "ApiErrorResponse",
+      "consumers": [
+        "TV3"
+      ]
+    },
+    {
+      "id": "activate-study-plan-tool-not-ready",
+      "operationId": "activateStudyPlan",
+      "method": "POST",
+      "path": "/planner/plans/{planId}/activate",
+      "httpStatus": 503,
+      "pathParams": {
+        "planId": "plan-2024604757-0003"
+      },
+      "responseSample": "error-tool-not-ready.sample.json",
+      "responseSchema": "ApiErrorResponse",
+      "consumers": [
+        "TV3"
+      ]
+    },
+    {
+      "id": "conversation-list",
+      "operationId": "listConversations",
+      "method": "GET",
+      "path": "/advisor/conversations",
+      "httpStatus": 200,
+      "responseSample": "conversation-list-response.sample.json",
+      "responseSchema": "ConversationListResponse",
+      "consumers": [
+        "TV3",
+        "TV1"
+      ]
+    },
+    {
+      "id": "conversation-get",
+      "operationId": "getConversation",
+      "method": "GET",
+      "path": "/advisor/conversations/{conversationId}",
+      "httpStatus": 200,
+      "pathParams": {
+        "conversationId": "6f1c2b9e-1d4a-4c55-9a51-2b7f0e8c4d21"
+      },
+      "responseSample": "conversation-response.sample.json",
+      "responseSchema": "ConversationRecord",
+      "consumers": [
+        "TV3",
+        "TV1"
+      ]
+    },
+    {
+      "id": "conversation-not-found",
+      "operationId": "getConversation",
+      "method": "GET",
+      "path": "/advisor/conversations/{conversationId}",
+      "httpStatus": 404,
+      "pathParams": {
+        "conversationId": "00000000-0000-0000-0000-000000000000"
+      },
+      "responseSample": "error-conversation-not-found.sample.json",
+      "responseSchema": "ApiErrorResponse",
+      "consumers": [
         "TV3"
       ]
     }

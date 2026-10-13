@@ -83,6 +83,21 @@ public class ApiException extends RuntimeException {
                 "Chức năng chưa được nối ở runtime hiện tại.", List.of("operationId: " + operationId));
     }
 
+    public static ApiException toolNotReady(String capability, String message) {
+        return new ApiException(HttpStatus.SERVICE_UNAVAILABLE, ApiErrorCode.TOOL_NOT_READY, message,
+                List.of("capability: " + capability));
+    }
+
+    public static ApiException planNotEditable(String message, String status) {
+        return new ApiException(HttpStatus.CONFLICT, ApiErrorCode.PLAN_NOT_EDITABLE, message,
+                List.of("Trạng thái hiện tại: " + status));
+    }
+
+    public static ApiException conversationNotFound(String conversationId) {
+        return new ApiException(HttpStatus.NOT_FOUND, ApiErrorCode.CONVERSATION_NOT_FOUND,
+                "Không tìm thấy hội thoại.", List.of("conversationId: " + conversationId));
+    }
+
     public HttpStatus getStatus() {
         return status;
     }

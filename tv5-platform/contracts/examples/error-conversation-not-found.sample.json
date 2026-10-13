@@ -1,0 +1,9 @@
+{
+  "code": "CONVERSATION_NOT_FOUND",
+  "message": "Không tìm thấy hội thoại.",
+  "requestId": "req-2026-10-15-0002",
+  "timestamp": "2026-10-15T02:01:00Z",
+  "details": [
+    "conversationId: 00000000-0000-0000-0000-000000000000"
+  ]
+}

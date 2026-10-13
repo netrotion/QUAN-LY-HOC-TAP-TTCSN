@@ -1,0 +1,9 @@
+{
+  "code": "TOOL_NOT_READY",
+  "message": "Công cụ thẩm định kế hoạch chưa sẵn sàng. Kế hoạch được lưu nháp nhưng chưa thể kiểm tra điều kiện hay kích hoạt.",
+  "requestId": "req-2026-10-15-0001",
+  "timestamp": "2026-10-15T02:00:00Z",
+  "details": [
+    "capability: VALIDATE_STUDY_PLAN"
+  ]
+}

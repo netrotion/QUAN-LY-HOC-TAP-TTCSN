@@ -1,0 +1,12 @@
+{
+  "valid": true,
+  "status": "DRAFT",
+  "violations": [],
+  "warnings": [
+    "Kết quả thẩm định thử (MOCK): công cụ thẩm định thật chưa sẵn sàng, kế hoạch chưa đủ điều kiện kích hoạt."
+  ],
+  "planVersion": 2,
+  "dataRevision": "REV-2024604757-001",
+  "validationMode": "MOCK",
+  "policyVersion": "policy-haui-demo-2026@0.0.1-v0"
+}

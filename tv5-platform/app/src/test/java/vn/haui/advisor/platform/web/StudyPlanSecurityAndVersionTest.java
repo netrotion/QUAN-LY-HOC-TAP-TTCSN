@@ -7,11 +7,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import vn.haui.advisor.platform.support.AcademicToolsTestConfig;
 import vn.haui.advisor.contracts.dto.*;
 import vn.haui.advisor.platform.support.TestAccounts;
 
@@ -28,9 +30,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Ngữ nghĩa vòng đời kế hoạch theo contracts-v1 (task-2.3 contract delta CD-01..CD-05) và cô lập ngữ cảnh sinh viên.
- * Mỗi test dùng một tài khoản riêng vì store kế hoạch là singleton trong context Spring.
+ * Mỗi test dùng một tài khoản riêng vì DB test dùng chung giữa các lớp test.
  */
 @SpringBootTest
+@Import(AcademicToolsTestConfig.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @DisplayName("StudyPlan V1: lifecycle, context isolation & versioning")

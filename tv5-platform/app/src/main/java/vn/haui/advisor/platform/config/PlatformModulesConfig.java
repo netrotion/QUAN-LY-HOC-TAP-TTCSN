@@ -14,7 +14,7 @@ import vn.haui.advisor.platform.transcript.importing.TesseractCliOcrEngine;
  * AcademicFacade = engine học vụ của TV4, nguồn sự thật duy nhất cho luật học vụ (CD-02).
  */
 @Configuration
-@EnableConfigurationProperties({ImportProperties.class, SeedProperties.class})
+@EnableConfigurationProperties({ImportProperties.class, SeedProperties.class, PlannerProperties.class})
 public class PlatformModulesConfig {
 
     @Bean

@@ -1,6 +1,6 @@
 {
   "name": "@haui/contracts",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "contracts-v1: fixtures, operation catalog và enum cho mock FE (TV2/TV3). Nguồn chuẩn là openapi/openapi-v1.yaml và examples/*.json.",
   "type": "module",

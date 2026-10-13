@@ -1,5 +1,6 @@
 package vn.haui.advisor.platform.web;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.haui.advisor.contracts.dto.*;
 import vn.haui.advisor.contracts.ports.StudentContextProvider;
@@ -40,9 +41,17 @@ public class StudyPlanController {
         return studyPlanService.get(studentContextProvider.getAuthenticatedContext(), planId);
     }
 
+    /** Hủy bản nháp; planVersion là phiên bản client đang giữ. */
+    @DeleteMapping("/plans/{planId}")
+    public ResponseEntity<Void> deleteStudyPlan(@PathVariable String planId,
+                                                @RequestParam(required = false) Integer planVersion) {
+        studyPlanService.delete(studentContextProvider.getAuthenticatedContext(), planId, planVersion);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/plans/{planId}/activate")
     public ActivateStudyPlanResponse activateStudyPlan(@PathVariable String planId,
-                                                       @RequestBody ActivateStudyPlanRequest request) {
+                                                       @RequestBody(required = false) ActivateStudyPlanRequest request) {
         return studyPlanService.activate(studentContextProvider.getAuthenticatedContext(), planId, request);
     }
 

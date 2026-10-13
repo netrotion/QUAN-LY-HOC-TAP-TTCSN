@@ -71,5 +71,6 @@
   "warnings": [],
   "createdAt": "2026-10-13T08:20:00Z",
   "updatedAt": "2026-10-13T08:20:00Z",
-  "activatedAt": null
+  "activatedAt": null,
+  "validatedAt": null
 }

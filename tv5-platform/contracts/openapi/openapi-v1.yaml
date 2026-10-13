@@ -3,9 +3,9 @@
 openapi: "3.0.3"
 info:
   title: "HaUI Advisor API"
-  version: "1.1.0"
+  version: "1.2.0"
   description: |
-    contracts-v1 — hợp đồng chốt sau review prototype (Task 2.3) làm đầu vào Phase 3. Bản 1.1.0 bổ sung tài khoản, hồ sơ, CTĐT, bảng điểm, nhập bảng điểm và chứng chỉ (Task 3.2).
+    contracts-v1 — hợp đồng chốt sau review prototype (Task 2.3) làm đầu vào Phase 3. Bản 1.1.0 bổ sung tài khoản, hồ sơ, CTĐT, bảng điểm, nhập bảng điểm và chứng chỉ (Task 3.2); 1.2.0 lưu kế hoạch/hội thoại trên DB và trạng thái sẵn sàng của công cụ học vụ (Task 3.7).
 
     Quy tắc chung:
     - Xác thực: session cookie (JSESSIONID) + CSRF (cookie XSRF-TOKEN, header X-XSRF-TOKEN) cho mọi request ghi, kể cả login. Chỉ vai trò STUDENT. Chưa đăng nhập → 401 UNAUTHENTICATED; thiếu CSRF/sai vai trò → 403 ACCESS_DENIED.
@@ -14,10 +14,11 @@ info:
     - dataRevision: token phiên bản dữ liệu học vụ; thao tác ghi gửi lại nguyên văn, cũ → 409 DATA_REVISION_STALE.
     - planVersion: phiên bản nội dung kế hoạch (optimistic lock), chỉ tăng khi lưu nội dung; lệch → 409 PLAN_VERSION_CONFLICT.
     - Vòng đời kế hoạch: lưu nháp luôn DRAFT; validate hợp lệ → VALIDATED; activate chỉ nhận VALIDATED (thẩm định lại, lỗi → 422) và lưu trữ bản ACTIVE cũ trong cùng giao dịch; sửa ACTIVE tạo DRAFT kế thừa.
+    - Công cụ chưa thật: AcademicFacade chưa khai báo VALIDATE_STUDY_PLAN trong readyCapabilities() thì validate trả 503 TOOL_NOT_READY (dev/test có thể bật thẩm định thử validationMode=MOCK) và không kế hoạch nào lên VALIDATED/ACTIVE. Kích hoạt kiểm tra lại revision hồ sơ (dataRevision), quy chế (policyVersion) và kế hoạch (planVersion) tại lúc thẩm định.
     - Số liệu dự kiến (projectedCpa, expectedGpa, targetGrade, phương án đề xuất) phải hiển thị nhãn "Dự kiến"; xem trước không ghi dữ liệu.
     - Một dữ liệu chỉ có một tên trường: xem glossary-v1.json. Mọi thay đổi sau mốc contracts-v1 phải qua PR của TV5 kèm kiểm tra phía sử dụng.
 
-    x-implementation-status: trạng thái runtime hiện tại của endpoint (IMPLEMENTED, IMPLEMENTED_IN_MEMORY, NOT_IMPLEMENTED → 501); contract không đổi theo trạng thái này.
+    x-implementation-status: trạng thái runtime hiện tại của endpoint (IMPLEMENTED, NOT_IMPLEMENTED → 501); contract không đổi theo trạng thái này.
 servers:
   - url: /api/v1
     description: "Base URL tương đối qua frontend proxy"
@@ -575,7 +576,7 @@ paths:
       summary: "Thẩm định kế hoạch theo quy chế (AcademicFacade là nguồn sự thật duy nhất)"
       operationId: validateStudyPlan
       x-facade-method: AcademicFacade#validateStudyPlan
-      x-implementation-status: IMPLEMENTED_IN_MEMORY
+      x-implementation-status: IMPLEMENTED
       requestBody:
         required: true
         content:
@@ -599,12 +600,14 @@ paths:
           $ref: "#/components/responses/NotFound"
         '409':
           $ref: "#/components/responses/Conflict"
+        '503':
+          $ref: "#/components/responses/ServiceUnavailable"
   /planner/plans:
     get:
       tags: [Planner]
       summary: "Lịch sử kế hoạch của sinh viên"
       operationId: listStudyPlans
-      x-implementation-status: IMPLEMENTED_IN_MEMORY
+      x-implementation-status: IMPLEMENTED
       responses:
         '200':
           description: "Danh sách kế hoạch"
@@ -620,7 +623,7 @@ paths:
       tags: [Planner]
       summary: "Lưu nháp kế hoạch (luôn DRAFT, không đổi bản ACTIVE)"
       operationId: saveStudyPlan
-      x-implementation-status: IMPLEMENTED_IN_MEMORY
+      x-implementation-status: IMPLEMENTED
       requestBody:
         required: true
         content:
@@ -649,7 +652,7 @@ paths:
       tags: [Planner]
       summary: "Chi tiết một kế hoạch"
       operationId: getStudyPlan
-      x-implementation-status: IMPLEMENTED_IN_MEMORY
+      x-implementation-status: IMPLEMENTED
       parameters:
         - name: planId
           in: path
@@ -670,12 +673,44 @@ paths:
           $ref: "#/components/responses/Forbidden"
         '404':
           $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Planner]
+      summary: "Hủy bản nháp (DRAFT/VALIDATED); bản ACTIVE/ARCHIVED không xóa được"
+      operationId: deleteStudyPlan
+      x-implementation-status: IMPLEMENTED
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          description: "Mã kế hoạch thuộc sinh viên đang đăng nhập."
+          schema:
+            type: string
+        - name: planVersion
+          in: query
+          required: true
+          description: "Phiên bản client đang giữ."
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '204':
+          description: "Đã hủy bản nháp"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+        '409':
+          $ref: "#/components/responses/Conflict"
   "/planner/plans/{planId}/activate":
     post:
       tags: [Planner]
       summary: "Kích hoạt kế hoạch VALIDATED; bản ACTIVE cũ chuyển ARCHIVED trong cùng giao dịch"
       operationId: activateStudyPlan
-      x-implementation-status: IMPLEMENTED_IN_MEMORY
+      x-implementation-status: IMPLEMENTED
       parameters:
         - name: planId
           in: path
@@ -708,12 +743,14 @@ paths:
           $ref: "#/components/responses/Conflict"
         '422':
           $ref: "#/components/responses/UnprocessableEntity"
+        '503':
+          $ref: "#/components/responses/ServiceUnavailable"
   "/planner/plans/{planId}/restore":
     post:
       tags: [Planner]
       summary: "Tạo DRAFT mới từ một kế hoạch (thường là ARCHIVED); bản gốc giữ nguyên"
       operationId: restoreStudyPlan
-      x-implementation-status: IMPLEMENTED_IN_MEMORY
+      x-implementation-status: IMPLEMENTED
       parameters:
         - name: planId
           in: path
@@ -882,6 +919,49 @@ paths:
           $ref: "#/components/responses/Forbidden"
         '501':
           $ref: "#/components/responses/NotImplemented"
+  /advisor/conversations:
+    get:
+      tags: [Advisor]
+      summary: "Lịch sử hội thoại của sinh viên"
+      operationId: listConversations
+      x-implementation-status: IMPLEMENTED
+      responses:
+        '200':
+          description: "Danh sách hội thoại"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationListResponse"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+  "/advisor/conversations/{conversationId}":
+    get:
+      tags: [Advisor]
+      summary: "Chi tiết một hội thoại (tin nhắn dạng JSON do module AI định nghĩa)"
+      operationId: getConversation
+      x-implementation-status: IMPLEMENTED
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          description: "Mã hội thoại thuộc sinh viên đang đăng nhập."
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Hội thoại"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationRecord"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
   /advisor/chat:
     post:
       tags: [Advisor]
@@ -948,8 +1028,14 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ApiErrorResponse"
+    ServiceUnavailable:
+      description: "TOOL_NOT_READY: công cụ học vụ cần cho thao tác chưa là công cụ thật (stub NOT_READY), thử lại sau"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
     NotFound:
-      description: "PLAN_NOT_FOUND | IMPORT_SESSION_NOT_FOUND | REQUIREMENT_NOT_FOUND: không có tài nguyên thuộc sinh viên đang đăng nhập"
+      description: "PLAN_NOT_FOUND | IMPORT_SESSION_NOT_FOUND | REQUIREMENT_NOT_FOUND | CONVERSATION_NOT_FOUND: không có tài nguyên thuộc sinh viên đang đăng nhập"
       content:
         application/json:
           schema:
@@ -1013,9 +1099,14 @@ components:
           type: string
           description: "Thời điểm server trả lời."
           format: date-time
+        academicTools:
+          type: array
+          description: "Trạng thái công cụ học vụ đã nối vào endpoint; FE dùng để tắt thao tác cần công cụ thật (vd. kích hoạt kế hoạch)."
+          items:
+            $ref: "#/components/schemas/AcademicToolReadinessItem"
     ApiErrorCode:
       type: string
-      description: "Mã lỗi nghiệp vụ. 400 VALIDATION_ERROR, CURRICULUM_NOT_FOUND; 401 UNAUTHENTICATED, INVALID_CREDENTIALS; 403 ACCESS_DENIED; 404 PLAN_NOT_FOUND, IMPORT_SESSION_NOT_FOUND, REQUIREMENT_NOT_FOUND; 409 DATA_REVISION_STALE, PLAN_VERSION_CONFLICT, PLAN_NOT_EDITABLE, ACCOUNT_ALREADY_EXISTS, IMPORT_SESSION_CLOSED, IMPORT_VERSION_CONFLICT; 413 UPLOAD_TOO_LARGE; 415 UNSUPPORTED_FILE_TYPE; 422 PLAN_NOT_VALIDATED, PLAN_VALIDATION_FAILED, IMPORT_HAS_BLOCKING_ISSUES; 429 IMPORT_LIMIT_REACHED; 501 NOT_IMPLEMENTED."
+      description: "Mã lỗi nghiệp vụ. 400 VALIDATION_ERROR, CURRICULUM_NOT_FOUND; 401 UNAUTHENTICATED, INVALID_CREDENTIALS; 403 ACCESS_DENIED; 404 PLAN_NOT_FOUND, IMPORT_SESSION_NOT_FOUND, REQUIREMENT_NOT_FOUND; 409 DATA_REVISION_STALE, PLAN_VERSION_CONFLICT, PLAN_NOT_EDITABLE, ACCOUNT_ALREADY_EXISTS, IMPORT_SESSION_CLOSED, IMPORT_VERSION_CONFLICT; 413 UPLOAD_TOO_LARGE; 415 UNSUPPORTED_FILE_TYPE; 422 PLAN_NOT_VALIDATED, PLAN_VALIDATION_FAILED, IMPORT_HAS_BLOCKING_ISSUES; 429 IMPORT_LIMIT_REACHED; 501 NOT_IMPLEMENTED; 503 TOOL_NOT_READY; 404 CONVERSATION_NOT_FOUND."
       enum:
         - VALIDATION_ERROR
         - PLAN_NOT_FOUND
@@ -1038,6 +1129,8 @@ components:
         - IMPORT_LIMIT_REACHED
         - UPLOAD_TOO_LARGE
         - UNSUPPORTED_FILE_TYPE
+        - TOOL_NOT_READY
+        - CONVERSATION_NOT_FOUND
     ApiErrorResponse:
       type: object
       description: "Body lỗi chung cho mọi response 4xx/5xx nghiệp vụ."
@@ -1502,6 +1595,14 @@ components:
           description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
           example: REV-2024604757-001
           nullable: true
+        validationMode:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/ValidationMode"
+        policyVersion:
+          type: string
+          description: "Phiên bản quy chế dùng khi thẩm định; đổi quy chế thì phải thẩm định lại trước khi kích hoạt."
+          nullable: true
     SaveStudyPlanRequest:
       type: object
       description: "Lưu nháp. planId null → tạo DRAFT mới. planId của DRAFT/VALIDATED → cập nhật tại chỗ, về DRAFT, planVersion+1. planId của ACTIVE → tạo DRAFT mới kế thừa, ACTIVE giữ nguyên. ARCHIVED/COMPLETED → 409 PLAN_NOT_EDITABLE (dùng restore)."
@@ -1759,6 +1860,11 @@ components:
         activatedAt:
           type: string
           description: "Thời điểm kích hoạt (nếu từng ACTIVE)."
+          format: date-time
+          nullable: true
+        validatedAt:
+          type: string
+          description: "Thời điểm thẩm định thật gần nhất còn hiệu lực (null nếu chưa/đã sửa sau đó)."
           format: date-time
           nullable: true
     ReconcileStudyPlanRequest:
@@ -2270,6 +2376,67 @@ components:
           description: "Mã/diễn giải cảnh báo, ví dụ TRANSCRIPT_REQUIRED, POLICY_SOURCE_UNAVAILABLE."
           items:
             type: string
+    AcademicCapability:
+      type: string
+      description: "[Port] Capability của AcademicFacade; implementation khai báo capability đã là công cụ thật qua readyCapabilities()."
+      enum:
+        - GET_ACADEMIC_STATUS
+        - CHECK_COURSE_ELIGIBILITY
+        - GENERATE_STUDY_PLAN
+        - VALIDATE_STUDY_PLAN
+        - SIMULATE_GRADES
+        - RANK_RETAKE_COURSES
+        - CALCULATE_TARGET_GRADES
+        - RUN_GRADUATION_AUDIT
+        - RECONCILE_STUDY_PLAN
+    AcademicToolStatus:
+      type: string
+      description: "READY: công cụ thật; MOCK: chỉ dev/test, kết quả thử; NOT_READY: chưa có công cụ thật (503 TOOL_NOT_READY / 501)."
+      enum: [READY, MOCK, NOT_READY]
+    AcademicToolReadinessItem:
+      type: object
+      description: "Trạng thái một công cụ học vụ."
+      required: [capability, status]
+      properties:
+        capability:
+          $ref: "#/components/schemas/AcademicCapability"
+        status:
+          $ref: "#/components/schemas/AcademicToolStatus"
+    ValidationMode:
+      type: string
+      description: "REAL: công cụ thẩm định thật; MOCK: thẩm định thử ở dev/test, không bao giờ dẫn tới VALIDATED/ACTIVE."
+      enum: [REAL, MOCK]
+    ConversationSummaryItem:
+      type: object
+      description: "Một hội thoại trong lịch sử chat."
+      required: [conversationId, title]
+      properties:
+        conversationId:
+          type: string
+          description: "Mã hội thoại."
+        title:
+          type: string
+          description: "Tiêu đề."
+        createdAt:
+          type: string
+          description: "Thời điểm tạo."
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          description: "Lần cập nhật gần nhất."
+          format: date-time
+          nullable: true
+    ConversationListResponse:
+      type: object
+      description: "Lịch sử hội thoại của sinh viên đang đăng nhập, mới cập nhật trước."
+      required: [conversations]
+      properties:
+        conversations:
+          type: array
+          description: "Hội thoại."
+          items:
+            $ref: "#/components/schemas/ConversationSummaryItem"
     AccountRole:
       type: string
       description: "Vai trò tài khoản; hệ thống chỉ có STUDENT."
