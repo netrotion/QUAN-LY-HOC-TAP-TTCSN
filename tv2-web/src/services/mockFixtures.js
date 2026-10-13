@@ -304,6 +304,7 @@ export function createMockEligibilityResponse(payload = {}) {
  */
 export const MOCK_GRADUATION_AUDIT = Object.freeze({
   studentId: 'std-2026-001',
+  reportType: 'ACTUAL',
   eligibleForGraduation: false,
   eligibleForThesis: false, // BR-09: Cần >= 85% tổng tín chỉ (115/135 TC)
   completedPercentage: 82,
@@ -395,6 +396,93 @@ export const MOCK_GRADUATION_AUDIT = Object.freeze({
     }
   ],
   dataRevision: 'rev-1001',
+  fixtureLabel: FIXTURE_TAG,
+  regulationTag: UNVERIFIED_RULE_TAG
+});
+
+/**
+ * Báo cáo Kiểm toán Tốt nghiệp Dự kiến (Kèm Lộ trình Bù đắp / Simulation — Task 3.9)
+ * Phản ánh kết quả sau khi sinh viên hoàn thành toàn bộ lộ trình bù đắp 2 học kỳ (135/135 TC, CPA 3.25 Loại Giỏi)
+ */
+export const MOCK_PROJECTED_GRADUATION_AUDIT = Object.freeze({
+  studentId: 'std-2026-001',
+  reportType: 'PROJECTED',
+  eligibleForGraduation: true,
+  eligibleForThesis: true,
+  completedPercentage: 100,
+  accumulatedCredits: 135,
+  totalCreditsRequired: 135,
+  trainingScore: 82,
+  trainingClassification: 'Tốt (Đạt chuẩn tốt nghiệp)',
+  retakeCreditsPercentage: 2.2,
+  expectedDegreeRank: 'Giỏi (CPA dự kiến 3.25 sau khi hoàn thành lộ trình bù đắp)',
+  checklist: [
+    {
+      id: 'CHK-01',
+      category: '1. TÍN CHỈ TÍCH LŨY',
+      name: 'Tổng số tín chỉ tích lũy toàn khóa (BR-10)',
+      completed: true,
+      totalCreditsRequired: 135,
+      accumulatedCredits: 135,
+      statusMessage: 'Dự kiến hoàn thành 135 / 135 tín chỉ (Đạt 100% CTĐT sau Kỳ 7 và Kỳ 8 bù đắp)'
+    },
+    {
+      id: 'CHK-02',
+      category: '2. KHỐI BẮT BUỘC',
+      name: 'Khối kiến thức giáo dục đại cương & bắt buộc ngành',
+      completed: true,
+      totalCreditsRequired: 94,
+      accumulatedCredits: 94,
+      statusMessage: 'Hoàn thành 100% khối kiến thức bắt buộc (đã bao gồm gỡ nợ MATH1002)'
+    },
+    {
+      id: 'CHK-03',
+      category: '3. TỰ CHỌN CHUYÊN NGÀNH',
+      name: 'Khối kiến thức tự chọn chuyên ngành',
+      completed: true,
+      totalCreditsRequired: 12,
+      accumulatedCredits: 12,
+      statusMessage: 'Dự kiến hoàn thành 12 / 12 tín chỉ tự chọn (bổ sung IT6010 & IT6015)'
+    },
+    {
+      id: 'CHK-04',
+      category: '4. CHUẨN NGOẠI NGỮ',
+      name: 'Chứng chỉ Chuẩn đầu ra Ngoại ngữ (TOEIC 550 / VSTEP - DEMO_UNVERIFIED)',
+      completed: true,
+      totalCreditsRequired: null,
+      accumulatedCredits: null,
+      statusMessage: 'Đã nộp chứng chỉ TOEIC 550 (Hợp lệ - Tích xanh)'
+    },
+    {
+      id: 'CHK-05',
+      category: '5. CHUẨN TIN HỌC',
+      name: 'Chuẩn đầu ra Tin học quốc tế (MOS/IC3 - DEMO_UNVERIFIED)',
+      completed: true,
+      totalCreditsRequired: null,
+      accumulatedCredits: null,
+      statusMessage: 'Dự kiến nộp chứng chỉ MOS trước hạn chót 2027-03-31 theo lịch nhắc thi'
+    },
+    {
+      id: 'CHK-06',
+      category: '6. GDTC & GDQP-AN',
+      name: 'Giáo dục thể chất & Giáo dục Quốc phòng - An ninh',
+      completed: true,
+      totalCreditsRequired: null,
+      accumulatedCredits: null,
+      statusMessage: 'Đã hoàn thành đầy đủ chứng chỉ GDTC và GDQP-AN'
+    },
+    {
+      id: 'CHK-07',
+      category: '7. ĐIỂM RÈN LUYỆN',
+      name: 'Điểm rèn luyện tích lũy toàn khóa',
+      completed: true,
+      totalCreditsRequired: null,
+      accumulatedCredits: null,
+      statusMessage: '82 điểm (Loại Tốt - Đạt yêu cầu)'
+    }
+  ],
+  pendingActions: [],
+  dataRevision: 'rev-1001-projected',
   fixtureLabel: FIXTURE_TAG,
   regulationTag: UNVERIFIED_RULE_TAG
 });

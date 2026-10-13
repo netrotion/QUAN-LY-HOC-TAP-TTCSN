@@ -289,8 +289,10 @@ function resolveMockFixture(method, normalizedPath, body, options = {}) {
       return mockAcademicService.getTranscript();
     case 'POST /academic/transcript/imports/manual':
       return mockAcademicService.createImportSession({ isManual: true, rows: body?.rows });
-    case 'GET /audit/graduation':
-      return { ...MOCK_GRADUATION_AUDIT };
+    case 'GET /audit/graduation': {
+      const isProjected = normalizedPath.includes('mode=projected') || options?.mode === 'projected';
+      return mockAcademicService.getGraduationAudit({ mode: isProjected ? 'projected' : 'actual' });
+    }
     case 'POST /planner/generate':
       return { ...MOCK_STUDY_PLAN };
     case 'POST /planner/validate':
@@ -657,7 +659,11 @@ export function createApiClient(customConfig = {}) {
   });
 
   const audit = Object.freeze({
-    getGraduationAudit: (opts) => get('/audit/graduation', opts)
+    getGraduationAudit: (opts = {}) => {
+      const mode = typeof opts === 'string' ? opts : opts?.mode;
+      const path = mode === 'projected' ? '/audit/graduation?mode=projected' : (mode ? `/audit/graduation?mode=${mode}` : '/audit/graduation');
+      return get(path, typeof opts === 'object' ? opts : { mode });
+    }
   });
 
   const planner = Object.freeze({

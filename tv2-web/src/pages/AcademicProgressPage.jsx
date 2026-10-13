@@ -19,37 +19,43 @@ import {
  */
 export function AcademicProgressPage() {
   const navigate = useNavigate();
+  const [reportMode, setReportMode] = useState('actual'); // 'actual' | 'projected'
   const [auditData, setAuditData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isRemediationModalOpen, setIsRemediationModalOpen] = useState(false);
 
-  const fetchAudit = useCallback(async () => {
+  const fetchAudit = useCallback(async (mode = reportMode) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.audit.getGraduationAudit();
+      const response = await api.audit.getGraduationAudit({ mode });
       setAuditData(response);
     } catch (err) {
       setError(err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [reportMode]);
 
   useEffect(() => {
-    fetchAudit();
+    fetchAudit(reportMode);
     const unsubStore = subscribeAcademicStore(() => {
-      fetchAudit();
+      fetchAudit(reportMode);
     });
     const unsubApi = api.subscribe(() => {
-      fetchAudit();
+      fetchAudit(reportMode);
     });
     return () => {
       unsubStore();
       unsubApi();
     };
-  }, [fetchAudit]);
+  }, [fetchAudit, reportMode]);
+
+  const handleSwitchReportMode = (newMode) => {
+    setReportMode(newMode);
+    fetchAudit(newMode);
+  };
 
   const checklistColumns = [
     {
@@ -82,20 +88,20 @@ export function AcademicProgressPage() {
       key: 'completed',
       title: 'Trạng thái',
       align: 'center',
-      width: '160px',
+      width: '180px',
       render: (completed, row) => {
         if (completed === true) {
           return <span className="haui-badge haui-badge--success">✓ ĐẠT (Hợp lệ)</span>;
         }
         if (completed === false) {
-          const isRedAlert = row.category.includes('TIN HỌC');
+          const isRedAlert = row.category.includes('TIN HỌC') || row.category.includes('NỢ MÔN');
           return (
             <span className={`haui-badge ${isRedAlert ? 'haui-badge--error' : 'haui-badge--warning'}`}>
               {isRedAlert ? '🚨 CẢNH BÁO ĐỎ' : '⚠️ CÒN THIẾU'}
             </span>
           );
         }
-        return <span className="haui-badge haui-badge--neutral">UNKNOWN (null)</span>;
+        return <span className="haui-badge haui-badge--neutral">○ CHƯA XÁC ĐỊNH / CHỜ DUYỆT</span>;
       }
     },
     {
@@ -150,14 +156,15 @@ export function AcademicProgressPage() {
     }
   ];
 
-  const pct = auditData?.completedPercentage ?? 82;
+  const isProjected = reportMode === 'projected' || auditData?.reportType === 'PROJECTED';
+  const pct = auditData?.completedPercentage ?? (isProjected ? 100 : 82);
   const radius = 52;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (pct / 100) * circumference;
 
   return (
     <div className="haui-audit-container" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-      {/* Khối Tiêu đề dành riêng cho Chế độ in ấn & Xuất PDF (@media print) */}
+      {/* Khối Tiêu đề dành riêng cho Chế độ in ấn & Xuất PDF (@media print) — Phân định rõ ràng Thực tế vs Dự kiến */}
       <div className="haui-print-header">
         <div style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '2px solid #000', paddingBottom: '12px' }}>
           <div style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase' }}>
@@ -166,12 +173,63 @@ export function AcademicProgressPage() {
           <div style={{ fontSize: '12px', fontStyle: 'italic', color: '#333' }}>
             Phòng Đào tạo &bull; Hệ thống Cố vấn Lộ trình Học tập HaUI Advisor
           </div>
-          <h1 style={{ fontSize: '18px', fontWeight: 800, margin: '10px 0 4px', textTransform: 'uppercase', color: '#000000' }}>
-            BÁO CÁO KIỂM TOÁN TỐT NGHIỆP 100% TIÊU CHÍ (DEGREE AUDIT)
+          <h1
+            className="haui-print-title"
+            style={{
+              fontSize: '18px',
+              fontWeight: 800,
+              margin: '10px 0 4px',
+              textTransform: 'uppercase',
+              color: isProjected ? '#1e3a8a' : '#000000'
+            }}
+          >
+            {isProjected
+              ? 'BÁO CÁO KIỂM TOÁN TỐT NGHIỆP — DỰ KIẾN (KÈM LỘ TRÌNH BÙ ĐẮP)'
+              : 'BÁO CÁO KIỂM TOÁN TỐT NGHIỆP — DỮ LIỆU THỰC TẾ (HIỆN TẠI)'}
           </h1>
-          <div style={{ fontSize: '11px', color: '#555' }}>
-            Mã văn bản: AUDIT-HAUI-{Date.now().toString().slice(-6)} &bull; Trạng thái: DEMO_UNVERIFIED
+          <div
+            className={`haui-print-badge ${isProjected ? 'haui-print-badge--projected' : 'haui-print-badge--actual'}`}
+            style={{
+              display: 'inline-block',
+              padding: '4px 12px',
+              fontSize: '11px',
+              fontWeight: 700,
+              borderRadius: '4px',
+              margin: '4px 0 8px',
+              border: isProjected ? '1px solid #b91c1c' : '1px solid #64748b',
+              backgroundColor: isProjected ? '#fef2f2' : '#f8fafc',
+              color: isProjected ? '#b91c1c' : '#0f172a'
+            }}
+          >
+            {isProjected
+              ? '⚠️ BÁO CÁO MÔ PHỎNG DỰ KIẾN (SIMULATION ONLY) — KHÔNG THAY THẾ BẢNG ĐIỂM CHÍNH THỨC'
+              : '● BÁO CÁO THỰC TẾ — PHẢN ÁNH DỮ LIỆU CHÍNH THỨC e-HaUI'}
           </div>
+          <div style={{ fontSize: '11px', color: '#555' }}>
+            Mã văn bản: {isProjected ? 'AUDIT-SIM-' : 'AUDIT-ACTUAL-'}
+            {Date.now().toString().slice(-6)} &bull; Phân loại:{' '}
+            <strong>{isProjected ? 'DỰ KIẾN / SIMULATION' : 'CHÍNH THỨC / THỰC TẾ'}</strong> &bull; Trạng thái: DEMO_UNVERIFIED
+          </div>
+        </div>
+
+        {/* Cảnh báo in ấn bắt buộc: TUYỆT ĐỐI KHÔNG ĐỂ LẪN DỰ KIẾN VỚI THỰC TẾ */}
+        <div
+          className={`haui-print-disclaimer ${isProjected ? 'haui-print-disclaimer--projected' : 'haui-print-disclaimer--actual'}`}
+          style={{
+            padding: '8px 12px',
+            marginBottom: '14px',
+            fontSize: '11px',
+            lineHeight: 1.5,
+            borderRadius: '4px',
+            borderLeft: isProjected ? '4px solid #dc2626' : '4px solid #0052cc',
+            backgroundColor: isProjected ? '#fff1f2' : '#eff6ff',
+            color: isProjected ? '#991b1b' : '#1e3a8a',
+            fontWeight: 600
+          }}
+        >
+          {isProjected
+            ? '🚨 CẢNH BÁO BẢN IN DỰ KIẾN / MÔ PHỎNG: Báo cáo này được lập dựa trên kế hoạch bù đắp các học phần nợ và chứng chỉ còn thiếu. TUYỆT ĐỐI KHÔNG CÓ GIÁ TRỊ PHÁP LÝ XÉT TỐT NGHIỆP CHÍNH THỨC cho đến khi tất cả học phần và chứng chỉ được hoàn thành trên hệ thống điểm thực tế e-HaUI.'
+            : '⚠️ BÁO CÁO HỌC VỤ THỰC TẾ: Báo cáo này phản ánh trung thực kết quả học tập và tích lũy ghi nhận trên cổng e-HaUI tính đến thời điểm in. Sinh viên CHƯA ĐỦ ĐIỀU KIỆN TỐT NGHIỆP nếu còn tiêu chí thiếu hoặc cảnh báo đỏ.'}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px', marginBottom: '16px', padding: '10px 14px', backgroundColor: 'var(--color-bg-muted)', border: '1px solid var(--color-border)', borderRadius: '4px' }}>
@@ -179,16 +237,80 @@ export function AcademicProgressPage() {
           <div><strong>Mã số sinh viên:</strong> {api.getConfig().sessionStudent?.studentId || 'std-2026-001'}</div>
           <div><strong>Ngành đào tạo:</strong> {api.getConfig().sessionStudent?.majorName || 'Kỹ thuật phần mềm (CNTT)'}</div>
           <div><strong>Khóa / Lớp:</strong> {api.getConfig().sessionStudent?.cohort || 'K17'} &bull; {api.getConfig().sessionStudent?.advisorClass || 'KTPM01-K17'}</div>
-          <div><strong>Tín chỉ tích lũy:</strong> {auditData?.accumulatedCredits ?? 112} / {auditData?.totalCreditsRequired ?? 135} TC ({pct}%)</div>
-          <div><strong>Đủ ĐK Tốt nghiệp:</strong> {auditData?.eligibleForGraduation ? '✓ ĐẠT YÊU CẦU' : 'CHƯA ĐẠT (CÒN ĐIỀU KIỆN THIẾU)'}</div>
+          <div><strong>Tín chỉ tích lũy:</strong> {auditData?.accumulatedCredits ?? (isProjected ? 135 : 112)} / {auditData?.totalCreditsRequired ?? 135} TC ({pct}%)</div>
+          <div>
+            <strong>Đủ ĐK Tốt nghiệp:</strong>{' '}
+            {auditData?.eligibleForGraduation ? (
+              <span style={{ color: isProjected ? '#2563eb' : '#16a34a', fontWeight: 700 }}>
+                {isProjected ? '✓ ĐẠT YÊU CẦU (DỰ KIẾN SAU BÙ ĐẮP)' : '✓ ĐẠT YÊU CẦU THỰC TẾ'}
+              </span>
+            ) : (
+              <span style={{ color: '#dc2626', fontWeight: 700 }}>CHƯA ĐẠT (CÒN ĐIỀU KIỆN THIẾU)</span>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Màn hình 9: Header + Vòng tròn tiến độ tổng thể 82% + Nút Lập kế hoạch bù đắp */}
+      {/* Thanh chuyển đổi chế độ xem Báo cáo: Thực tế vs Dự kiến */}
+      <div
+        className="haui-report-mode-switcher"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 'var(--space-3)',
+          padding: 'var(--space-3) var(--space-4)',
+          backgroundColor: 'var(--color-bg-surface)',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--color-border)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+            Chế độ Báo cáo Học vụ (Task 3.9):
+          </span>
+          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+            <button
+              type="button"
+              className={`haui-state-pill ${!isProjected ? 'haui-state-pill--active' : ''}`}
+              onClick={() => handleSwitchReportMode('actual')}
+              title="Xem Báo cáo dựa trên dữ liệu học tập thực tế hiện có trên e-HaUI"
+            >
+              📋 Báo cáo Thực tế (Hiện tại — {auditData?.reportType === 'ACTUAL' ? pct : 82}%)
+            </button>
+            <button
+              type="button"
+              className={`haui-state-pill ${isProjected ? 'haui-state-pill--active' : ''}`}
+              onClick={() => handleSwitchReportMode('projected')}
+              title="Xem Báo cáo dự kiến mô phỏng sau khi hoàn thành lộ trình bù đắp 2 học kỳ"
+            >
+              🔮 Báo cáo Dự kiến (Kèm Lộ trình Bù đắp — 100%)
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.print()}
+            title="In báo cáo học vụ hoặc Lưu PDF khổ A4 theo chế độ đang chọn"
+          >
+            🖨️ In Báo Cáo ({isProjected ? 'Dự kiến' : 'Thực tế'})
+          </Button>
+        </div>
+      </div>
+
+      {/* Màn hình 9: Header + Vòng tròn tiến độ tổng thể + Nút Lập kế hoạch bù đắp */}
       <Card
         variant={auditData?.eligibleForGraduation ? 'status-success' : 'status-warning'}
-        title="Màn hình 9: Bảng Kiểm toán Tốt nghiệp 100% (Graduation Degree Audit)"
-        subtitle="Luồng chính 3: Tự động rà soát 100% điều kiện tốt nghiệp (G7, US-11, FR-17, BR-08..BR-10, AC-05)"
+        title={`Màn hình 9: Bảng Kiểm toán Tốt nghiệp 100% (${isProjected ? 'Báo cáo Dự kiến Mô phỏng' : 'Báo cáo Thực tế Hiện tại'})`}
+        subtitle={
+          isProjected
+            ? 'Mô phỏng kết quả sau khi sinh viên hoàn thành toàn bộ môn nợ, tín chỉ tự chọn và chứng chỉ MOS'
+            : 'Luồng chính 3: Tự động rà soát 100% điều kiện tốt nghiệp (G7, US-11, FR-17, BR-08..BR-10, AC-05)'
+        }
         headerAction={
           <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', flexWrap: 'wrap' }}>
             <Button
@@ -206,11 +328,10 @@ export function AcademicProgressPage() {
             >
               🛠️ Lập kế hoạch bù đắp các điều kiện còn thiếu
             </Button>
-            <Button variant="secondary" size="sm" loading={loading} onClick={fetchAudit}>
+            <Button variant="secondary" size="sm" loading={loading} onClick={() => fetchAudit(reportMode)}>
               Kiểm tra lại
             </Button>
           </div>
-        }
       >
         {loading && <Loading label="Đang rà soát 100% hồ sơ điều kiện tốt nghiệp..." />}
 
@@ -441,7 +562,12 @@ export function AcademicProgressPage() {
 
       {/* Khối Chữ ký dành riêng cho Chế độ in ấn (@media print) */}
       <div className="haui-print-signatures">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', textAlign: 'center', marginTop: '36px', paddingTop: '16px' }}>
+        <div style={{ fontSize: '11px', fontStyle: 'italic', marginBottom: '8px', textAlign: 'center', color: '#475569' }}>
+          {isProjected
+            ? 'Xác nhận Kế hoạch Học tập Bù đắp Dự kiến (Sinh viên cam kết hoàn thành đúng lộ trình để đạt chuẩn tốt nghiệp):'
+            : 'Xác nhận Báo cáo Kết quả Học tập và Rà soát Điều kiện Tốt nghiệp Thực tế:'}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', textAlign: 'center', marginTop: '16px', paddingTop: '12px' }}>
           <div>
             <strong style={{ fontSize: '13px' }}>SINH VIÊN XÁC NHẬN</strong>
             <div style={{ fontSize: '11px', fontStyle: 'italic', marginTop: '4px' }}>(Ký và ghi rõ họ tên)</div>

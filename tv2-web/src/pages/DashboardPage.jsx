@@ -419,6 +419,22 @@ export function DashboardPage({ mountedRouteSummary }) {
             <Button variant="secondary" size="sm" onClick={() => navigate('/what-if')}>
               🧮 Mô phỏng điểm CPA (What-if)
             </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate('/planner?plan_id=plan-2026-9001')}
+              title="Mở kế hoạch học tập đã lưu gần nhất (Kế hoạch cũ) của sinh viên"
+            >
+              📂 Mở Kế hoạch Học tập Đã lưu (Kế hoạch cũ)
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate('/audit')}
+              title="Mở Bảng Kiểm toán Tốt nghiệp 100% tiêu chí & In báo cáo học vụ"
+            >
+              🎓 Kiểm toán Tốt nghiệp &amp; Báo cáo in
+            </Button>
             <Button variant="secondary" size="sm" onClick={() => navigate('/planner')}>
               📅 Xem lộ trình học tập
             </Button>
@@ -620,7 +636,80 @@ export function DashboardPage({ mountedRouteSummary }) {
         </Card>
       </div>
 
-      {/* 5. Thanh tiến độ Chương trình đào tạo (Degree Progress Bar theo 5 Khối kiến thức) */}
+      {/* 5. Khối Tiến độ Học vụ & Kế hoạch Học tập Đã lưu (Task 3.9) */}
+      <Card
+        title="Tiến độ Học vụ & Kế hoạch Học tập Đã lưu (Task 3.9)"
+        subtitle="Theo dõi tiến độ tích lũy thực tế và kế hoạch học tập đã đăng ký/lưu trữ gần nhất"
+        variant="status-info"
+        headerAction={
+          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/audit')}
+              title="Mở bảng kiểm toán tốt nghiệp và in báo cáo"
+            >
+              🎓 Kiểm toán Tốt nghiệp (Audit)
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => navigate('/planner?plan_id=plan-2026-9001')}
+              title="Mở kế hoạch học tập cũ đã lưu trên hệ thống"
+            >
+              📂 Mở Kế hoạch cũ (ACTIVE) &rarr;
+            </Button>
+          </div>
+        }
+      >
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-4)' }}>
+          <div style={{ padding: 'var(--space-3)', backgroundColor: 'var(--color-bg-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontWeight: 600 }}>
+              KẾ HOẠCH HỌC TẬP GẦN NHẤT
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+              <strong style={{ fontSize: 'var(--text-base)', color: 'var(--color-primary)' }}>
+                plan-2026-9001
+              </strong>
+              <span className="haui-badge haui-badge--success">ACTIVE</span>
+            </div>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
+              Kế hoạch K17 – 18 tín chỉ kỳ tới &bull; Lưu: 2026-10-13
+            </div>
+          </div>
+
+          <div style={{ padding: 'var(--space-3)', backgroundColor: 'var(--color-bg-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontWeight: 600 }}>
+              TIẾN ĐỘ KIỂM TOÁN TỐT NGHIỆP
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+              <strong style={{ fontSize: 'var(--text-base)' }}>82% Hoàn thành</strong>
+              <span className="haui-badge haui-badge--warning">5/7 Đạt</span>
+            </div>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-warning-text)', marginTop: '4px' }}>
+              Còn 2 điều kiện cần bù đắp (Tin học MOS &amp; 6 TC tự chọn)
+            </div>
+          </div>
+
+          <div style={{ padding: 'var(--space-3)', backgroundColor: 'var(--color-bg-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontWeight: 600 }}>
+              BÁO CÁO HỌC VỤ &amp; IN ẤN
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+                Hỗ trợ xuất PDF chuẩn A4 (Thực tế &bull; Dự kiến)
+              </span>
+            </div>
+            <div style={{ marginTop: '8px' }}>
+              <Button variant="outline" size="sm" onClick={() => navigate('/audit')}>
+                🖨️ Xuất Báo Cáo Học Vụ &rarr;
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* 6. Thanh tiến độ Chương trình đào tạo (Degree Progress Bar theo 5 Khối kiến thức) */}
       <Card
         title="Thanh Tiến độ Chương trình Đào tạo theo Khối Kiến thức (Degree Progress Bar)"
         subtitle="Phân rã tỷ lệ hoàn thành từng khối kiến thức ngành Kỹ thuật phần mềm / CNTT"

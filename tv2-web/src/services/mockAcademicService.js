@@ -10,7 +10,7 @@
  * - Luồng 3 bước Import Bảng điểm: Upload/Manual -> Review/Edit Rows -> Confirm & Tái tính toán trạng thái.
  */
 
-import { FIXTURE_TAG, UNVERIFIED_RULE_TAG } from './mockFixtures.js';
+import { FIXTURE_TAG, UNVERIFIED_RULE_TAG, MOCK_GRADUATION_AUDIT, MOCK_PROJECTED_GRADUATION_AUDIT } from './mockFixtures.js';
 
 // Thang điểm 4 HaUI quy đổi từ điểm chữ
 const GRADE_POINT_4_MAP = Object.freeze({
@@ -794,6 +794,141 @@ class MockAcademicServiceState {
       accumulated_credits: metrics.accumulatedCredits,
       academic_status: metrics.academicStatus,
       warnings: metrics.warnings
+    };
+  }
+
+  /**
+   * Báo cáo Kiểm toán Tốt nghiệp 100% Tiêu chí (Task 3.9)
+   * Hỗ trợ 2 chế độ:
+   * - 'actual' (Thực tế): Phản ánh dữ liệu chính thức e-HaUI (82%, 112/135 TC, thiếu tự chọn và MOS, nợ MATH1002).
+   * - 'projected' (Dự kiến): Mô phỏng hoàn thành lộ trình bù đắp 2 kỳ (100%, 135/135 TC, CPA 3.25 Loại Giỏi).
+   * @param {Object|string} [options]
+   */
+  getGraduationAudit(options = {}) {
+    const mode = typeof options === 'string' ? options : (options?.mode || 'actual');
+    if (mode === 'projected') {
+      return { ...MOCK_PROJECTED_GRADUATION_AUDIT };
+    }
+
+    const student = this.getActivePersona();
+    if (student.studentId === 'std-2026-001' || !student.studentId) {
+      return { ...MOCK_GRADUATION_AUDIT };
+    }
+    const metrics = computeServerAcademicMetrics(student.attempts, student.totalCreditsRequired, student);
+    const earned = metrics.accumulatedCredits;
+    const total = student.totalCreditsRequired || 135;
+    const completedPercentage = Math.min(100, Math.round((earned / total) * 100));
+
+    // Xây dựng 7 tiêu chí kiểm toán
+    const checklist = [
+      {
+        id: 'CHK-01',
+        category: '1. TÍN CHỈ TÍCH LŨY',
+        name: 'Tổng số tín chỉ tích lũy toàn khóa (BR-10)',
+        completed: earned >= total,
+        totalCreditsRequired: total,
+        accumulatedCredits: earned,
+        statusMessage: earned >= total
+          ? `Đã tích lũy đủ ${earned} / ${total} tín chỉ`
+          : `Đạt ${earned} / ${total} tín chỉ (Còn thiếu ${total - earned} tín chỉ)`
+      },
+      {
+        id: 'CHK-02',
+        category: '2. KHỐI BẮT BUỘC',
+        name: 'Khối kiến thức giáo dục đại cương & bắt buộc ngành',
+        completed: earned >= 94,
+        totalCreditsRequired: 94,
+        accumulatedCredits: Math.min(94, earned),
+        statusMessage: earned >= 94
+          ? 'Hoàn thành 100% các học phần bắt buộc'
+          : `Đã tích lũy ${Math.min(94, earned)} / 94 tín chỉ bắt buộc`
+      },
+      {
+        id: 'CHK-03',
+        category: '3. TỰ CHỌN CHUYÊN NGÀNH',
+        name: 'Khối kiến thức tự chọn chuyên ngành',
+        completed: earned >= 106,
+        totalCreditsRequired: 12,
+        accumulatedCredits: Math.min(12, Math.max(0, earned - 94)),
+        statusMessage: earned >= 106
+          ? 'Đã hoàn thành 12/12 tín chỉ tự chọn'
+          : 'Đã tích lũy 6 / 12 tín chỉ (Cảnh báo: Cần đăng ký thêm 2 môn tự chọn trong danh mục)'
+      },
+      {
+        id: 'CHK-04',
+        category: '4. CHUẨN NGOẠI NGỮ',
+        name: 'Chứng chỉ Chuẩn đầu ra Ngoại ngữ (TOEIC 550 / VSTEP - DEMO_UNVERIFIED)',
+        completed: student.studentId !== 'std-2026-empty',
+        totalCreditsRequired: null,
+        accumulatedCredits: null,
+        statusMessage: student.studentId !== 'std-2026-empty'
+          ? 'Đã nộp chứng chỉ TOEIC 550 (Hợp lệ - Tích xanh)'
+          : 'Chưa có chứng chỉ ngoại ngữ nộp về phòng Đào tạo (DEMO_UNVERIFIED)'
+      },
+      {
+        id: 'CHK-05',
+        category: '5. CHUẨN TIN HỌC',
+        name: 'Chuẩn đầu ra Tin học quốc tế (MOS/IC3 - DEMO_UNVERIFIED)',
+        completed: false,
+        totalCreditsRequired: null,
+        accumulatedCredits: null,
+        statusMessage: 'Chưa nộp (Cảnh báo đỏ AC-05: Hạn chót trước đợt xét tốt nghiệp 3 tháng)'
+      },
+      {
+        id: 'CHK-06',
+        category: '6. GDTC & GDQP-AN',
+        name: 'Giáo dục thể chất & Giáo dục Quốc phòng - An ninh',
+        completed: true,
+        totalCreditsRequired: null,
+        accumulatedCredits: null,
+        statusMessage: 'Đã hoàn thành đầy đủ chứng chỉ GDTC và GDQP-AN'
+      },
+      {
+        id: 'CHK-07',
+        category: '7. ĐIỂM RÈN LUYỆN',
+        name: 'Điểm rèn luyện tích lũy toàn khóa',
+        completed: true,
+        totalCreditsRequired: null,
+        accumulatedCredits: null,
+        statusMessage: `${student.studentId === 'std-2026-001' ? 78 : (student.studentId === 'std-2026-normal' ? 84 : 70)} điểm (Loại Khá - Đạt yêu cầu)`
+      }
+    ];
+
+    return {
+      studentId: student.studentId,
+      student_id: student.studentId,
+      reportType: 'ACTUAL',
+      eligibleForGraduation: earned >= total && checklist.every((c) => c.completed === true),
+      eligibleForThesis: earned >= 115, // BR-09: Cần >= 85% tổng tín chỉ (115/135 TC)
+      completedPercentage,
+      accumulatedCredits: earned,
+      totalCreditsRequired: total,
+      trainingScore: student.studentId === 'std-2026-001' ? 78 : 84,
+      trainingClassification: 'Khá (Đạt yêu cầu xét tốt nghiệp)',
+      retakeCreditsPercentage: 2.2,
+      expectedDegreeRank: metrics.cpa && metrics.cpa >= 3.2 ? 'Giỏi' : (metrics.cpa && metrics.cpa >= 2.5 ? 'Khá' : 'Trung bình'),
+      checklist,
+      pendingActions: [
+        {
+          certificateType: 'MOS',
+          requiredStandard: 'Đạt chứng chỉ Tin học MOS 3 môn (DEMO_UNVERIFIED)',
+          actionDescription: 'Đăng ký thi đợt gần nhất tại Trung tâm CNTT và nộp chứng chỉ trước đợt xét tốt nghiệp 3 tháng',
+          deadline: '2027-03-31',
+          status: 'PENDING'
+        },
+        ...(earned < total ? [
+          {
+            certificateType: 'ELECTIVE_CREDITS',
+            requiredStandard: 'Bổ sung 6 tín chỉ Tự chọn chuyên ngành (2 học phần)',
+            actionDescription: 'Đưa 2 môn tự chọn (IT6010, IT6015) vào Kế hoạch học tập kỳ tới',
+            deadline: '2027-01-15',
+            status: 'PENDING'
+          }
+        ] : [])
+      ],
+      dataRevision: `REV-${student.studentId}-${this.sessionVersion}`,
+      fixtureLabel: FIXTURE_TAG,
+      regulationTag: UNVERIFIED_RULE_TAG
     };
   }
 }

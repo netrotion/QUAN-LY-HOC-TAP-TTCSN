@@ -15,7 +15,8 @@
 import {
   FIXTURE_TAG,
   UNVERIFIED_RULE_TAG,
-  MOCK_GRADUATION_AUDIT
+  MOCK_GRADUATION_AUDIT,
+  MOCK_PROJECTED_GRADUATION_AUDIT
 } from './mockFixtures.js';
 import {
   mockAcademicService,
@@ -330,8 +331,13 @@ export function getDynamicAcademicStatus() {
 
 /**
  * Sinh phản hồi động cho `api.audit.getGraduationAudit()`
+ * Hỗ trợ 2 chế độ: 'actual' (Thực tế) và 'projected' (Dự kiến kèm bù đắp)
  */
-export function getDynamicGraduationAudit() {
+export function getDynamicGraduationAudit(mode = 'actual') {
+  if (mode === 'projected') {
+    return { ...MOCK_PROJECTED_GRADUATION_AUDIT };
+  }
+
   const snapshot = getAcademicSnapshot();
   const { student, metrics } = snapshot;
 
