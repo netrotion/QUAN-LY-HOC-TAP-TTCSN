@@ -186,16 +186,16 @@ export function DemoUiPage() {
           <Button
             variant="secondary"
             size="sm"
-            loading={apiLoading && activeEndpointLabel === 'POST /api/v1/academic/transcript-ingest (AC-01)'}
+            loading={apiLoading && activeEndpointLabel === 'POST /api/v1/academic/transcript/imports (AC-01)'}
             onClick={() =>
-              handleInvokeApi('POST /api/v1/academic/transcript-ingest (AC-01)', () =>
-                api.academic.ingestTranscript({
+              handleInvokeApi('POST /api/v1/academic/transcript/imports (AC-01)', () =>
+                api.academic.uploadTranscript({
                   fileName: 'Bang_Diem_Ca_Nhan_eHaUI_K17.pdf'
                 })
               )
             }
           >
-            POST /academic/transcript-ingest (AC-01)
+            POST /academic/transcript/imports (AC-01)
           </Button>
 
           <Button
@@ -585,7 +585,7 @@ export function DemoUiPage() {
             actionLabel="Tạo dữ liệu mẫu"
             onAction={() =>
               handleInvokeApi('POST /api/v1/simulation/retake-ranking', () =>
-                api.simulation.rankRetake({ maxCourses: 2 })
+                api.simulation.rankRetake({ maxSuggestions: 2 })
               )
             }
           />

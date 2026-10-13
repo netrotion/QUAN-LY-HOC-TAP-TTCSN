@@ -68,9 +68,9 @@ export function AcademicProgressPage() {
       align: 'center',
       width: '185px',
       render: (_, row) =>
-        row.requiredCredits !== null && row.requiredCredits !== undefined ? (
+        row.totalCreditsRequired !== null && row.totalCreditsRequired !== undefined ? (
           <span>
-            <strong>{row.earnedCredits ?? 'null'}</strong> / {row.requiredCredits} TC
+            <strong>{row.accumulatedCredits ?? 'null'}</strong> / {row.totalCreditsRequired} TC
           </span>
         ) : (
           <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>
@@ -179,7 +179,7 @@ export function AcademicProgressPage() {
           <div><strong>Mã số sinh viên:</strong> {api.getConfig().sessionStudent?.studentId || 'std-2026-001'}</div>
           <div><strong>Ngành đào tạo:</strong> {api.getConfig().sessionStudent?.majorName || 'Kỹ thuật phần mềm (CNTT)'}</div>
           <div><strong>Khóa / Lớp:</strong> {api.getConfig().sessionStudent?.cohort || 'K17'} &bull; {api.getConfig().sessionStudent?.advisorClass || 'KTPM01-K17'}</div>
-          <div><strong>Tín chỉ tích lũy:</strong> {auditData?.totalCreditsEarned ?? 112} / {auditData?.totalCreditsRequired ?? 135} TC ({pct}%)</div>
+          <div><strong>Tín chỉ tích lũy:</strong> {auditData?.accumulatedCredits ?? 112} / {auditData?.totalCreditsRequired ?? 135} TC ({pct}%)</div>
           <div><strong>Đủ ĐK Tốt nghiệp:</strong> {auditData?.eligibleForGraduation ? '✓ ĐẠT YÊU CẦU' : 'CHƯA ĐẠT (CÒN ĐIỀU KIỆN THIẾU)'}</div>
         </div>
       </div>
@@ -279,10 +279,10 @@ export function AcademicProgressPage() {
                   TỔNG TÍN CHỈ TÍCH LŨY (BR-10)
                 </div>
                 <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, marginTop: '4px' }}>
-                  {auditData.totalCreditsEarned} / {auditData.totalCreditsRequired} TC
+                  {auditData.accumulatedCredits} / {auditData.totalCreditsRequired} TC
                 </div>
                 <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-warning-text)', marginTop: '4px' }}>
-                  Còn thiếu {auditData.totalCreditsRequired - auditData.totalCreditsEarned} tín chỉ (gồm 6 TC tự chọn)
+                  Còn thiếu {auditData.totalCreditsRequired - auditData.accumulatedCredits} tín chỉ (gồm 6 TC tự chọn)
                 </div>
               </div>
 

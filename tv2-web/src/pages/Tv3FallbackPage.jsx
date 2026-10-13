@@ -55,7 +55,7 @@ export function Tv3FallbackPage({ routeSpec, api, ui, contractStatus }) {
           break;
         case 'what-if':
           if ( (customPayload.mode || whatIfMode) === 'retake') {
-            result = await api.simulation.rankRetake({ maxCourses: 3 });
+            result = await api.simulation.rankRetake({ maxSuggestions: 3 });
           } else if ((customPayload.mode || whatIfMode) === 'target') {
             result = await api.simulation.calculateTargetGrades({ targetCpa: 3.2 });
           } else {
@@ -280,7 +280,7 @@ export function Tv3FallbackPage({ routeSpec, api, ui, contractStatus }) {
                   align: 'center',
                   render: (_, row) => `${row.minScore10} – ${row.maxScore10}`
                 },
-                { key: 'score4', title: 'Thang điểm 4', width: '120px', align: 'center' },
+                { key: 'gradePoint', title: 'Thang điểm 4', width: '120px', align: 'center' },
                 { key: 'classification', title: 'Phân loại & Quy định học cải thiện (BR-05 / BR-06)' }
               ]}
               data={HAUI_GRADE_SCALE_BR05}

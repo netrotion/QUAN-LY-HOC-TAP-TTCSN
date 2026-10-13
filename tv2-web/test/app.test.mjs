@@ -87,7 +87,7 @@ test('2. Kiểm thử các kịch bản UI Flow & PRD (AC-01..AC-05, BR-01..BR-1
   const ingestOk = await client.academic.ingestTranscript({
     fileName: 'Bang_Diem_Ca_Nhan_eHaUI_K17.pdf'
   });
-  assert.equal(ingestOk.extractedCpa, 2.45);
+  assert.equal(ingestOk.reportedCpa, 2.45);
   assert.ok(ingestOk.records.length >= 6);
 
   await assert.rejects(
@@ -334,7 +334,7 @@ test('7. Task 2.2a: Màn hình Xác thực / Login (/login) và Chuyển đổi 
   assert.equal(atRiskSnap.student.fullName, 'Trần Thị Bình');
   assert.equal(atRiskSnap.metrics.cpa, 1.85);
   assert.ok(atRiskSnap.metrics.cpa < 2.0, 'Sinh viên nguy cơ học vụ phải có CPA < 2.0');
-  assert.ok(atRiskSnap.metrics.academicWarning.includes('Cảnh báo học vụ Mức 1'));
+  assert.ok(atRiskSnap.metrics.warnings.some((w) => w.includes('Cảnh báo học vụ Mức 1')));
   assert.ok(atRiskSnap.metrics.failedCourses.some((c) => c.courseCode === 'MATH1002'));
 
   // 4. Preset 3: Sinh viên chưa có bảng điểm (tài khoản trắng K19)
@@ -367,9 +367,9 @@ test('8. Task 2.2a: Luồng Nhập & Bóc tách bảng điểm (/transcript) và
   } = await import('../src/services/academicStore.js');
 
   const testRecords = [
-    { courseCode: 'MATH1001', courseName: 'Giải tích 1', credits: 3, letterGrade: 'A', score4: 4.0, status: 'PASSED' },
-    { courseCode: 'IT1001', courseName: 'Nhập môn lập trình', credits: 3, letterGrade: 'B+', score4: 3.5, status: 'PASSED' },
-    { courseCode: 'MATH1002', courseName: 'Toán rời rạc', credits: 3, letterGrade: 'F', score4: 0.0, status: 'FAILED' }
+    { courseCode: 'MATH1001', courseName: 'Giải tích 1', credits: 3, letterGrade: 'A', gradePoint: 4.0, status: 'PASSED' },
+    { courseCode: 'IT1001', courseName: 'Nhập môn lập trình', credits: 3, letterGrade: 'B+', gradePoint: 3.5, status: 'PASSED' },
+    { courseCode: 'MATH1002', courseName: 'Toán rời rạc', credits: 3, letterGrade: 'F', gradePoint: 0.0, status: 'FAILED' }
   ];
 
   // 1. Kiểm tra tính toán metrics: Tổng TC đạt = 6 (môn F không tính vào tín chỉ tích lũy), CPA = (3*4 + 3*3.5 + 3*0) / 9 = 22.5 / 9 = 2.50

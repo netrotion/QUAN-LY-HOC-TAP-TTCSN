@@ -528,7 +528,9 @@ export function CurriculumTreePage() {
               disabled={!eligibilityResult?.eligible}
               onClick={() => {
                 setEligibilityModalOpen(false);
-                navigate(`/planner?course_id=${selectedCourse?.courseCode}`);
+                const courseId = selectedCourse?.course_id || selectedCourse?.courseCode;
+                const activePlanId = 'default-plan';
+                navigate(`/planner?course_id=${encodeURIComponent(courseId)}&plan_id=${encodeURIComponent(activePlanId)}`);
               }}
             >
               {eligibilityResult?.eligible

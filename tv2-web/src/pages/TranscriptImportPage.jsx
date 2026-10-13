@@ -6,6 +6,7 @@ import {
   convertScore10ToGrade,
   getAcademicSnapshot
 } from '../services/academicStore.js';
+import { computeServerAcademicMetrics } from '../services/mockAcademicService.js';
 import { api } from '../services/apiClient.js';
 import { MOCK_TRANSCRIPT_INGESTION_PREVIEW } from '../services/mockFixtures.js';
 
@@ -122,15 +123,10 @@ export function TranscriptImportPage() {
       if (field === 'score10') {
         const converted = convertScore10ToGrade(value);
         target.letterGrade = converted.letterGrade;
-        target.score4 = converted.score4;
         target.status = converted.status;
       } else if (field === 'letterGrade') {
-        const gradeMap = {
-          A: 4.0, 'B+': 3.5, B: 3.0, 'C+': 2.5, C: 2.0, 'D+': 1.5, D: 1.0, F: 0.0
-        };
         const valUpper = String(value).toUpperCase().trim();
         target.letterGrade = valUpper;
-        target.score4 = gradeMap[valUpper] ?? 2.0;
         target.status = valUpper === 'F' ? 'FAILED' : (valUpper === 'D' || valUpper === 'D+') ? 'PASSED_LOW' : 'PASSED';
       }
 
@@ -156,7 +152,6 @@ export function TranscriptImportPage() {
       credits: Number(newCourseForm.credits || 3),
       score10: Number(newCourseForm.score10),
       letterGrade: newCourseForm.letterGrade || converted.letterGrade || 'B',
-      score4: converted.score4 ?? 3.0,
       status: converted.status || 'PASSED'
     };
 
@@ -174,22 +169,17 @@ export function TranscriptImportPage() {
   // Xử lý xác nhận bảng điểm ở Bước 3
   const handleConfirmAndSave = () => {
     commitTranscriptRecords(draftRecords, {
-      sourceFileName: selectedFile?.name || 'Nhap_Thu_Cong.csv'
+      fileName: selectedFile?.name || 'Nhap_Thu_Cong.csv'
     });
 
     navigate('/dashboard');
   };
 
-  // Tính toán tóm tắt trước khi lưu
-  const totalEarnedCredits = draftRecords
-    .filter((r) => r.status !== 'FAILED' && r.letterGrade !== 'F')
-    .reduce((sum, r) => sum + Number(r.credits || 0), 0);
-
-  const gradedRecords = draftRecords.filter((r) => r.score4 !== null && r.score4 !== undefined);
-  const totalPoints = gradedRecords.reduce((sum, r) => sum + Number(r.credits || 0) * Number(r.score4 || 0), 0);
-  const totalGradedCredits = gradedRecords.reduce((sum, r) => sum + Number(r.credits || 0), 0);
-  const projectedCpa = totalGradedCredits > 0 ? Number((totalPoints / totalGradedCredits).toFixed(2)) : 0;
-  const failedCourses = draftRecords.filter((r) => r.status === 'FAILED' || r.letterGrade === 'F');
+  // Tính toán tóm tắt từ Server Mock Service (không tự tính toán ở client)
+  const serverSummary = computeServerAcademicMetrics(draftRecords);
+  const totalEarnedCredits = serverSummary.accumulatedCredits;
+  const projectedCpa = serverSummary.cpa ?? 0;
+  const failedCourses = serverSummary.failedCourses;
 
   // Columns cấu hình cho Bảng xem lại & chỉnh sửa inline (Bước 2)
   const reviewColumns = [
@@ -267,11 +257,11 @@ export function TranscriptImportPage() {
       )
     },
     {
-      key: 'score4',
-      title: 'Thang 4',
-      width: '80px',
+      key: 'gradeEvaluation',
+      title: 'Quy chế BR-05',
+      width: '100px',
       align: 'center',
-      render: (val) => <strong>{val !== null && val !== undefined ? val : '—'}</strong>
+      render: (_, row) => <strong>{row.letterGrade || '—'}</strong>
     },
     {
       key: 'status',

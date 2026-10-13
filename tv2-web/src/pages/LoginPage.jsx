@@ -117,12 +117,12 @@ export function LoginPage() {
                   <div style={{ fontSize: '11px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
                     {p.majorName} &bull; {p.studentId}
                   </div>
-                  <div style={{ fontSize: '11px', color: p.academicWarning ? 'var(--color-error-text)' : 'var(--color-text-muted)', marginTop: '4px' }}>
+                  <div style={{ fontSize: '11px', color: p.warnings?.length ? 'var(--color-error-text)' : 'var(--color-text-muted)', marginTop: '4px' }}>
                     {p.id === 'at-risk'
                       ? 'CPA 1.85 • Nợ Toán rời rạc (MATH1002)'
                       : p.id === 'empty'
                       ? '0 Tín chỉ • Chưa có bảng điểm'
-                      : 'CPA 3.20 • 102/135 TC • Tiến độ chuẩn'}
+                      : 'CPA 3.05 • 102/135 TC • Tiến độ chuẩn'}
                   </div>
                 </div>
               );

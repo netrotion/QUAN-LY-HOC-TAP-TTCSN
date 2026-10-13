@@ -21,14 +21,14 @@ export const UNVERIFIED_RULE_TAG = 'DEMO_UNVERIFIED';
  * Bảng quy đổi thang điểm 10 - điểm chữ - thang điểm 4 theo PRD (BR-05 — DEMO_UNVERIFIED)
  */
 export const HAUI_GRADE_SCALE_BR05 = Object.freeze([
-  { letter: 'A', minScore10: 8.5, maxScore10: 10.0, score4: 4.0, classification: 'Giỏi / Xuất sắc', allowRetake: false },
-  { letter: 'B+', minScore10: 8.0, maxScore10: 8.4, score4: 3.5, classification: 'Khá giỏi', allowRetake: false },
-  { letter: 'B', minScore10: 7.0, maxScore10: 7.9, score4: 3.0, classification: 'Khá', allowRetake: false },
-  { letter: 'C+', minScore10: 6.5, maxScore10: 6.9, score4: 2.5, classification: 'Trung bình khá', allowRetake: false },
-  { letter: 'C', minScore10: 5.5, maxScore10: 6.4, score4: 2.0, classification: 'Trung bình (Được học cải thiện - BR-06)', allowRetake: true },
-  { letter: 'D+', minScore10: 5.0, maxScore10: 5.4, score4: 1.5, classification: 'Trung bình yếu (Ưu tiên cải thiện - BR-06)', allowRetake: true },
-  { letter: 'D', minScore10: 4.0, maxScore10: 4.9, score4: 1.0, classification: 'Yếu (Ưu tiên cải thiện cao - BR-06)', allowRetake: true },
-  { letter: 'F', minScore10: 0.0, maxScore10: 3.9, score4: 0.0, classification: 'Trượt / Bắt buộc học lại (BR-01)', allowRetake: true }
+  { letter: 'A', minScore10: 8.5, maxScore10: 10.0, gradePoint: 4.0, classification: 'Giỏi / Xuất sắc', allowRetake: false },
+  { letter: 'B+', minScore10: 8.0, maxScore10: 8.4, gradePoint: 3.5, classification: 'Khá giỏi', allowRetake: false },
+  { letter: 'B', minScore10: 7.0, maxScore10: 7.9, gradePoint: 3.0, classification: 'Khá', allowRetake: false },
+  { letter: 'C+', minScore10: 6.5, maxScore10: 6.9, gradePoint: 2.5, classification: 'Trung bình khá', allowRetake: false },
+  { letter: 'C', minScore10: 5.5, maxScore10: 6.4, gradePoint: 2.0, classification: 'Trung bình (Được học cải thiện - BR-06)', allowRetake: true },
+  { letter: 'D+', minScore10: 5.0, maxScore10: 5.4, gradePoint: 1.5, classification: 'Trung bình yếu (Ưu tiên cải thiện - BR-06)', allowRetake: true },
+  { letter: 'D', minScore10: 4.0, maxScore10: 4.9, gradePoint: 1.0, classification: 'Yếu (Ưu tiên cải thiện cao - BR-06)', allowRetake: true },
+  { letter: 'F', minScore10: 0.0, maxScore10: 3.9, gradePoint: 0.0, classification: 'Trượt / Bắt buộc học lại (BR-01)', allowRetake: true }
 ]);
 
 /**
@@ -185,16 +185,18 @@ export const MOCK_ACADEMIC_STATUS = Object.freeze({
   totalCreditsRequired: 135,
   completionRatePercent: 50.4,
   riskLevel: 'WARNING_LEVEL_1',
-  warningMessages: [
+  academicStatus: 'AT_RISK',
+  academic_status: 'AT_RISK',
+  warnings: [
     'Bạn đang nợ môn Toán rời rạc (3 TC - MATH1002) – Đây là môn tiên quyết của Cấu trúc dữ liệu & Giải thuật (IT6001) kỳ tới!',
     'Điểm GPA học kỳ hiện tại đang ở trạng thái null / UNKNOWN (chưa khóa sổ điểm từ e-HaUI)'
   ],
   knowledgeBlocks: [
-    { blockId: 'GEN', name: 'Khối kiến thức Đại cương', earnedCredits: 25.5, requiredCredits: 30, percentage: 85, color: 'var(--color-success)' },
-    { blockId: 'CORE', name: 'Khối Cơ sở ngành', earnedCredits: 24, requiredCredits: 48, percentage: 50, color: 'var(--color-primary)' },
-    { blockId: 'SPEC', name: 'Khối Chuyên ngành', earnedCredits: 3, requiredCredits: 30, percentage: 10, color: 'var(--color-info)' },
-    { blockId: 'ELEC', name: 'Khối Tự chọn', earnedCredits: 3, requiredCredits: 15, percentage: 20, color: 'var(--color-warning)' },
-    { blockId: 'GRAD', name: 'Khối Tốt nghiệp (Đồ án / Thực tập)', earnedCredits: 0, requiredCredits: 12, percentage: 0, color: 'var(--color-text-muted)' }
+    { blockId: 'GEN', name: 'Khối kiến thức Đại cương', accumulatedCredits: 25.5, totalCreditsRequired: 30, percentage: 85, color: 'var(--color-success)' },
+    { blockId: 'CORE', name: 'Khối Cơ sở ngành', accumulatedCredits: 24, totalCreditsRequired: 48, percentage: 50, color: 'var(--color-primary)' },
+    { blockId: 'SPEC', name: 'Khối Chuyên ngành', accumulatedCredits: 3, totalCreditsRequired: 30, percentage: 10, color: 'var(--color-info)' },
+    { blockId: 'ELEC', name: 'Khối Tự chọn', accumulatedCredits: 3, totalCreditsRequired: 15, percentage: 20, color: 'var(--color-warning)' },
+    { blockId: 'GRAD', name: 'Khối Tốt nghiệp (Đồ án / Thực tập)', accumulatedCredits: 0, totalCreditsRequired: 12, percentage: 0, color: 'var(--color-text-muted)' }
   ],
   dataRevision: 'rev-1001',
   fixtureLabel: FIXTURE_TAG,
@@ -205,19 +207,19 @@ export const MOCK_ACADEMIC_STATUS = Object.freeze({
  * Dữ liệu mẫu cho Luồng phụ A (Bước A1 -> A4: Tải & Bóc tách Bảng điểm từ e-HaUI — FR-02, AC-01)
  */
 export const MOCK_TRANSCRIPT_INGESTION_PREVIEW = Object.freeze({
-  sourceFileName: 'Bang_Diem_Ca_Nhan_eHaUI_std-2026-001.pdf',
+  fileName: 'Bang_Diem_Ca_Nhan_eHaUI_std-2026-001.pdf',
   extractedAt: '2026-09-29T08:30:00Z',
   studentId: 'std-2026-001',
-  extractedCpa: 2.45,
-  extractedAccumulatedCredits: 68,
+  reportedCpa: 2.45,
+  reportedAccumulatedCredits: 68,
   records: [
-    { courseCode: 'MATH1001', courseName: 'Giải tích 1', semesterCode: '2024_1', credits: 3, score10: 8.1, letterGrade: 'B+', score4: 3.5, status: 'PASSED' },
-    { courseCode: 'IT1001', courseName: 'Nhập môn lập trình', semesterCode: '2024_1', credits: 3, score10: 8.7, letterGrade: 'A', score4: 4.0, status: 'PASSED' },
-    { courseCode: 'ML1001', courseName: 'Triết học Mác - Lênin', semesterCode: '2024_1', credits: 3, score10: 4.5, letterGrade: 'D', score4: 1.0, status: 'PASSED_LOW' },
-    { courseCode: 'MATH1002', courseName: 'Toán rời rạc', semesterCode: '2024_2', credits: 3, score10: 3.2, letterGrade: 'F', score4: 0.0, status: 'FAILED' },
-    { courseCode: 'IT2001', courseName: 'Lập trình hướng đối tượng', semesterCode: '2024_2', credits: 4, score10: 5.2, letterGrade: 'D+', score4: 1.5, status: 'PASSED_LOW' },
-    { courseCode: 'IT3001', courseName: 'Mạng máy tính căn bản', semesterCode: '2025_1', credits: 3, score10: 7.4, letterGrade: 'B', score4: 3.0, status: 'PASSED' },
-    { courseCode: 'IT3004', courseName: 'Hệ quản trị Cơ sở dữ liệu', semesterCode: '2025_2', credits: 3, score10: null, letterGrade: null, score4: null, status: 'IN_PROGRESS' }
+    { courseCode: 'MATH1001', courseName: 'Giải tích 1', semesterCode: '2024_1', credits: 3, score10: 8.1, letterGrade: 'B+', status: 'PASSED' },
+    { courseCode: 'IT1001', courseName: 'Nhập môn lập trình', semesterCode: '2024_1', credits: 3, score10: 8.7, letterGrade: 'A', status: 'PASSED' },
+    { courseCode: 'ML1001', courseName: 'Triết học Mác - Lênin', semesterCode: '2024_1', credits: 3, score10: 4.5, letterGrade: 'D', status: 'PASSED_LOW' },
+    { courseCode: 'MATH1002', courseName: 'Toán rời rạc', semesterCode: '2024_2', credits: 3, score10: 3.2, letterGrade: 'F', status: 'FAILED' },
+    { courseCode: 'IT2001', courseName: 'Lập trình hướng đối tượng', semesterCode: '2024_2', credits: 4, score10: 5.2, letterGrade: 'D+', status: 'PASSED_LOW' },
+    { courseCode: 'IT3001', courseName: 'Mạng máy tính căn bản', semesterCode: '2025_1', credits: 3, score10: 7.4, letterGrade: 'B', status: 'PASSED' },
+    { courseCode: 'IT3004', courseName: 'Hệ quản trị Cơ sở dữ liệu', semesterCode: '2025_2', credits: 3, score10: null, letterGrade: null, status: 'IN_PROGRESS' }
   ],
   fixtureLabel: FIXTURE_TAG,
   regulationTag: UNVERIFIED_RULE_TAG
@@ -305,7 +307,7 @@ export const MOCK_GRADUATION_AUDIT = Object.freeze({
   eligibleForGraduation: false,
   eligibleForThesis: false, // BR-09: Cần >= 85% tổng tín chỉ (115/135 TC)
   completedPercentage: 82,
-  totalCreditsEarned: 112,
+  accumulatedCredits: 112,
   totalCreditsRequired: 135,
   trainingScore: 78,
   trainingClassification: 'Khá (Đạt yêu cầu xét tốt nghiệp)',
@@ -317,8 +319,8 @@ export const MOCK_GRADUATION_AUDIT = Object.freeze({
       category: '1. TÍN CHỈ TÍCH LŨY',
       name: 'Tổng số tín chỉ tích lũy toàn khóa (BR-10)',
       completed: false,
-      requiredCredits: 135,
-      earnedCredits: 112,
+      totalCreditsRequired: 135,
+      accumulatedCredits: 112,
       statusMessage: 'Đạt 112 / 135 tín chỉ (Còn thiếu 23 tín chỉ)'
     },
     {
@@ -326,8 +328,8 @@ export const MOCK_GRADUATION_AUDIT = Object.freeze({
       category: '2. KHỐI BẮT BUỘC',
       name: 'Khối kiến thức giáo dục đại cương & bắt buộc ngành',
       completed: true,
-      requiredCredits: 94,
-      earnedCredits: 94,
+      totalCreditsRequired: 94,
+      accumulatedCredits: 94,
       statusMessage: 'Hoàn thành 100% các học phần bắt buộc theo tiến độ'
     },
     {
@@ -335,8 +337,8 @@ export const MOCK_GRADUATION_AUDIT = Object.freeze({
       category: '3. TỰ CHỌN CHUYÊN NGÀNH',
       name: 'Khối kiến thức tự chọn chuyên ngành',
       completed: false,
-      requiredCredits: 12,
-      earnedCredits: 6,
+      totalCreditsRequired: 12,
+      accumulatedCredits: 6,
       statusMessage: 'Đã tích lũy 6 / 12 tín chỉ (Cảnh báo: Cần đăng ký thêm 2 môn tự chọn trong danh mục)'
     },
     {
@@ -344,8 +346,8 @@ export const MOCK_GRADUATION_AUDIT = Object.freeze({
       category: '4. CHUẨN NGOẠI NGỮ',
       name: 'Chứng chỉ Chuẩn đầu ra Ngoại ngữ (TOEIC 550 / VSTEP - DEMO_UNVERIFIED)',
       completed: true,
-      requiredCredits: null,
-      earnedCredits: null,
+      totalCreditsRequired: null,
+      accumulatedCredits: null,
       statusMessage: 'Đã nộp chứng chỉ TOEIC 550 (Hợp lệ - Tích xanh)'
     },
     {
@@ -353,8 +355,8 @@ export const MOCK_GRADUATION_AUDIT = Object.freeze({
       category: '5. CHUẨN TIN HỌC',
       name: 'Chuẩn đầu ra Tin học quốc tế (MOS/IC3 - DEMO_UNVERIFIED)',
       completed: false,
-      requiredCredits: null,
-      earnedCredits: null,
+      totalCreditsRequired: null,
+      accumulatedCredits: null,
       statusMessage: 'Chưa nộp (Cảnh báo đỏ AC-05: Hạn chót trước đợt xét tốt nghiệp 3 tháng)'
     },
     {
@@ -362,8 +364,8 @@ export const MOCK_GRADUATION_AUDIT = Object.freeze({
       category: '6. GDTC & GDQP-AN',
       name: 'Giáo dục thể chất & Giáo dục Quốc phòng - An ninh',
       completed: true,
-      requiredCredits: null,
-      earnedCredits: null,
+      totalCreditsRequired: null,
+      accumulatedCredits: null,
       statusMessage: 'Đã hoàn thành đầy đủ chứng chỉ GDTC và GDQP-AN'
     },
     {
@@ -371,8 +373,8 @@ export const MOCK_GRADUATION_AUDIT = Object.freeze({
       category: '7. ĐIỂM RÈN LUYỆN',
       name: 'Điểm rèn luyện tích lũy toàn khóa',
       completed: true,
-      requiredCredits: null,
-      earnedCredits: null,
+      totalCreditsRequired: null,
+      accumulatedCredits: null,
       statusMessage: '78 điểm (Loại Khá - Đạt yêu cầu)'
     }
   ],
@@ -549,9 +551,9 @@ export const MOCK_RECONCILE_PLAN = Object.freeze({
 export const MOCK_SIMULATE_GRADES = Object.freeze({
   studentId: 'std-2026-001',
   currentCpa: 2.45,
-  projectedSemesterGpa: 3.44,
-  projectedNewCpa: 2.58,
-  cpaDifference: 0.13,
+  expectedGpa: 3.44,
+  projectedCpa: 2.58,
+  cpaDelta: 0.13,
   rankChange: 'Từ Trung bình (2.45) -> Đạt ngưỡng Bằng Khá (2.58 >= 2.50)',
   dataRevision: 'rev-1001',
   fixtureLabel: FIXTURE_TAG
@@ -571,7 +573,7 @@ export const MOCK_RETAKE_RANKING = Object.freeze({
       currentGradePoints: 1.5,
       targetGrade: 'A',
       targetGradePoints: 4.0,
-      potentialCpaGain: 0.16,
+      cpaDelta: 0.16,
       rank: 1,
       badge: 'Khuyên dùng số 1',
       rationale: 'Môn 4 tín chỉ có điểm D+, cải thiện lên A giúp CPA tăng +0.16 điểm (ROI cao nhất)'
@@ -584,7 +586,7 @@ export const MOCK_RETAKE_RANKING = Object.freeze({
       currentGradePoints: 1.0,
       targetGrade: 'B',
       targetGradePoints: 3.0,
-      potentialCpaGain: 0.09,
+      cpaDelta: 0.09,
       rank: 2,
       badge: 'Khuyên dùng số 2',
       rationale: 'Cải thiện từ D lên B giúp CPA tăng +0.09 điểm với chi phí 3 tín chỉ'
@@ -623,7 +625,7 @@ export const MOCK_TARGET_GRADES = Object.freeze({
       rationale: 'Duy trì chuẩn GPA trung bình các kỳ còn lại >= 3.42'
     }
   ],
-  feasibilityWarnings: [
+  warnings: [
     'Mục tiêu tốt nghiệp loại Giỏi (CPA >= 3.20) đòi hỏi GPA trung bình 67 tín chỉ còn lại >= 3.42 (mức tương đối thử thách, nên kết hợp học cải thiện môn điểm D/D+).'
   ],
   dataRevision: 'rev-1001',

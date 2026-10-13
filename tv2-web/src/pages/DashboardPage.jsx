@@ -646,7 +646,7 @@ export function DashboardPage({ mountedRouteSummary }) {
               >
                 <strong>{blk.name}</strong>
                 <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-xs)' }}>
-                  Đã tích lũy: <strong>{blk.earnedCredits}</strong> / {blk.requiredCredits} TC ({blk.percentage}%)
+                  Đã tích lũy: <strong>{blk.accumulatedCredits ?? 0}</strong> / {blk.totalCreditsRequired ?? 30} TC ({blk.percentage}%)
                 </span>
               </div>
               <div className="haui-progress-track">
@@ -881,11 +881,11 @@ export function DashboardPage({ mountedRouteSummary }) {
                 }}
               >
                 <span>
-                  File nguồn: <code>{ingestResult.sourceFileName}</code>
+                  File nguồn: <code>{ingestResult.fileName}</code>
                 </span>
                 <span>
-                  CPA tính toán: <strong>{ingestResult.extractedCpa}</strong> &bull; Tín chỉ:{' '}
-                  <strong>{ingestResult.extractedAccumulatedCredits} TC</strong>
+                  CPA tính toán: <strong>{ingestResult.reportedCpa}</strong> &bull; Tín chỉ:{' '}
+                  <strong>{ingestResult.reportedAccumulatedCredits} TC</strong>
                 </span>
               </div>
               <Table
@@ -895,7 +895,6 @@ export function DashboardPage({ mountedRouteSummary }) {
                   { key: 'credits', title: 'TC', align: 'center', width: '60px' },
                   { key: 'score10', title: 'Hệ 10', align: 'center', width: '80px' },
                   { key: 'letterGrade', title: 'Điểm chữ', align: 'center', width: '90px' },
-                  { key: 'score4', title: 'Hệ 4', align: 'center', width: '80px' },
                   {
                     key: 'status',
                     title: 'Phân loại (FR-04)',

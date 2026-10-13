@@ -28,6 +28,7 @@ import {
   createMockHealthResponse,
   createMockValidatePlanResponse
 } from './mockFixtures.js';
+import { mockAcademicService } from './mockAcademicService.js';
 
 /**
  * Lỗi chuẩn hóa từ API Client (tương thích `ApiErrorResponse` trong `openapi-v0.yaml`)
@@ -179,10 +180,76 @@ function resolveMockFixture(method, normalizedPath, body, options = {}) {
     });
   }
 
+  // Dynamic routes for transcript import sessions
+  if (upperMethod === 'GET' && cleanPath.startsWith('/academic/transcript/imports/')) {
+    const sessionId = cleanPath.split('/')[4];
+    const session = mockAcademicService.getImportSession(sessionId);
+    if (!session) {
+      throw new ApiClientError({
+        code: 'IMPORT_SESSION_NOT_FOUND',
+        status: 404,
+        message: `Không tìm thấy phiên import: ${sessionId}`
+      });
+    }
+    return session;
+  }
+
+  if (upperMethod === 'PUT' && cleanPath.startsWith('/academic/transcript/imports/') && cleanPath.endsWith('/rows')) {
+    const parts = cleanPath.split('/');
+    const sessionId = parts[4];
+    const session = mockAcademicService.updateImportRows(sessionId, body?.rows || []);
+    if (!session) {
+      throw new ApiClientError({
+        code: 'IMPORT_SESSION_NOT_FOUND',
+        status: 404,
+        message: `Không tìm thấy phiên import: ${sessionId}`
+      });
+    }
+    return session;
+  }
+
+  if (upperMethod === 'POST' && cleanPath.startsWith('/academic/transcript/imports/') && cleanPath.endsWith('/confirm')) {
+    const parts = cleanPath.split('/');
+    const sessionId = parts[4];
+    const confirmRes = mockAcademicService.confirmImportSession(sessionId);
+    if (!confirmRes) {
+      throw new ApiClientError({
+        code: 'IMPORT_SESSION_NOT_FOUND',
+        status: 404,
+        message: `Không tìm thấy phiên import: ${sessionId}`
+      });
+    }
+    return confirmRes;
+  }
+
   const routeKey = `${upperMethod} ${cleanPath}`;
 
   if (options.state?.dynamicProvider && typeof options.state.dynamicProvider[routeKey] === 'function') {
     return options.state.dynamicProvider[routeKey](body, options);
+  }
+
+  // Xử lý upload bảng điểm (/academic/transcript/imports và alias tương thích)
+  if (upperMethod === 'POST' && (cleanPath === '/academic/transcript/imports' || cleanPath.endsWith('transcript-ingest'))) {
+    const fileName = String(body?.fileName || 'Bang_Diem_eHaUI.pdf');
+    if (body?.invalidFormat || /\.(exe|zip|docx|txt)$/i.test(fileName)) {
+      throw new ApiClientError({
+        code: 'INVALID_TRANSCRIPT_FORMAT',
+        status: 422,
+        message: `Không tải được bảng điểm do lỗi định dạng file (${fileName}). Hệ thống chỉ chấp nhận file PDF hoặc Ảnh (PNG/JPG) xuất từ cổng e-HaUI.`,
+        requestId: `req-ingest-err-${Date.now()}`,
+        details: [
+          'Vui lòng chọn [Tải lại file] đúng chuẩn PDF/Ảnh e-HaUI hoặc chọn [Nhập điểm thủ công từng môn].'
+        ]
+      });
+    }
+    const session = mockAcademicService.createImportSession({ fileName, rows: body?.rows });
+    return {
+      ...session,
+      fileName,
+      reportedCpa: session.documentSummary.reportedCpa,
+      reportedAccumulatedCredits: session.documentSummary.reportedAccumulatedCredits,
+      records: session.rows
+    };
   }
 
   switch (routeKey) {
@@ -190,31 +257,38 @@ function resolveMockFixture(method, normalizedPath, body, options = {}) {
       return { ...MOCK_BOOTSTRAP_INFO };
     case 'GET /system/health':
       return createMockHealthResponse();
+    case 'GET /auth/csrf':
+      return { csrfToken: `csrf-v1-${Date.now()}` };
+    case 'GET /auth/session':
+      return { authenticated: true, student: mockAcademicService.getStudentContext() };
+    case 'POST /auth/login': {
+      const presetId = body?.presetId || (
+        String(body?.studentId || '').includes('normal') ? 'normal' :
+        String(body?.studentId || '').includes('empty') ? 'empty' : 'at-risk'
+      );
+      mockAcademicService.setActivePersona(presetId);
+      if (options.state) {
+        options.state.sessionStudent = mockAcademicService.getActivePersona();
+      }
+      return { authenticated: true, success: true, student: mockAcademicService.getStudentContext() };
+    }
+    case 'POST /auth/logout':
+      return { authenticated: false, success: true };
+    case 'GET /students/me':
+      return mockAcademicService.getStudentContext();
     case 'GET /academic/status':
+      if (options.state?.sessionStudent?.id && options.state.sessionStudent.id !== 'std-2026-001') {
+        return mockAcademicService.getAcademicStatus();
+      }
       return { ...MOCK_ACADEMIC_STATUS };
     case 'GET /academic/curriculum':
-      return { ...MOCK_CURRICULUM_TREE };
+      return mockAcademicService.getCurriculum();
     case 'POST /academic/eligibility':
-      return createMockEligibilityResponse(body);
-    case 'POST /academic/transcript-ingest': {
-      // Mục 4.1 Luồng phụ A & Mục 5 Edge Cases: Kiểm tra định dạng file bảng điểm
-      const fileName = String(body?.fileName || 'Bang_Diem_eHaUI.pdf');
-      if (body?.invalidFormat || /\.(exe|zip|docx|txt)$/i.test(fileName)) {
-        throw new ApiClientError({
-          code: 'INVALID_TRANSCRIPT_FORMAT',
-          status: 422,
-          message: `Không tải được bảng điểm do lỗi định dạng file (${fileName}). Hệ thống chỉ chấp nhận file PDF hoặc Ảnh (PNG/JPG) xuất từ cổng e-HaUI.`,
-          requestId: `req-ingest-err-${Date.now()}`,
-          details: [
-            'Vui lòng chọn [Tải lại file] đúng chuẩn PDF/Ảnh e-HaUI hoặc chọn [Nhập điểm thủ công từng môn].'
-          ]
-        });
-      }
-      return {
-        ...MOCK_TRANSCRIPT_INGESTION_PREVIEW,
-        sourceFileName: fileName
-      };
-    }
+      return mockAcademicService.checkEligibility(body?.courseCode);
+    case 'GET /academic/transcript':
+      return mockAcademicService.getTranscript();
+    case 'POST /academic/transcript/imports/manual':
+      return mockAcademicService.createImportSession({ isManual: true, rows: body?.rows });
     case 'GET /audit/graduation':
       return { ...MOCK_GRADUATION_AUDIT };
     case 'POST /planner/generate':
@@ -298,6 +372,9 @@ export function createApiClient(customConfig = {}) {
 
   function setSessionStudent(nextStudent) {
     state.sessionStudent = { ...state.sessionStudent, ...nextStudent };
+    if (nextStudent?.id || nextStudent?.studentId) {
+      mockAcademicService.setActivePersona(nextStudent.id || nextStudent.studentId);
+    }
     notifyListeners();
     return state.sessionStudent;
   }
@@ -558,11 +635,25 @@ export function createApiClient(customConfig = {}) {
     getHealth: (opts) => get('/system/health', opts)
   });
 
+  const auth = Object.freeze({
+    login: (payload = {}, opts) => post('/auth/login', payload, opts),
+    logout: (opts) => post('/auth/logout', {}, opts),
+    getSession: (opts) => get('/auth/session', opts),
+    getCsrfToken: (opts) => get('/auth/csrf', opts)
+  });
+
   const academic = Object.freeze({
     getStatus: (opts) => get('/academic/status', opts),
     getCurriculum: (opts) => get('/academic/curriculum', opts),
     checkEligibility: (payload, opts) => post('/academic/eligibility', payload, opts),
-    ingestTranscript: (payload, opts) => post('/academic/transcript-ingest', payload, opts)
+    getTranscript: (opts) => get('/academic/transcript', opts),
+    getProfile: (opts) => get('/students/me', opts),
+    uploadTranscript: (payload, opts) => post('/academic/transcript/imports', payload, opts),
+    startManualImport: (payload, opts) => post('/academic/transcript/imports/manual', payload, opts),
+    getImportSession: (sessionId, opts) => get(`/academic/transcript/imports/${sessionId}`, opts),
+    updateImportRows: (sessionId, rows, opts) => put(`/academic/transcript/imports/${sessionId}/rows`, { rows }, opts),
+    confirmImport: (sessionId, opts) => post(`/academic/transcript/imports/${sessionId}/confirm`, {}, opts),
+    ingestTranscript: (payload, opts) => post('/academic/transcript/imports', payload, opts)
   });
 
   const audit = Object.freeze({
@@ -601,6 +692,7 @@ export function createApiClient(customConfig = {}) {
     setDynamicProvider,
     addRequestInterceptor,
     addResponseInterceptor,
+    auth,
     system,
     academic,
     audit,
