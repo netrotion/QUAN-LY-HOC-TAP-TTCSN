@@ -101,26 +101,116 @@ public class MockAcademicFacade implements AcademicFacade {
 
     @Override
     public SimulateGradesResponse simulateGrades(SimulateGradesRequest request) {
-        throw new UnsupportedOperationException("simulateGrades chưa được yêu cầu trong fixture mock của TV1.");
+        String studentId = request != null ? request.getStudentId() : "MOCK_STUDENT";
+        return new SimulateGradesResponse(
+                studentId,
+                new BigDecimal("3.00"),
+                new BigDecimal("3.50"),
+                new BigDecimal("3.20"),
+                new BigDecimal("0.20"),
+                "MOCK_REVISION_V0"
+        );
     }
 
     @Override
     public RankRetakeCoursesResponse rankRetakeCourses(RankRetakeCoursesRequest request) {
-        throw new UnsupportedOperationException("rankRetakeCourses chưa được yêu cầu trong fixture mock của TV1.");
+        String studentId = request != null ? request.getStudentId() : "MOCK_STUDENT";
+        List<RetakeCourseRecommendation> recs = List.of(
+                new RetakeCourseRecommendation(
+                        "LP6010",
+                        "Triết học Mác-Lênin",
+                        3,
+                        "D",
+                        new BigDecimal("1.0"),
+                        "B+",
+                        new BigDecimal("3.5"),
+                        new BigDecimal("0.08"),
+                        1,
+                        "Cải thiện điểm từ D lên B+ với 3 tín chỉ mang lại hiệu quả ROI CPA cao nhất"
+                ),
+                new RetakeCourseRecommendation(
+                        "LP6012",
+                        "Chủ nghĩa xã hội khoa học",
+                        2,
+                        "D+",
+                        new BigDecimal("1.5"),
+                        "A",
+                        new BigDecimal("4.0"),
+                        new BigDecimal("0.05"),
+                        2,
+                        "Cải thiện điểm từ D+ lên A với 2 tín chỉ"
+                )
+        );
+        return new RankRetakeCoursesResponse(studentId, recs, "MOCK_REVISION_V0");
     }
 
     @Override
     public CalculateTargetGradesResponse calculateTargetGrades(CalculateTargetGradesRequest request) {
-        throw new UnsupportedOperationException("calculateTargetGrades chưa được yêu cầu trong fixture mock của TV1.");
+        String studentId = request != null ? request.getStudentId() : "MOCK_STUDENT";
+        BigDecimal target = request != null && request.getTargetCpa() != null ? request.getTargetCpa() : new BigDecimal("3.50");
+        return new CalculateTargetGradesResponse(
+                studentId,
+                new BigDecimal("3.18"),
+                target,
+                60,
+                new BigDecimal("3.65"),
+                List.of(
+                        new TargetCourseGradeRequirement("IT6015", "Phát triển ứng dụng Web", 3, "B+", new BigDecimal("3.5"), "Môn bắt buộc"),
+                        new TargetCourseGradeRequirement("IT6020", "Trí tuệ nhân tạo", 3, "A", new BigDecimal("4.0"), "Môn cơ sở")
+                ),
+                simulatedWarnings,
+                "MOCK_REVISION_V0"
+        );
     }
 
     @Override
     public GraduationAuditResponse runGraduationAudit(GraduationAuditRequest request) {
-        throw new UnsupportedOperationException("runGraduationAudit chưa được yêu cầu trong fixture mock của TV1.");
+        String studentId = request != null ? request.getStudentId() : "MOCK_STUDENT";
+        List<AuditChecklistItem> checklist = List.of(
+                new AuditChecklistItem("Tín chỉ", "Tín chỉ tích lũy chuyên ngành", false, 150, 61, "Cần tích lũy thêm 89 tín chỉ"),
+                new AuditChecklistItem("Chứng chỉ", "Chuẩn đầu ra tin học MOS", false, 0, 0, "Bắt buộc trước đợt xét tốt nghiệp"),
+                new AuditChecklistItem("Chứng chỉ", "Chuẩn đầu ra ngoại ngữ TOEIC", true, 0, 0, "Đã hoàn thành"),
+                new AuditChecklistItem("Chứng chỉ", "Giáo dục quốc phòng an ninh", true, 0, 0, "Đã hoàn thành"),
+                new AuditChecklistItem("Khóa luận", "Đồ án tốt nghiệp", false, 10, 0, "Điều kiện cuối khóa")
+        );
+        return new GraduationAuditResponse(
+                studentId,
+                false,
+                40,
+                61,
+                150,
+                checklist,
+                List.of(),
+                "MOCK_REVISION_V0"
+        );
     }
 
     @Override
     public ReconcileStudyPlanResponse reconcileStudyPlan(ReconcileStudyPlanRequest request) {
-        throw new UnsupportedOperationException("reconcileStudyPlan chưa được yêu cầu trong fixture mock của TV1.");
+        String studentId = request != null ? request.getStudentId() : "MOCK_STUDENT";
+        return new ReconcileStudyPlanResponse(
+                "PLAN-MOCK-001",
+                studentId,
+                true,
+                List.of("IT6015"),
+                List.of(),
+                List.of(),
+                1,
+                "MOCK_REVISION_V0"
+        );
+    }
+
+    @Override
+    public java.util.Set<AcademicCapability> readyCapabilities() {
+        return java.util.Set.of(
+                AcademicCapability.GET_ACADEMIC_STATUS,
+                AcademicCapability.CHECK_COURSE_ELIGIBILITY,
+                AcademicCapability.GENERATE_STUDY_PLAN,
+                AcademicCapability.VALIDATE_STUDY_PLAN,
+                AcademicCapability.SIMULATE_GRADES,
+                AcademicCapability.RANK_RETAKE_COURSES,
+                AcademicCapability.CALCULATE_TARGET_GRADES,
+                AcademicCapability.RUN_GRADUATION_AUDIT
+        );
     }
 }
