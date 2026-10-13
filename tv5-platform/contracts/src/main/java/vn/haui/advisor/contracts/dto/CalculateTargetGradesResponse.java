@@ -1,5 +1,7 @@
 package vn.haui.advisor.contracts.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
@@ -11,7 +13,7 @@ public class CalculateTargetGradesResponse implements Serializable {
     private Integer remainingCredits;
     private BigDecimal requiredAverageGpa;
     private List<TargetCourseGradeRequirement> courseRequirements;
-    private List<String> feasibilityWarnings;
+    private List<String> warnings;
     private String dataRevision;
 
     public CalculateTargetGradesResponse() {
@@ -20,14 +22,14 @@ public class CalculateTargetGradesResponse implements Serializable {
     public CalculateTargetGradesResponse(String studentId, BigDecimal currentCpa, BigDecimal targetCpa,
                                          Integer remainingCredits, BigDecimal requiredAverageGpa,
                                          List<TargetCourseGradeRequirement> courseRequirements,
-                                         List<String> feasibilityWarnings, String dataRevision) {
+                                         List<String> warnings, String dataRevision) {
         this.studentId = studentId;
         this.currentCpa = currentCpa;
         this.targetCpa = targetCpa;
         this.remainingCredits = remainingCredits;
         this.requiredAverageGpa = requiredAverageGpa;
         this.courseRequirements = courseRequirements;
-        this.feasibilityWarnings = feasibilityWarnings;
+        this.warnings = warnings;
         this.dataRevision = dataRevision;
     }
 
@@ -79,12 +81,12 @@ public class CalculateTargetGradesResponse implements Serializable {
         this.courseRequirements = courseRequirements;
     }
 
-    public List<String> getFeasibilityWarnings() {
-        return feasibilityWarnings;
+    public List<String> getWarnings() {
+        return warnings;
     }
 
-    public void setFeasibilityWarnings(List<String> feasibilityWarnings) {
-        this.feasibilityWarnings = feasibilityWarnings;
+    public void setWarnings(List<String> warnings) {
+        this.warnings = warnings;
     }
 
     public String getDataRevision() {
@@ -93,5 +95,16 @@ public class CalculateTargetGradesResponse implements Serializable {
 
     public void setDataRevision(String dataRevision) {
         this.dataRevision = dataRevision;
+    }
+
+    /**
+     * Accessor chuyển tiếp cho mã nguồn dùng tên V0; JSON chỉ có trường {@code warnings}.
+     *
+     * @deprecated dùng {@link #getWarnings()}.
+     */
+    @Deprecated(since = "1.0.0", forRemoval = true)
+    @JsonIgnore
+    public List<String> getFeasibilityWarnings() {
+        return getWarnings();
     }
 }

@@ -5,46 +5,30 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * DTO chi tiết Kế hoạch học tập (thao tác read).
+ * Chi tiết một Kế hoạch học tập đã lưu: {@code GET /planner/plans/{planId}}
+ * và kết quả {@code POST /planner/plans/{planId}/restore}.
  */
 public class StudyPlanDetailResponse implements Serializable {
     private String planId;
     private String studentId;
     private String planName;
     private StudyPlanStatus status;
-    private Integer version;
+    private Integer planVersion;
+    private String sourcePlanId;
     private String dataRevision;
     private BigDecimal targetCpa;
     private String targetGraduationSemester;
     private Integer maxCreditsPerSemester;
+    private Integer totalCredits;
+    private BigDecimal projectedCpa;
     private List<PlannedSemesterItem> semesters;
     private List<ChatActionItem> actions;
     private List<String> warnings;
     private String createdAt;
     private String updatedAt;
+    private String activatedAt;
 
     public StudyPlanDetailResponse() {
-    }
-
-    public StudyPlanDetailResponse(String planId, String studentId, String planName, StudyPlanStatus status,
-                                   Integer version, String dataRevision, BigDecimal targetCpa,
-                                   String targetGraduationSemester, Integer maxCreditsPerSemester,
-                                   List<PlannedSemesterItem> semesters, List<ChatActionItem> actions,
-                                   List<String> warnings, String createdAt, String updatedAt) {
-        this.planId = planId;
-        this.studentId = studentId;
-        this.planName = planName;
-        this.status = status;
-        this.version = version;
-        this.dataRevision = dataRevision;
-        this.targetCpa = targetCpa;
-        this.targetGraduationSemester = targetGraduationSemester;
-        this.maxCreditsPerSemester = maxCreditsPerSemester;
-        this.semesters = semesters;
-        this.actions = actions;
-        this.warnings = warnings;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
     }
 
     public String getPlanId() {
@@ -79,12 +63,20 @@ public class StudyPlanDetailResponse implements Serializable {
         this.status = status;
     }
 
-    public Integer getVersion() {
-        return version;
+    public Integer getPlanVersion() {
+        return planVersion;
     }
 
-    public void setVersion(Integer version) {
-        this.version = version;
+    public void setPlanVersion(Integer planVersion) {
+        this.planVersion = planVersion;
+    }
+
+    public String getSourcePlanId() {
+        return sourcePlanId;
+    }
+
+    public void setSourcePlanId(String sourcePlanId) {
+        this.sourcePlanId = sourcePlanId;
     }
 
     public String getDataRevision() {
@@ -117,6 +109,22 @@ public class StudyPlanDetailResponse implements Serializable {
 
     public void setMaxCreditsPerSemester(Integer maxCreditsPerSemester) {
         this.maxCreditsPerSemester = maxCreditsPerSemester;
+    }
+
+    public Integer getTotalCredits() {
+        return totalCredits;
+    }
+
+    public void setTotalCredits(Integer totalCredits) {
+        this.totalCredits = totalCredits;
+    }
+
+    public BigDecimal getProjectedCpa() {
+        return projectedCpa;
+    }
+
+    public void setProjectedCpa(BigDecimal projectedCpa) {
+        this.projectedCpa = projectedCpa;
     }
 
     public List<PlannedSemesterItem> getSemesters() {
@@ -157,5 +165,13 @@ public class StudyPlanDetailResponse implements Serializable {
 
     public void setUpdatedAt(String updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getActivatedAt() {
+        return activatedAt;
+    }
+
+    public void setActivatedAt(String activatedAt) {
+        this.activatedAt = activatedAt;
     }
 }

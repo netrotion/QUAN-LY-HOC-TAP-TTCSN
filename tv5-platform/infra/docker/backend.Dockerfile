@@ -11,6 +11,7 @@ COPY tv5-platform/app/pom.xml tv5-platform/app/
 
 # Copy sources of internal modules
 COPY tv5-platform/contracts/src tv5-platform/contracts/src
+COPY tv5-platform/contracts/examples tv5-platform/contracts/examples
 COPY tv1-ai/src tv1-ai/src
 COPY tv4-academic/src tv4-academic/src
 COPY tv5-platform/app/src tv5-platform/app/src

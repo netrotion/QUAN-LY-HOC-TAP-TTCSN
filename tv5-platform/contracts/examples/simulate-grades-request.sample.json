@@ -1,18 +1,18 @@
 {
-  "studentId": "std-2026-001",
+  "studentId": "2024604757",
   "courses": [
     {
-      "courseCode": "IT6001",
+      "courseCode": "IT6039",
       "credits": 3,
       "expectedGrade": "A",
-      "expectedGradePoints": 4.0
+      "expectedGradePoints": 4
     },
     {
-      "courseCode": "IT6002",
+      "courseCode": "IT6044",
       "credits": 3,
       "expectedGrade": "B+",
       "expectedGradePoints": 3.5
     }
   ],
-  "dataRevision": "rev-1001"
+  "dataRevision": "REV-2024604757-001"
 }

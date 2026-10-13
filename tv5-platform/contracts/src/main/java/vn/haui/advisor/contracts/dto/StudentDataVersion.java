@@ -3,24 +3,22 @@ package vn.haui.advisor.contracts.dto;
 import java.io.Serializable;
 
 /**
- * DTO theo dõi phiên bản dữ liệu học vụ của sinh viên (Optimistic Locking & Stale Data Detection).
+ * Phiên bản dữ liệu học vụ của sinh viên (phát hiện dữ liệu cũ). dataRevision là token duy nhất
+ * đại diện phiên bản; client gửi lại nguyên văn trong các thao tác ghi.
  */
 public class StudentDataVersion implements Serializable {
     private String studentId;
     private String dataRevision;
-    private Integer version;
-    private String lastUpdated;
+    private String updatedAt;
     private Boolean stale;
 
     public StudentDataVersion() {
     }
 
-    public StudentDataVersion(String studentId, String dataRevision, Integer version,
-                              String lastUpdated, Boolean stale) {
+    public StudentDataVersion(String studentId, String dataRevision, String updatedAt, Boolean stale) {
         this.studentId = studentId;
         this.dataRevision = dataRevision;
-        this.version = version;
-        this.lastUpdated = lastUpdated;
+        this.updatedAt = updatedAt;
         this.stale = stale;
     }
 
@@ -40,20 +38,12 @@ public class StudentDataVersion implements Serializable {
         this.dataRevision = dataRevision;
     }
 
-    public Integer getVersion() {
-        return version;
+    public String getUpdatedAt() {
+        return updatedAt;
     }
 
-    public void setVersion(Integer version) {
-        this.version = version;
-    }
-
-    public String getLastUpdated() {
-        return lastUpdated;
-    }
-
-    public void setLastUpdated(String lastUpdated) {
-        this.lastUpdated = lastUpdated;
+    public void setUpdatedAt(String updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public Boolean getStale() {

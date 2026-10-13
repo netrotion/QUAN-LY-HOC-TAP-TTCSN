@@ -6,6 +6,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY tv3-planner-ui/package.json ./tv3-planner-ui/
 COPY tv2-web/package.json ./tv2-web/
+COPY tv5-platform/contracts/package.json ./tv5-platform/contracts/
 
 # Install dependencies via npm ci
 RUN npm ci
@@ -13,6 +14,7 @@ RUN npm ci
 # Copy sources
 COPY tv3-planner-ui/ ./tv3-planner-ui/
 COPY tv2-web/ ./tv2-web/
+COPY tv5-platform/contracts/js ./tv5-platform/contracts/js
 
 # Build packages
 RUN npm run build

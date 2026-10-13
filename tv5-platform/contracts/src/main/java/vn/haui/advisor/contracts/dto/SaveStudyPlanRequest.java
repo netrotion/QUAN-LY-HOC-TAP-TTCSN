@@ -5,8 +5,9 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * Request lưu Kế hoạch học tập (thao tác save).
- * Hỗ trợ tạo mới (planId == null) hoặc cập nhật (kèm planVersion cho optimistic lock).
+ * Lưu nháp kế hoạch ({@code POST /planner/plans}); kết quả luôn DRAFT.
+ * planId null → tạo mới; planId của DRAFT/VALIDATED → cập nhật tại chỗ (planVersion bắt buộc, tăng 1);
+ * planId của ACTIVE → tạo DRAFT kế thừa, bản ACTIVE giữ nguyên; ARCHIVED/COMPLETED → 409 PLAN_NOT_EDITABLE.
  */
 public class SaveStudyPlanRequest implements Serializable {
     private String planId;

@@ -1,12 +1,12 @@
 {
-  "studentId": "std-2026-001",
-  "gpa": null,
-  "cpa": 2.45,
-  "accumulatedCredits": 68,
-  "totalCreditsRequired": 135,
-  "riskLevel": "WARNING_LEVEL_1",
-  "warningMessages": [
-    "Cảnh báo học vụ mức 1 do nợ môn tiên quyết Toán rời rạc"
+  "studentId": "2024604757",
+  "gpa": 3.42,
+  "cpa": 3.18,
+  "accumulatedCredits": 61,
+  "totalCreditsRequired": 150,
+  "riskLevel": "NORMAL",
+  "warnings": [
+    "Còn nợ học phần LP6004 - Tư tưởng Hồ Chí Minh (điểm F), cần đăng ký học lại"
   ],
-  "dataRevision": "rev-1001"
+  "dataRevision": "REV-2024604757-001"
 }

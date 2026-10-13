@@ -1,21 +1,21 @@
 {
-  "studentId": "std-2026-001",
-  "currentCpa": 2.45,
-  "targetCpa": 3.20,
-  "remainingCredits": 67,
-  "requiredAverageGpa": 3.42,
+  "studentId": "2024604757",
+  "currentCpa": 3.18,
+  "targetCpa": 3.4,
+  "remainingCredits": 89,
+  "requiredAverageGpa": 3.55,
   "courseRequirements": [
     {
-      "courseCode": "IT4001",
-      "courseName": "Cơ sở dữ liệu nâng cao",
+      "courseCode": "IT6096",
+      "courseName": "Thiết kế phần mềm",
       "credits": 3,
       "requiredGrade": "A",
-      "requiredGradePoints": 4.0,
-      "rationale": "Cần đạt mức A ở tối thiểu 60% số môn chuyên ngành"
+      "requiredGradePoints": 4,
+      "rationale": "Môn chuyên ngành 3 tín chỉ, cần đạt A để bù phần chênh CPA"
     }
   ],
-  "feasibilityWarnings": [
-    "Mục tiêu đòi hỏi GPA trung bình các kỳ còn lại >= 3.42 (mức tương đối thử thách)"
+  "warnings": [
+    "Mục tiêu yêu cầu GPA trung bình các kỳ còn lại >= 3.55 (mức thử thách)"
   ],
-  "dataRevision": "rev-1001"
+  "dataRevision": "REV-2024604757-001"
 }

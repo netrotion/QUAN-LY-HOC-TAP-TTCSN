@@ -1,0 +1,12 @@
+{
+  "studentId": "std-missing-unknown-v1",
+  "gpa": null,
+  "cpa": null,
+  "accumulatedCredits": null,
+  "totalCreditsRequired": 150,
+  "riskLevel": null,
+  "warnings": [
+    "Chưa có bảng điểm đã xác nhận: GPA/CPA/tín chỉ tích lũy chưa xác định (UNKNOWN)"
+  ],
+  "dataRevision": "REV-std-missing-unknown-v1-001"
+}

@@ -1,0 +1,1778 @@
+# contracts-v1 — nguồn chuẩn của hợp đồng HTTP. Sở hữu: TV5 (tv5-platform/contracts).
+# Thay đổi sau mốc contracts-v1: PR của TV5 + CHANGELOG + contracts-v1.lock.json + kiểm tra phía sử dụng.
+openapi: "3.0.3"
+info:
+  title: "HaUI Advisor API"
+  version: "1.0.0"
+  description: |
+    contracts-v1 — hợp đồng chốt sau review prototype (Task 2.3) làm đầu vào Phase 3.
+
+    Quy tắc chung:
+    - Danh tính sinh viên chỉ lấy từ phiên đăng nhập server (StudentContextProvider). Trường studentId trong request là readOnly: client không gửi, server bỏ qua nếu có.
+    - dataRevision: token phiên bản dữ liệu học vụ; thao tác ghi gửi lại nguyên văn, cũ → 409 DATA_REVISION_STALE.
+    - planVersion: phiên bản nội dung kế hoạch (optimistic lock), chỉ tăng khi lưu nội dung; lệch → 409 PLAN_VERSION_CONFLICT.
+    - Vòng đời kế hoạch: lưu nháp luôn DRAFT; validate hợp lệ → VALIDATED; activate chỉ nhận VALIDATED (thẩm định lại, lỗi → 422) và lưu trữ bản ACTIVE cũ trong cùng giao dịch; sửa ACTIVE tạo DRAFT kế thừa.
+    - Số liệu dự kiến (projectedCpa, expectedGpa, targetGrade, phương án đề xuất) phải hiển thị nhãn "Dự kiến"; xem trước không ghi dữ liệu.
+    - Một dữ liệu chỉ có một tên trường: xem glossary-v1.json. Mọi thay đổi sau mốc contracts-v1 phải qua PR của TV5 kèm kiểm tra phía sử dụng.
+
+    x-implementation-status: trạng thái runtime hiện tại của endpoint (IMPLEMENTED, IMPLEMENTED_IN_MEMORY, NOT_IMPLEMENTED → 501); contract không đổi theo trạng thái này.
+servers:
+  - url: /api/v1
+    description: "Base URL tương đối qua frontend proxy"
+tags:
+  - name: System
+    description: "Thông tin hệ thống và health check"
+  - name: Academic
+    description: "Tình trạng học vụ và điều kiện học phần"
+  - name: Planner
+    description: "Sinh, thẩm định, lưu, kích hoạt và khôi phục kế hoạch học tập"
+  - name: Simulation
+    description: "What-if, học cải thiện và tính điểm ngược"
+  - name: Audit
+    description: "Rà soát điều kiện tốt nghiệp"
+  - name: Advisor
+    description: "Trợ lý ảo học vụ"
+paths:
+  /system/bootstrap:
+    get:
+      tags: [System]
+      summary: "Thông tin bootstrap kỹ thuật"
+      operationId: getBootstrapInfo
+      x-implementation-status: IMPLEMENTED
+      responses:
+        '200':
+          description: "Thông tin runtime"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BootstrapInfoResponse"
+  /system/health:
+    get:
+      tags: [System]
+      summary: "Health check kỹ thuật"
+      operationId: getSystemHealth
+      x-implementation-status: IMPLEMENTED
+      responses:
+        '200':
+          description: "Tiến trình hoạt động"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+                  timestamp:
+                    type: string
+                    format: date-time
+  /academic/status:
+    get:
+      tags: [Academic]
+      summary: "Tình trạng học vụ của sinh viên đang đăng nhập"
+      operationId: getAcademicStatus
+      x-facade-method: AcademicFacade#getAcademicStatus
+      x-implementation-status: NOT_IMPLEMENTED
+      responses:
+        '200':
+          description: "Tình trạng học vụ"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicStatusResponse"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '501':
+          $ref: "#/components/responses/NotImplemented"
+  /academic/eligibility:
+    post:
+      tags: [Academic]
+      summary: "Kiểm tra điều kiện đăng ký học phần"
+      operationId: checkCourseEligibility
+      x-facade-method: AcademicFacade#checkCourseEligibility
+      x-implementation-status: NOT_IMPLEMENTED
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseEligibilityRequest"
+      responses:
+        '200':
+          description: "Kết quả điều kiện"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseEligibilityResponse"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '409':
+          $ref: "#/components/responses/Conflict"
+        '501':
+          $ref: "#/components/responses/NotImplemented"
+  /planner/generate:
+    post:
+      tags: [Planner]
+      summary: "Sinh phương án lộ trình để xem trước (không lưu)"
+      operationId: generateStudyPlan
+      x-facade-method: AcademicFacade#generateStudyPlan
+      x-implementation-status: NOT_IMPLEMENTED
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateStudyPlanRequest"
+      responses:
+        '200':
+          description: "Phương án đề xuất"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateStudyPlanResponse"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '409':
+          $ref: "#/components/responses/Conflict"
+        '501':
+          $ref: "#/components/responses/NotImplemented"
+  /planner/validate:
+    post:
+      tags: [Planner]
+      summary: "Thẩm định kế hoạch theo quy chế (AcademicFacade là nguồn sự thật duy nhất)"
+      operationId: validateStudyPlan
+      x-facade-method: AcademicFacade#validateStudyPlan
+      x-implementation-status: IMPLEMENTED_IN_MEMORY
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateStudyPlanRequest"
+      responses:
+        '200':
+          description: "Kết quả thẩm định"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidateStudyPlanResponse"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+        '409':
+          $ref: "#/components/responses/Conflict"
+  /planner/plans:
+    get:
+      tags: [Planner]
+      summary: "Lịch sử kế hoạch của sinh viên"
+      operationId: listStudyPlans
+      x-implementation-status: IMPLEMENTED_IN_MEMORY
+      responses:
+        '200':
+          description: "Danh sách kế hoạch"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudyPlanListResponse"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Planner]
+      summary: "Lưu nháp kế hoạch (luôn DRAFT, không đổi bản ACTIVE)"
+      operationId: saveStudyPlan
+      x-implementation-status: IMPLEMENTED_IN_MEMORY
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveStudyPlanRequest"
+      responses:
+        '200':
+          description: "Đã lưu nháp"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaveStudyPlanResponse"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+        '409':
+          $ref: "#/components/responses/Conflict"
+  "/planner/plans/{planId}":
+    get:
+      tags: [Planner]
+      summary: "Chi tiết một kế hoạch"
+      operationId: getStudyPlan
+      x-implementation-status: IMPLEMENTED_IN_MEMORY
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          description: "Mã kế hoạch thuộc sinh viên đang đăng nhập."
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Chi tiết kế hoạch"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudyPlanDetailResponse"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+  "/planner/plans/{planId}/activate":
+    post:
+      tags: [Planner]
+      summary: "Kích hoạt kế hoạch VALIDATED; bản ACTIVE cũ chuyển ARCHIVED trong cùng giao dịch"
+      operationId: activateStudyPlan
+      x-implementation-status: IMPLEMENTED_IN_MEMORY
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          description: "Mã kế hoạch thuộc sinh viên đang đăng nhập."
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivateStudyPlanRequest"
+      responses:
+        '200':
+          description: "Đã kích hoạt"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivateStudyPlanResponse"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+        '409':
+          $ref: "#/components/responses/Conflict"
+        '422':
+          $ref: "#/components/responses/UnprocessableEntity"
+  "/planner/plans/{planId}/restore":
+    post:
+      tags: [Planner]
+      summary: "Tạo DRAFT mới từ một kế hoạch (thường là ARCHIVED); bản gốc giữ nguyên"
+      operationId: restoreStudyPlan
+      x-implementation-status: IMPLEMENTED_IN_MEMORY
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          description: "Mã kế hoạch thuộc sinh viên đang đăng nhập."
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RestoreStudyPlanRequest"
+      responses:
+        '200':
+          description: "Bản DRAFT mới"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudyPlanDetailResponse"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+  /planner/reconcile:
+    post:
+      tags: [Planner]
+      summary: "Đối chiếu kết quả học kỳ với kế hoạch ACTIVE (US-13)"
+      operationId: reconcileStudyPlan
+      x-facade-method: AcademicFacade#reconcileStudyPlan
+      x-implementation-status: NOT_IMPLEMENTED
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReconcileStudyPlanRequest"
+      responses:
+        '200':
+          description: "Kết quả đối chiếu"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReconcileStudyPlanResponse"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+        '409':
+          $ref: "#/components/responses/Conflict"
+        '501':
+          $ref: "#/components/responses/NotImplemented"
+  /simulation/grades:
+    post:
+      tags: [Simulation]
+      summary: "What-if: giả lập điểm kỳ tới"
+      operationId: simulateGrades
+      x-facade-method: AcademicFacade#simulateGrades
+      x-implementation-status: NOT_IMPLEMENTED
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SimulateGradesRequest"
+      responses:
+        '200':
+          description: "Kết quả giả lập"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulateGradesResponse"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '409':
+          $ref: "#/components/responses/Conflict"
+        '501':
+          $ref: "#/components/responses/NotImplemented"
+  /simulation/retake-ranking:
+    post:
+      tags: [Simulation]
+      summary: "Xếp hạng môn học lại/cải thiện theo hiệu quả CPA"
+      operationId: rankRetakeCourses
+      x-facade-method: AcademicFacade#rankRetakeCourses
+      x-implementation-status: NOT_IMPLEMENTED
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RankRetakeCoursesRequest"
+      responses:
+        '200':
+          description: "Danh sách gợi ý"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RankRetakeCoursesResponse"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '409':
+          $ref: "#/components/responses/Conflict"
+        '501':
+          $ref: "#/components/responses/NotImplemented"
+  /simulation/target-grades:
+    post:
+      tags: [Simulation]
+      summary: "Tính ngược điểm cần đạt cho CPA mục tiêu"
+      operationId: calculateTargetGrades
+      x-facade-method: AcademicFacade#calculateTargetGrades
+      x-implementation-status: NOT_IMPLEMENTED
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalculateTargetGradesRequest"
+      responses:
+        '200':
+          description: "Kết quả tính ngược"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculateTargetGradesResponse"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '409':
+          $ref: "#/components/responses/Conflict"
+        '501':
+          $ref: "#/components/responses/NotImplemented"
+  /audit/graduation:
+    get:
+      tags: [Audit]
+      summary: "Rà soát điều kiện tốt nghiệp"
+      operationId: runGraduationAudit
+      x-facade-method: AcademicFacade#runGraduationAudit
+      x-implementation-status: NOT_IMPLEMENTED
+      responses:
+        '200':
+          description: "Kết quả rà soát"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GraduationAuditResponse"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '501':
+          $ref: "#/components/responses/NotImplemented"
+  /advisor/chat:
+    post:
+      tags: [Advisor]
+      summary: "Hỏi trợ lý học vụ"
+      operationId: chatAdvisor
+      x-facade-method: AdvisorFacade#chat
+      x-implementation-status: NOT_IMPLEMENTED
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        '200':
+          description: "Câu trả lời"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '501':
+          $ref: "#/components/responses/NotImplemented"
+components:
+  responses:
+    BadRequest:
+      description: "VALIDATION_ERROR: body sai định dạng hoặc thiếu trường bắt buộc"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+    Forbidden:
+      description: "Chưa đăng nhập hoặc thiếu CSRF token (Spring Security, không có body nghiệp vụ)"
+    NotFound:
+      description: "PLAN_NOT_FOUND: không có kế hoạch thuộc sinh viên đang đăng nhập"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+    Conflict:
+      description: "DATA_REVISION_STALE | PLAN_VERSION_CONFLICT | PLAN_NOT_EDITABLE"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+    UnprocessableEntity:
+      description: "PLAN_NOT_VALIDATED | PLAN_VALIDATION_FAILED (details = danh sách vi phạm)"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+    NotImplemented:
+      description: "NOT_IMPLEMENTED: capability chưa được nối ở runtime hiện tại"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+  schemas:
+    BootstrapInfoResponse:
+      type: object
+      description: "Thông tin kỹ thuật của runtime (không phải DTO nghiệp vụ)."
+      required: [contractVersion, contractMilestone, runtimeMode, modules]
+      properties:
+        contractVersion:
+          type: string
+          description: "Phiên bản contracts đang chạy."
+          example: "1.0.0"
+        contractMilestone:
+          type: string
+          description: "Mốc phát hành contracts."
+          example: contracts-v1
+        runtimeMode:
+          type: string
+          description: "Chế độ runtime."
+          example: bootstrap-v0
+        modules:
+          type: object
+          description: "Trạng thái từng module: READY | NOT_IMPLEMENTED | IN_MEMORY."
+          properties:
+            contracts:
+              type: string
+              description: "Module contracts."
+            academic:
+              type: string
+              description: "Module học vụ (TV4)."
+            advisor:
+              type: string
+              description: "Module AI (TV1)."
+            persistence:
+              type: string
+              description: "Lưu trữ dữ liệu (TV5)."
+        message:
+          type: string
+          description: "Ghi chú cho người vận hành."
+        timestamp:
+          type: string
+          description: "Thời điểm server trả lời."
+          format: date-time
+    ApiErrorCode:
+      type: string
+      description: "Mã lỗi nghiệp vụ. 400 VALIDATION_ERROR; 404 PLAN_NOT_FOUND; 409 DATA_REVISION_STALE, PLAN_VERSION_CONFLICT, PLAN_NOT_EDITABLE; 422 PLAN_NOT_VALIDATED, PLAN_VALIDATION_FAILED; 501 NOT_IMPLEMENTED."
+      enum:
+        - VALIDATION_ERROR
+        - PLAN_NOT_FOUND
+        - DATA_REVISION_STALE
+        - PLAN_VERSION_CONFLICT
+        - PLAN_NOT_EDITABLE
+        - PLAN_NOT_VALIDATED
+        - PLAN_VALIDATION_FAILED
+        - NOT_IMPLEMENTED
+    ApiErrorResponse:
+      type: object
+      description: "Body lỗi chung cho mọi response 4xx/5xx nghiệp vụ."
+      required: [code, message, requestId, timestamp]
+      properties:
+        code:
+          $ref: "#/components/schemas/ApiErrorCode"
+        message:
+          type: string
+          description: "Thông điệp tiếng Việt hiển thị được cho người dùng."
+        requestId:
+          type: string
+          description: "Mã truy vết request."
+        timestamp:
+          type: string
+          description: "Thời điểm phát sinh lỗi."
+          format: date-time
+        details:
+          type: array
+          description: "Chi tiết bổ sung; với PLAN_VALIDATION_FAILED là danh sách vi phạm."
+          items:
+            type: string
+          nullable: true
+    AcademicRiskLevel:
+      type: string
+      description: "Mức rủi ro học vụ."
+      enum: [NORMAL, WARNING_LEVEL_1, WARNING_LEVEL_2, CRITICAL]
+    StudyPlanStatus:
+      type: string
+      description: "Vòng đời kế hoạch: DRAFT → VALIDATED → ACTIVE → COMPLETED | ARCHIVED. Sửa nội dung đưa về DRAFT; tối đa một ACTIVE mỗi sinh viên."
+      enum: [DRAFT, VALIDATED, ACTIVE, COMPLETED, ARCHIVED]
+    TrustedStudentContext:
+      type: object
+      description: "[Port] Danh tính sinh viên lấy từ phiên đăng nhập server; không bao giờ lấy từ client."
+      required: [studentId, dataRevision]
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên."
+        studentCode:
+          type: string
+          description: "Mã sinh viên hiển thị (MSSV)."
+          nullable: true
+        fullName:
+          type: string
+          description: "Họ tên."
+          nullable: true
+        majorCode:
+          type: string
+          description: "Mã chương trình/ngành."
+          example: CT1085
+          nullable: true
+        cohort:
+          type: string
+          description: "Khóa."
+          example: K19
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+    StudentDataVersion:
+      type: object
+      description: "[Port] Phiên bản dữ liệu học vụ hiện hành của sinh viên."
+      required: [studentId, dataRevision]
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên."
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+        updatedAt:
+          type: string
+          description: "Lần cập nhật dữ liệu học vụ gần nhất."
+          format: date-time
+          nullable: true
+        stale:
+          type: boolean
+          description: "true nếu revision so sánh đã cũ."
+          nullable: true
+    ConversationRecord:
+      type: object
+      description: "[Port] Bản ghi hội thoại lưu bởi ConversationStore, chỉ chủ sở hữu đọc được."
+      required: [conversationId, studentId]
+      properties:
+        conversationId:
+          type: string
+          description: "Mã hội thoại."
+        studentId:
+          type: string
+          description: "Chủ hội thoại."
+        title:
+          type: string
+          description: "Tiêu đề."
+          nullable: true
+        createdAt:
+          type: string
+          description: "Thời điểm tạo."
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          description: "Thời điểm cập nhật."
+          format: date-time
+          nullable: true
+        messagesJson:
+          type: string
+          description: "Danh sách tin nhắn dạng JSON string."
+          nullable: true
+    AcademicStatusRequest:
+      type: object
+      description: "[AcademicFacade#getAcademicStatus] Input do server dựng (GET /academic/status không có body)."
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên. Server luôn điền từ TrustedStudentContext; client không gửi, giá trị client gửi bị bỏ qua."
+          readOnly: true
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+    AcademicStatusResponse:
+      type: object
+      description: "Tình trạng học vụ. Thiếu dữ liệu → null (UNKNOWN), không gán 0."
+      required: [studentId, gpa, cpa, accumulatedCredits, dataRevision]
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên."
+        gpa:
+          type: number
+          description: "GPA học kỳ gần nhất (thang 4); null = chưa có dữ liệu."
+          nullable: true
+        cpa:
+          type: number
+          description: "CPA tích lũy (thang 4); null = chưa có dữ liệu."
+          nullable: true
+        accumulatedCredits:
+          type: integer
+          format: int32
+          description: "Số tín chỉ tích lũy (đã đạt); null = chưa có dữ liệu."
+          nullable: true
+        totalCreditsRequired:
+          type: integer
+          format: int32
+          description: "Tổng tín chỉ CTĐT yêu cầu."
+          nullable: true
+        riskLevel:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/AcademicRiskLevel"
+        warnings:
+          type: array
+          description: "Cảnh báo học vụ."
+          items:
+            type: string
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+    CourseEligibilityRequest:
+      type: object
+      description: "Kiểm tra điều kiện đăng ký một học phần."
+      required: [courseCode]
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên. Server luôn điền từ TrustedStudentContext; client không gửi, giá trị client gửi bị bỏ qua."
+          readOnly: true
+          nullable: true
+        courseCode:
+          type: string
+          description: "Mã học phần."
+          example: IT6083
+        targetSemester:
+          type: string
+          description: "Học kỳ dự định đăng ký."
+          pattern: "^[0-9]{4}_(1|2|SUMMER)$"
+          example: "2026_1"
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+    CourseEligibilityResponse:
+      type: object
+      description: "Kết quả điều kiện đăng ký. Môn điều kiện chưa có kết quả → eligible=false và ghi UNKNOWN trong missingPrerequisites."
+      required: [courseCode, eligible, missingPrerequisites]
+      properties:
+        courseCode:
+          type: string
+          description: "Mã học phần."
+        eligible:
+          type: boolean
+          description: "Đủ điều kiện đăng ký."
+        missingPrerequisites:
+          type: array
+          description: "Điều kiện còn thiếu, mỗi dòng bắt đầu bằng mã học phần."
+          items:
+            type: string
+        warnings:
+          type: array
+          description: "Cảnh báo không chặn thao tác (hiển thị cho người dùng)."
+          items:
+            type: string
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+    PlannedCourseItem:
+      type: object
+      description: "Một học phần trong một học kỳ của kế hoạch."
+      required: [courseCode, credits]
+      properties:
+        courseCode:
+          type: string
+          description: "Mã học phần (theo CTĐT)."
+        courseName:
+          type: string
+          description: "Tên học phần (theo CTĐT)."
+          nullable: true
+        credits:
+          type: integer
+          format: int32
+          description: "Số tín chỉ."
+        targetGrade:
+          type: string
+          description: "Điểm chữ mục tiêu (dự kiến)."
+          example: A
+          nullable: true
+        rationale:
+          type: string
+          description: "Lý do xếp môn."
+          nullable: true
+        courseType:
+          type: string
+          description: "STANDARD | RETAKE | IMPROVEMENT | ELECTIVE | ADVANCED."
+          nullable: true
+        status:
+          type: string
+          description: "Trạng thái môn trong kế hoạch: PLANNED | COMPLETED | FAILED | DROPPED."
+          nullable: true
+    PlannedSemesterItem:
+      type: object
+      description: "Một học kỳ trong kế hoạch. totalCredits = tổng credits của courses."
+      required: [semesterCode, courses, totalCredits]
+      properties:
+        semesterOrder:
+          type: integer
+          format: int32
+          description: "Thứ tự học kỳ trong kế hoạch, bắt đầu từ 1."
+          nullable: true
+        semesterCode:
+          type: string
+          description: "Mã học kỳ <năm bắt đầu>_<1|2|SUMMER>."
+          pattern: "^[0-9]{4}_(1|2|SUMMER)$"
+          example: "2026_1"
+        semesterName:
+          type: string
+          description: "Tên hiển thị."
+          nullable: true
+        courses:
+          type: array
+          description: "Học phần trong kỳ."
+          items:
+            $ref: "#/components/schemas/PlannedCourseItem"
+        totalCredits:
+          type: integer
+          format: int32
+          description: "Tổng tín chỉ của kỳ."
+        expectedGpa:
+          type: number
+          description: "GPA kỳ dự kiến (hiển thị nhãn \"Dự kiến\")."
+          nullable: true
+    ChatActionItem:
+      type: object
+      description: "Hành động gợi ý (trong chat hoặc trong kế hoạch)."
+      required: [actionType]
+      properties:
+        actionType:
+          type: string
+          description: "Loại hành động, ví dụ OPEN_PLANNER, OPEN_WHAT_IF, OPEN_AUDIT, RETAKE_IMPROVEMENT, UNBLOCK_PREREQUISITE, WORKLOAD_BALANCING, CERTIFICATE."
+        label:
+          type: string
+          description: "Nhãn nút bấm."
+          nullable: true
+        targetRoute:
+          type: string
+          description: "Route FE cần mở, ví dụ /planner, /what-if, /audit."
+          nullable: true
+        payloadJson:
+          type: string
+          description: "Tham số cho route dạng JSON string."
+          nullable: true
+        description:
+          type: string
+          description: "Mô tả hành động."
+          nullable: true
+        priority:
+          type: integer
+          format: int32
+          description: "Độ ưu tiên, 1 là cao nhất."
+          nullable: true
+    GenerateStudyPlanRequest:
+      type: object
+      description: "Yêu cầu sinh phương án lộ trình (xem trước, không lưu)."
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên. Server luôn điền từ TrustedStudentContext; client không gửi, giá trị client gửi bị bỏ qua."
+          readOnly: true
+          nullable: true
+        targetGraduationSemester:
+          type: string
+          description: "Học kỳ muốn tốt nghiệp."
+          pattern: "^[0-9]{4}_(1|2|SUMMER)$"
+          example: "2026_1"
+          nullable: true
+        targetCpa:
+          type: number
+          description: "CPA mục tiêu."
+          nullable: true
+        maxCreditsPerSemester:
+          type: integer
+          format: int32
+          description: "Trần tín chỉ mỗi kỳ người dùng chọn."
+          nullable: true
+        includeSummerSemesters:
+          type: boolean
+          description: "Cho phép xếp môn vào kỳ hè (học vượt)."
+          nullable: true
+        selectedRetakeCourseCodes:
+          type: array
+          description: "Mã học phần người dùng chọn học lại/cải thiện (từ What-if)."
+          items:
+            type: string
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+    GenerateStudyPlanResponse:
+      type: object
+      description: "Phương án lộ trình đề xuất, chưa lưu (status luôn DRAFT, không có planId/planVersion). Lưu bằng POST /planner/plans."
+      required: [proposalId, status, semesters]
+      properties:
+        proposalId:
+          type: string
+          description: "Mã phương án đề xuất; trùng ChatPlanProposal.proposalId khi đề xuất đi qua chat."
+        studentId:
+          type: string
+          description: "Mã sinh viên."
+          nullable: true
+        planName:
+          type: string
+          description: "Tên gợi ý khi lưu."
+          nullable: true
+        status:
+          $ref: "#/components/schemas/StudyPlanStatus"
+        targetCpa:
+          type: number
+          description: "CPA mục tiêu đã dùng để sinh phương án."
+          nullable: true
+        totalCredits:
+          type: integer
+          format: int32
+          description: "Tổng tín chỉ của mọi học kỳ trong phương án."
+          nullable: true
+        projectedCpa:
+          type: number
+          description: "CPA dự kiến khi hoàn thành phương án."
+          nullable: true
+        semesters:
+          type: array
+          description: "Các học kỳ."
+          items:
+            $ref: "#/components/schemas/PlannedSemesterItem"
+        actions:
+          type: array
+          description: "Hành động đi kèm."
+          items:
+            $ref: "#/components/schemas/ChatActionItem"
+          nullable: true
+        warnings:
+          type: array
+          description: "Cảnh báo không chặn thao tác (hiển thị cho người dùng)."
+          items:
+            type: string
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+    ValidateStudyPlanRequest:
+      type: object
+      description: "Thẩm định kế hoạch bằng AcademicFacade. Có planId (+planVersion): thẩm định bản đã lưu, hợp lệ thì bản đó chuyển VALIDATED; semesters bỏ trống. Không planId: kiểm tra nhanh semesters chưa lưu, không ghi gì."
+      properties:
+        planId:
+          type: string
+          description: "Kế hoạch đã lưu cần thẩm định."
+          nullable: true
+        studentId:
+          type: string
+          description: "Mã sinh viên. Server luôn điền từ TrustedStudentContext; client không gửi, giá trị client gửi bị bỏ qua."
+          readOnly: true
+          nullable: true
+        semesters:
+          type: array
+          description: "Nội dung cần kiểm tra khi chưa lưu."
+          items:
+            $ref: "#/components/schemas/PlannedSemesterItem"
+          nullable: true
+        planVersion:
+          type: integer
+          format: int32
+          description: "Bắt buộc khi có planId; khác bản đang lưu → 409 PLAN_VERSION_CONFLICT."
+          minimum: 1
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+    ValidateStudyPlanResponse:
+      type: object
+      description: "Kết quả thẩm định. violations chặn kích hoạt; warnings chỉ khuyến cáo."
+      required: [valid, status, violations, warnings]
+      properties:
+        valid:
+          type: boolean
+          description: "true khi không có vi phạm."
+        status:
+          $ref: "#/components/schemas/StudyPlanStatus"
+        violations:
+          type: array
+          description: "Vi phạm quy chế (chặn kích hoạt)."
+          items:
+            type: string
+        warnings:
+          type: array
+          description: "Cảnh báo không chặn thao tác (hiển thị cho người dùng)."
+          items:
+            type: string
+        planVersion:
+          type: integer
+          format: int32
+          description: "Phiên bản đã thẩm định (khi thẩm định bản đã lưu)."
+          minimum: 1
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+    SaveStudyPlanRequest:
+      type: object
+      description: "Lưu nháp. planId null → tạo DRAFT mới. planId của DRAFT/VALIDATED → cập nhật tại chỗ, về DRAFT, planVersion+1. planId của ACTIVE → tạo DRAFT mới kế thừa, ACTIVE giữ nguyên. ARCHIVED/COMPLETED → 409 PLAN_NOT_EDITABLE (dùng restore)."
+      required: [planName, semesters]
+      properties:
+        planId:
+          type: string
+          description: "Kế hoạch cần cập nhật; null để tạo mới."
+          nullable: true
+        planName:
+          type: string
+          description: "Tên kế hoạch."
+        planVersion:
+          type: integer
+          format: int32
+          description: "Bắt buộc khi có planId."
+          minimum: 1
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+        targetCpa:
+          type: number
+          description: "CPA mục tiêu."
+          nullable: true
+        targetGraduationSemester:
+          type: string
+          description: "Học kỳ muốn tốt nghiệp."
+          pattern: "^[0-9]{4}_(1|2|SUMMER)$"
+          example: "2026_1"
+          nullable: true
+        maxCreditsPerSemester:
+          type: integer
+          format: int32
+          description: "Trần tín chỉ mỗi kỳ."
+          nullable: true
+        semesters:
+          type: array
+          description: "Nội dung kế hoạch (cho phép chưa hợp lệ học vụ)."
+          items:
+            $ref: "#/components/schemas/PlannedSemesterItem"
+        actions:
+          type: array
+          description: "Hành động gắn với kế hoạch (chứng chỉ, học cải thiện...)."
+          items:
+            $ref: "#/components/schemas/ChatActionItem"
+          nullable: true
+    SaveStudyPlanResponse:
+      type: object
+      description: "Kết quả lưu nháp; status luôn DRAFT."
+      required: [planId, planName, status, planVersion, updatedAt]
+      properties:
+        planId:
+          type: string
+          description: "Kế hoạch đã lưu (mới nếu tạo hoặc kế thừa từ ACTIVE)."
+        planName:
+          type: string
+          description: "Tên kế hoạch."
+        status:
+          $ref: "#/components/schemas/StudyPlanStatus"
+        planVersion:
+          type: integer
+          format: int32
+          description: "Phiên bản nội dung kế hoạch (optimistic lock); tăng 1 mỗi lần lưu nội dung."
+          minimum: 1
+        sourcePlanId:
+          type: string
+          description: "Kế hoạch gốc khi bản này được tạo từ ACTIVE hoặc restore."
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+        updatedAt:
+          type: string
+          description: "Thời điểm lưu."
+          format: date-time
+        message:
+          type: string
+          description: "Thông điệp cho người dùng."
+          nullable: true
+    ActivateStudyPlanRequest:
+      type: object
+      description: "Kích hoạt kế hoạch {planId} trên path."
+      required: [planVersion]
+      properties:
+        planVersion:
+          type: integer
+          format: int32
+          description: "Phiên bản client đang giữ; khác bản lưu → 409 PLAN_VERSION_CONFLICT."
+          minimum: 1
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+    ActivateStudyPlanResponse:
+      type: object
+      description: "Kích hoạt thành công: bản này ACTIVE, bản ACTIVE cũ chuyển ARCHIVED trong cùng giao dịch."
+      required: [planId, status, activatedAt, archivedPlanIds]
+      properties:
+        planId:
+          type: string
+          description: "Kế hoạch vừa kích hoạt."
+        status:
+          $ref: "#/components/schemas/StudyPlanStatus"
+        activatedAt:
+          type: string
+          description: "Thời điểm kích hoạt."
+          format: date-time
+        archivedPlanIds:
+          type: array
+          description: "Các kế hoạch ACTIVE trước đó vừa bị lưu trữ."
+          items:
+            type: string
+        message:
+          type: string
+          description: "Thông điệp cho người dùng."
+          nullable: true
+    RestoreStudyPlanRequest:
+      type: object
+      description: "Tạo DRAFT mới sao chép nội dung kế hoạch {planId}; bản gốc giữ nguyên."
+      properties:
+        planName:
+          type: string
+          description: "Tên bản mới; mặc định \"Bản sao từ <tên cũ>\"."
+          nullable: true
+    StudyPlanSummaryItem:
+      type: object
+      description: "Một dòng lịch sử kế hoạch."
+      required: [planId, planName, planVersion, status, updatedAt]
+      properties:
+        planId:
+          type: string
+          description: "Mã kế hoạch."
+        planName:
+          type: string
+          description: "Tên kế hoạch."
+        planVersion:
+          type: integer
+          format: int32
+          description: "Phiên bản nội dung kế hoạch (optimistic lock); tăng 1 mỗi lần lưu nội dung."
+          minimum: 1
+        status:
+          $ref: "#/components/schemas/StudyPlanStatus"
+        sourcePlanId:
+          type: string
+          description: "Kế hoạch gốc (nếu có)."
+          nullable: true
+        totalCredits:
+          type: integer
+          format: int32
+          description: "Tổng tín chỉ của mọi học kỳ."
+          nullable: true
+        projectedCpa:
+          type: number
+          description: "CPA dự kiến."
+          nullable: true
+        updatedAt:
+          type: string
+          description: "Lần lưu gần nhất."
+          format: date-time
+    StudyPlanListResponse:
+      type: object
+      description: "Lịch sử kế hoạch của sinh viên đang đăng nhập, mới cập nhật trước. Bản ACTIVE (tối đa một) có status ACTIVE."
+      required: [plans]
+      properties:
+        plans:
+          type: array
+          description: "Danh sách kế hoạch."
+          items:
+            $ref: "#/components/schemas/StudyPlanSummaryItem"
+    StudyPlanDetailResponse:
+      type: object
+      description: "Chi tiết kế hoạch đã lưu."
+      required: [planId, studentId, planName, status, planVersion, semesters, createdAt, updatedAt]
+      properties:
+        planId:
+          type: string
+          description: "Mã kế hoạch."
+        studentId:
+          type: string
+          description: "Chủ kế hoạch."
+        planName:
+          type: string
+          description: "Tên kế hoạch."
+        status:
+          $ref: "#/components/schemas/StudyPlanStatus"
+        planVersion:
+          type: integer
+          format: int32
+          description: "Phiên bản nội dung kế hoạch (optimistic lock); tăng 1 mỗi lần lưu nội dung."
+          minimum: 1
+        sourcePlanId:
+          type: string
+          description: "Kế hoạch gốc (nếu có)."
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+        targetCpa:
+          type: number
+          description: "CPA mục tiêu."
+          nullable: true
+        targetGraduationSemester:
+          type: string
+          description: "Học kỳ muốn tốt nghiệp."
+          pattern: "^[0-9]{4}_(1|2|SUMMER)$"
+          example: "2026_1"
+          nullable: true
+        maxCreditsPerSemester:
+          type: integer
+          format: int32
+          description: "Trần tín chỉ mỗi kỳ."
+          nullable: true
+        totalCredits:
+          type: integer
+          format: int32
+          description: "Tổng tín chỉ của mọi học kỳ."
+          nullable: true
+        projectedCpa:
+          type: number
+          description: "CPA dự kiến."
+          nullable: true
+        semesters:
+          type: array
+          description: "Các học kỳ."
+          items:
+            $ref: "#/components/schemas/PlannedSemesterItem"
+        actions:
+          type: array
+          description: "Hành động gắn với kế hoạch."
+          items:
+            $ref: "#/components/schemas/ChatActionItem"
+          nullable: true
+        warnings:
+          type: array
+          description: "Cảnh báo không chặn thao tác (hiển thị cho người dùng)."
+          items:
+            type: string
+          nullable: true
+        createdAt:
+          type: string
+          description: "Thời điểm tạo."
+          format: date-time
+        updatedAt:
+          type: string
+          description: "Lần lưu gần nhất."
+          format: date-time
+        activatedAt:
+          type: string
+          description: "Thời điểm kích hoạt (nếu từng ACTIVE)."
+          format: date-time
+          nullable: true
+    ReconcileStudyPlanRequest:
+      type: object
+      description: "Đối chiếu kết quả một học kỳ đã học với kế hoạch ACTIVE (US-13)."
+      required: [planId, completedSemester]
+      properties:
+        planId:
+          type: string
+          description: "Kế hoạch ACTIVE."
+        studentId:
+          type: string
+          description: "Mã sinh viên. Server luôn điền từ TrustedStudentContext; client không gửi, giá trị client gửi bị bỏ qua."
+          readOnly: true
+          nullable: true
+        completedSemester:
+          type: string
+          description: "Học kỳ vừa có kết quả."
+          pattern: "^[0-9]{4}_(1|2|SUMMER)$"
+          example: "2026_1"
+        planVersion:
+          type: integer
+          format: int32
+          description: "Phiên bản nội dung kế hoạch (optimistic lock); tăng 1 mỗi lần lưu nội dung."
+          minimum: 1
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+    ReconcileStudyPlanResponse:
+      type: object
+      description: "Kết quả đối chiếu thực tế với dự kiến."
+      required: [planId, onTrack]
+      properties:
+        planId:
+          type: string
+          description: "Kế hoạch được đối chiếu."
+        studentId:
+          type: string
+          description: "Mã sinh viên."
+          nullable: true
+        onTrack:
+          type: boolean
+          description: "Còn đúng lộ trình."
+        completedCourses:
+          type: array
+          description: "Môn đã hoàn thành theo kế hoạch."
+          items:
+            type: string
+          nullable: true
+        missedOrFailedCourses:
+          type: array
+          description: "Môn trượt/bỏ lỡ."
+          items:
+            type: string
+          nullable: true
+        adjustmentsRecommended:
+          type: array
+          description: "Điều chỉnh đề xuất."
+          items:
+            type: string
+          nullable: true
+        planVersion:
+          type: integer
+          format: int32
+          description: "Phiên bản nội dung kế hoạch (optimistic lock); tăng 1 mỗi lần lưu nội dung."
+          minimum: 1
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+    SimulatedCourseGrade:
+      type: object
+      description: "Một môn với điểm giả định."
+      required: [courseCode, credits]
+      properties:
+        courseCode:
+          type: string
+          description: "Mã học phần."
+        credits:
+          type: integer
+          format: int32
+          description: "Số tín chỉ."
+        expectedGrade:
+          type: string
+          description: "Điểm chữ giả định."
+          nullable: true
+        expectedGradePoints:
+          type: number
+          description: "Điểm thang 4 giả định; null → tra theo expectedGrade."
+          nullable: true
+    SimulateGradesRequest:
+      type: object
+      description: "What-if: giả lập điểm, không ghi bảng điểm hay kế hoạch ACTIVE."
+      required: [courses]
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên. Server luôn điền từ TrustedStudentContext; client không gửi, giá trị client gửi bị bỏ qua."
+          readOnly: true
+          nullable: true
+        courses:
+          type: array
+          description: "Các môn giả lập."
+          items:
+            $ref: "#/components/schemas/SimulatedCourseGrade"
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+    SimulateGradesResponse:
+      type: object
+      description: "Kết quả giả lập (dự kiến)."
+      required: [currentCpa, expectedGpa, projectedCpa, cpaDelta]
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên."
+          nullable: true
+        currentCpa:
+          type: number
+          description: "CPA hiện tại."
+        expectedGpa:
+          type: number
+          description: "GPA kỳ giả lập (dự kiến)."
+        projectedCpa:
+          type: number
+          description: "CPA sau kỳ giả lập (dự kiến)."
+        cpaDelta:
+          type: number
+          description: "projectedCpa - currentCpa."
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+    RankRetakeCoursesRequest:
+      type: object
+      description: "Xếp hạng môn nên học lại/cải thiện theo hiệu quả CPA."
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên. Server luôn điền từ TrustedStudentContext; client không gửi, giá trị client gửi bị bỏ qua."
+          readOnly: true
+          nullable: true
+        maxSuggestions:
+          type: integer
+          format: int32
+          description: "Số gợi ý tối đa."
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+    RetakeCourseRecommendation:
+      type: object
+      description: "Một gợi ý học lại/cải thiện."
+      required: [courseCode, credits, cpaDelta, rank]
+      properties:
+        courseCode:
+          type: string
+          description: "Mã học phần."
+        courseName:
+          type: string
+          description: "Tên học phần."
+          nullable: true
+        credits:
+          type: integer
+          format: int32
+          description: "Số tín chỉ."
+        currentGrade:
+          type: string
+          description: "Điểm chữ hiện tại."
+          nullable: true
+        currentGradePoints:
+          type: number
+          description: "Điểm thang 4 hiện tại."
+          nullable: true
+        targetGrade:
+          type: string
+          description: "Điểm chữ mục tiêu."
+          nullable: true
+        targetGradePoints:
+          type: number
+          description: "Điểm thang 4 mục tiêu."
+          nullable: true
+        cpaDelta:
+          type: number
+          description: "CPA tăng thêm dự kiến nếu đạt targetGrade."
+        rank:
+          type: integer
+          format: int32
+          description: "Thứ hạng, 1 là hiệu quả nhất."
+        rationale:
+          type: string
+          description: "Giải thích."
+          nullable: true
+    RankRetakeCoursesResponse:
+      type: object
+      description: "Danh sách gợi ý theo thứ hạng."
+      required: [recommendations]
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên."
+          nullable: true
+        recommendations:
+          type: array
+          description: "Gợi ý."
+          items:
+            $ref: "#/components/schemas/RetakeCourseRecommendation"
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+    CalculateTargetGradesRequest:
+      type: object
+      description: "Tính ngược điểm cần đạt cho CPA mục tiêu."
+      required: [targetCpa]
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên. Server luôn điền từ TrustedStudentContext; client không gửi, giá trị client gửi bị bỏ qua."
+          readOnly: true
+          nullable: true
+        targetCpa:
+          type: number
+          description: "CPA mục tiêu."
+        targetGraduationSemester:
+          type: string
+          description: "Học kỳ muốn tốt nghiệp."
+          pattern: "^[0-9]{4}_(1|2|SUMMER)$"
+          example: "2026_1"
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+    TargetCourseGradeRequirement:
+      type: object
+      description: "Điểm cần đạt ở một môn."
+      required: [courseCode]
+      properties:
+        courseCode:
+          type: string
+          description: "Mã học phần."
+        courseName:
+          type: string
+          description: "Tên học phần."
+          nullable: true
+        credits:
+          type: integer
+          format: int32
+          description: "Số tín chỉ."
+          nullable: true
+        requiredGrade:
+          type: string
+          description: "Điểm chữ cần đạt."
+          nullable: true
+        requiredGradePoints:
+          type: number
+          description: "Điểm thang 4 cần đạt."
+          nullable: true
+        rationale:
+          type: string
+          description: "Giải thích."
+          nullable: true
+    CalculateTargetGradesResponse:
+      type: object
+      description: "Kết quả tính ngược (dự kiến)."
+      required: [currentCpa, targetCpa, requiredAverageGpa]
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên."
+          nullable: true
+        currentCpa:
+          type: number
+          description: "CPA hiện tại."
+        targetCpa:
+          type: number
+          description: "CPA mục tiêu."
+        remainingCredits:
+          type: integer
+          format: int32
+          description: "Tín chỉ còn phải học."
+          nullable: true
+        requiredAverageGpa:
+          type: number
+          description: "GPA trung bình cần đạt cho phần còn lại."
+        courseRequirements:
+          type: array
+          description: "Điểm cần đạt từng môn."
+          items:
+            $ref: "#/components/schemas/TargetCourseGradeRequirement"
+          nullable: true
+        warnings:
+          type: array
+          description: "Cảnh báo tính khả thi."
+          items:
+            type: string
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+    GraduationAuditRequest:
+      type: object
+      description: "[AcademicFacade#runGraduationAudit] Input do server dựng (GET /audit/graduation không có body)."
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên. Server luôn điền từ TrustedStudentContext; client không gửi, giá trị client gửi bị bỏ qua."
+          readOnly: true
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+    AuditChecklistItem:
+      type: object
+      description: "Một điều kiện tốt nghiệp."
+      required: [category, name, completed]
+      properties:
+        category:
+          type: string
+          description: "Nhóm điều kiện."
+        name:
+          type: string
+          description: "Tên điều kiện."
+        completed:
+          type: boolean
+          description: "Đã đạt."
+        totalCreditsRequired:
+          type: integer
+          format: int32
+          description: "Tín chỉ yêu cầu của điều kiện (null nếu không tính bằng tín chỉ)."
+          nullable: true
+        accumulatedCredits:
+          type: integer
+          format: int32
+          description: "Tín chỉ đã tích lũy cho điều kiện."
+          nullable: true
+        statusMessage:
+          type: string
+          description: "Diễn giải trạng thái."
+          nullable: true
+    AuditCertificateAction:
+      type: object
+      description: "Chứng chỉ/chuẩn đầu ra còn thiếu, chuyển thành action trong kế hoạch."
+      required: [certificateType, status]
+      properties:
+        certificateType:
+          type: string
+          description: "Loại chứng chỉ, ví dụ MOS, TOEIC."
+        requiredStandard:
+          type: string
+          description: "Chuẩn yêu cầu."
+          nullable: true
+        actionDescription:
+          type: string
+          description: "Việc cần làm."
+          nullable: true
+        deadline:
+          type: string
+          description: "Hạn chót (yyyy-MM-dd)."
+          format: date
+          nullable: true
+        status:
+          type: string
+          description: "PENDING | DONE."
+    GraduationAuditResponse:
+      type: object
+      description: "Rà soát tốt nghiệp (dự kiến; không thay quyết định của trường)."
+      required: [eligibleForGraduation, checklist, pendingActions]
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên."
+          nullable: true
+        eligibleForGraduation:
+          type: boolean
+          description: "Đủ điều kiện theo dữ liệu hiện có."
+        completedPercentage:
+          type: integer
+          format: int32
+          description: "Phần trăm hoàn thành tín chỉ."
+          nullable: true
+        accumulatedCredits:
+          type: integer
+          format: int32
+          description: "Số tín chỉ tích lũy."
+          nullable: true
+        totalCreditsRequired:
+          type: integer
+          format: int32
+          description: "Tổng tín chỉ CTĐT yêu cầu."
+          nullable: true
+        checklist:
+          type: array
+          description: "Danh sách điều kiện."
+          items:
+            $ref: "#/components/schemas/AuditChecklistItem"
+        pendingActions:
+          type: array
+          description: "Việc còn phải làm."
+          items:
+            $ref: "#/components/schemas/AuditCertificateAction"
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+          nullable: true
+    ChatRequest:
+      type: object
+      description: "Tin nhắn gửi trợ lý. Client tự sinh conversationId (UUID) cho hội thoại mới."
+      required: [conversationId, message]
+      properties:
+        conversationId:
+          type: string
+          description: "Mã hội thoại."
+        message:
+          type: string
+          description: "Nội dung câu hỏi."
+        clientTimestamp:
+          type: string
+          description: "Thời điểm client gửi."
+          format: date-time
+          nullable: true
+    ChatSourceItem:
+      type: object
+      description: "Nguồn trích dẫn; phải tồn tại trong context đã truy xuất."
+      required: [sourceId, title]
+      properties:
+        sourceId:
+          type: string
+          description: "Mã nguồn trong RAG source catalog."
+        title:
+          type: string
+          description: "Tên tài liệu."
+        section:
+          type: string
+          description: "Mục trích dẫn."
+          nullable: true
+        version:
+          type: string
+          description: "Phiên bản tài liệu nguồn."
+          nullable: true
+        referenceUrl:
+          type: string
+          description: "Đường dẫn tài liệu."
+          nullable: true
+    ChatPlanProposal:
+      type: object
+      description: "Phương án kế hoạch đề xuất trong chat (chưa lưu)."
+      required: [proposalId, semesters]
+      properties:
+        proposalId:
+          type: string
+          description: "Mã phương án; trùng GenerateStudyPlanResponse.proposalId."
+        summary:
+          type: string
+          description: "Tóm tắt."
+          nullable: true
+        semesters:
+          type: array
+          description: "Các học kỳ đề xuất."
+          items:
+            $ref: "#/components/schemas/PlannedSemesterItem"
+        projectedCpa:
+          type: number
+          description: "CPA dự kiến."
+          nullable: true
+    ChatResponse:
+      type: object
+      description: "Câu trả lời của trợ lý."
+      required: [answer, sources, actions, planProposal, warnings]
+      properties:
+        answer:
+          type: string
+          description: "Nội dung trả lời."
+        sources:
+          type: array
+          description: "Nguồn trích dẫn."
+          items:
+            $ref: "#/components/schemas/ChatSourceItem"
+        actions:
+          type: array
+          description: "Hành động gợi ý."
+          items:
+            $ref: "#/components/schemas/ChatActionItem"
+        planProposal:
+          description: "Đề xuất kế hoạch; null với câu hỏi không liên quan lộ trình."
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/ChatPlanProposal"
+        warnings:
+          type: array
+          description: "Mã/diễn giải cảnh báo, ví dụ TRANSCRIPT_REQUIRED, POLICY_SOURCE_UNAVAILABLE."
+          items:
+            type: string

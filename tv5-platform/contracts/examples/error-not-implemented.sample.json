@@ -1,0 +1,9 @@
+{
+  "code": "NOT_IMPLEMENTED",
+  "message": "Chức năng chưa được nối ở runtime hiện tại.",
+  "requestId": "req-2026-10-13-0005",
+  "timestamp": "2026-10-13T08:15:00Z",
+  "details": [
+    "Capability getAcademicStatus sẽ được nối với AcademicFacade ở Phase 4"
+  ]
+}

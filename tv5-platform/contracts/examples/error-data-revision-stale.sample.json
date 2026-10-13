@@ -1,0 +1,10 @@
+{
+  "code": "DATA_REVISION_STALE",
+  "message": "Dữ liệu học vụ đã thay đổi. Vui lòng tải lại dữ liệu mới nhất rồi thực hiện lại.",
+  "requestId": "req-2026-10-13-0001",
+  "timestamp": "2026-10-13T08:11:00Z",
+  "details": [
+    "Revision hiện hành: REV-2024604757-002",
+    "Revision client gửi: REV-2024604757-001"
+  ]
+}

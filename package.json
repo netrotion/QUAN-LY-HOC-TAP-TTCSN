@@ -4,7 +4,8 @@
   "private": true,
   "workspaces": [
     "tv3-planner-ui",
-    "tv2-web"
+    "tv2-web",
+    "tv5-platform/contracts"
   ],
   "scripts": {
     "dev": "npm run --workspace=@haui/web dev",
@@ -12,11 +13,14 @@
     "build:web": "npm run --workspace=@haui/web build",
     "build": "npm run build:planner && npm run build:web",
     "lint": "node scripts/check-lint.mjs",
-    "test": "node --test tv3-planner-ui/test/*.test.mjs tv2-web/test/*.test.mjs",
+    "test": "node --test tv3-planner-ui/test/*.test.mjs tv2-web/test/*.test.mjs tv5-platform/contracts/js/test/*.test.mjs",
     "check:ownership": "node scripts/check-ownership.mjs",
     "check:secrets": "node scripts/check-secrets.mjs",
     "check:architecture": "node scripts/check-architecture.mjs",
     "check:contracts": "node scripts/check-contracts.mjs",
+    "check:contract-consumers": "node scripts/check-contract-consumers.mjs",
+    "contracts:build": "node scripts/check-contracts.mjs --write",
+    "contracts:lock": "node scripts/check-contracts.mjs --update-lock",
     "smoke": "node scripts/smoke-check.mjs",
     "check:all": "npm run check:ownership && npm run check:secrets && npm run check:architecture && npm run check:contracts && npm run lint && npm run test && npm run build",
     "verify:all": "npm run check:all && npm run smoke"

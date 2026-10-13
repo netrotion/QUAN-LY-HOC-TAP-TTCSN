@@ -1,0 +1,9 @@
+{
+  "code": "PLAN_VALIDATION_FAILED",
+  "message": "Kế hoạch vi phạm quy chế khi thẩm định lại lúc kích hoạt.",
+  "requestId": "req-2026-10-13-0004",
+  "timestamp": "2026-10-13T08:14:00Z",
+  "details": [
+    "Học kỳ 2026_1 có 5 TC, thấp hơn mức tối thiểu 10 TC của học kỳ chính"
+  ]
+}

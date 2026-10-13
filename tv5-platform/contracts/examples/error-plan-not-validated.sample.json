@@ -1,0 +1,9 @@
+{
+  "code": "PLAN_NOT_VALIDATED",
+  "message": "Chỉ kích hoạt được kế hoạch đã thẩm định hợp lệ. Hãy bấm \"Kiểm tra điều kiện\" trước.",
+  "requestId": "req-2026-10-13-0003",
+  "timestamp": "2026-10-13T08:13:00Z",
+  "details": [
+    "Trạng thái hiện tại: DRAFT"
+  ]
+}

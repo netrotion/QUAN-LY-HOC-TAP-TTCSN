@@ -1,14 +1,19 @@
 {
-  "planId": "plan-2026-9001",
-  "studentId": "std-2026-001",
-  "onTrack": true,
+  "planId": "plan-2024604757-0002",
+  "studentId": "2024604757",
+  "onTrack": false,
   "completedCourses": [
-    "MATH1002 - Điểm B (Đạt mục tiêu)"
+    "LP6004 - Tư tưởng Hồ Chí Minh: B (đạt mục tiêu B)",
+    "IT6039 - Thiết kế Web: A (đạt mục tiêu A)",
+    "IT6044 - Ứng dụng thuật toán: B (mục tiêu B+)",
+    "IT6096 - Thiết kế phần mềm: A (đạt mục tiêu A)"
   ],
-  "missedOrFailedCourses": [],
+  "missedOrFailedCourses": [
+    "IT6095 - Tối ưu hóa: F"
+  ],
   "adjustmentsRecommended": [
-    "Tiến độ phù hợp, tiếp tục kích hoạt đăng ký kỳ tiếp theo theo lộ trình"
+    "Xếp học lại IT6095 - Tối ưu hóa vào học kỳ 2026_2 hoặc kỳ hè 2026_SUMMER"
   ],
-  "planVersion": 1,
-  "dataRevision": "rev-1002"
+  "planVersion": 2,
+  "dataRevision": "REV-2024604757-002"
 }

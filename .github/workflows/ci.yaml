@@ -55,6 +55,9 @@ jobs:
       - name: Run Contracts & Fixtures Check
         run: npm run check:contracts
 
+      - name: Report Contract Consumers (TV1-TV4, non-blocking)
+        run: npm run check:contract-consumers
+
       - name: Run Frontend Linter
         run: npm run lint
 

@@ -1,24 +1,140 @@
 {
-  "answer": "Khi chưa đạt môn Toán rời rạc (MATH1002), bạn sẽ chưa đủ điều kiện tiên quyết để đăng ký môn Cấu trúc dữ liệu & Giải thuật (IT6001) trong học kỳ tới.",
+  "answer": "Kỳ 2026_1 bạn nên ưu tiên học lại LP6004 - Tư tưởng Hồ Chí Minh để giải tỏa nợ học phần, kết hợp các môn chuyên ngành đã đủ học phần học trước. Tổng 14 tín chỉ, nằm trong giới hạn 10-24 tín chỉ của học kỳ chính. Đây là phương án dự kiến, bạn có thể mở Planner để xem và lưu.",
   "sources": [
     {
-      "sourceId": "SRC_CTDT_DEMO",
-      "title": "Khung CTĐT ngành CNTT (Bản mẫu demo)",
-      "section": "Mục 4.2 - Cây quan hệ học phần tiên quyết",
-      "version": "DEMO_UNVERIFIED",
-      "referenceUrl": "/api/v1/curriculum/demo"
+      "sourceId": "REG-HAUI-01",
+      "title": "Quy chế đào tạo theo hệ thống tín chỉ — Trường Đại học Công nghiệp Hà Nội (HaUI)",
+      "section": "1. Tổ chức Đào tạo và Kế hoạch Học tập > 2. Giới hạn Đăng ký Tín chỉ (Credit Limits)",
+      "version": "gitblob:cab439dd3364",
+      "referenceUrl": "https://sv.haui.edu.vn/quy-che/reg-haui-01"
     }
   ],
   "actions": [
     {
       "actionType": "OPEN_PLANNER",
-      "label": "Mở Study Planner để xem lộ trình học lại",
+      "label": "Mở Planner với phương án đề xuất",
       "targetRoute": "/planner",
-      "payloadJson": "{\"suggestedCourse\":\"MATH1002\"}"
+      "payloadJson": "{\"proposalId\":\"proposal-2024604757-20261013-01\"}",
+      "description": null,
+      "priority": 1
     }
   ],
-  "planProposal": null,
+  "planProposal": {
+    "proposalId": "proposal-2024604757-20261013-01",
+    "summary": "Đề xuất 2 học kỳ tới: học lại LP6004, cải thiện LP6010 và các môn chuyên ngành đúng tiến độ",
+    "semesters": [
+      {
+        "semesterOrder": 1,
+        "semesterCode": "2026_1",
+        "semesterName": "Học kỳ 1 năm học 2026-2027",
+        "courses": [
+          {
+            "courseCode": "LP6004",
+            "courseName": "Tư tưởng Hồ Chí Minh",
+            "credits": 2,
+            "targetGrade": "B",
+            "rationale": "Học lại môn điểm F để giải tỏa nợ học phần",
+            "courseType": "RETAKE",
+            "status": "PLANNED"
+          },
+          {
+            "courseCode": "IT6039",
+            "courseName": "Thiết kế Web",
+            "credits": 3,
+            "targetGrade": "A",
+            "rationale": "Học kỳ gợi ý 4 trong CTĐT",
+            "courseType": "STANDARD",
+            "status": "PLANNED"
+          },
+          {
+            "courseCode": "IT6044",
+            "courseName": "Ứng dụng thuật toán",
+            "credits": 3,
+            "targetGrade": "B+",
+            "rationale": "Đã học IT6002 và IT6015 (học phần học trước)",
+            "courseType": "STANDARD",
+            "status": "PLANNED"
+          },
+          {
+            "courseCode": "IT6096",
+            "courseName": "Thiết kế phần mềm",
+            "credits": 3,
+            "targetGrade": "A",
+            "rationale": "Đã học IT6097 (học phần học trước)",
+            "courseType": "STANDARD",
+            "status": "PLANNED"
+          },
+          {
+            "courseCode": "IT6095",
+            "courseName": "Tối ưu hóa",
+            "credits": 3,
+            "targetGrade": "B+",
+            "rationale": "Học kỳ gợi ý 5 trong CTĐT",
+            "courseType": "STANDARD",
+            "status": "PLANNED"
+          }
+        ],
+        "totalCredits": 14,
+        "expectedGpa": 3.45
+      },
+      {
+        "semesterOrder": 2,
+        "semesterCode": "2026_2",
+        "semesterName": "Học kỳ 2 năm học 2026-2027",
+        "courses": [
+          {
+            "courseCode": "LP6010",
+            "courseName": "Triết học Mác-Lênin",
+            "credits": 3,
+            "targetGrade": "B+",
+            "rationale": "Học cải thiện từ D+ lên B+, hiệu quả CPA cao nhất",
+            "courseType": "IMPROVEMENT",
+            "status": "PLANNED"
+          },
+          {
+            "courseCode": "IT6151",
+            "courseName": "Phát triển phần mềm hướng dịch vụ",
+            "credits": 3,
+            "targetGrade": "A",
+            "rationale": "Đã học IT6019 (học phần học trước)",
+            "courseType": "STANDARD",
+            "status": "PLANNED"
+          },
+          {
+            "courseCode": "IT6084",
+            "courseName": "Kiểm thử phần mềm",
+            "credits": 3,
+            "targetGrade": "B+",
+            "rationale": "Đã học IT6002 và IT6082 (học phần học trước)",
+            "courseType": "STANDARD",
+            "status": "PLANNED"
+          },
+          {
+            "courseCode": "IT6020",
+            "courseName": "Lập trình Java nâng cao",
+            "credits": 3,
+            "targetGrade": "A",
+            "rationale": "Đã học IT6019 và IT6120 (học phần học trước)",
+            "courseType": "STANDARD",
+            "status": "PLANNED"
+          },
+          {
+            "courseCode": "LP6013",
+            "courseName": "Lịch sử Đảng Cộng sản Việt Nam",
+            "credits": 2,
+            "targetGrade": "B",
+            "rationale": "Đã học LP6011 (học phần học trước)",
+            "courseType": "STANDARD",
+            "status": "PLANNED"
+          }
+        ],
+        "totalCredits": 14,
+        "expectedGpa": 3.5
+      }
+    ],
+    "projectedCpa": 3.26
+  },
   "warnings": [
-    "Quy tắc tiên quyết dựa trên dữ liệu mô phỏng, cần đối chiếu thông báo mở lớp chính thức"
+    "Quy tắc tín chỉ dựa trên quy chế demo (DEMO_UNVERIFIED), cần đối chiếu thông báo mở lớp chính thức"
   ]
 }

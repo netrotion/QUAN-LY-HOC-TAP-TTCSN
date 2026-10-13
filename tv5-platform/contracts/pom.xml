@@ -15,7 +15,7 @@
     <packaging>jar</packaging>
 
     <name>haui-contracts</name>
-    <description>Core DTOs, Enums, and Port Interfaces for HaUI Advisor</description>
+    <description>Contracts V1: DTOs, Enums, Port Interfaces, OpenAPI and JSON fixtures for HaUI Advisor</description>
 
     <dependencies>
         <!-- JSON Serialization -->
@@ -44,5 +44,41 @@
             <artifactId>archunit-junit5</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Đọc openapi-v1.yaml trong contract test -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <!-- JSON fixtures contracts-v1 đi kèm jar để fake provider và phía sử dụng đọc từ classpath -->
+            <resource>
+                <directory>examples</directory>
+                <targetPath>contracts-v1/examples</targetPath>
+                <includes>
+                    <include>*.json</include>
+                </includes>
+            </resource>
+        </resources>
+        <plugins>
+            <!-- test-jar: chia sẻ bộ kiểm tra schema OpenAPI cho consumer test ở platform app -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

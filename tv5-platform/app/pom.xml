@@ -70,6 +70,13 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Bộ kiểm tra schema OpenAPI + fixtures contracts-v1 cho HTTP/consumer contract test -->
+        <dependency>
+            <groupId>vn.haui.advisor</groupId>
+            <artifactId>haui-contracts</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>

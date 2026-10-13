@@ -1,47 +1,84 @@
 {
-  "planId": "plan-2024-k19-001",
+  "planId": "plan-2024604757-0002",
   "studentId": "2024604757",
-  "planName": "Kế hoạch học tập KTPM K19 - Mục tiêu CPA 3.20",
-  "status": "VALIDATED",
-  "version": 1,
-  "dataRevision": "REV-2024-001",
-  "targetCpa": 3.20,
+  "planName": "Kế hoạch KTPM K19 - mục tiêu CPA 3.20",
+  "status": "ACTIVE",
+  "planVersion": 2,
+  "sourcePlanId": null,
+  "dataRevision": "REV-2024604757-001",
+  "targetCpa": 3.2,
   "targetGraduationSemester": "2028_1",
   "maxCreditsPerSemester": 20,
+  "totalCredits": 14,
+  "projectedCpa": 3.21,
   "semesters": [
     {
       "semesterOrder": 1,
-      "semesterCode": "2024_1",
-      "plannedCredits": 18,
-      "estimatedGpa": 3.15,
+      "semesterCode": "2026_1",
+      "semesterName": "Học kỳ 1 năm học 2026-2027",
       "courses": [
         {
-          "courseCode": "BS6001",
-          "courseName": "Giải tích 1",
+          "courseCode": "LP6004",
+          "courseName": "Tư tưởng Hồ Chí Minh",
+          "credits": 2,
+          "targetGrade": "B",
+          "rationale": "Học lại môn điểm F để giải tỏa nợ học phần",
+          "courseType": "RETAKE",
+          "status": "PLANNED"
+        },
+        {
+          "courseCode": "IT6039",
+          "courseName": "Thiết kế Web",
           "credits": 3,
-          "targetGrade": "B+",
+          "targetGrade": "A",
+          "rationale": "Học kỳ gợi ý 4 trong CTĐT",
           "courseType": "STANDARD",
           "status": "PLANNED"
         },
         {
-          "courseCode": "IT6012",
-          "courseName": "Cơ sở lập trình",
-          "credits": 4,
+          "courseCode": "IT6044",
+          "courseName": "Ứng dụng thuật toán",
+          "credits": 3,
+          "targetGrade": "B+",
+          "rationale": "Đã học IT6002 và IT6015 (học phần học trước)",
+          "courseType": "STANDARD",
+          "status": "PLANNED"
+        },
+        {
+          "courseCode": "IT6096",
+          "courseName": "Thiết kế phần mềm",
+          "credits": 3,
           "targetGrade": "A",
+          "rationale": "Đã học IT6097 (học phần học trước)",
+          "courseType": "STANDARD",
+          "status": "PLANNED"
+        },
+        {
+          "courseCode": "IT6095",
+          "courseName": "Tối ưu hóa",
+          "credits": 3,
+          "targetGrade": "B+",
+          "rationale": "Học kỳ gợi ý 5 trong CTĐT",
           "courseType": "STANDARD",
           "status": "PLANNED"
         }
-      ]
+      ],
+      "totalCredits": 14,
+      "expectedGpa": 3.45
     }
   ],
   "actions": [
     {
-      "actionType": "UNBLOCK_PREREQUISITE",
-      "description": "Ưu tiên đạt điểm môn Cơ sở lập trình để mở khóa môn Cấu trúc dữ liệu và giải thuật kỳ sau",
-      "priority": 1
+      "actionType": "CERTIFICATE",
+      "label": "Xem điều kiện tốt nghiệp",
+      "targetRoute": "/audit",
+      "payloadJson": "{\"certificateType\":\"MOS\"}",
+      "description": "Đăng ký thi và nộp chứng chỉ MOS trước đợt xét tốt nghiệp",
+      "priority": 2
     }
   ],
   "warnings": [],
-  "createdAt": "2026-10-01T08:00:00Z",
-  "updatedAt": "2026-10-01T08:00:00Z"
+  "createdAt": "2026-09-15T08:00:00Z",
+  "updatedAt": "2026-09-20T02:00:00Z",
+  "activatedAt": "2026-09-20T02:05:00Z"
 }

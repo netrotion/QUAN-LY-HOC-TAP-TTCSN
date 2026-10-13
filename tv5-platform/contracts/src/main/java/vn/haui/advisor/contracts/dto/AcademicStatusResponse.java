@@ -1,5 +1,7 @@
 package vn.haui.advisor.contracts.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
@@ -11,7 +13,7 @@ public class AcademicStatusResponse implements Serializable {
     private Integer accumulatedCredits;
     private Integer totalCreditsRequired;
     private AcademicRiskLevel riskLevel;
-    private List<String> warningMessages;
+    private List<String> warnings;
     private String dataRevision;
 
     public AcademicStatusResponse() {
@@ -19,14 +21,14 @@ public class AcademicStatusResponse implements Serializable {
 
     public AcademicStatusResponse(String studentId, BigDecimal gpa, BigDecimal cpa, Integer accumulatedCredits,
                                   Integer totalCreditsRequired, AcademicRiskLevel riskLevel,
-                                  List<String> warningMessages, String dataRevision) {
+                                  List<String> warnings, String dataRevision) {
         this.studentId = studentId;
         this.gpa = gpa;
         this.cpa = cpa;
         this.accumulatedCredits = accumulatedCredits;
         this.totalCreditsRequired = totalCreditsRequired;
         this.riskLevel = riskLevel;
-        this.warningMessages = warningMessages;
+        this.warnings = warnings;
         this.dataRevision = dataRevision;
     }
 
@@ -78,12 +80,23 @@ public class AcademicStatusResponse implements Serializable {
         this.riskLevel = riskLevel;
     }
 
-    public List<String> getWarningMessages() {
-        return warningMessages;
+    public List<String> getWarnings() {
+        return warnings;
     }
 
-    public void setWarningMessages(List<String> warningMessages) {
-        this.warningMessages = warningMessages;
+    public void setWarnings(List<String> warnings) {
+        this.warnings = warnings;
+    }
+
+    /**
+     * Accessor chuyển tiếp cho mã nguồn dùng tên V0; JSON chỉ có trường {@code warnings}.
+     *
+     * @deprecated dùng {@link #getWarnings()}.
+     */
+    @Deprecated(since = "1.0.0", forRemoval = true)
+    @JsonIgnore
+    public List<String> getWarningMessages() {
+        return warnings;
     }
 
     public String getDataRevision() {

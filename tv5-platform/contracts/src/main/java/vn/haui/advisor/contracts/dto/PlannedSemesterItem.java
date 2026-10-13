@@ -74,27 +74,11 @@ public class PlannedSemesterItem implements Serializable {
         this.totalCredits = totalCredits;
     }
 
-    public Integer getPlannedCredits() {
-        return totalCredits;
-    }
-
-    public void setPlannedCredits(Integer plannedCredits) {
-        this.totalCredits = plannedCredits;
-    }
-
     public BigDecimal getExpectedGpa() {
         return expectedGpa;
     }
 
     public void setExpectedGpa(BigDecimal expectedGpa) {
         this.expectedGpa = expectedGpa;
-    }
-
-    public BigDecimal getEstimatedGpa() {
-        return expectedGpa;
-    }
-
-    public void setEstimatedGpa(BigDecimal estimatedGpa) {
-        this.expectedGpa = estimatedGpa;
     }
 }

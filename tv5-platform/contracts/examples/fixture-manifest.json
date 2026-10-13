@@ -1,80 +1,351 @@
 {
-  "manifestType": "FIXTURE_ONLY",
-  "version": "0.0.1-v0",
-  "purpose": "Kiểm tra cấu trúc và tính tương thích serialization/deserialization DTO V0, không phải dữ liệu học vụ thực tế",
+  "manifestType": "CONTRACT_FIXTURES",
+  "milestone": "contracts-v1",
+  "contractVersion": "1.0.0",
+  "openapi": "../openapi/openapi-v1.yaml",
+  "purpose": "Ví dụ chuẩn của contracts-v1: mock FE (TV2/TV3), fake provider cho AI (TV1), input AcademicFacade cho TV4. Mọi fixture qua contract test (OpenAPI + DTO round-trip). Dữ liệu là sinh viên demo 2024604757 theo fixture TV4, không phải dữ liệu học vụ thật.",
+  "demoStudent": {
+    "studentId": "2024604757",
+    "dataRevision": "REV-2024604757-001"
+  },
+  "notes": [
+    "requestSample có studentId là input AcademicFacade do server dựng: client HTTP KHÔNG gửi studentId (readOnly), server điền từ TrustedStudentContext.",
+    "GET /academic/status và GET /audit/graduation không có body: requestSample chỉ dành cho TV4/TV1 (input facade).",
+    "Học phần, tên và số tín chỉ lấy từ tv4-academic/fixtures/curriculum-ktpm-v1.json."
+  ],
   "fixtures": [
     {
-      "capability": "getAcademicStatus",
+      "id": "academic-status",
+      "operationId": "getAcademicStatus",
+      "method": "GET",
+      "path": "/academic/status",
+      "httpStatus": 200,
+      "facadeMethod": "AcademicFacade#getAcademicStatus",
       "requestSample": "academic-status-request.sample.json",
-      "responseSample": "academic-status-response.sample.json"
+      "requestSchema": "AcademicStatusRequest",
+      "responseSample": "academic-status-response.sample.json",
+      "responseSchema": "AcademicStatusResponse",
+      "consumers": [
+        "TV2",
+        "TV3",
+        "TV1",
+        "TV4"
+      ]
     },
     {
-      "capability": "checkCourseEligibility",
+      "id": "academic-status-missing-data",
+      "operationId": "getAcademicStatus",
+      "method": "GET",
+      "path": "/academic/status",
+      "httpStatus": 200,
+      "facadeMethod": "AcademicFacade#getAcademicStatus",
+      "requestSample": "academic-status-missing-data-request.sample.json",
+      "requestSchema": "AcademicStatusRequest",
+      "responseSample": "academic-status-missing-data-response.sample.json",
+      "responseSchema": "AcademicStatusResponse",
+      "consumers": [
+        "TV2",
+        "TV3",
+        "TV4"
+      ]
+    },
+    {
+      "id": "course-eligibility",
+      "operationId": "checkCourseEligibility",
+      "method": "POST",
+      "path": "/academic/eligibility",
+      "httpStatus": 200,
+      "facadeMethod": "AcademicFacade#checkCourseEligibility",
       "requestSample": "course-eligibility-request.sample.json",
-      "responseSample": "course-eligibility-response.sample.json"
+      "requestSchema": "CourseEligibilityRequest",
+      "responseSample": "course-eligibility-response.sample.json",
+      "responseSchema": "CourseEligibilityResponse",
+      "consumers": [
+        "TV2",
+        "TV1",
+        "TV4"
+      ]
     },
     {
-      "capability": "generateStudyPlan",
+      "id": "generate-study-plan",
+      "operationId": "generateStudyPlan",
+      "method": "POST",
+      "path": "/planner/generate",
+      "httpStatus": 200,
+      "facadeMethod": "AcademicFacade#generateStudyPlan",
       "requestSample": "generate-study-plan-request.sample.json",
-      "responseSample": "generate-study-plan-response.sample.json"
+      "requestSchema": "GenerateStudyPlanRequest",
+      "responseSample": "generate-study-plan-response.sample.json",
+      "responseSchema": "GenerateStudyPlanResponse",
+      "consumers": [
+        "TV3",
+        "TV1",
+        "TV4"
+      ]
     },
     {
-      "capability": "validateStudyPlan",
+      "id": "validate-study-plan",
+      "operationId": "validateStudyPlan",
+      "method": "POST",
+      "path": "/planner/validate",
+      "httpStatus": 200,
+      "facadeMethod": "AcademicFacade#validateStudyPlan",
       "requestSample": "validate-study-plan-request.sample.json",
-      "responseSample": "validate-study-plan-response.sample.json"
+      "requestSchema": "ValidateStudyPlanRequest",
+      "responseSample": "validate-study-plan-response.sample.json",
+      "responseSchema": "ValidateStudyPlanResponse",
+      "consumers": [
+        "TV3",
+        "TV1",
+        "TV4"
+      ]
     },
     {
-      "capability": "simulateGrades",
-      "requestSample": "simulate-grades-request.sample.json",
-      "responseSample": "simulate-grades-response.sample.json"
+      "id": "list-study-plans",
+      "operationId": "listStudyPlans",
+      "method": "GET",
+      "path": "/planner/plans",
+      "httpStatus": 200,
+      "responseSample": "study-plan-list-response.sample.json",
+      "responseSchema": "StudyPlanListResponse",
+      "consumers": [
+        "TV3"
+      ]
     },
     {
-      "capability": "rankRetakeCourses",
-      "requestSample": "rank-retake-request.sample.json",
-      "responseSample": "rank-retake-response.sample.json"
-    },
-    {
-      "capability": "calculateTargetGrades",
-      "requestSample": "calculate-target-grades-request.sample.json",
-      "responseSample": "calculate-target-grades-response.sample.json"
-    },
-    {
-      "capability": "runGraduationAudit",
-      "requestSample": "graduation-audit-request.sample.json",
-      "responseSample": "graduation-audit-response.sample.json"
-    },
-    {
-      "capability": "reconcileStudyPlan",
-      "requestSample": "reconcile-study-plan-request.sample.json",
-      "responseSample": "reconcile-study-plan-response.sample.json"
-    },
-    {
-      "capability": "chatAdvisor",
-      "requestSample": "chat-request.sample.json",
-      "responseSample": "chat-response.sample.json"
-    },
-    {
-      "capability": "getStudyPlan",
-      "responseSample": "study-plan-read-response.sample.json"
-    },
-    {
-      "capability": "previewStudyPlan",
-      "requestSample": "study-plan-preview-request.sample.json",
-      "responseSample": "study-plan-preview-response.sample.json"
-    },
-    {
-      "capability": "saveStudyPlan",
+      "id": "save-study-plan",
+      "operationId": "saveStudyPlan",
+      "method": "POST",
+      "path": "/planner/plans",
+      "httpStatus": 200,
       "requestSample": "study-plan-save-request.sample.json",
-      "responseSample": "study-plan-save-response.sample.json"
+      "requestSchema": "SaveStudyPlanRequest",
+      "responseSample": "study-plan-save-response.sample.json",
+      "responseSchema": "SaveStudyPlanResponse",
+      "consumers": [
+        "TV3"
+      ]
     },
     {
-      "capability": "activateStudyPlan",
+      "id": "get-study-plan",
+      "operationId": "getStudyPlan",
+      "method": "GET",
+      "path": "/planner/plans/{planId}",
+      "httpStatus": 200,
+      "pathParams": {
+        "planId": "plan-2024604757-0002"
+      },
+      "responseSample": "study-plan-read-response.sample.json",
+      "responseSchema": "StudyPlanDetailResponse",
+      "consumers": [
+        "TV3",
+        "TV2"
+      ]
+    },
+    {
+      "id": "activate-study-plan",
+      "operationId": "activateStudyPlan",
+      "method": "POST",
+      "path": "/planner/plans/{planId}/activate",
+      "httpStatus": 200,
+      "pathParams": {
+        "planId": "plan-2024604757-0003"
+      },
       "requestSample": "study-plan-activate-request.sample.json",
-      "responseSample": "study-plan-activate-response.sample.json"
+      "requestSchema": "ActivateStudyPlanRequest",
+      "responseSample": "study-plan-activate-response.sample.json",
+      "responseSchema": "ActivateStudyPlanResponse",
+      "consumers": [
+        "TV3"
+      ]
     },
     {
-      "capability": "apiError",
-      "responseSample": "api-error.sample.json"
+      "id": "activate-study-plan-not-validated",
+      "operationId": "activateStudyPlan",
+      "method": "POST",
+      "path": "/planner/plans/{planId}/activate",
+      "httpStatus": 422,
+      "pathParams": {
+        "planId": "plan-2024604757-0003"
+      },
+      "responseSample": "error-plan-not-validated.sample.json",
+      "responseSchema": "ApiErrorResponse",
+      "consumers": [
+        "TV3"
+      ]
+    },
+    {
+      "id": "activate-study-plan-validation-failed",
+      "operationId": "activateStudyPlan",
+      "method": "POST",
+      "path": "/planner/plans/{planId}/activate",
+      "httpStatus": 422,
+      "pathParams": {
+        "planId": "plan-2024604757-0003"
+      },
+      "responseSample": "error-plan-validation-failed.sample.json",
+      "responseSchema": "ApiErrorResponse",
+      "consumers": [
+        "TV3"
+      ]
+    },
+    {
+      "id": "save-study-plan-version-conflict",
+      "operationId": "saveStudyPlan",
+      "method": "POST",
+      "path": "/planner/plans",
+      "httpStatus": 409,
+      "responseSample": "error-plan-version-conflict.sample.json",
+      "responseSchema": "ApiErrorResponse",
+      "consumers": [
+        "TV3"
+      ]
+    },
+    {
+      "id": "activate-study-plan-stale-revision",
+      "operationId": "activateStudyPlan",
+      "method": "POST",
+      "path": "/planner/plans/{planId}/activate",
+      "httpStatus": 409,
+      "pathParams": {
+        "planId": "plan-2024604757-0003"
+      },
+      "responseSample": "error-data-revision-stale.sample.json",
+      "responseSchema": "ApiErrorResponse",
+      "consumers": [
+        "TV3",
+        "TV2"
+      ]
+    },
+    {
+      "id": "restore-study-plan",
+      "operationId": "restoreStudyPlan",
+      "method": "POST",
+      "path": "/planner/plans/{planId}/restore",
+      "httpStatus": 200,
+      "pathParams": {
+        "planId": "plan-2024604757-0001"
+      },
+      "requestSample": "study-plan-restore-request.sample.json",
+      "requestSchema": "RestoreStudyPlanRequest",
+      "responseSample": "study-plan-restore-response.sample.json",
+      "responseSchema": "StudyPlanDetailResponse",
+      "consumers": [
+        "TV3"
+      ]
+    },
+    {
+      "id": "reconcile-study-plan",
+      "operationId": "reconcileStudyPlan",
+      "method": "POST",
+      "path": "/planner/reconcile",
+      "httpStatus": 200,
+      "facadeMethod": "AcademicFacade#reconcileStudyPlan",
+      "requestSample": "reconcile-study-plan-request.sample.json",
+      "requestSchema": "ReconcileStudyPlanRequest",
+      "responseSample": "reconcile-study-plan-response.sample.json",
+      "responseSchema": "ReconcileStudyPlanResponse",
+      "consumers": [
+        "TV3",
+        "TV4"
+      ]
+    },
+    {
+      "id": "simulate-grades",
+      "operationId": "simulateGrades",
+      "method": "POST",
+      "path": "/simulation/grades",
+      "httpStatus": 200,
+      "facadeMethod": "AcademicFacade#simulateGrades",
+      "requestSample": "simulate-grades-request.sample.json",
+      "requestSchema": "SimulateGradesRequest",
+      "responseSample": "simulate-grades-response.sample.json",
+      "responseSchema": "SimulateGradesResponse",
+      "consumers": [
+        "TV3",
+        "TV1",
+        "TV4"
+      ]
+    },
+    {
+      "id": "rank-retake-courses",
+      "operationId": "rankRetakeCourses",
+      "method": "POST",
+      "path": "/simulation/retake-ranking",
+      "httpStatus": 200,
+      "facadeMethod": "AcademicFacade#rankRetakeCourses",
+      "requestSample": "rank-retake-request.sample.json",
+      "requestSchema": "RankRetakeCoursesRequest",
+      "responseSample": "rank-retake-response.sample.json",
+      "responseSchema": "RankRetakeCoursesResponse",
+      "consumers": [
+        "TV3",
+        "TV1",
+        "TV4"
+      ]
+    },
+    {
+      "id": "calculate-target-grades",
+      "operationId": "calculateTargetGrades",
+      "method": "POST",
+      "path": "/simulation/target-grades",
+      "httpStatus": 200,
+      "facadeMethod": "AcademicFacade#calculateTargetGrades",
+      "requestSample": "calculate-target-grades-request.sample.json",
+      "requestSchema": "CalculateTargetGradesRequest",
+      "responseSample": "calculate-target-grades-response.sample.json",
+      "responseSchema": "CalculateTargetGradesResponse",
+      "consumers": [
+        "TV3",
+        "TV1",
+        "TV4"
+      ]
+    },
+    {
+      "id": "graduation-audit",
+      "operationId": "runGraduationAudit",
+      "method": "GET",
+      "path": "/audit/graduation",
+      "httpStatus": 200,
+      "facadeMethod": "AcademicFacade#runGraduationAudit",
+      "requestSample": "graduation-audit-request.sample.json",
+      "requestSchema": "GraduationAuditRequest",
+      "responseSample": "graduation-audit-response.sample.json",
+      "responseSchema": "GraduationAuditResponse",
+      "consumers": [
+        "TV2",
+        "TV1",
+        "TV4"
+      ]
+    },
+    {
+      "id": "chat-advisor",
+      "operationId": "chatAdvisor",
+      "method": "POST",
+      "path": "/advisor/chat",
+      "httpStatus": 200,
+      "facadeMethod": "AdvisorFacade#chat",
+      "requestSample": "chat-request.sample.json",
+      "requestSchema": "ChatRequest",
+      "responseSample": "chat-response.sample.json",
+      "responseSchema": "ChatResponse",
+      "consumers": [
+        "TV3",
+        "TV1"
+      ]
+    },
+    {
+      "id": "not-implemented",
+      "operationId": "getAcademicStatus",
+      "method": "GET",
+      "path": "/academic/status",
+      "httpStatus": 501,
+      "responseSample": "error-not-implemented.sample.json",
+      "responseSchema": "ApiErrorResponse",
+      "consumers": [
+        "TV2",
+        "TV3"
+      ]
     }
   ]
 }

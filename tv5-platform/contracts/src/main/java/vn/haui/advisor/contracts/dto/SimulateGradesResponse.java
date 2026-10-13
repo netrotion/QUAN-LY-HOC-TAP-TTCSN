@@ -1,26 +1,28 @@
 package vn.haui.advisor.contracts.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 
 public class SimulateGradesResponse implements Serializable {
     private String studentId;
     private BigDecimal currentCpa;
-    private BigDecimal projectedSemesterGpa;
-    private BigDecimal projectedNewCpa;
-    private BigDecimal cpaDifference;
+    private BigDecimal expectedGpa;
+    private BigDecimal projectedCpa;
+    private BigDecimal cpaDelta;
     private String dataRevision;
 
     public SimulateGradesResponse() {
     }
 
-    public SimulateGradesResponse(String studentId, BigDecimal currentCpa, BigDecimal projectedSemesterGpa,
-                                  BigDecimal projectedNewCpa, BigDecimal cpaDifference, String dataRevision) {
+    public SimulateGradesResponse(String studentId, BigDecimal currentCpa, BigDecimal expectedGpa,
+                                  BigDecimal projectedCpa, BigDecimal cpaDelta, String dataRevision) {
         this.studentId = studentId;
         this.currentCpa = currentCpa;
-        this.projectedSemesterGpa = projectedSemesterGpa;
-        this.projectedNewCpa = projectedNewCpa;
-        this.cpaDifference = cpaDifference;
+        this.expectedGpa = expectedGpa;
+        this.projectedCpa = projectedCpa;
+        this.cpaDelta = cpaDelta;
         this.dataRevision = dataRevision;
     }
 
@@ -40,28 +42,28 @@ public class SimulateGradesResponse implements Serializable {
         this.currentCpa = currentCpa;
     }
 
-    public BigDecimal getProjectedSemesterGpa() {
-        return projectedSemesterGpa;
+    public BigDecimal getExpectedGpa() {
+        return expectedGpa;
     }
 
-    public void setProjectedSemesterGpa(BigDecimal projectedSemesterGpa) {
-        this.projectedSemesterGpa = projectedSemesterGpa;
+    public void setExpectedGpa(BigDecimal expectedGpa) {
+        this.expectedGpa = expectedGpa;
     }
 
-    public BigDecimal getProjectedNewCpa() {
-        return projectedNewCpa;
+    public BigDecimal getProjectedCpa() {
+        return projectedCpa;
     }
 
-    public void setProjectedNewCpa(BigDecimal projectedNewCpa) {
-        this.projectedNewCpa = projectedNewCpa;
+    public void setProjectedCpa(BigDecimal projectedCpa) {
+        this.projectedCpa = projectedCpa;
     }
 
-    public BigDecimal getCpaDifference() {
-        return cpaDifference;
+    public BigDecimal getCpaDelta() {
+        return cpaDelta;
     }
 
-    public void setCpaDifference(BigDecimal cpaDifference) {
-        this.cpaDifference = cpaDifference;
+    public void setCpaDelta(BigDecimal cpaDelta) {
+        this.cpaDelta = cpaDelta;
     }
 
     public String getDataRevision() {
@@ -70,5 +72,38 @@ public class SimulateGradesResponse implements Serializable {
 
     public void setDataRevision(String dataRevision) {
         this.dataRevision = dataRevision;
+    }
+
+    /**
+     * Accessor chuyển tiếp cho mã nguồn dùng tên V0; JSON chỉ có trường {@code expectedGpa}.
+     *
+     * @deprecated dùng {@link #getExpectedGpa()}.
+     */
+    @Deprecated(since = "1.0.0", forRemoval = true)
+    @JsonIgnore
+    public BigDecimal getProjectedSemesterGpa() {
+        return getExpectedGpa();
+    }
+
+    /**
+     * Accessor chuyển tiếp cho mã nguồn dùng tên V0; JSON chỉ có trường {@code projectedCpa}.
+     *
+     * @deprecated dùng {@link #getProjectedCpa()}.
+     */
+    @Deprecated(since = "1.0.0", forRemoval = true)
+    @JsonIgnore
+    public BigDecimal getProjectedNewCpa() {
+        return getProjectedCpa();
+    }
+
+    /**
+     * Accessor chuyển tiếp cho mã nguồn dùng tên V0; JSON chỉ có trường {@code cpaDelta}.
+     *
+     * @deprecated dùng {@link #getCpaDelta()}.
+     */
+    @Deprecated(since = "1.0.0", forRemoval = true)
+    @JsonIgnore
+    public BigDecimal getCpaDifference() {
+        return getCpaDelta();
     }
 }

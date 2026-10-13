@@ -1,33 +1,136 @@
 {
-  "planId": "plan-2024-k19-001",
-  "planName": "Kế hoạch học tập KTPM K19 - Bản chỉnh sửa",
+  "planId": "plan-2024604757-0003",
+  "planName": "Kế hoạch KTPM K19 - thêm môn cải thiện",
   "planVersion": 1,
-  "dataRevision": "REV-2024-001",
-  "targetCpa": 3.25,
+  "dataRevision": "REV-2024604757-001",
+  "targetCpa": 3.4,
   "targetGraduationSemester": "2028_1",
   "maxCreditsPerSemester": 20,
   "semesters": [
     {
-      "semesterOrder": 3,
-      "semesterCode": "2025_1",
-      "plannedCredits": 18,
-      "estimatedGpa": 3.25,
+      "semesterOrder": 1,
+      "semesterCode": "2026_1",
+      "semesterName": "Học kỳ 1 năm học 2026-2027",
       "courses": [
         {
-          "courseCode": "IT6015",
-          "courseName": "Cấu trúc dữ liệu và giải thuật",
+          "courseCode": "LP6004",
+          "courseName": "Tư tưởng Hồ Chí Minh",
+          "credits": 2,
+          "targetGrade": "B",
+          "rationale": "Học lại môn điểm F để giải tỏa nợ học phần",
+          "courseType": "RETAKE",
+          "status": "PLANNED"
+        },
+        {
+          "courseCode": "IT6039",
+          "courseName": "Thiết kế Web",
           "credits": 3,
           "targetGrade": "A",
+          "rationale": "Học kỳ gợi ý 4 trong CTĐT",
+          "courseType": "STANDARD",
+          "status": "PLANNED"
+        },
+        {
+          "courseCode": "IT6044",
+          "courseName": "Ứng dụng thuật toán",
+          "credits": 3,
+          "targetGrade": "B+",
+          "rationale": "Đã học IT6002 và IT6015 (học phần học trước)",
+          "courseType": "STANDARD",
+          "status": "PLANNED"
+        },
+        {
+          "courseCode": "IT6096",
+          "courseName": "Thiết kế phần mềm",
+          "credits": 3,
+          "targetGrade": "A",
+          "rationale": "Đã học IT6097 (học phần học trước)",
+          "courseType": "STANDARD",
+          "status": "PLANNED"
+        },
+        {
+          "courseCode": "IT6095",
+          "courseName": "Tối ưu hóa",
+          "credits": 3,
+          "targetGrade": "B+",
+          "rationale": "Học kỳ gợi ý 5 trong CTĐT",
           "courseType": "STANDARD",
           "status": "PLANNED"
         }
-      ]
+      ],
+      "totalCredits": 14,
+      "expectedGpa": 3.45
+    },
+    {
+      "semesterOrder": 2,
+      "semesterCode": "2026_2",
+      "semesterName": "Học kỳ 2 năm học 2026-2027",
+      "courses": [
+        {
+          "courseCode": "LP6010",
+          "courseName": "Triết học Mác-Lênin",
+          "credits": 3,
+          "targetGrade": "B+",
+          "rationale": "Học cải thiện từ D+ lên B+, hiệu quả CPA cao nhất",
+          "courseType": "IMPROVEMENT",
+          "status": "PLANNED"
+        },
+        {
+          "courseCode": "IT6151",
+          "courseName": "Phát triển phần mềm hướng dịch vụ",
+          "credits": 3,
+          "targetGrade": "A",
+          "rationale": "Đã học IT6019 (học phần học trước)",
+          "courseType": "STANDARD",
+          "status": "PLANNED"
+        },
+        {
+          "courseCode": "IT6084",
+          "courseName": "Kiểm thử phần mềm",
+          "credits": 3,
+          "targetGrade": "B+",
+          "rationale": "Đã học IT6002 và IT6082 (học phần học trước)",
+          "courseType": "STANDARD",
+          "status": "PLANNED"
+        },
+        {
+          "courseCode": "IT6020",
+          "courseName": "Lập trình Java nâng cao",
+          "credits": 3,
+          "targetGrade": "A",
+          "rationale": "Đã học IT6019 và IT6120 (học phần học trước)",
+          "courseType": "STANDARD",
+          "status": "PLANNED"
+        },
+        {
+          "courseCode": "LP6013",
+          "courseName": "Lịch sử Đảng Cộng sản Việt Nam",
+          "credits": 2,
+          "targetGrade": "B",
+          "rationale": "Đã học LP6011 (học phần học trước)",
+          "courseType": "STANDARD",
+          "status": "PLANNED"
+        }
+      ],
+      "totalCredits": 14,
+      "expectedGpa": 3.5
     }
   ],
   "actions": [
     {
-      "actionType": "WORKLOAD_BALANCING",
-      "description": "Cân đối 18 tín chỉ trong học kỳ chính",
+      "actionType": "RETAKE_IMPROVEMENT",
+      "label": "Xem tác động học cải thiện",
+      "targetRoute": "/what-if",
+      "payloadJson": "{\"courseCode\":\"LP6010\"}",
+      "description": "Học cải thiện Triết học Mác-Lênin từ D+ lên B+ giúp CPA tăng khoảng 0.08",
+      "priority": 1
+    },
+    {
+      "actionType": "CERTIFICATE",
+      "label": "Xem điều kiện tốt nghiệp",
+      "targetRoute": "/audit",
+      "payloadJson": "{\"certificateType\":\"MOS\"}",
+      "description": "Đăng ký thi và nộp chứng chỉ MOS trước đợt xét tốt nghiệp",
       "priority": 2
     }
   ]

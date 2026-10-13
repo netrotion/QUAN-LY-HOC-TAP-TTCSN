@@ -31,7 +31,7 @@ public class ChatActionItem implements Serializable {
     }
 
     public String getDescription() {
-        return description != null ? description : label;
+        return description;
     }
 
     public void setDescription(String description) {

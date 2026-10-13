@@ -1,0 +1,75 @@
+{
+  "planId": "plan-2024604757-0004",
+  "studentId": "2024604757",
+  "planName": "Bản sao từ Kế hoạch KTPM K19 - bản đầu",
+  "status": "DRAFT",
+  "planVersion": 1,
+  "sourcePlanId": "plan-2024604757-0001",
+  "dataRevision": "REV-2024604757-001",
+  "targetCpa": 3.2,
+  "targetGraduationSemester": "2028_1",
+  "maxCreditsPerSemester": 20,
+  "totalCredits": 14,
+  "projectedCpa": 3.15,
+  "semesters": [
+    {
+      "semesterOrder": 1,
+      "semesterCode": "2026_1",
+      "semesterName": "Học kỳ 1 năm học 2026-2027",
+      "courses": [
+        {
+          "courseCode": "LP6004",
+          "courseName": "Tư tưởng Hồ Chí Minh",
+          "credits": 2,
+          "targetGrade": "B",
+          "rationale": "Học lại môn điểm F để giải tỏa nợ học phần",
+          "courseType": "RETAKE",
+          "status": "PLANNED"
+        },
+        {
+          "courseCode": "IT6039",
+          "courseName": "Thiết kế Web",
+          "credits": 3,
+          "targetGrade": "B+",
+          "rationale": "Học kỳ gợi ý 4 trong CTĐT",
+          "courseType": "STANDARD",
+          "status": "PLANNED"
+        },
+        {
+          "courseCode": "IT6044",
+          "courseName": "Ứng dụng thuật toán",
+          "credits": 3,
+          "targetGrade": "B",
+          "rationale": "Đã học IT6002 và IT6015 (học phần học trước)",
+          "courseType": "STANDARD",
+          "status": "PLANNED"
+        },
+        {
+          "courseCode": "IT6040",
+          "courseName": "Thực tập cơ sở ngành",
+          "credits": 3,
+          "targetGrade": "B+",
+          "rationale": "Học kỳ gợi ý 5 trong CTĐT",
+          "courseType": "STANDARD",
+          "status": "PLANNED"
+        },
+        {
+          "courseCode": "IT6123",
+          "courseName": "Tương tác người máy",
+          "credits": 3,
+          "targetGrade": "B",
+          "rationale": "Học kỳ gợi ý 6 trong CTĐT",
+          "courseType": "STANDARD",
+          "status": "PLANNED"
+        }
+      ],
+      "totalCredits": 14,
+      "expectedGpa": 3.1
+    }
+  ],
+  "actions": [],
+  "warnings": [],
+  "createdAt": "2026-10-13T08:20:00Z",
+  "updatedAt": "2026-10-13T08:20:00Z",
+  "activatedAt": null
+}

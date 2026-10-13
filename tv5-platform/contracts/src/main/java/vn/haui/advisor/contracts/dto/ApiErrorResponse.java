@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.List;
 
 public class ApiErrorResponse implements Serializable {
-    private String code;
+    private ApiErrorCode code;
     private String message;
     private String requestId;
     private Instant timestamp;
@@ -15,7 +15,7 @@ public class ApiErrorResponse implements Serializable {
         this.timestamp = Instant.now();
     }
 
-    public ApiErrorResponse(String code, String message, String requestId, List<String> details) {
+    public ApiErrorResponse(ApiErrorCode code, String message, String requestId, List<String> details) {
         this.code = code;
         this.message = message;
         this.requestId = requestId;
@@ -23,11 +23,11 @@ public class ApiErrorResponse implements Serializable {
         this.details = details;
     }
 
-    public String getCode() {
+    public ApiErrorCode getCode() {
         return code;
     }
 
-    public void setCode(String code) {
+    public void setCode(ApiErrorCode code) {
         this.code = code;
     }
 

@@ -1,0 +1,10 @@
+{
+  "code": "PLAN_VERSION_CONFLICT",
+  "message": "Kế hoạch đã được lưu ở nơi khác. Vui lòng tải lại kế hoạch trước khi tiếp tục.",
+  "requestId": "req-2026-10-13-0002",
+  "timestamp": "2026-10-13T08:12:00Z",
+  "details": [
+    "planVersion hiện hành: 3",
+    "planVersion client gửi: 2"
+  ]
+}

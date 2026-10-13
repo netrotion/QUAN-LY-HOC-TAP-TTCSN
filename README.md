@@ -16,7 +16,7 @@ haui-advisor/
 ├── tv3-planner-ui/        # TV3: Feature package Planner/Chat/What-if UI
 ├── tv4-academic/          # TV4: Module quy tắc học vụ & công cụ đề xuất (Maven library)
 ├── tv5-platform/          # TV5: Platform Boot runtime, contracts, migration, hạ tầng & CI
-│   ├── contracts/        # Java DTO/ports, OpenAPI V0, JSON fixtures mẫu
+│   ├── contracts/        # contracts-v1: Java DTO/ports, OpenAPI V1, JSON fixtures, @haui/contracts (FE), fake provider
 │   ├── app/              # Spring Boot main runtime, Flyway migrations, Security & REST APIs
 │   ├── infra/            # Docker Compose, Dockerfiles & migrations
 │   └── docs/             # Báo cáo kỹ thuật bootstrap & lock
@@ -94,8 +94,15 @@ npm run check:ownership
 # Kiểm tra ranh giới kiến trúc và chống vòng phụ thuộc
 npm run check:architecture
 
-# Kiểm tra hợp đồng OpenAPI và JSON fixtures mẫu
+# Kiểm tra contracts-v1: phiên bản, OpenAPI ↔ manifest ↔ fixtures, glossary, CTĐT TV4, module FE, khóa mốc
 npm run check:contracts
+
+# Báo cáo chỗ FE (TV2/TV3) còn dùng tên trường/path ngoài contracts-v1 (không chặn; --strict để chặn)
+npm run check:contract-consumers
+
+# Chỉ TV5, khi phát hành thay đổi contract: sinh lại module FE và cập nhật contracts-v1.lock.json
+npm run contracts:build
+npm run contracts:lock
 
 # Kiểm tra cú pháp linter
 npm run lint
@@ -137,10 +144,13 @@ docker compose --env-file .env -f tv5-platform/infra/compose.yaml down
 
 ---
 
-## 5. Điểm kiểm tra kỹ thuật (Endpoints V0)
+## 5. Hợp đồng API `contracts-v1`
 
-- **Thông tin Bootstrap:** `GET http://localhost:8080/api/v1/system/bootstrap`
-- **Health Check:** `GET http://localhost:8080/api/v1/system/health`
+- **Nguồn chuẩn:** `tv5-platform/contracts/openapi/openapi-v1.yaml`, ví dụ trong `tv5-platform/contracts/examples/`, từ điển trường `tv5-platform/contracts/glossary-v1.json`.
+- **Tài liệu phát hành, hướng dẫn cho từng thành viên và quy trình đổi contract:** [tv5-platform/docs/task-2.4-contracts-v1.md](tv5-platform/docs/task-2.4-contracts-v1.md).
+- **Mock FE:** `import { getFixture, findFixture } from '@haui/contracts'`. **Fake provider Java:** `vn.haui.advisor.contracts.fake.*`.
+- **Thông tin runtime:** `GET http://localhost:8080/api/v1/system/bootstrap` (trả `contractVersion`), health: `GET /api/v1/system/health`.
+- **Planner V1 (in-memory):** `GET|POST /api/v1/planner/plans`, `GET /api/v1/planner/plans/{planId}`, `POST /api/v1/planner/validate`, `POST /api/v1/planner/plans/{planId}/activate`, `POST /api/v1/planner/plans/{planId}/restore`. Các operation học vụ/AI khác trả `501 NOT_IMPLEMENTED` cho tới khi được nối.
 - **Frontend Technical Shell & Màn hình demo UI:** `http://localhost:5173`
 
 ---

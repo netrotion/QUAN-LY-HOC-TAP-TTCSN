@@ -3,37 +3,27 @@ package vn.haui.advisor.contracts.dto;
 import java.io.Serializable;
 
 /**
- * Request kích hoạt Kế hoạch học tập (thao tác activate).
- * Chuyển trạng thái sang ACTIVE và lưu trữ (ARCHIVED) các kế hoạch ACTIVE trước đó.
+ * Request kích hoạt Kế hoạch học tập: {@code POST /planner/plans/{planId}/activate}.
+ * planId nằm trên path; body chỉ mang phiên bản client đang giữ để chặn ghi đè dữ liệu cũ.
  */
 public class ActivateStudyPlanRequest implements Serializable {
-    private String planId;
-    private Integer expectedVersion;
+    private Integer planVersion;
     private String dataRevision;
 
     public ActivateStudyPlanRequest() {
     }
 
-    public ActivateStudyPlanRequest(String planId, Integer expectedVersion, String dataRevision) {
-        this.planId = planId;
-        this.expectedVersion = expectedVersion;
+    public ActivateStudyPlanRequest(Integer planVersion, String dataRevision) {
+        this.planVersion = planVersion;
         this.dataRevision = dataRevision;
     }
 
-    public String getPlanId() {
-        return planId;
+    public Integer getPlanVersion() {
+        return planVersion;
     }
 
-    public void setPlanId(String planId) {
-        this.planId = planId;
-    }
-
-    public Integer getExpectedVersion() {
-        return expectedVersion;
-    }
-
-    public void setExpectedVersion(Integer expectedVersion) {
-        this.expectedVersion = expectedVersion;
+    public void setPlanVersion(Integer planVersion) {
+        this.planVersion = planVersion;
     }
 
     public String getDataRevision() {

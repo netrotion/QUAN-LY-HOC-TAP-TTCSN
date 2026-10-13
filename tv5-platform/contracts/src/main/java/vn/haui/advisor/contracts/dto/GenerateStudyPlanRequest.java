@@ -2,6 +2,7 @@ package vn.haui.advisor.contracts.dto;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.List;
 
 public class GenerateStudyPlanRequest implements Serializable {
     private String studentId;
@@ -9,6 +10,7 @@ public class GenerateStudyPlanRequest implements Serializable {
     private BigDecimal targetCpa;
     private Integer maxCreditsPerSemester;
     private Boolean includeSummerSemesters;
+    private List<String> selectedRetakeCourseCodes;
     private String dataRevision;
 
     public GenerateStudyPlanRequest() {
@@ -70,5 +72,13 @@ public class GenerateStudyPlanRequest implements Serializable {
 
     public void setDataRevision(String dataRevision) {
         this.dataRevision = dataRevision;
+    }
+
+    public List<String> getSelectedRetakeCourseCodes() {
+        return selectedRetakeCourseCodes;
+    }
+
+    public void setSelectedRetakeCourseCodes(List<String> selectedRetakeCourseCodes) {
+        this.selectedRetakeCourseCodes = selectedRetakeCourseCodes;
     }
 }

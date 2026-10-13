@@ -1,9 +1,9 @@
 {
-  "planId": "plan-2024-k19-001",
+  "planId": "plan-2024604757-0003",
   "status": "ACTIVE",
-  "activatedAt": "2026-10-04T10:05:00Z",
+  "activatedAt": "2026-10-13T08:10:00Z",
   "archivedPlanIds": [
-    "plan-2024-k19-000"
+    "plan-2024604757-0002"
   ],
-  "message": "Kích hoạt kế hoạch học tập thành công. Bản kế hoạch hiện hành đang được theo dõi."
+  "message": "Đã kích hoạt kế hoạch. Kế hoạch đang theo dõi trước đó đã được lưu trữ."
 }

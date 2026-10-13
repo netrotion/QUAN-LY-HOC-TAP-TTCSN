@@ -1,5 +1,7 @@
 package vn.haui.advisor.contracts.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.io.Serializable;
 import java.util.List;
 
@@ -7,7 +9,7 @@ public class GraduationAuditResponse implements Serializable {
     private String studentId;
     private boolean eligibleForGraduation;
     private Integer completedPercentage;
-    private Integer totalCreditsEarned;
+    private Integer accumulatedCredits;
     private Integer totalCreditsRequired;
     private List<AuditChecklistItem> checklist;
     private List<AuditCertificateAction> pendingActions;
@@ -17,13 +19,13 @@ public class GraduationAuditResponse implements Serializable {
     }
 
     public GraduationAuditResponse(String studentId, boolean eligibleForGraduation,
-                                   Integer completedPercentage, Integer totalCreditsEarned,
+                                   Integer completedPercentage, Integer accumulatedCredits,
                                    Integer totalCreditsRequired, List<AuditChecklistItem> checklist,
                                    List<AuditCertificateAction> pendingActions, String dataRevision) {
         this.studentId = studentId;
         this.eligibleForGraduation = eligibleForGraduation;
         this.completedPercentage = completedPercentage;
-        this.totalCreditsEarned = totalCreditsEarned;
+        this.accumulatedCredits = accumulatedCredits;
         this.totalCreditsRequired = totalCreditsRequired;
         this.checklist = checklist;
         this.pendingActions = pendingActions;
@@ -54,12 +56,12 @@ public class GraduationAuditResponse implements Serializable {
         this.completedPercentage = completedPercentage;
     }
 
-    public Integer getTotalCreditsEarned() {
-        return totalCreditsEarned;
+    public Integer getAccumulatedCredits() {
+        return accumulatedCredits;
     }
 
-    public void setTotalCreditsEarned(Integer totalCreditsEarned) {
-        this.totalCreditsEarned = totalCreditsEarned;
+    public void setAccumulatedCredits(Integer accumulatedCredits) {
+        this.accumulatedCredits = accumulatedCredits;
     }
 
     public Integer getTotalCreditsRequired() {
@@ -92,5 +94,16 @@ public class GraduationAuditResponse implements Serializable {
 
     public void setDataRevision(String dataRevision) {
         this.dataRevision = dataRevision;
+    }
+
+    /**
+     * Accessor chuyển tiếp cho mã nguồn dùng tên V0; JSON chỉ có trường {@code accumulatedCredits}.
+     *
+     * @deprecated dùng {@link #getAccumulatedCredits()}.
+     */
+    @Deprecated(since = "1.0.0", forRemoval = true)
+    @JsonIgnore
+    public Integer getTotalCreditsEarned() {
+        return getAccumulatedCredits();
     }
 }

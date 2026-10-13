@@ -1,5 +1,7 @@
 package vn.haui.advisor.contracts.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 
@@ -11,7 +13,7 @@ public class RetakeCourseRecommendation implements Serializable {
     private BigDecimal currentGradePoints;
     private String targetGrade;
     private BigDecimal targetGradePoints;
-    private BigDecimal potentialCpaGain;
+    private BigDecimal cpaDelta;
     private Integer rank;
     private String rationale;
 
@@ -21,7 +23,7 @@ public class RetakeCourseRecommendation implements Serializable {
     public RetakeCourseRecommendation(String courseCode, String courseName, Integer credits,
                                       String currentGrade, BigDecimal currentGradePoints,
                                       String targetGrade, BigDecimal targetGradePoints,
-                                      BigDecimal potentialCpaGain, Integer rank, String rationale) {
+                                      BigDecimal cpaDelta, Integer rank, String rationale) {
         this.courseCode = courseCode;
         this.courseName = courseName;
         this.credits = credits;
@@ -29,7 +31,7 @@ public class RetakeCourseRecommendation implements Serializable {
         this.currentGradePoints = currentGradePoints;
         this.targetGrade = targetGrade;
         this.targetGradePoints = targetGradePoints;
-        this.potentialCpaGain = potentialCpaGain;
+        this.cpaDelta = cpaDelta;
         this.rank = rank;
         this.rationale = rationale;
     }
@@ -90,12 +92,12 @@ public class RetakeCourseRecommendation implements Serializable {
         this.targetGradePoints = targetGradePoints;
     }
 
-    public BigDecimal getPotentialCpaGain() {
-        return potentialCpaGain;
+    public BigDecimal getCpaDelta() {
+        return cpaDelta;
     }
 
-    public void setPotentialCpaGain(BigDecimal potentialCpaGain) {
-        this.potentialCpaGain = potentialCpaGain;
+    public void setCpaDelta(BigDecimal cpaDelta) {
+        this.cpaDelta = cpaDelta;
     }
 
     public Integer getRank() {
@@ -112,5 +114,16 @@ public class RetakeCourseRecommendation implements Serializable {
 
     public void setRationale(String rationale) {
         this.rationale = rationale;
+    }
+
+    /**
+     * Accessor chuyển tiếp cho mã nguồn dùng tên V0; JSON chỉ có trường {@code cpaDelta}.
+     *
+     * @deprecated dùng {@link #getCpaDelta()}.
+     */
+    @Deprecated(since = "1.0.0", forRemoval = true)
+    @JsonIgnore
+    public BigDecimal getPotentialCpaGain() {
+        return getCpaDelta();
     }
 }

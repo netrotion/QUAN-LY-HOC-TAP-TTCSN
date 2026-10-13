@@ -7,6 +7,7 @@ import vn.haui.advisor.contracts.dto.StudentDataVersion;
 import vn.haui.advisor.contracts.dto.TrustedStudentContext;
 import vn.haui.advisor.contracts.ports.StudentContextProvider;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -16,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Ràng buộc an toàn cốt lõi:
  * - Không bao giờ lấy studentId từ request payload hay query parameter do client gửi.
  * - Danh tính sinh viên luôn trích xuất từ server authentication/session context.
- * - Cung cấp cơ chế phát hiện dữ liệu thay đổi (dataRevision/version tracking).
+ * - Cung cấp cơ chế phát hiện dữ liệu thay đổi qua token dataRevision.
  */
 @Component
 public class DefaultStudentContextProvider implements StudentContextProvider {
@@ -31,7 +32,7 @@ public class DefaultStudentContextProvider implements StudentContextProvider {
 
     public DefaultStudentContextProvider() {
         versionRegistry.put(DEFAULT_DEMO_STUDENT_ID,
-                new StudentDataVersion(DEFAULT_DEMO_STUDENT_ID, DEFAULT_DATA_REVISION, 1, "2026-10-04T00:00:00Z", false));
+                new StudentDataVersion(DEFAULT_DEMO_STUDENT_ID, DEFAULT_DATA_REVISION, "2026-10-04T00:00:00Z", false));
     }
 
     @Override
@@ -58,7 +59,7 @@ public class DefaultStudentContextProvider implements StudentContextProvider {
     @Override
     public StudentDataVersion getDataVersion(String studentId) {
         return versionRegistry.computeIfAbsent(studentId, id ->
-                new StudentDataVersion(id, "REV-" + id + "-001", 1, "2026-10-04T00:00:00Z", false));
+                new StudentDataVersion(id, "REV-" + id + "-001", "2026-10-04T00:00:00Z", false));
     }
 
     @Override
@@ -70,8 +71,8 @@ public class DefaultStudentContextProvider implements StudentContextProvider {
         return !current.getDataRevision().equalsIgnoreCase(clientRevision.trim());
     }
 
-    public void updateDataRevision(String studentId, String newRevision, int version) {
+    public void updateDataRevision(String studentId, String newRevision) {
         versionRegistry.put(studentId,
-                new StudentDataVersion(studentId, newRevision, version, "2026-10-04T12:00:00Z", false));
+                new StudentDataVersion(studentId, newRevision, Instant.now().toString(), false));
     }
 }

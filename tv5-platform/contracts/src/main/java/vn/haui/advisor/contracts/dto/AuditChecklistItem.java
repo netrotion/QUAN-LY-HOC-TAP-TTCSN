@@ -6,20 +6,20 @@ public class AuditChecklistItem implements Serializable {
     private String category;
     private String name;
     private boolean completed;
-    private Integer requiredCredits;
-    private Integer earnedCredits;
+    private Integer totalCreditsRequired;
+    private Integer accumulatedCredits;
     private String statusMessage;
 
     public AuditChecklistItem() {
     }
 
     public AuditChecklistItem(String category, String name, boolean completed,
-                              Integer requiredCredits, Integer earnedCredits, String statusMessage) {
+                              Integer totalCreditsRequired, Integer accumulatedCredits, String statusMessage) {
         this.category = category;
         this.name = name;
         this.completed = completed;
-        this.requiredCredits = requiredCredits;
-        this.earnedCredits = earnedCredits;
+        this.totalCreditsRequired = totalCreditsRequired;
+        this.accumulatedCredits = accumulatedCredits;
         this.statusMessage = statusMessage;
     }
 
@@ -47,20 +47,20 @@ public class AuditChecklistItem implements Serializable {
         this.completed = completed;
     }
 
-    public Integer getRequiredCredits() {
-        return requiredCredits;
+    public Integer getTotalCreditsRequired() {
+        return totalCreditsRequired;
     }
 
-    public void setRequiredCredits(Integer requiredCredits) {
-        this.requiredCredits = requiredCredits;
+    public void setTotalCreditsRequired(Integer totalCreditsRequired) {
+        this.totalCreditsRequired = totalCreditsRequired;
     }
 
-    public Integer getEarnedCredits() {
-        return earnedCredits;
+    public Integer getAccumulatedCredits() {
+        return accumulatedCredits;
     }
 
-    public void setEarnedCredits(Integer earnedCredits) {
-        this.earnedCredits = earnedCredits;
+    public void setAccumulatedCredits(Integer accumulatedCredits) {
+        this.accumulatedCredits = accumulatedCredits;
     }
 
     public String getStatusMessage() {

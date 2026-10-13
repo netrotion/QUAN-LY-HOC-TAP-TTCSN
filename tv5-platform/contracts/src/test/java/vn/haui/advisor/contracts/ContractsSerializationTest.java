@@ -1,219 +1,240 @@
 package vn.haui.advisor.contracts;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import vn.haui.advisor.contracts.dto.*;
 
-import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ContractsSerializationTest {
+/**
+ * Kiểm tra ngữ nghĩa của từng fixture contracts-v1 sau khi đọc vào DTO, và tính nhất quán
+ * giữa các fixture (cùng sinh viên, cùng revision, tổng tín chỉ khớp chi tiết, lịch sử khớp chi tiết).
+ */
+class ContractsSerializationTest {
 
-    private ObjectMapper objectMapper;
-    private Path examplesDir;
+    private final ObjectMapper mapper = ContractTestSupport.mapper();
 
-    @BeforeEach
-    void setUp() {
-        objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-
-        // Tìm đường dẫn tới folder examples
-        Path current = Paths.get("").toAbsolutePath();
-        if (current.endsWith("contracts")) {
-            examplesDir = current.resolve("examples");
-        } else {
-            examplesDir = current.resolve("tv5-platform/contracts/examples");
-        }
+    private <T> T read(String file, Class<T> type) throws IOException {
+        return mapper.readValue(ContractTestSupport.examplesDir().resolve(file).toFile(), type);
     }
 
     @Test
-    void testAcademicStatusSerialization() throws Exception {
-        File reqFile = examplesDir.resolve("academic-status-request.sample.json").toFile();
-        AcademicStatusRequest req = objectMapper.readValue(reqFile, AcademicStatusRequest.class);
-        assertThat(req.getStudentId()).isEqualTo("std-2026-001");
-        assertThat(req.getDataRevision()).isEqualTo("rev-1001");
+    @DisplayName("Academic status: dữ liệu thật và trường hợp thiếu dữ liệu (null = UNKNOWN)")
+    void academicStatus() throws Exception {
+        AcademicStatusResponse res = read("academic-status-response.sample.json", AcademicStatusResponse.class);
+        assertThat(res.getStudentId()).isEqualTo("2024604757");
+        assertThat(res.getCpa()).isEqualByComparingTo("3.18");
+        assertThat(res.getAccumulatedCredits()).isEqualTo(61);
+        assertThat(res.getRiskLevel()).isEqualTo(AcademicRiskLevel.NORMAL);
+        assertThat(res.getWarnings()).hasSize(1);
 
-        File resFile = examplesDir.resolve("academic-status-response.sample.json").toFile();
-        AcademicStatusResponse res = objectMapper.readValue(resFile, AcademicStatusResponse.class);
-        assertThat(res.getStudentId()).isEqualTo("std-2026-001");
-        assertThat(res.getGpa()).isNull(); // Thiếu dữ liệu thể hiện null
-        assertThat(res.getCpa()).isEqualByComparingTo(new BigDecimal("2.45"));
-        assertThat(res.getRiskLevel()).isEqualTo(AcademicRiskLevel.WARNING_LEVEL_1);
+        AcademicStatusResponse missing = read("academic-status-missing-data-response.sample.json", AcademicStatusResponse.class);
+        assertThat(missing.getGpa()).isNull();
+        assertThat(missing.getCpa()).isNull();
+        assertThat(missing.getAccumulatedCredits()).isNull();
     }
 
     @Test
-    void testCourseEligibilitySerialization() throws Exception {
-        File reqFile = examplesDir.resolve("course-eligibility-request.sample.json").toFile();
-        CourseEligibilityRequest req = objectMapper.readValue(reqFile, CourseEligibilityRequest.class);
-        assertThat(req.getCourseCode()).isEqualTo("IT6001");
+    @DisplayName("Eligibility: môn học trước chưa học → eligible=false kèm mã môn thiếu")
+    void courseEligibility() throws Exception {
+        CourseEligibilityRequest req = read("course-eligibility-request.sample.json", CourseEligibilityRequest.class);
+        assertThat(req.getCourseCode()).isEqualTo("IT6083");
+        assertThat(req.getTargetSemester()).isEqualTo("2026_1");
 
-        File resFile = examplesDir.resolve("course-eligibility-response.sample.json").toFile();
-        CourseEligibilityResponse res = objectMapper.readValue(resFile, CourseEligibilityResponse.class);
+        CourseEligibilityResponse res = read("course-eligibility-response.sample.json", CourseEligibilityResponse.class);
         assertThat(res.isEligible()).isFalse();
-        assertThat(res.getMissingPrerequisites()).isNotEmpty();
+        assertThat(res.getMissingPrerequisites()).first().asString().startsWith("IT6203");
     }
 
     @Test
-    void testGenerateStudyPlanSerialization() throws Exception {
-        File reqFile = examplesDir.resolve("generate-study-plan-request.sample.json").toFile();
-        GenerateStudyPlanRequest req = objectMapper.readValue(reqFile, GenerateStudyPlanRequest.class);
-        assertThat(req.getTargetCpa()).isEqualByComparingTo(new BigDecimal("3.20"));
+    @DisplayName("Generate: phương án xem trước chỉ có proposalId, luôn DRAFT")
+    void generateStudyPlan() throws Exception {
+        GenerateStudyPlanRequest req = read("generate-study-plan-request.sample.json", GenerateStudyPlanRequest.class);
+        assertThat(req.getSelectedRetakeCourseCodes()).containsExactly("LP6010");
 
-        File resFile = examplesDir.resolve("generate-study-plan-response.sample.json").toFile();
-        GenerateStudyPlanResponse res = objectMapper.readValue(resFile, GenerateStudyPlanResponse.class);
+        GenerateStudyPlanResponse res = read("generate-study-plan-response.sample.json", GenerateStudyPlanResponse.class);
+        assertThat(res.getProposalId()).startsWith("proposal-");
         assertThat(res.getStatus()).isEqualTo(StudyPlanStatus.DRAFT);
-        assertThat(res.getSemesters()).hasSize(1);
+        assertThat(res.getSemesters()).hasSize(2);
+        assertThat(res.getTotalCredits()).isEqualTo(28);
     }
 
     @Test
-    void testValidateStudyPlanSerialization() throws Exception {
-        File reqFile = examplesDir.resolve("validate-study-plan-request.sample.json").toFile();
-        ValidateStudyPlanRequest req = objectMapper.readValue(reqFile, ValidateStudyPlanRequest.class);
-        assertThat(req.getPlanId()).isEqualTo("plan-2026-9001");
+    @DisplayName("Validate: vi phạm tín chỉ tối thiểu giữ DRAFT")
+    void validateStudyPlan() throws Exception {
+        ValidateStudyPlanRequest req = read("validate-study-plan-request.sample.json", ValidateStudyPlanRequest.class);
+        assertThat(req.getPlanId()).isNull();
+        assertThat(req.getSemesters().get(0).getTotalCredits()).isEqualTo(5);
 
-        File resFile = examplesDir.resolve("validate-study-plan-response.sample.json").toFile();
-        ValidateStudyPlanResponse res = objectMapper.readValue(resFile, ValidateStudyPlanResponse.class);
+        ValidateStudyPlanResponse res = read("validate-study-plan-response.sample.json", ValidateStudyPlanResponse.class);
         assertThat(res.isValid()).isFalse();
         assertThat(res.getStatus()).isEqualTo(StudyPlanStatus.DRAFT);
         assertThat(res.getViolations()).isNotEmpty();
     }
 
     @Test
-    void testSimulateGradesSerialization() throws Exception {
-        File reqFile = examplesDir.resolve("simulate-grades-request.sample.json").toFile();
-        SimulateGradesRequest req = objectMapper.readValue(reqFile, SimulateGradesRequest.class);
-        assertThat(req.getCourses()).hasSize(2);
+    @DisplayName("Vòng đời kế hoạch: lưu nháp DRAFT, kích hoạt lưu trữ bản ACTIVE cũ, restore tạo DRAFT mới")
+    void planLifecycle() throws Exception {
+        StudyPlanListResponse list = read("study-plan-list-response.sample.json", StudyPlanListResponse.class);
+        assertThat(list.getPlans()).filteredOn(p -> p.getStatus() == StudyPlanStatus.ACTIVE).hasSize(1);
 
-        File resFile = examplesDir.resolve("simulate-grades-response.sample.json").toFile();
-        SimulateGradesResponse res = objectMapper.readValue(resFile, SimulateGradesResponse.class);
-        assertThat(res.getCurrentCpa()).isEqualByComparingTo(new BigDecimal("2.45"));
-        assertThat(res.getProjectedNewCpa()).isEqualByComparingTo(new BigDecimal("2.56"));
+        SaveStudyPlanResponse saved = read("study-plan-save-response.sample.json", SaveStudyPlanResponse.class);
+        assertThat(saved.getStatus()).isEqualTo(StudyPlanStatus.DRAFT);
+        assertThat(saved.getPlanVersion()).isEqualTo(2);
+
+        ActivateStudyPlanRequest activateReq = read("study-plan-activate-request.sample.json", ActivateStudyPlanRequest.class);
+        assertThat(activateReq.getPlanVersion()).isEqualTo(saved.getPlanVersion());
+
+        ActivateStudyPlanResponse activated = read("study-plan-activate-response.sample.json", ActivateStudyPlanResponse.class);
+        assertThat(activated.getPlanId()).isEqualTo(saved.getPlanId());
+        assertThat(activated.getStatus()).isEqualTo(StudyPlanStatus.ACTIVE);
+        assertThat(activated.getArchivedPlanIds()).containsExactly("plan-2024604757-0002");
+
+        StudyPlanDetailResponse restored = read("study-plan-restore-response.sample.json", StudyPlanDetailResponse.class);
+        assertThat(restored.getStatus()).isEqualTo(StudyPlanStatus.DRAFT);
+        assertThat(restored.getPlanVersion()).isEqualTo(1);
+        assertThat(restored.getSourcePlanId()).isEqualTo("plan-2024604757-0001");
     }
 
     @Test
-    void testRankRetakeSerialization() throws Exception {
-        File resFile = examplesDir.resolve("rank-retake-response.sample.json").toFile();
-        RankRetakeCoursesResponse res = objectMapper.readValue(resFile, RankRetakeCoursesResponse.class);
-        assertThat(res.getRecommendations()).hasSize(2);
-        assertThat(res.getRecommendations().get(0).getPotentialCpaGain()).isEqualByComparingTo(new BigDecimal("0.16"));
+    @DisplayName("Lịch sử kế hoạch khớp chi tiết của cùng planId")
+    void summaryMatchesDetail() throws Exception {
+        StudyPlanListResponse list = read("study-plan-list-response.sample.json", StudyPlanListResponse.class);
+        StudyPlanDetailResponse active = read("study-plan-read-response.sample.json", StudyPlanDetailResponse.class);
+        StudyPlanDetailResponse restored = read("study-plan-restore-response.sample.json", StudyPlanDetailResponse.class);
+
+        StudyPlanSummaryItem activeSummary = list.getPlans().stream()
+                .filter(p -> p.getPlanId().equals(active.getPlanId())).findFirst().orElseThrow();
+        assertThat(activeSummary.getStatus()).isEqualTo(active.getStatus());
+        assertThat(activeSummary.getPlanVersion()).isEqualTo(active.getPlanVersion());
+        assertThat(activeSummary.getTotalCredits()).isEqualTo(active.getTotalCredits());
+        assertThat(activeSummary.getProjectedCpa()).isEqualByComparingTo(active.getProjectedCpa());
+        assertThat(activeSummary.getUpdatedAt()).isEqualTo(active.getUpdatedAt());
+
+        StudyPlanSummaryItem origin = list.getPlans().stream()
+                .filter(p -> p.getPlanId().equals(restored.getSourcePlanId())).findFirst().orElseThrow();
+        assertThat(origin.getStatus()).isEqualTo(StudyPlanStatus.ARCHIVED);
+        assertThat(origin.getTotalCredits()).isEqualTo(restored.getTotalCredits());
     }
 
     @Test
-    void testCalculateTargetGradesSerialization() throws Exception {
-        File resFile = examplesDir.resolve("calculate-target-grades-response.sample.json").toFile();
-        CalculateTargetGradesResponse res = objectMapper.readValue(resFile, CalculateTargetGradesResponse.class);
-        assertThat(res.getRequiredAverageGpa()).isEqualByComparingTo(new BigDecimal("3.42"));
+    @DisplayName("Simulation, retake, target grades dùng cùng tên số liệu dự kiến")
+    void simulationFamily() throws Exception {
+        SimulateGradesResponse sim = read("simulate-grades-response.sample.json", SimulateGradesResponse.class);
+        assertThat(sim.getProjectedCpa().subtract(sim.getCurrentCpa())).isEqualByComparingTo(sim.getCpaDelta());
+
+        RankRetakeCoursesResponse rank = read("rank-retake-response.sample.json", RankRetakeCoursesResponse.class);
+        assertThat(rank.getRecommendations()).extracting(RetakeCourseRecommendation::getRank).containsExactly(1, 2);
+        assertThat(rank.getRecommendations().get(0).getCpaDelta()).isEqualByComparingTo("0.08");
+
+        CalculateTargetGradesResponse target = read("calculate-target-grades-response.sample.json", CalculateTargetGradesResponse.class);
+        assertThat(target.getRemainingCredits()).isEqualTo(150 - 61);
+        assertThat(target.getWarnings()).isNotEmpty();
     }
 
     @Test
-    void testGraduationAuditSerialization() throws Exception {
-        File resFile = examplesDir.resolve("graduation-audit-response.sample.json").toFile();
-        GraduationAuditResponse res = objectMapper.readValue(resFile, GraduationAuditResponse.class);
-        assertThat(res.isEligibleForGraduation()).isFalse();
-        assertThat(res.getCompletedPercentage()).isEqualTo(82);
-        assertThat(res.getPendingActions()).hasSize(1);
+    @DisplayName("Audit và chat")
+    void auditAndChat() throws Exception {
+        GraduationAuditResponse audit = read("graduation-audit-response.sample.json", GraduationAuditResponse.class);
+        assertThat(audit.isEligibleForGraduation()).isFalse();
+        assertThat(audit.getAccumulatedCredits()).isEqualTo(61);
+        assertThat(audit.getPendingActions()).extracting(AuditCertificateAction::getCertificateType).containsExactly("MOS");
+
+        ChatResponse chat = read("chat-response.sample.json", ChatResponse.class);
+        assertThat(chat.getSources()).extracting(ChatSourceItem::getSourceId).containsExactly("REG-HAUI-01");
+        assertThat(chat.getPlanProposal().getSemesters()).hasSize(2);
+        GenerateStudyPlanResponse generated = read("generate-study-plan-response.sample.json", GenerateStudyPlanResponse.class);
+        assertThat(chat.getPlanProposal().getProposalId()).isEqualTo(generated.getProposalId());
     }
 
     @Test
-    void testReconcileStudyPlanSerialization() throws Exception {
-        File resFile = examplesDir.resolve("reconcile-study-plan-response.sample.json").toFile();
-        ReconcileStudyPlanResponse res = objectMapper.readValue(resFile, ReconcileStudyPlanResponse.class);
-        assertThat(res.isOnTrack()).isTrue();
+    @DisplayName("Lỗi: mỗi mã lỗi nghiệp vụ có ví dụ đọc được")
+    void errors() throws Exception {
+        Map<String, ApiErrorCode> expected = Map.of(
+                "error-data-revision-stale.sample.json", ApiErrorCode.DATA_REVISION_STALE,
+                "error-plan-version-conflict.sample.json", ApiErrorCode.PLAN_VERSION_CONFLICT,
+                "error-plan-not-validated.sample.json", ApiErrorCode.PLAN_NOT_VALIDATED,
+                "error-plan-validation-failed.sample.json", ApiErrorCode.PLAN_VALIDATION_FAILED,
+                "error-not-implemented.sample.json", ApiErrorCode.NOT_IMPLEMENTED);
+        for (Map.Entry<String, ApiErrorCode> entry : expected.entrySet()) {
+            ApiErrorResponse error = read(entry.getKey(), ApiErrorResponse.class);
+            assertThat(error.getCode()).as(entry.getKey()).isEqualTo(entry.getValue());
+            assertThat(error.getTimestamp()).as(entry.getKey()).isNotNull();
+        }
     }
 
     @Test
-    void testChatSerialization() throws Exception {
-        File reqFile = examplesDir.resolve("chat-request.sample.json").toFile();
-        ChatRequest req = objectMapper.readValue(reqFile, ChatRequest.class);
-        assertThat(req.getMessage()).contains("Toán rời rạc");
-
-        File resFile = examplesDir.resolve("chat-response.sample.json").toFile();
-        ChatResponse res = objectMapper.readValue(resFile, ChatResponse.class);
-        assertThat(res.getAnswer()).isNotEmpty();
-        assertThat(res.getSources()).hasSize(1);
-        assertThat(res.getActions()).hasSize(1);
+    @DisplayName("Tổng tín chỉ: học kỳ = tổng môn, kế hoạch = tổng học kỳ (một nguồn cho một số liệu)")
+    void creditTotalsAreDerivedConsistently() throws Exception {
+        List<String> problems = new ArrayList<>();
+        for (ContractTestSupport.SampleRef sample : ContractTestSupport.manifestSamples()) {
+            checkTotals(ContractTestSupport.readExample(sample.file()), sample.file(), problems);
+        }
+        assertThat(problems).isEmpty();
     }
 
     @Test
-    void testApiErrorSerialization() throws Exception {
-        File resFile = examplesDir.resolve("api-error.sample.json").toFile();
-        ApiErrorResponse err = objectMapper.readValue(resFile, ApiErrorResponse.class);
-        assertThat(err.getCode()).isEqualTo("NOT_IMPLEMENTED");
-        assertThat(err.getRequestId()).isEqualTo("req-9999-sample");
+    @DisplayName("Mọi fixture dùng cùng sinh viên demo và dataRevision hợp lệ")
+    void fixturesShareOneStudentWorld() throws Exception {
+        JsonNode demo = ContractTestSupport.manifest().get("demoStudent");
+        Map<String, String> revisionByStudent = new HashMap<>();
+        revisionByStudent.put(demo.get("studentId").asText(), demo.get("dataRevision").asText());
+        revisionByStudent.put("std-missing-unknown-v1", "REV-std-missing-unknown-v1-001");
+
+        List<String> problems = new ArrayList<>();
+        for (ContractTestSupport.SampleRef sample : ContractTestSupport.manifestSamples()) {
+            JsonNode json = ContractTestSupport.readExample(sample.file());
+            if (json.hasNonNull("studentId") && !revisionByStudent.containsKey(json.get("studentId").asText())) {
+                problems.add(sample.file() + ": studentId lạ " + json.get("studentId").asText());
+            }
+            if (json.hasNonNull("dataRevision") && !json.get("dataRevision").asText().startsWith("REV-")) {
+                problems.add(sample.file() + ": dataRevision không theo dạng REV-<studentId>-<nnn>");
+            }
+        }
+        assertThat(problems).isEmpty();
+    }
+
+    private static void checkTotals(JsonNode node, String file, List<String> problems) {
+        if (node.isObject()) {
+            if (node.has("courses") && node.has("totalCredits") && node.get("courses").isArray()) {
+                int sum = 0;
+                for (JsonNode course : node.get("courses")) {
+                    sum += course.path("credits").asInt();
+                }
+                if (sum != node.get("totalCredits").asInt()) {
+                    problems.add(file + ": học kỳ " + node.path("semesterCode").asText()
+                            + " totalCredits=" + node.get("totalCredits").asInt() + " nhưng tổng môn=" + sum);
+                }
+            }
+            if (node.has("semesters") && node.hasNonNull("totalCredits") && node.get("semesters").isArray()) {
+                int sum = 0;
+                for (JsonNode semester : node.get("semesters")) {
+                    sum += semester.path("totalCredits").asInt();
+                }
+                if (sum != node.get("totalCredits").asInt()) {
+                    problems.add(file + ": totalCredits kế hoạch=" + node.get("totalCredits").asInt()
+                            + " nhưng tổng học kỳ=" + sum);
+                }
+            }
+            node.fields().forEachRemaining(field -> checkTotals(field.getValue(), file, problems));
+        } else if (node.isArray()) {
+            node.forEach(child -> checkTotals(child, file, problems));
+        }
     }
 
     @Test
-    void testStudyPlanReadSerialization() throws Exception {
-        File resFile = examplesDir.resolve("study-plan-read-response.sample.json").toFile();
-        StudyPlanDetailResponse res = objectMapper.readValue(resFile, StudyPlanDetailResponse.class);
-        assertThat(res.getPlanId()).isEqualTo("plan-2024-k19-001");
-        assertThat(res.getStudentId()).isEqualTo("2024604757");
-        assertThat(res.getStatus()).isEqualTo(StudyPlanStatus.VALIDATED);
-        assertThat(res.getVersion()).isEqualTo(1);
-        assertThat(res.getDataRevision()).isEqualTo("REV-2024-001");
-        assertThat(res.getTargetCpa()).isEqualByComparingTo(new BigDecimal("3.20"));
-        assertThat(res.getSemesters()).hasSize(1);
-        assertThat(res.getActions()).hasSize(1);
-    }
-
-    @Test
-    void testStudyPlanPreviewSerialization() throws Exception {
-        File reqFile = examplesDir.resolve("study-plan-preview-request.sample.json").toFile();
-        PreviewStudyPlanRequest req = objectMapper.readValue(reqFile, PreviewStudyPlanRequest.class);
-        assertThat(req.getTargetGraduationSemester()).isEqualTo("2028_1");
-        assertThat(req.getTargetCpa()).isEqualByComparingTo(new BigDecimal("3.20"));
-        assertThat(req.getIncludeSummerSemesters()).isTrue();
-
-        File resFile = examplesDir.resolve("study-plan-preview-response.sample.json").toFile();
-        PreviewStudyPlanResponse res = objectMapper.readValue(resFile, PreviewStudyPlanResponse.class);
-        assertThat(res.getStatus()).isEqualTo(StudyPlanStatus.DRAFT);
-        assertThat(res.getEstimatedFinalCpa()).isEqualByComparingTo(new BigDecimal("3.25"));
-        assertThat(res.getTotalPlannedCredits()).isEqualTo(105);
-    }
-
-    @Test
-    void testStudyPlanSaveSerialization() throws Exception {
-        File reqFile = examplesDir.resolve("study-plan-save-request.sample.json").toFile();
-        SaveStudyPlanRequest req = objectMapper.readValue(reqFile, SaveStudyPlanRequest.class);
-        assertThat(req.getPlanId()).isEqualTo("plan-2024-k19-001");
-        assertThat(req.getPlanVersion()).isEqualTo(1);
-        assertThat(req.getDataRevision()).isEqualTo("REV-2024-001");
-
-        File resFile = examplesDir.resolve("study-plan-save-response.sample.json").toFile();
-        SaveStudyPlanResponse res = objectMapper.readValue(resFile, SaveStudyPlanResponse.class);
-        assertThat(res.getPlanId()).isEqualTo("plan-2024-k19-001");
-        assertThat(res.getPlanVersion()).isEqualTo(2);
-        assertThat(res.getStatus()).isEqualTo(StudyPlanStatus.VALIDATED);
-    }
-
-    @Test
-    void testStudyPlanActivateSerialization() throws Exception {
-        File reqFile = examplesDir.resolve("study-plan-activate-request.sample.json").toFile();
-        ActivateStudyPlanRequest req = objectMapper.readValue(reqFile, ActivateStudyPlanRequest.class);
-        assertThat(req.getPlanId()).isEqualTo("plan-2024-k19-001");
-        assertThat(req.getExpectedVersion()).isEqualTo(2);
-
-        File resFile = examplesDir.resolve("study-plan-activate-response.sample.json").toFile();
-        ActivateStudyPlanResponse res = objectMapper.readValue(resFile, ActivateStudyPlanResponse.class);
-        assertThat(res.getPlanId()).isEqualTo("plan-2024-k19-001");
-        assertThat(res.getStatus()).isEqualTo(StudyPlanStatus.ACTIVE);
-        assertThat(res.getArchivedPlanIds()).contains("plan-2024-k19-000");
-    }
-
-    @Test
-    void testStudentDataVersionSerialization() throws Exception {
-        StudentDataVersion version = new StudentDataVersion("2024604757", "REV-2024-001", 1, "2026-10-04T10:00:00Z", false);
-        String json = objectMapper.writeValueAsString(version);
-        StudentDataVersion deserialized = objectMapper.readValue(json, StudentDataVersion.class);
-        assertThat(deserialized.getStudentId()).isEqualTo("2024604757");
-        assertThat(deserialized.getDataRevision()).isEqualTo("REV-2024-001");
-        assertThat(deserialized.getVersion()).isEqualTo(1);
-        assertThat(deserialized.getStale()).isFalse();
+    @DisplayName("BigDecimal giữ nguyên giá trị số khi đọc fixture")
+    void bigDecimalPrecision() throws Exception {
+        CalculateTargetGradesResponse target = read("calculate-target-grades-response.sample.json", CalculateTargetGradesResponse.class);
+        assertThat(target.getRequiredAverageGpa()).isEqualByComparingTo(new BigDecimal("3.55"));
     }
 }

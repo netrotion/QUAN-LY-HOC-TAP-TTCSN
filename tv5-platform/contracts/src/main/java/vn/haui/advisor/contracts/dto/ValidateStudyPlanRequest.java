@@ -3,6 +3,11 @@ package vn.haui.advisor.contracts.dto;
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * Thẩm định kế hoạch bằng AcademicFacade ({@code POST /planner/validate}).
+ * Có planId + planVersion: thẩm định bản đã lưu (server nạp semesters đã lưu), hợp lệ thì chuyển VALIDATED.
+ * Không có planId: kiểm tra nhanh semesters chưa lưu, không ghi gì. studentId luôn do server điền.
+ */
 public class ValidateStudyPlanRequest implements Serializable {
     private String planId;
     private String studentId;

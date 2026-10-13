@@ -1,0 +1,629 @@
+{
+  "milestone": "contracts-v1",
+  "contractVersion": "1.0.0",
+  "owner": "TV5",
+  "rule": "Một dữ liệu chỉ có một tên trường; cùng tên trường thì cùng kiểu JSON ở mọi schema. Thêm trường mới phải đăng ký ở đây trong cùng PR.",
+  "fields": {
+    "accumulatedCredits": {
+      "type": "integer",
+      "meaning": "Số tín chỉ đã tích lũy (đã đạt); dùng cho cả cấp sinh viên và từng điều kiện tốt nghiệp"
+    },
+    "actionDescription": {
+      "type": "string",
+      "meaning": "Việc cần làm để đạt chứng chỉ/chuẩn đầu ra"
+    },
+    "actionType": {
+      "type": "string",
+      "meaning": "Loại hành động gợi ý"
+    },
+    "actions": {
+      "type": "array<object>",
+      "meaning": "Danh sách hành động gợi ý/gắn với kế hoạch"
+    },
+    "activatedAt": {
+      "type": "string",
+      "meaning": "Thời điểm kế hoạch được kích hoạt"
+    },
+    "adjustmentsRecommended": {
+      "type": "array<string>",
+      "meaning": "Điều chỉnh đề xuất sau đối chiếu học kỳ"
+    },
+    "answer": {
+      "type": "string",
+      "meaning": "Nội dung trả lời của trợ lý"
+    },
+    "archivedPlanIds": {
+      "type": "array<string>",
+      "meaning": "Kế hoạch ACTIVE cũ bị lưu trữ khi kích hoạt bản mới"
+    },
+    "category": {
+      "type": "string",
+      "meaning": "Nhóm điều kiện tốt nghiệp"
+    },
+    "certificateType": {
+      "type": "string",
+      "meaning": "Loại chứng chỉ (MOS, TOEIC...)"
+    },
+    "checklist": {
+      "type": "array<object>",
+      "meaning": "Danh sách điều kiện tốt nghiệp"
+    },
+    "clientTimestamp": {
+      "type": "string",
+      "meaning": "Thời điểm client gửi tin nhắn"
+    },
+    "code": {
+      "type": "string",
+      "meaning": "Mã lỗi nghiệp vụ (ApiErrorCode)"
+    },
+    "cohort": {
+      "type": "string",
+      "meaning": "Khóa tuyển sinh"
+    },
+    "completed": {
+      "type": "boolean",
+      "meaning": "Điều kiện đã đạt"
+    },
+    "completedCourses": {
+      "type": "array<string>",
+      "meaning": "Môn đã hoàn thành theo kế hoạch"
+    },
+    "completedPercentage": {
+      "type": "integer",
+      "meaning": "Phần trăm hoàn thành tín chỉ CTĐT"
+    },
+    "completedSemester": {
+      "type": "string",
+      "meaning": "Học kỳ vừa có kết quả để đối chiếu"
+    },
+    "contractMilestone": {
+      "type": "string",
+      "meaning": "Mốc phát hành contracts (contracts-v1)"
+    },
+    "contractVersion": {
+      "type": "string",
+      "meaning": "Phiên bản contracts đang chạy"
+    },
+    "conversationId": {
+      "type": "string",
+      "meaning": "Mã hội thoại do client sinh (UUID)"
+    },
+    "courseCode": {
+      "type": "string",
+      "meaning": "Mã học phần theo CTĐT"
+    },
+    "courseName": {
+      "type": "string",
+      "meaning": "Tên học phần theo CTĐT"
+    },
+    "courseRequirements": {
+      "type": "array<object>",
+      "meaning": "Điểm cần đạt từng môn để tới CPA mục tiêu"
+    },
+    "courseType": {
+      "type": "string",
+      "meaning": "Loại môn trong kế hoạch: STANDARD | RETAKE | IMPROVEMENT | ELECTIVE | ADVANCED"
+    },
+    "courses": {
+      "type": "array<object>",
+      "meaning": "Danh sách học phần của đối tượng chứa (học kỳ kế hoạch hoặc lượt giả lập)"
+    },
+    "cpa": {
+      "type": "number",
+      "meaning": "CPA tích lũy thực tế (thang 4); null khi thiếu dữ liệu"
+    },
+    "cpaDelta": {
+      "type": "number",
+      "meaning": "Chênh lệch CPA dự kiến so với CPA hiện tại"
+    },
+    "createdAt": {
+      "type": "string",
+      "meaning": "Thời điểm tạo"
+    },
+    "credits": {
+      "type": "integer",
+      "meaning": "Số tín chỉ của học phần"
+    },
+    "currentCpa": {
+      "type": "number",
+      "meaning": "CPA hiện tại dùng làm mốc tính toán"
+    },
+    "currentGrade": {
+      "type": "string",
+      "meaning": "Điểm chữ hiện tại của học phần"
+    },
+    "currentGradePoints": {
+      "type": "number",
+      "meaning": "Điểm thang 4 hiện tại của học phần"
+    },
+    "dataRevision": {
+      "type": "string",
+      "meaning": "Token phiên bản dữ liệu học vụ của sinh viên (StudentDataVersion)"
+    },
+    "deadline": {
+      "type": "string",
+      "meaning": "Hạn chót (yyyy-MM-dd)"
+    },
+    "description": {
+      "type": "string",
+      "meaning": "Mô tả hành động"
+    },
+    "details": {
+      "type": "array<string>",
+      "meaning": "Chi tiết bổ sung của lỗi"
+    },
+    "eligible": {
+      "type": "boolean",
+      "meaning": "Đủ điều kiện đăng ký học phần"
+    },
+    "eligibleForGraduation": {
+      "type": "boolean",
+      "meaning": "Đủ điều kiện tốt nghiệp theo dữ liệu hiện có (dự kiến)"
+    },
+    "expectedGpa": {
+      "type": "number",
+      "meaning": "GPA học kỳ dự kiến"
+    },
+    "expectedGrade": {
+      "type": "string",
+      "meaning": "Điểm chữ giả định trong What-if"
+    },
+    "expectedGradePoints": {
+      "type": "number",
+      "meaning": "Điểm thang 4 giả định trong What-if"
+    },
+    "fullName": {
+      "type": "string",
+      "meaning": "Họ tên sinh viên"
+    },
+    "gpa": {
+      "type": "number",
+      "meaning": "GPA học kỳ gần nhất thực tế (thang 4); null khi thiếu dữ liệu"
+    },
+    "includeSummerSemesters": {
+      "type": "boolean",
+      "meaning": "Cho phép xếp kỳ hè (học vượt)"
+    },
+    "label": {
+      "type": "string",
+      "meaning": "Nhãn nút bấm"
+    },
+    "majorCode": {
+      "type": "string",
+      "meaning": "Mã chương trình/ngành"
+    },
+    "maxCreditsPerSemester": {
+      "type": "integer",
+      "meaning": "Trần tín chỉ mỗi kỳ người dùng chọn"
+    },
+    "maxSuggestions": {
+      "type": "integer",
+      "meaning": "Số gợi ý tối đa"
+    },
+    "message": {
+      "type": "string",
+      "meaning": "Thông điệp văn bản (câu hỏi trong ChatRequest; thông báo trong response)"
+    },
+    "messagesJson": {
+      "type": "string",
+      "meaning": "Danh sách tin nhắn hội thoại dạng JSON string"
+    },
+    "missedOrFailedCourses": {
+      "type": "array<string>",
+      "meaning": "Môn trượt/bỏ lỡ so với kế hoạch"
+    },
+    "missingPrerequisites": {
+      "type": "array<string>",
+      "meaning": "Điều kiện học phần còn thiếu"
+    },
+    "modules": {
+      "type": "object",
+      "meaning": "Trạng thái module runtime"
+    },
+    "name": {
+      "type": "string",
+      "meaning": "Tên điều kiện tốt nghiệp"
+    },
+    "onTrack": {
+      "type": "boolean",
+      "meaning": "Còn đúng lộ trình"
+    },
+    "payloadJson": {
+      "type": "string",
+      "meaning": "Tham số route dạng JSON string"
+    },
+    "pendingActions": {
+      "type": "array<object>",
+      "meaning": "Chứng chỉ/chuẩn đầu ra còn phải làm"
+    },
+    "planId": {
+      "type": "string",
+      "meaning": "Mã kế hoạch đã lưu"
+    },
+    "planName": {
+      "type": "string",
+      "meaning": "Tên kế hoạch"
+    },
+    "planProposal": {
+      "type": "object",
+      "meaning": "Phương án kế hoạch đề xuất trong chat"
+    },
+    "planVersion": {
+      "type": "integer",
+      "meaning": "Phiên bản nội dung kế hoạch (optimistic lock)"
+    },
+    "plans": {
+      "type": "array<object>",
+      "meaning": "Danh sách kế hoạch"
+    },
+    "priority": {
+      "type": "integer",
+      "meaning": "Độ ưu tiên hành động"
+    },
+    "projectedCpa": {
+      "type": "number",
+      "meaning": "CPA dự kiến (sau phương án/kỳ giả lập)"
+    },
+    "proposalId": {
+      "type": "string",
+      "meaning": "Mã phương án đề xuất chưa lưu"
+    },
+    "rank": {
+      "type": "integer",
+      "meaning": "Thứ hạng gợi ý"
+    },
+    "rationale": {
+      "type": "string",
+      "meaning": "Giải thích lý do"
+    },
+    "recommendations": {
+      "type": "array<object>",
+      "meaning": "Danh sách gợi ý học lại/cải thiện"
+    },
+    "referenceUrl": {
+      "type": "string",
+      "meaning": "Đường dẫn tài liệu nguồn"
+    },
+    "remainingCredits": {
+      "type": "integer",
+      "meaning": "Số tín chỉ còn phải học"
+    },
+    "requestId": {
+      "type": "string",
+      "meaning": "Mã truy vết request"
+    },
+    "requiredAverageGpa": {
+      "type": "number",
+      "meaning": "GPA trung bình cần đạt cho phần còn lại"
+    },
+    "requiredGrade": {
+      "type": "string",
+      "meaning": "Điểm chữ cần đạt"
+    },
+    "requiredGradePoints": {
+      "type": "number",
+      "meaning": "Điểm thang 4 cần đạt"
+    },
+    "requiredStandard": {
+      "type": "string",
+      "meaning": "Chuẩn chứng chỉ yêu cầu"
+    },
+    "riskLevel": {
+      "type": "string",
+      "meaning": "Mức rủi ro học vụ"
+    },
+    "runtimeMode": {
+      "type": "string",
+      "meaning": "Chế độ runtime"
+    },
+    "section": {
+      "type": "string",
+      "meaning": "Mục trích dẫn trong tài liệu nguồn"
+    },
+    "selectedRetakeCourseCodes": {
+      "type": "array<string>",
+      "meaning": "Mã học phần người dùng chọn học lại/cải thiện"
+    },
+    "semesterCode": {
+      "type": "string",
+      "meaning": "Mã học kỳ <năm>_<1|2|SUMMER>"
+    },
+    "semesterName": {
+      "type": "string",
+      "meaning": "Tên học kỳ hiển thị"
+    },
+    "semesterOrder": {
+      "type": "integer",
+      "meaning": "Thứ tự học kỳ trong kế hoạch"
+    },
+    "semesters": {
+      "type": "array<object>",
+      "meaning": "Danh sách học kỳ của kế hoạch/phương án"
+    },
+    "sourceId": {
+      "type": "string",
+      "meaning": "Mã nguồn trong RAG source catalog"
+    },
+    "sourcePlanId": {
+      "type": "string",
+      "meaning": "Kế hoạch gốc mà bản này được tạo từ (kế thừa ACTIVE hoặc restore)"
+    },
+    "sources": {
+      "type": "array<object>",
+      "meaning": "Nguồn trích dẫn của câu trả lời"
+    },
+    "stale": {
+      "type": "boolean",
+      "meaning": "Revision đã cũ"
+    },
+    "status": {
+      "type": "string",
+      "meaning": "Trạng thái của đối tượng chứa (StudyPlanStatus với kế hoạch; chuỗi trạng thái với môn/chứng chỉ)"
+    },
+    "statusMessage": {
+      "type": "string",
+      "meaning": "Diễn giải trạng thái điều kiện"
+    },
+    "studentCode": {
+      "type": "string",
+      "meaning": "MSSV hiển thị"
+    },
+    "studentId": {
+      "type": "string",
+      "meaning": "Mã sinh viên (server điền từ TrustedStudentContext)"
+    },
+    "summary": {
+      "type": "string",
+      "meaning": "Tóm tắt phương án"
+    },
+    "targetCpa": {
+      "type": "number",
+      "meaning": "CPA mục tiêu người dùng đặt"
+    },
+    "targetGrade": {
+      "type": "string",
+      "meaning": "Điểm chữ mục tiêu (dự kiến)"
+    },
+    "targetGradePoints": {
+      "type": "number",
+      "meaning": "Điểm thang 4 mục tiêu"
+    },
+    "targetGraduationSemester": {
+      "type": "string",
+      "meaning": "Học kỳ muốn tốt nghiệp"
+    },
+    "targetRoute": {
+      "type": "string",
+      "meaning": "Route FE cần mở"
+    },
+    "targetSemester": {
+      "type": "string",
+      "meaning": "Học kỳ dự định đăng ký học phần"
+    },
+    "timestamp": {
+      "type": "string",
+      "meaning": "Thời điểm server trả lời/phát sinh lỗi"
+    },
+    "title": {
+      "type": "string",
+      "meaning": "Tiêu đề (hội thoại, tài liệu nguồn)"
+    },
+    "totalCredits": {
+      "type": "integer",
+      "meaning": "Tổng tín chỉ của đối tượng chứa (học kỳ hoặc toàn kế hoạch); bằng tổng credits bên trong"
+    },
+    "totalCreditsRequired": {
+      "type": "integer",
+      "meaning": "Tổng tín chỉ yêu cầu (CTĐT hoặc từng điều kiện tốt nghiệp)"
+    },
+    "updatedAt": {
+      "type": "string",
+      "meaning": "Thời điểm cập nhật/lưu gần nhất"
+    },
+    "valid": {
+      "type": "boolean",
+      "meaning": "Kế hoạch không có vi phạm"
+    },
+    "version": {
+      "type": "string",
+      "meaning": "Phiên bản tài liệu nguồn RAG"
+    },
+    "violations": {
+      "type": "array<string>",
+      "meaning": "Vi phạm quy chế chặn kích hoạt"
+    },
+    "warnings": {
+      "type": "array<string>",
+      "meaning": "Cảnh báo không chặn thao tác"
+    }
+  },
+  "retired": {
+    "plannedCredits": {
+      "replacedBy": "totalCredits",
+      "was": "PlannedSemesterItem (alias V0)"
+    },
+    "totalPlannedCredits": {
+      "replacedBy": "totalCredits",
+      "was": "PreviewStudyPlanResponse (V0)"
+    },
+    "estimatedGpa": {
+      "replacedBy": "expectedGpa",
+      "was": "PlannedSemesterItem (alias V0)"
+    },
+    "projectedSemesterGpa": {
+      "replacedBy": "expectedGpa",
+      "was": "SimulateGradesResponse (V0)"
+    },
+    "projectedGpa": {
+      "replacedBy": "expectedGpa",
+      "was": "mock FE TV3"
+    },
+    "estimatedFinalCpa": {
+      "replacedBy": "projectedCpa",
+      "was": "PreviewStudyPlanResponse (V0)"
+    },
+    "projectedNewCpa": {
+      "replacedBy": "projectedCpa",
+      "was": "SimulateGradesResponse (V0)"
+    },
+    "cpaDifference": {
+      "replacedBy": "cpaDelta",
+      "was": "SimulateGradesResponse (V0)"
+    },
+    "potentialCpaGain": {
+      "replacedBy": "cpaDelta",
+      "was": "RetakeCourseRecommendation (V0)"
+    },
+    "expectedCpaDelta": {
+      "replacedBy": "cpaDelta",
+      "was": "fixture TV4 student-profiles (nội bộ TV4)"
+    },
+    "expectedVersion": {
+      "replacedBy": "planVersion",
+      "was": "ActivateStudyPlanRequest (V0)"
+    },
+    "savedAt": {
+      "replacedBy": "updatedAt",
+      "was": "SaveStudyPlanResponse (V0)"
+    },
+    "lastUpdated": {
+      "replacedBy": "updatedAt",
+      "was": "StudentDataVersion (V0)"
+    },
+    "lastUpdatedAt": {
+      "replacedBy": "updatedAt",
+      "was": "task-2.3-contract-delta CD-07"
+    },
+    "warningMessages": {
+      "replacedBy": "warnings",
+      "was": "AcademicStatusResponse (V0)"
+    },
+    "feasibilityWarnings": {
+      "replacedBy": "warnings",
+      "was": "CalculateTargetGradesResponse (V0)"
+    },
+    "academicWarning": {
+      "replacedBy": "warnings",
+      "was": "mock FE TV2 academicStore"
+    },
+    "totalCreditsEarned": {
+      "replacedBy": "accumulatedCredits",
+      "was": "GraduationAuditResponse (V0)"
+    },
+    "earnedCredits": {
+      "replacedBy": "accumulatedCredits",
+      "was": "AuditChecklistItem (V0)"
+    },
+    "totalEarnedCredits": {
+      "replacedBy": "accumulatedCredits",
+      "was": "plannerStore FE TV3"
+    },
+    "requiredCredits": {
+      "replacedBy": "totalCreditsRequired",
+      "was": "AuditChecklistItem (V0)"
+    },
+    "totalRequiredCredits": {
+      "replacedBy": "totalCreditsRequired",
+      "was": "plannerStore FE TV3"
+    },
+    "suggestedSemesters": {
+      "replacedBy": "semesters",
+      "was": "ChatPlanProposal (V0)"
+    },
+    "maxCourses": {
+      "replacedBy": "maxSuggestions",
+      "was": "request FE TV2/TV3 rankRetake"
+    }
+  },
+  "javaBridges": [
+    {
+      "member": "AcademicStatusResponse#getWarningMessages",
+      "replacedBy": "getWarnings",
+      "usedBy": [
+        "tv1-ai DefaultAdvisorFacade",
+        "tv4-academic AcademicSpecV1Test",
+        "tv4-academic AcademicFacadeHarnessTest"
+      ],
+      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+    },
+    {
+      "member": "CalculateTargetGradesResponse#getFeasibilityWarnings",
+      "replacedBy": "getWarnings",
+      "usedBy": [
+        "tv4-academic AcademicSpecV1Test"
+      ],
+      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+    },
+    {
+      "member": "ChatPlanProposal#getSuggestedSemesters",
+      "replacedBy": "getSemesters",
+      "usedBy": [
+        "tv1-ai AdvisorFacadeTest"
+      ],
+      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+    },
+    {
+      "member": "GenerateStudyPlanResponse#getPlanId",
+      "replacedBy": "getProposalId",
+      "usedBy": [
+        "tv1-ai DefaultAdvisorFacade"
+      ],
+      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+    },
+    {
+      "member": "GenerateStudyPlanResponse#<init>(8)",
+      "replacedBy": "constructor 7 tham số (bỏ planVersion)",
+      "usedBy": [
+        "tv1-ai MockAcademicFacade",
+        "tv1-ai ToolAdapterTest",
+        "tv4-academic DefaultAcademicFacade",
+        "tv4-academic StudyPlanScheduler"
+      ],
+      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+    },
+    {
+      "member": "GraduationAuditResponse#getTotalCreditsEarned",
+      "replacedBy": "getAccumulatedCredits",
+      "usedBy": [
+        "tv4-academic AcademicSpecV1Test"
+      ],
+      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+    },
+    {
+      "member": "RetakeCourseRecommendation#getPotentialCpaGain",
+      "replacedBy": "getCpaDelta",
+      "usedBy": [
+        "tv4-academic DefaultAcademicFacade",
+        "tv4-academic AcademicSpecV1Test",
+        "tv4-academic AcademicFacadeHarnessTest"
+      ],
+      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+    },
+    {
+      "member": "SimulateGradesResponse#getCpaDifference",
+      "replacedBy": "getCpaDelta",
+      "usedBy": [
+        "tv4-academic AcademicSpecV1Test",
+        "tv4-academic AcademicFacadeHarnessTest"
+      ],
+      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+    },
+    {
+      "member": "SimulateGradesResponse#getProjectedNewCpa",
+      "replacedBy": "getProjectedCpa",
+      "usedBy": [
+        "tv4-academic AcademicSpecV1Test",
+        "tv4-academic AcademicFacadeHarnessTest"
+      ],
+      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+    },
+    {
+      "member": "SimulateGradesResponse#getProjectedSemesterGpa",
+      "replacedBy": "getExpectedGpa",
+      "usedBy": [
+        "tv4-academic AcademicSpecV1Test"
+      ],
+      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+    }
+  ]
+}

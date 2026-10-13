@@ -1,9 +1,10 @@
 {
-  "planId": "plan-2024-k19-001",
-  "planName": "Kế hoạch học tập KTPM K19 - Bản chỉnh sửa",
-  "status": "VALIDATED",
+  "planId": "plan-2024604757-0003",
+  "planName": "Kế hoạch KTPM K19 - thêm môn cải thiện",
+  "status": "DRAFT",
   "planVersion": 2,
-  "dataRevision": "REV-2024-001",
-  "savedAt": "2026-10-04T10:00:00Z",
-  "message": "Lưu kế hoạch học tập thành công"
+  "sourcePlanId": "plan-2024604757-0002",
+  "dataRevision": "REV-2024604757-001",
+  "updatedAt": "2026-10-13T08:00:00Z",
+  "message": "Đã lưu nháp. Kế hoạch đang theo dõi không thay đổi."
 }

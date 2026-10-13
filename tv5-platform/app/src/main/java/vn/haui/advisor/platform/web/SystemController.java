@@ -4,6 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import vn.haui.advisor.contracts.ContractVersion;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -16,17 +17,18 @@ public class SystemController {
     @GetMapping("/bootstrap")
     public ResponseEntity<Map<String, Object>> getBootstrapInfo() {
         Map<String, Object> response = new LinkedHashMap<>();
-        response.put("contractVersion", "0.0.1-v0");
-        response.put("runtimeMode", "bootstrap-v0");
+        response.put("contractVersion", ContractVersion.CURRENT);
+        response.put("contractMilestone", ContractVersion.MILESTONE);
+        response.put("runtimeMode", "in-memory");
 
         Map<String, String> modules = new LinkedHashMap<>();
         modules.put("contracts", "READY");
         modules.put("academic", "NOT_IMPLEMENTED");
         modules.put("advisor", "NOT_IMPLEMENTED");
-        modules.put("persistence", "NOT_IMPLEMENTED");
+        modules.put("persistence", "IN_MEMORY");
         response.put("modules", modules);
 
-        response.put("message", "Khung kỹ thuật HaUI Advisor Bootstrap V0 đã sẵn sàng. Các chức năng học vụ và AI chưa được triển khai.");
+        response.put("message", "HaUI Advisor đang chạy contracts-v1. Planner lưu trong bộ nhớ; các endpoint học vụ và AI trả 501 cho tới khi được nối.");
         response.put("timestamp", Instant.now().toString());
 
         return ResponseEntity.ok(response);

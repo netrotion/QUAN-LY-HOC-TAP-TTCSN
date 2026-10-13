@@ -1,51 +1,59 @@
 {
-  "studentId": "std-2026-001",
+  "studentId": "2024604757",
   "eligibleForGraduation": false,
-  "completedPercentage": 82,
-  "totalCreditsEarned": 112,
-  "totalCreditsRequired": 135,
+  "completedPercentage": 41,
+  "accumulatedCredits": 61,
+  "totalCreditsRequired": 150,
   "checklist": [
     {
       "category": "TÍN CHỈ TÍCH LŨY",
       "name": "Tổng số tín chỉ tích lũy",
       "completed": false,
-      "requiredCredits": 135,
-      "earnedCredits": 112,
-      "statusMessage": "Còn thiếu 23 tín chỉ"
+      "totalCreditsRequired": 150,
+      "accumulatedCredits": 61,
+      "statusMessage": "Còn thiếu 89 tín chỉ"
     },
     {
-      "category": "KHỐI ĐẠI CƯƠNG",
-      "name": "Khối kiến thức giáo dục đại cương",
+      "category": "NGOẠI NGỮ",
+      "name": "Tiếng Anh TOEIC 500+",
       "completed": true,
-      "requiredCredits": 30,
-      "earnedCredits": 30,
-      "statusMessage": "Đã hoàn thành 100%"
+      "totalCreditsRequired": null,
+      "accumulatedCredits": null,
+      "statusMessage": "Đã hoàn thành chuẩn đầu ra ngoại ngữ TOEIC"
     },
     {
-      "category": "CHỨNG CHỈ NGOẠI NGỮ",
-      "name": "Chuẩn đầu ra Ngoại ngữ (TOEIC 550)",
-      "completed": true,
-      "requiredCredits": null,
-      "earnedCredits": null,
-      "statusMessage": "Đã nộp chứng chỉ TOEIC 550 hợp lệ"
-    },
-    {
-      "category": "CHỨNG CHỈ TIN HỌC",
-      "name": "Chuẩn đầu ra Tin học (MOS/IC3)",
+      "category": "TIN HỌC",
+      "name": "Chuẩn kỹ năng CNTT nâng cao (MOS)",
       "completed": false,
-      "requiredCredits": null,
-      "earnedCredits": null,
-      "statusMessage": "Chưa nộp chứng chỉ tin học quốc tế"
+      "totalCreditsRequired": null,
+      "accumulatedCredits": null,
+      "statusMessage": "Chưa nộp chứng chỉ kỹ năng CNTT"
+    },
+    {
+      "category": "GDQP_AN",
+      "name": "Chứng chỉ Giáo dục Quốc phòng - An ninh",
+      "completed": true,
+      "totalCreditsRequired": null,
+      "accumulatedCredits": null,
+      "statusMessage": "Đã tích lũy đủ 4 học phần GDQP-AN"
+    },
+    {
+      "category": "GDTC",
+      "name": "Chứng chỉ Giáo dục Thể chất",
+      "completed": true,
+      "totalCreditsRequired": null,
+      "accumulatedCredits": null,
+      "statusMessage": "Đã hoàn thành các học phần thể chất"
     }
   ],
   "pendingActions": [
     {
       "certificateType": "MOS",
-      "requiredStandard": "Đạt chứng chỉ MOS 3 môn",
-      "actionDescription": "Đăng ký thi và nộp chứng chỉ trước đợt xét tốt nghiệp 3 tháng",
-      "deadline": "2027-03-31",
+      "requiredStandard": "Chuẩn kỹ năng CNTT nâng cao (MOS)",
+      "actionDescription": "Đăng ký thi và nộp chứng chỉ MOS trước đợt xét tốt nghiệp",
+      "deadline": "2028-03-31",
       "status": "PENDING"
     }
   ],
-  "dataRevision": "rev-1001"
+  "dataRevision": "REV-2024604757-001"
 }

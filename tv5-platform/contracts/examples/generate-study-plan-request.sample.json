@@ -1,8 +1,11 @@
 {
-  "studentId": "std-2026-001",
-  "targetGraduationSemester": "2027_2",
-  "targetCpa": 3.20,
+  "studentId": "2024604757",
+  "targetGraduationSemester": "2028_1",
+  "targetCpa": 3.4,
   "maxCreditsPerSemester": 20,
-  "includeSummerSemesters": true,
-  "dataRevision": "rev-1001"
+  "includeSummerSemesters": false,
+  "selectedRetakeCourseCodes": [
+    "LP6010"
+  ],
+  "dataRevision": "REV-2024604757-001"
 }

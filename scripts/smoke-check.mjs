@@ -49,7 +49,7 @@ allPassed = runStep('2. Ownership Boundaries & Changed Paths', 'node scripts/che
 allPassed = runStep('3. Architecture Cyclic Dependency Gates', 'node scripts/check-architecture.mjs') && allPassed;
 
 // 3. Contracts & Fixtures Integrity
-allPassed = runStep('4. OpenAPI Spec & Fixtures Manifest', 'node scripts/check-contracts.mjs') && allPassed;
+allPassed = runStep('4. Contracts V1 (OpenAPI, glossary, fixtures, lock)', 'node scripts/check-contracts.mjs') && allPassed;
 
 // 4. Frontend Code Quality & Tests
 allPassed = runStep('5. Frontend Cleanliness & Lint Rules', 'node scripts/check-lint.mjs') && allPassed;
