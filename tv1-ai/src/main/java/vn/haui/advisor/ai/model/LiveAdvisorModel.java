@@ -32,23 +32,33 @@ public class LiveAdvisorModel implements AdvisorModel {
     private final Function<String, String> providerFunction;
     private final ResponseGroundingValidator validator;
     private final ObjectMapper objectMapper;
+    private final boolean allowDotEnvFallback;
 
     public LiveAdvisorModel() {
-        this(null, new ResponseGroundingValidator());
+        this(null, new ResponseGroundingValidator(), true);
+    }
+
+    public LiveAdvisorModel(boolean allowDotEnvFallback) {
+        this(null, new ResponseGroundingValidator(), allowDotEnvFallback);
     }
 
     public LiveAdvisorModel(Function<String, String> providerFunction) {
-        this(providerFunction, new ResponseGroundingValidator());
+        this(providerFunction, new ResponseGroundingValidator(), true);
     }
 
     public LiveAdvisorModel(ResponseGroundingValidator validator) {
-        this(null, validator);
+        this(null, validator, true);
     }
 
     public LiveAdvisorModel(Function<String, String> providerFunction, ResponseGroundingValidator validator) {
+        this(providerFunction, validator, true);
+    }
+
+    public LiveAdvisorModel(Function<String, String> providerFunction, ResponseGroundingValidator validator, boolean allowDotEnvFallback) {
         this.providerFunction = providerFunction;
         this.validator = validator != null ? validator : new ResponseGroundingValidator();
         this.objectMapper = new ObjectMapper();
+        this.allowDotEnvFallback = allowDotEnvFallback;
     }
 
     @Override
@@ -121,7 +131,9 @@ public class LiveAdvisorModel implements AdvisorModel {
             key = System.getProperty("spring.ai.gemini.api-key");
         }
         if (key == null || key.isBlank()) {
-            key = loadDotEnv().get("GEMINI_API_KEY");
+            if (this.allowDotEnvFallback) {
+                key = loadDotEnv().get("GEMINI_API_KEY");
+            }
         }
         return key;
     }

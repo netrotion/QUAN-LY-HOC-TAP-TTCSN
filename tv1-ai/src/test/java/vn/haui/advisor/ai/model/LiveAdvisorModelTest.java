@@ -149,7 +149,7 @@ class LiveAdvisorModelTest {
     @Test
     @DisplayName("Unconfigured live model produces safe warning without crashing")
     void testUnconfiguredLiveModelProducesWarning() {
-        LiveAdvisorModel model = new LiveAdvisorModel();
+        LiveAdvisorModel model = new LiveAdvisorModel(false);
         AdvisorModelInput input = new AdvisorModelInput("Test", studentContext, Map.of());
 
         AdvisorModelOutput output = model.generate(input);
