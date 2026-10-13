@@ -16,7 +16,7 @@ haui-advisor/
 ├── tv3-planner-ui/        # TV3: Feature package Planner/Chat/What-if UI
 ├── tv4-academic/          # TV4: Module quy tắc học vụ & công cụ đề xuất (Maven library)
 ├── tv5-platform/          # TV5: Platform Boot runtime, contracts, migration, hạ tầng & CI
-│   ├── contracts/        # contracts-v1: Java DTO/ports, OpenAPI V1, JSON fixtures, @haui/contracts (FE), fake provider
+│   ├── contracts/        # contracts-v1 (1.1.0): Java DTO/ports, OpenAPI V1, JSON fixtures, @haui/contracts (FE), fake provider
 │   ├── app/              # Spring Boot main runtime, Flyway migrations, Security & REST APIs
 │   ├── infra/            # Docker Compose, Dockerfiles & migrations
 │   └── docs/             # Báo cáo kỹ thuật bootstrap & lock
@@ -150,6 +150,7 @@ docker compose --env-file .env -f tv5-platform/infra/compose.yaml down
 - **Tài liệu phát hành, hướng dẫn cho từng thành viên và quy trình đổi contract:** [tv5-platform/docs/task-2.4-contracts-v1.md](tv5-platform/docs/task-2.4-contracts-v1.md).
 - **Mock FE:** `import { getFixture, findFixture } from '@haui/contracts'`. **Fake provider Java:** `vn.haui.advisor.contracts.fake.*`.
 - **Thông tin runtime:** `GET http://localhost:8080/api/v1/system/bootstrap` (trả `contractVersion`), health: `GET /api/v1/system/health`.
+- **Tài khoản & dữ liệu (Task 3.2, DB):** session cookie + CSRF (`GET /api/v1/auth/csrf` → gửi header `X-XSRF-TOKEN` cho mọi request ghi), `POST /api/v1/auth/login|register|logout`, `GET /api/v1/auth/session`, `GET|PUT /api/v1/students/me`, `GET /api/v1/academic/curriculum`, `GET /api/v1/academic/transcript`, nhập bảng điểm `/api/v1/academic/transcript/imports` (tải lên → xem lại → xác nhận), chứng chỉ `/api/v1/academic/certificates`. Tài khoản demo: đặt `DEMO_ACCOUNTS_ENABLED=true` và `DEMO_ACCOUNT_PASSWORD` (đăng nhập bằng mã SV `2024604757`). Chi tiết: [tv5-platform/docs/task-3.2-accounts-data-import.md](tv5-platform/docs/task-3.2-accounts-data-import.md).
 - **Planner V1 (in-memory):** `GET|POST /api/v1/planner/plans`, `GET /api/v1/planner/plans/{planId}`, `POST /api/v1/planner/validate`, `POST /api/v1/planner/plans/{planId}/activate`, `POST /api/v1/planner/plans/{planId}/restore`. Các operation học vụ/AI khác trả `501 NOT_IMPLEMENTED` cho tới khi được nối.
 - **Frontend Technical Shell & Màn hình demo UI:** `http://localhost:5173`
 

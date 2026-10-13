@@ -93,20 +93,29 @@ for (const name of Object.keys(retired)) {
   if (new RegExp(`^\\s+${name}:`, 'm').test(readText(OPENAPI_FILE))) fail(`openapi-v1.yaml còn trường khai tử '${name}'`);
 }
 
+// 3b. Không có chuỗi lỗi mã hóa (UTF-8 đọc nhầm Windows-1252, vd. "LÃª Viá»‡t") trong fixture/OpenAPI
+const MOJIBAKE = /Ã[\u0080-¿]|á»|áº|Æ°|Ä‘|â€/;
+for (const file of [...exampleFiles().map((f) => `${EXAMPLES_DIR}/${f}`), OPENAPI_FILE, GLOSSARY_FILE]) {
+  const match = readText(file).match(MOJIBAKE);
+  if (match) fail(`${file}: có chuỗi lỗi mã hóa "${match[0]}" (sửa nguồn về UTF-8 đúng)`);
+}
+
 // 4. Học phần trong fixture khớp CTĐT của TV4 (cùng mã → cùng tên, cùng số tín chỉ)
 if (fs.existsSync(CURRICULUM_FILE)) {
   const curriculum = new Map(readJson(CURRICULUM_FILE).courses.map((c) => [c.courseCode, c]));
   const visit = (value, file) => {
     if (Array.isArray(value)) { value.forEach((v) => visit(v, file)); return; }
     if (!value || typeof value !== 'object') return;
-    if (typeof value.courseCode === 'string') {
+    // Dòng nhập bảng điểm có thể cố ý mang mã sai (đã gắn issue UNKNOWN_COURSE_CODE) để minh họa bước xem lại
+    const flaggedUnknown = Array.isArray(value.issues) && value.issues.some((i) => i.code === 'UNKNOWN_COURSE_CODE');
+    if (typeof value.courseCode === 'string' && !flaggedUnknown) {
       const course = curriculum.get(value.courseCode);
       if (!course) fail(`${file}: học phần ${value.courseCode} không có trong ${CURRICULUM_FILE}`);
       else {
-        if (value.courseName !== undefined && value.courseName !== course.courseName) {
+        if (value.courseName != null && value.courseName !== course.courseName) {
           fail(`${file}: ${value.courseCode} tên '${value.courseName}' ≠ CTĐT '${course.courseName}'`);
         }
-        if (value.credits !== undefined && value.credits !== course.credits) {
+        if (value.credits != null && value.credits !== course.credits) {
           fail(`${file}: ${value.courseCode} ${value.credits} TC ≠ CTĐT ${course.credits} TC`);
         }
       }

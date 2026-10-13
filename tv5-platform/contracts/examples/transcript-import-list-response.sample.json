@@ -1,0 +1,103 @@
+{
+  "sessions": [
+    {
+      "importSessionId": "imp-2024604757-20261014-01",
+      "status": "REVIEW_REQUIRED",
+      "sourceType": "PDF_TEXT",
+      "fileName": "BangDiem_2024604757.pdf",
+      "fileSizeBytes": 48213,
+      "pageCount": 2,
+      "sessionVersion": 1,
+      "rows": [
+        {
+          "rowId": "row-001",
+          "sourceText": "IT6015 Ky thuat lap trinh 3 9.3 A",
+          "courseCode": "IT6015",
+          "courseName": "Kỹ thuật lập trình",
+          "documentCourseName": "Ky thuat lap trinh",
+          "credits": 3,
+          "semesterCode": "2024_1",
+          "score10": 9.3,
+          "letterGrade": "A",
+          "included": true,
+          "confidence": null,
+          "issues": [
+            {
+              "code": "COURSE_NAME_DIFFERS",
+              "blocking": false,
+              "message": "Tên trên tài liệu \"Ky thuat lap trinh\" khác tên trong CTĐT \"Kỹ thuật lập trình\"; khi xác nhận sẽ dùng tên CTĐT."
+            }
+          ]
+        },
+        {
+          "rowId": "row-002",
+          "sourceText": "IT6002 Cấu trúc dữ liệu và giải thuật 3 6.8 C+",
+          "courseCode": "IT6002",
+          "courseName": "Cấu trúc dữ liệu và giải thuật",
+          "documentCourseName": "Cấu trúc dữ liệu và giải thuật",
+          "credits": 3,
+          "semesterCode": "2025_1",
+          "score10": 6.8,
+          "letterGrade": "C+",
+          "included": true,
+          "confidence": null,
+          "issues": []
+        },
+        {
+          "rowId": "row-003",
+          "sourceText": "IT6O35 Toán rời rạc 3 6.6 C+",
+          "courseCode": "IT6O35",
+          "courseName": null,
+          "documentCourseName": "Toán rời rạc",
+          "credits": null,
+          "semesterCode": "2024_2",
+          "score10": 6.6,
+          "letterGrade": "C+",
+          "included": true,
+          "confidence": null,
+          "issues": [
+            {
+              "code": "UNKNOWN_COURSE_CODE",
+              "blocking": true,
+              "message": "Mã IT6O35 không có trong CTĐT. Sửa mã học phần hoặc bỏ chọn dòng."
+            }
+          ]
+        },
+        {
+          "rowId": "row-004",
+          "sourceText": "IT6126 Hệ thống cơ sở dữ liệu 4",
+          "courseCode": "IT6126",
+          "courseName": "Hệ thống cơ sở dữ liệu",
+          "documentCourseName": "Hệ thống cơ sở dữ liệu",
+          "credits": 4,
+          "semesterCode": "2026_1",
+          "score10": null,
+          "letterGrade": null,
+          "included": true,
+          "confidence": null,
+          "issues": [
+            {
+              "code": "MISSING_GRADE",
+              "blocking": false,
+              "message": "Chưa có điểm; học phần được ghi nhận là đang học."
+            }
+          ]
+        }
+      ],
+      "documentSummary": {
+        "studentIdOnDocument": "2024604757",
+        "fullNameOnDocument": "Lê Việt Hùng",
+        "reportedCpa": 3.18,
+        "reportedAccumulatedCredits": 61
+      },
+      "warnings": [
+        "CPA và số tín chỉ in trên tài liệu chỉ để đối chiếu; CPA chính thức do hệ thống tính từ bảng điểm sau khi bạn xác nhận."
+      ],
+      "blockingIssueCount": 1,
+      "createdAt": "2026-10-14T02:10:00Z",
+      "updatedAt": "2026-10-14T02:10:00Z",
+      "expiresAt": "2026-10-15T02:10:00Z",
+      "confirmedAt": null
+    }
+  ]
+}

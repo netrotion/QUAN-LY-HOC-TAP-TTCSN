@@ -17,6 +17,10 @@
     <name>haui-platform-app</name>
     <description>Platform Application - Spring Boot Runtime, Adapters, Security, and REST APIs</description>
 
+    <properties>
+        <spring-boot.run.skip>false</spring-boot.run.skip>
+    </properties>
+
     <dependencies>
         <!-- Internal Modules -->
         <dependency>
@@ -44,6 +48,16 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+
+        <!-- Nhập bảng điểm: đọc PDF có text, render PDF scan sang ảnh cho OCR -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
         </dependency>
 
         <!-- Database & Drivers -->
@@ -85,7 +99,8 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>test</scope>
+            <!-- runtime: profile "local" chạy không cần PostgreSQL; test dùng H2 in-memory -->
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 

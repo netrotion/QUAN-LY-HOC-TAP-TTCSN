@@ -44,3 +44,6 @@ Thumbs.db
 
 # Docker volumes
 pgdata/
+
+# DB H2 của profile local
+.haui-local/

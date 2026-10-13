@@ -1,0 +1,9 @@
+{
+  "code": "IMPORT_HAS_BLOCKING_ISSUES",
+  "message": "Còn dòng cần sửa trước khi xác nhận bảng điểm.",
+  "requestId": "req-2026-10-14-0005",
+  "timestamp": "2026-10-14T02:13:00Z",
+  "details": [
+    "row-003: Mã IT6O35 không có trong CTĐT. Sửa mã học phần hoặc bỏ chọn dòng."
+  ]
+}

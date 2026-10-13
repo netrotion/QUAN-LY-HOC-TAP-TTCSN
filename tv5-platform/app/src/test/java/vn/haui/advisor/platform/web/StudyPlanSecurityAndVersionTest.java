@@ -13,7 +13,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import vn.haui.advisor.contracts.dto.*;
-import vn.haui.advisor.platform.security.DefaultStudentContextProvider;
+import vn.haui.advisor.platform.support.TestAccounts;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -43,25 +43,33 @@ public class StudyPlanSecurityAndVersionTest {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private DefaultStudentContextProvider studentContextProvider;
+    private TestAccounts accounts;
 
     @Test
-    @DisplayName("Chặn request chưa đăng nhập")
+    @DisplayName("Chặn request chưa đăng nhập (401) và request ghi thiếu CSRF (403)")
     void shouldBlockUnauthenticatedRequests() throws Exception {
         mockMvc.perform(get("/api/v1/planner/plans"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code", is("UNAUTHENTICATED")));
 
         mockMvc.perform(post("/api/v1/planner/plans")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(post("/api/v1/planner/plans")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code", is("ACCESS_DENIED")));
     }
 
     @Test
     @WithMockUser(username = "sv-spoof", roles = "STUDENT")
     @DisplayName("Bỏ qua studentId client gửi, chỉ tin context phiên đăng nhập")
     void shouldIgnoreClientSuppliedStudentId() throws Exception {
+        accounts.ensure("sv-spoof");
         String planId = saveDraft("sv-spoof", validSemesters());
 
         mockMvc.perform(get("/api/v1/planner/plans/" + planId).param("studentId", "attacker-9999"))
@@ -81,6 +89,7 @@ public class StudyPlanSecurityAndVersionTest {
     @WithMockUser(username = "sv-other", roles = "STUDENT")
     @DisplayName("Không đọc/kích hoạt được kế hoạch của sinh viên khác (404)")
     void shouldNotExposeOtherStudentsPlans() throws Exception {
+        accounts.ensure("sv-other");
         mockMvc.perform(get("/api/v1/planner/plans/plan-2024604757-0002"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code", is("PLAN_NOT_FOUND")));
@@ -91,7 +100,7 @@ public class StudyPlanSecurityAndVersionTest {
     @DisplayName("dataRevision cũ → 409 DATA_REVISION_STALE")
     void shouldDetectStaleDataRevision() throws Exception {
         String oldRevision = revisionOf("sv-stale");
-        studentContextProvider.updateDataRevision("sv-stale", "REV-sv-stale-002");
+        accounts.bumpRevision("sv-stale");
 
         perform(post("/api/v1/planner/plans"), saveRequest(null, null, oldRevision, validSemesters()))
                 .andExpect(status().isConflict())
@@ -259,7 +268,7 @@ public class StudyPlanSecurityAndVersionTest {
     }
 
     private String revisionOf(String student) {
-        return studentContextProvider.getDataVersion(student).getDataRevision();
+        return accounts.ensure(student);
     }
 
     private static SaveStudyPlanRequest saveRequest(String planId, Integer planVersion, String revision,

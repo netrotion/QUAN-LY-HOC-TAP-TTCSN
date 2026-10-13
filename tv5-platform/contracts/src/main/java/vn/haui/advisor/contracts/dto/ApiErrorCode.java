@@ -19,5 +19,31 @@ public enum ApiErrorCode {
     /** 422: thẩm định lại lúc kích hoạt phát hiện vi phạm; details chứa danh sách vi phạm. */
     PLAN_VALIDATION_FAILED,
     /** 501: capability chưa được triển khai ở runtime hiện tại. */
-    NOT_IMPLEMENTED
+    NOT_IMPLEMENTED,
+    /** 401: chưa đăng nhập hoặc phiên đã hết hạn. */
+    UNAUTHENTICATED,
+    /** 401: sai mã sinh viên hoặc mật khẩu. */
+    INVALID_CREDENTIALS,
+    /** 403: thiếu/sai CSRF token hoặc tài khoản không có vai trò STUDENT. */
+    ACCESS_DENIED,
+    /** 409: mã sinh viên đã có tài khoản. */
+    ACCOUNT_ALREADY_EXISTS,
+    /** 400: curriculumId không tồn tại. */
+    CURRICULUM_NOT_FOUND,
+    /** 404: không có chuẩn đầu ra với requirementCode này. */
+    REQUIREMENT_NOT_FOUND,
+    /** 404: không có phiên nhập thuộc sinh viên đang đăng nhập. */
+    IMPORT_SESSION_NOT_FOUND,
+    /** 409: phiên nhập đã xác nhận, hủy hoặc hết hạn. */
+    IMPORT_SESSION_CLOSED,
+    /** 409: sessionVersion client gửi khác phiên bản đang lưu. */
+    IMPORT_VERSION_CONFLICT,
+    /** 422: còn dòng có vấn đề chặn hoặc không có dòng nào để xác nhận; details liệt kê dòng. */
+    IMPORT_HAS_BLOCKING_ISSUES,
+    /** 429: đã có quá nhiều phiên nhập đang chờ xem lại. */
+    IMPORT_LIMIT_REACHED,
+    /** 413: file vượt giới hạn dung lượng hoặc số trang. */
+    UPLOAD_TOO_LARGE,
+    /** 415: file không phải PDF, PNG hoặc JPEG (kiểm tra theo nội dung, không theo đuôi file). */
+    UNSUPPORTED_FILE_TYPE
 }

@@ -1,19 +1,399 @@
 {
   "manifestType": "CONTRACT_FIXTURES",
   "milestone": "contracts-v1",
-  "contractVersion": "1.0.0",
+  "contractVersion": "1.1.0",
   "openapi": "../openapi/openapi-v1.yaml",
   "purpose": "Ví dụ chuẩn của contracts-v1: mock FE (TV2/TV3), fake provider cho AI (TV1), input AcademicFacade cho TV4. Mọi fixture qua contract test (OpenAPI + DTO round-trip). Dữ liệu là sinh viên demo 2024604757 theo fixture TV4, không phải dữ liệu học vụ thật.",
   "demoStudent": {
     "studentId": "2024604757",
     "dataRevision": "REV-2024604757-001"
   },
+  "otherStudents": [
+    {
+      "studentId": "std-missing-unknown-v1",
+      "dataRevision": "REV-std-missing-unknown-v1-001",
+      "note": "ca thiếu dữ liệu (fixture TV4)"
+    },
+    {
+      "studentId": "2024610001",
+      "dataRevision": null,
+      "note": "tài khoản mới trong ví dụ đăng ký"
+    }
+  ],
   "notes": [
     "requestSample có studentId là input AcademicFacade do server dựng: client HTTP KHÔNG gửi studentId (readOnly), server điền từ TrustedStudentContext.",
     "GET /academic/status và GET /audit/graduation không có body: requestSample chỉ dành cho TV4/TV1 (input facade).",
-    "Học phần, tên và số tín chỉ lấy từ tv4-academic/fixtures/curriculum-ktpm-v1.json."
+    "Học phần, tên và số tín chỉ lấy từ tv4-academic/fixtures/curriculum-ktpm-v1.json; tên chuẩn đầu ra theo tv4-academic/fixtures/policy-demo.json.",
+    "Tải bảng điểm là multipart/form-data (trường file), không có JSON request sample; password trong ví dụ là giá trị minh họa."
   ],
   "fixtures": [
+    {
+      "id": "auth-csrf",
+      "operationId": "getCsrfToken",
+      "method": "GET",
+      "path": "/auth/csrf",
+      "httpStatus": 200,
+      "responseSample": "auth-csrf-response.sample.json",
+      "responseSchema": "CsrfTokenResponse",
+      "consumers": [
+        "TV2"
+      ]
+    },
+    {
+      "id": "auth-session",
+      "operationId": "getAuthSession",
+      "method": "GET",
+      "path": "/auth/session",
+      "httpStatus": 200,
+      "responseSample": "auth-session-response.sample.json",
+      "responseSchema": "AuthSessionResponse",
+      "consumers": [
+        "TV2",
+        "TV3"
+      ]
+    },
+    {
+      "id": "auth-session-anonymous",
+      "operationId": "getAuthSession",
+      "method": "GET",
+      "path": "/auth/session",
+      "httpStatus": 200,
+      "responseSample": "auth-session-anonymous-response.sample.json",
+      "responseSchema": "AuthSessionResponse",
+      "consumers": [
+        "TV2"
+      ]
+    },
+    {
+      "id": "auth-login",
+      "operationId": "login",
+      "method": "POST",
+      "path": "/auth/login",
+      "httpStatus": 200,
+      "requestSample": "auth-login-request.sample.json",
+      "requestSchema": "LoginRequest",
+      "responseSample": "auth-session-response.sample.json",
+      "responseSchema": "AuthSessionResponse",
+      "consumers": [
+        "TV2"
+      ]
+    },
+    {
+      "id": "auth-login-invalid-credentials",
+      "operationId": "login",
+      "method": "POST",
+      "path": "/auth/login",
+      "httpStatus": 401,
+      "responseSample": "error-invalid-credentials.sample.json",
+      "responseSchema": "ApiErrorResponse",
+      "consumers": [
+        "TV2"
+      ]
+    },
+    {
+      "id": "auth-register",
+      "operationId": "registerAccount",
+      "method": "POST",
+      "path": "/auth/register",
+      "httpStatus": 200,
+      "requestSample": "auth-register-request.sample.json",
+      "requestSchema": "RegisterAccountRequest",
+      "responseSample": "auth-register-response.sample.json",
+      "responseSchema": "AuthSessionResponse",
+      "consumers": [
+        "TV2",
+        "TV3"
+      ]
+    },
+    {
+      "id": "auth-register-conflict",
+      "operationId": "registerAccount",
+      "method": "POST",
+      "path": "/auth/register",
+      "httpStatus": 409,
+      "responseSample": "error-account-already-exists.sample.json",
+      "responseSchema": "ApiErrorResponse",
+      "consumers": [
+        "TV2",
+        "TV3"
+      ]
+    },
+    {
+      "id": "unauthenticated",
+      "operationId": "getStudentProfile",
+      "method": "GET",
+      "path": "/students/me",
+      "httpStatus": 401,
+      "responseSample": "error-unauthenticated.sample.json",
+      "responseSchema": "ApiErrorResponse",
+      "consumers": [
+        "TV2",
+        "TV3"
+      ]
+    },
+    {
+      "id": "access-denied",
+      "operationId": "updateStudentProfile",
+      "method": "PUT",
+      "path": "/students/me",
+      "httpStatus": 403,
+      "responseSample": "error-access-denied.sample.json",
+      "responseSchema": "ApiErrorResponse",
+      "consumers": [
+        "TV2",
+        "TV3"
+      ]
+    },
+    {
+      "id": "student-profile",
+      "operationId": "getStudentProfile",
+      "method": "GET",
+      "path": "/students/me",
+      "httpStatus": 200,
+      "responseSample": "student-profile-response.sample.json",
+      "responseSchema": "StudentProfileResponse",
+      "consumers": [
+        "TV2",
+        "TV3"
+      ]
+    },
+    {
+      "id": "student-profile-update",
+      "operationId": "updateStudentProfile",
+      "method": "PUT",
+      "path": "/students/me",
+      "httpStatus": 200,
+      "requestSample": "student-profile-update-request.sample.json",
+      "requestSchema": "UpdateStudentProfileRequest",
+      "responseSample": "student-profile-response.sample.json",
+      "responseSchema": "StudentProfileResponse",
+      "consumers": [
+        "TV3"
+      ]
+    },
+    {
+      "id": "curriculum",
+      "operationId": "getCurriculum",
+      "method": "GET",
+      "path": "/academic/curriculum",
+      "httpStatus": 200,
+      "responseSample": "curriculum-response.sample.json",
+      "responseSchema": "CurriculumResponse",
+      "consumers": [
+        "TV2"
+      ]
+    },
+    {
+      "id": "transcript",
+      "operationId": "getTranscript",
+      "method": "GET",
+      "path": "/academic/transcript",
+      "httpStatus": 200,
+      "responseSample": "transcript-response.sample.json",
+      "responseSchema": "TranscriptResponse",
+      "consumers": [
+        "TV2",
+        "TV4"
+      ]
+    },
+    {
+      "id": "transcript-import-list",
+      "operationId": "listTranscriptImports",
+      "method": "GET",
+      "path": "/academic/transcript/imports",
+      "httpStatus": 200,
+      "responseSample": "transcript-import-list-response.sample.json",
+      "responseSchema": "TranscriptImportListResponse",
+      "consumers": [
+        "TV2"
+      ]
+    },
+    {
+      "id": "transcript-import-upload",
+      "operationId": "uploadTranscript",
+      "method": "POST",
+      "path": "/academic/transcript/imports",
+      "httpStatus": 200,
+      "responseSample": "transcript-import-upload-response.sample.json",
+      "responseSchema": "TranscriptImportResponse",
+      "consumers": [
+        "TV2",
+        "TV3"
+      ]
+    },
+    {
+      "id": "transcript-import-upload-too-large",
+      "operationId": "uploadTranscript",
+      "method": "POST",
+      "path": "/academic/transcript/imports",
+      "httpStatus": 413,
+      "responseSample": "error-upload-too-large.sample.json",
+      "responseSchema": "ApiErrorResponse",
+      "consumers": [
+        "TV2"
+      ]
+    },
+    {
+      "id": "transcript-import-upload-unsupported",
+      "operationId": "uploadTranscript",
+      "method": "POST",
+      "path": "/academic/transcript/imports",
+      "httpStatus": 415,
+      "responseSample": "error-unsupported-file-type.sample.json",
+      "responseSchema": "ApiErrorResponse",
+      "consumers": [
+        "TV2"
+      ]
+    },
+    {
+      "id": "transcript-import-upload-limit",
+      "operationId": "uploadTranscript",
+      "method": "POST",
+      "path": "/academic/transcript/imports",
+      "httpStatus": 429,
+      "responseSample": "error-import-limit-reached.sample.json",
+      "responseSchema": "ApiErrorResponse",
+      "consumers": [
+        "TV2"
+      ]
+    },
+    {
+      "id": "transcript-import-manual",
+      "operationId": "startManualTranscriptImport",
+      "method": "POST",
+      "path": "/academic/transcript/imports/manual",
+      "httpStatus": 200,
+      "responseSample": "transcript-import-manual-response.sample.json",
+      "responseSchema": "TranscriptImportResponse",
+      "consumers": [
+        "TV2"
+      ]
+    },
+    {
+      "id": "transcript-import-get",
+      "operationId": "getTranscriptImport",
+      "method": "GET",
+      "path": "/academic/transcript/imports/{importSessionId}",
+      "httpStatus": 200,
+      "pathParams": {
+        "importSessionId": "imp-2024604757-20261014-01"
+      },
+      "responseSample": "transcript-import-upload-response.sample.json",
+      "responseSchema": "TranscriptImportResponse",
+      "consumers": [
+        "TV2"
+      ]
+    },
+    {
+      "id": "transcript-import-rows",
+      "operationId": "updateTranscriptImportRows",
+      "method": "PUT",
+      "path": "/academic/transcript/imports/{importSessionId}/rows",
+      "httpStatus": 200,
+      "pathParams": {
+        "importSessionId": "imp-2024604757-20261014-01"
+      },
+      "requestSample": "transcript-import-rows-request.sample.json",
+      "requestSchema": "UpdateImportRowsRequest",
+      "responseSample": "transcript-import-rows-response.sample.json",
+      "responseSchema": "TranscriptImportResponse",
+      "consumers": [
+        "TV2"
+      ]
+    },
+    {
+      "id": "transcript-import-confirm",
+      "operationId": "confirmTranscriptImport",
+      "method": "POST",
+      "path": "/academic/transcript/imports/{importSessionId}/confirm",
+      "httpStatus": 200,
+      "pathParams": {
+        "importSessionId": "imp-2024604757-20261014-01"
+      },
+      "requestSample": "transcript-import-confirm-request.sample.json",
+      "requestSchema": "ConfirmTranscriptImportRequest",
+      "responseSample": "transcript-import-confirm-response.sample.json",
+      "responseSchema": "TranscriptResponse",
+      "consumers": [
+        "TV2"
+      ]
+    },
+    {
+      "id": "transcript-import-confirm-blocked",
+      "operationId": "confirmTranscriptImport",
+      "method": "POST",
+      "path": "/academic/transcript/imports/{importSessionId}/confirm",
+      "httpStatus": 422,
+      "pathParams": {
+        "importSessionId": "imp-2024604757-20261014-01"
+      },
+      "responseSample": "error-import-blocking-issues.sample.json",
+      "responseSchema": "ApiErrorResponse",
+      "consumers": [
+        "TV2"
+      ]
+    },
+    {
+      "id": "transcript-import-cancel",
+      "operationId": "cancelTranscriptImport",
+      "method": "POST",
+      "path": "/academic/transcript/imports/{importSessionId}/cancel",
+      "httpStatus": 200,
+      "pathParams": {
+        "importSessionId": "imp-2024604757-20261014-01"
+      },
+      "responseSample": "transcript-import-cancel-response.sample.json",
+      "responseSchema": "TranscriptImportResponse",
+      "consumers": [
+        "TV2"
+      ]
+    },
+    {
+      "id": "certificates",
+      "operationId": "listCertificates",
+      "method": "GET",
+      "path": "/academic/certificates",
+      "httpStatus": 200,
+      "responseSample": "certificates-response.sample.json",
+      "responseSchema": "CertificateListResponse",
+      "consumers": [
+        "TV2",
+        "TV3"
+      ]
+    },
+    {
+      "id": "certificate-declare",
+      "operationId": "declareCertificate",
+      "method": "PUT",
+      "path": "/academic/certificates/{requirementCode}",
+      "httpStatus": 200,
+      "pathParams": {
+        "requirementCode": "IT_SKILLS"
+      },
+      "requestSample": "certificate-declare-request.sample.json",
+      "requestSchema": "DeclareCertificateRequest",
+      "responseSample": "certificate-declare-response.sample.json",
+      "responseSchema": "CertificateStatusItem",
+      "consumers": [
+        "TV2",
+        "TV3"
+      ]
+    },
+    {
+      "id": "certificate-declare-not-found",
+      "operationId": "declareCertificate",
+      "method": "PUT",
+      "path": "/academic/certificates/{requirementCode}",
+      "httpStatus": 404,
+      "pathParams": {
+        "requirementCode": "TOEIC_900"
+      },
+      "responseSample": "error-requirement-not-found.sample.json",
+      "responseSchema": "ApiErrorResponse",
+      "consumers": [
+        "TV2"
+      ]
+    },
     {
       "id": "academic-status",
       "operationId": "getAcademicStatus",

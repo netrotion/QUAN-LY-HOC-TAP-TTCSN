@@ -15,7 +15,7 @@
     },
     {
       "category": "NGOẠI NGỮ",
-      "name": "Tiếng Anh TOEIC 500+",
+      "name": "Chuẩn đầu ra Ngoại ngữ (TOEIC 550)",
       "completed": true,
       "totalCreditsRequired": null,
       "accumulatedCredits": null,
@@ -23,7 +23,7 @@
     },
     {
       "category": "TIN HỌC",
-      "name": "Chuẩn kỹ năng CNTT nâng cao (MOS)",
+      "name": "Chuẩn đầu ra Tin học (MOS/IC3)",
       "completed": false,
       "totalCreditsRequired": null,
       "accumulatedCredits": null,
@@ -49,7 +49,7 @@
   "pendingActions": [
     {
       "certificateType": "MOS",
-      "requiredStandard": "Chuẩn kỹ năng CNTT nâng cao (MOS)",
+      "requiredStandard": "Chuẩn đầu ra Tin học (MOS/IC3)",
       "actionDescription": "Đăng ký thi và nộp chứng chỉ MOS trước đợt xét tốt nghiệp",
       "deadline": "2028-03-31",
       "status": "PENDING"

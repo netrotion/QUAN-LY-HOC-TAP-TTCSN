@@ -123,6 +123,22 @@ class HttpContractConformanceTest {
         }
     }
 
+    @Test
+    @DisplayName("Auth và dữ liệu sinh viên (contracts 1.1) trả body đúng schema")
+    void accountAndDataEndpointsMatchSchema() throws Exception {
+        expect(get("/api/v1/auth/csrf"), null, 200, "CsrfTokenResponse");
+        JsonNode session = expect(get("/api/v1/auth/session"), null, 200, "AuthSessionResponse");
+        assertThat(session.get("studentId").asText()).isEqualTo("2024604757");
+        expect(post("/api/v1/auth/login"), objectMapper.valueToTree(java.util.Map.of("studentId", "2024604757", "password", "sai")),
+                401, "ApiErrorResponse");
+        expect(get("/api/v1/students/me"), null, 200, "StudentProfileResponse");
+        expect(get("/api/v1/academic/curriculum"), null, 200, "CurriculumResponse");
+        expect(get("/api/v1/academic/transcript"), null, 200, "TranscriptResponse");
+        expect(get("/api/v1/academic/certificates"), null, 200, "CertificateListResponse");
+        expect(get("/api/v1/academic/transcript/imports"), null, 200, "TranscriptImportListResponse");
+        expect(get("/api/v1/academic/transcript/imports/imp-khong-ton-tai"), null, 404, "ApiErrorResponse");
+    }
+
     private JsonNode expect(MockHttpServletRequestBuilder request, JsonNode body, int status, String schema) throws Exception {
         if (body != null) {
             request.contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(body));

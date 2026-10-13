@@ -1,5 +1,5 @@
 // GENERATED — KHÔNG SỬA TAY. Sinh bởi `npm run contracts:build` từ tv5-platform/contracts (openapi-v1.yaml, examples/*.json, enum Java).
-export const CONTRACT_VERSION = "1.0.0";
+export const CONTRACT_VERSION = "1.1.0";
 export const CONTRACT_MILESTONE = "contracts-v1";
 export const API_BASE_PATH = '/api/v1';
 export const DEMO_STUDENT = Object.freeze({
@@ -22,7 +22,20 @@ export const ENUMS = Object.freeze({
     "PLAN_NOT_EDITABLE",
     "PLAN_NOT_VALIDATED",
     "PLAN_VALIDATION_FAILED",
-    "NOT_IMPLEMENTED"
+    "NOT_IMPLEMENTED",
+    "UNAUTHENTICATED",
+    "INVALID_CREDENTIALS",
+    "ACCESS_DENIED",
+    "ACCOUNT_ALREADY_EXISTS",
+    "CURRICULUM_NOT_FOUND",
+    "REQUIREMENT_NOT_FOUND",
+    "IMPORT_SESSION_NOT_FOUND",
+    "IMPORT_SESSION_CLOSED",
+    "IMPORT_VERSION_CONFLICT",
+    "IMPORT_HAS_BLOCKING_ISSUES",
+    "IMPORT_LIMIT_REACHED",
+    "UPLOAD_TOO_LARGE",
+    "UNSUPPORTED_FILE_TYPE"
   ],
   "AcademicRiskLevel": [
     "NORMAL",
@@ -40,6 +53,10 @@ export const OPERATIONS = Object.freeze({
     "method": "POST",
     "path": "/simulation/target-grades"
   },
+  "cancelTranscriptImport": {
+    "method": "POST",
+    "path": "/academic/transcript/imports/{importSessionId}/cancel"
+  },
   "chatAdvisor": {
     "method": "POST",
     "path": "/advisor/chat"
@@ -47,6 +64,14 @@ export const OPERATIONS = Object.freeze({
   "checkCourseEligibility": {
     "method": "POST",
     "path": "/academic/eligibility"
+  },
+  "confirmTranscriptImport": {
+    "method": "POST",
+    "path": "/academic/transcript/imports/{importSessionId}/confirm"
+  },
+  "declareCertificate": {
+    "method": "PUT",
+    "path": "/academic/certificates/{requirementCode}"
   },
   "generateStudyPlan": {
     "method": "POST",
@@ -56,9 +81,25 @@ export const OPERATIONS = Object.freeze({
     "method": "GET",
     "path": "/academic/status"
   },
+  "getAuthSession": {
+    "method": "GET",
+    "path": "/auth/session"
+  },
   "getBootstrapInfo": {
     "method": "GET",
     "path": "/system/bootstrap"
+  },
+  "getCsrfToken": {
+    "method": "GET",
+    "path": "/auth/csrf"
+  },
+  "getCurriculum": {
+    "method": "GET",
+    "path": "/academic/curriculum"
+  },
+  "getStudentProfile": {
+    "method": "GET",
+    "path": "/students/me"
   },
   "getStudyPlan": {
     "method": "GET",
@@ -68,9 +109,33 @@ export const OPERATIONS = Object.freeze({
     "method": "GET",
     "path": "/system/health"
   },
+  "getTranscript": {
+    "method": "GET",
+    "path": "/academic/transcript"
+  },
+  "getTranscriptImport": {
+    "method": "GET",
+    "path": "/academic/transcript/imports/{importSessionId}"
+  },
+  "listCertificates": {
+    "method": "GET",
+    "path": "/academic/certificates"
+  },
   "listStudyPlans": {
     "method": "GET",
     "path": "/planner/plans"
+  },
+  "listTranscriptImports": {
+    "method": "GET",
+    "path": "/academic/transcript/imports"
+  },
+  "login": {
+    "method": "POST",
+    "path": "/auth/login"
+  },
+  "logout": {
+    "method": "POST",
+    "path": "/auth/logout"
   },
   "rankRetakeCourses": {
     "method": "POST",
@@ -79,6 +144,10 @@ export const OPERATIONS = Object.freeze({
   "reconcileStudyPlan": {
     "method": "POST",
     "path": "/planner/reconcile"
+  },
+  "registerAccount": {
+    "method": "POST",
+    "path": "/auth/register"
   },
   "restoreStudyPlan": {
     "method": "POST",
@@ -96,12 +165,1588 @@ export const OPERATIONS = Object.freeze({
     "method": "POST",
     "path": "/simulation/grades"
   },
+  "startManualTranscriptImport": {
+    "method": "POST",
+    "path": "/academic/transcript/imports/manual"
+  },
+  "updateStudentProfile": {
+    "method": "PUT",
+    "path": "/students/me"
+  },
+  "updateTranscriptImportRows": {
+    "method": "PUT",
+    "path": "/academic/transcript/imports/{importSessionId}/rows"
+  },
+  "uploadTranscript": {
+    "method": "POST",
+    "path": "/academic/transcript/imports"
+  },
   "validateStudyPlan": {
     "method": "POST",
     "path": "/planner/validate"
   }
 });
 export const FIXTURES = Object.freeze({
+  "auth-csrf": {
+    "operationId": "getCsrfToken",
+    "method": "GET",
+    "path": "/auth/csrf",
+    "httpStatus": 200,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "CsrfTokenResponse",
+    "response": {
+      "headerName": "X-XSRF-TOKEN",
+      "parameterName": "_csrf",
+      "token": "4f3b2a9c-8d1e-4c7a-b5f6-2e9d0c1a7b33"
+    },
+    "consumers": [
+      "TV2"
+    ]
+  },
+  "auth-session": {
+    "operationId": "getAuthSession",
+    "method": "GET",
+    "path": "/auth/session",
+    "httpStatus": 200,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "AuthSessionResponse",
+    "response": {
+      "authenticated": true,
+      "studentId": "2024604757",
+      "fullName": "Lê Việt Hùng",
+      "role": "STUDENT"
+    },
+    "consumers": [
+      "TV2",
+      "TV3"
+    ]
+  },
+  "auth-session-anonymous": {
+    "operationId": "getAuthSession",
+    "method": "GET",
+    "path": "/auth/session",
+    "httpStatus": 200,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "AuthSessionResponse",
+    "response": {
+      "authenticated": false,
+      "studentId": null,
+      "fullName": null,
+      "role": null
+    },
+    "consumers": [
+      "TV2"
+    ]
+  },
+  "auth-login": {
+    "operationId": "login",
+    "method": "POST",
+    "path": "/auth/login",
+    "httpStatus": 200,
+    "pathParams": null,
+    "requestSchema": "LoginRequest",
+    "request": {
+      "studentId": "2024604757",
+      "password": "demo-password-example"
+    },
+    "responseSchema": "AuthSessionResponse",
+    "response": {
+      "authenticated": true,
+      "studentId": "2024604757",
+      "fullName": "Lê Việt Hùng",
+      "role": "STUDENT"
+    },
+    "consumers": [
+      "TV2"
+    ]
+  },
+  "auth-login-invalid-credentials": {
+    "operationId": "login",
+    "method": "POST",
+    "path": "/auth/login",
+    "httpStatus": 401,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "ApiErrorResponse",
+    "response": {
+      "code": "INVALID_CREDENTIALS",
+      "message": "Mã sinh viên hoặc mật khẩu không đúng.",
+      "requestId": "req-2026-10-14-0002",
+      "timestamp": "2026-10-14T02:01:00Z",
+      "details": []
+    },
+    "consumers": [
+      "TV2"
+    ]
+  },
+  "auth-register": {
+    "operationId": "registerAccount",
+    "method": "POST",
+    "path": "/auth/register",
+    "httpStatus": 200,
+    "pathParams": null,
+    "requestSchema": "RegisterAccountRequest",
+    "request": {
+      "studentId": "2024610001",
+      "password": "demo-password-example",
+      "fullName": "Nguyễn Thu Hà",
+      "email": "thuha.demo@example.com",
+      "className": "2024DHKTPM01",
+      "cohort": "K19",
+      "curriculumId": "curriculum-ktpm-haui-2024"
+    },
+    "responseSchema": "AuthSessionResponse",
+    "response": {
+      "authenticated": true,
+      "studentId": "2024610001",
+      "fullName": "Nguyễn Thu Hà",
+      "role": "STUDENT"
+    },
+    "consumers": [
+      "TV2",
+      "TV3"
+    ]
+  },
+  "auth-register-conflict": {
+    "operationId": "registerAccount",
+    "method": "POST",
+    "path": "/auth/register",
+    "httpStatus": 409,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "ApiErrorResponse",
+    "response": {
+      "code": "ACCOUNT_ALREADY_EXISTS",
+      "message": "Mã sinh viên này đã có tài khoản.",
+      "requestId": "req-2026-10-14-0004",
+      "timestamp": "2026-10-14T02:03:00Z",
+      "details": []
+    },
+    "consumers": [
+      "TV2",
+      "TV3"
+    ]
+  },
+  "unauthenticated": {
+    "operationId": "getStudentProfile",
+    "method": "GET",
+    "path": "/students/me",
+    "httpStatus": 401,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "ApiErrorResponse",
+    "response": {
+      "code": "UNAUTHENTICATED",
+      "message": "Bạn chưa đăng nhập hoặc phiên đã hết hạn. Vui lòng đăng nhập lại.",
+      "requestId": "req-2026-10-14-0001",
+      "timestamp": "2026-10-14T02:00:00Z",
+      "details": []
+    },
+    "consumers": [
+      "TV2",
+      "TV3"
+    ]
+  },
+  "access-denied": {
+    "operationId": "updateStudentProfile",
+    "method": "PUT",
+    "path": "/students/me",
+    "httpStatus": 403,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "ApiErrorResponse",
+    "response": {
+      "code": "ACCESS_DENIED",
+      "message": "Yêu cầu bị từ chối: thiếu CSRF token hoặc tài khoản không có quyền sinh viên.",
+      "requestId": "req-2026-10-14-0003",
+      "timestamp": "2026-10-14T02:02:00Z",
+      "details": []
+    },
+    "consumers": [
+      "TV2",
+      "TV3"
+    ]
+  },
+  "student-profile": {
+    "operationId": "getStudentProfile",
+    "method": "GET",
+    "path": "/students/me",
+    "httpStatus": 200,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "StudentProfileResponse",
+    "response": {
+      "studentId": "2024604757",
+      "fullName": "Lê Việt Hùng",
+      "email": "lehung.haui@gmail.com",
+      "className": "2024DHKTPM02",
+      "cohort": "K19",
+      "curriculumId": "curriculum-ktpm-haui-2024",
+      "curriculumName": "Chương trình đào tạo Kỹ sư Kỹ thuật phần mềm - HaUI (Khóa 2024)",
+      "majorCode": "CT1085",
+      "majorName": "Kỹ thuật phần mềm",
+      "faculty": "Trường Công nghệ thông tin và Truyền thông - Đại học Công nghiệp Hà Nội",
+      "transcriptStatus": "CONFIRMED",
+      "dataRevision": "REV-2024604757-001",
+      "createdAt": "2026-09-01T00:00:00Z",
+      "updatedAt": "2026-10-01T08:00:00Z"
+    },
+    "consumers": [
+      "TV2",
+      "TV3"
+    ]
+  },
+  "student-profile-update": {
+    "operationId": "updateStudentProfile",
+    "method": "PUT",
+    "path": "/students/me",
+    "httpStatus": 200,
+    "pathParams": null,
+    "requestSchema": "UpdateStudentProfileRequest",
+    "request": {
+      "fullName": null,
+      "email": "lehung.haui.moi@example.com",
+      "className": null,
+      "cohort": null,
+      "curriculumId": null,
+      "dataRevision": "REV-2024604757-001"
+    },
+    "responseSchema": "StudentProfileResponse",
+    "response": {
+      "studentId": "2024604757",
+      "fullName": "Lê Việt Hùng",
+      "email": "lehung.haui@gmail.com",
+      "className": "2024DHKTPM02",
+      "cohort": "K19",
+      "curriculumId": "curriculum-ktpm-haui-2024",
+      "curriculumName": "Chương trình đào tạo Kỹ sư Kỹ thuật phần mềm - HaUI (Khóa 2024)",
+      "majorCode": "CT1085",
+      "majorName": "Kỹ thuật phần mềm",
+      "faculty": "Trường Công nghệ thông tin và Truyền thông - Đại học Công nghiệp Hà Nội",
+      "transcriptStatus": "CONFIRMED",
+      "dataRevision": "REV-2024604757-001",
+      "createdAt": "2026-09-01T00:00:00Z",
+      "updatedAt": "2026-10-01T08:00:00Z"
+    },
+    "consumers": [
+      "TV3"
+    ]
+  },
+  "curriculum": {
+    "operationId": "getCurriculum",
+    "method": "GET",
+    "path": "/academic/curriculum",
+    "httpStatus": 200,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "CurriculumResponse",
+    "response": {
+      "curriculumId": "curriculum-ktpm-haui-2024",
+      "curriculumName": "Chương trình đào tạo Kỹ sư Kỹ thuật phần mềm - HaUI (Khóa 2024)",
+      "majorCode": "CT1085",
+      "majorName": "Kỹ thuật phần mềm",
+      "faculty": "Trường Công nghệ thông tin và Truyền thông - Đại học Công nghiệp Hà Nội",
+      "totalCreditsRequired": 150,
+      "status": "VERIFIED_GROUND_TRUTH",
+      "source": "Cổng thông tin đào tạo sv.haui.edu.vn",
+      "courses": [
+        {
+          "courseCode": "IT6015",
+          "courseName": "Kỹ thuật lập trình",
+          "credits": 3,
+          "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+          "suggestedSemester": 2,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [
+            "ME6042"
+          ],
+          "corequisiteCourseCodes": []
+        },
+        {
+          "courseCode": "IT6002",
+          "courseName": "Cấu trúc dữ liệu và giải thuật",
+          "credits": 3,
+          "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+          "suggestedSemester": 3,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [
+            "IT6015",
+            "SC6208"
+          ],
+          "corequisiteCourseCodes": []
+        },
+        {
+          "courseCode": "IT6044",
+          "courseName": "Ứng dụng thuật toán",
+          "credits": 3,
+          "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+          "suggestedSemester": 4,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [
+            "IT6002",
+            "IT6015"
+          ],
+          "corequisiteCourseCodes": []
+        },
+        {
+          "courseCode": "IT6067",
+          "courseName": "Kiến trúc máy tính và hệ điều hành",
+          "credits": 3,
+          "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+          "suggestedSemester": 3,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [
+            "IT6015"
+          ],
+          "corequisiteCourseCodes": []
+        },
+        {
+          "courseCode": "IT6083",
+          "courseName": "Mạng máy tính",
+          "credits": 3,
+          "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+          "suggestedSemester": 5,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [
+            "IT6067",
+            "IT6203"
+          ],
+          "corequisiteCourseCodes": []
+        },
+        {
+          "courseCode": "LP6010",
+          "courseName": "Triết học Mác-Lênin",
+          "credits": 3,
+          "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+          "suggestedSemester": 1,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [],
+          "corequisiteCourseCodes": []
+        },
+        {
+          "courseCode": "LP6011",
+          "courseName": "Kinh tế chính trị Mác-Lênin",
+          "credits": 2,
+          "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+          "suggestedSemester": 2,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [
+            "LP6010"
+          ],
+          "corequisiteCourseCodes": []
+        },
+        {
+          "courseCode": "LP6004",
+          "courseName": "Tư tưởng Hồ Chí Minh",
+          "credits": 2,
+          "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+          "suggestedSemester": 6,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [
+            "LP6010",
+            "LP6011"
+          ],
+          "corequisiteCourseCodes": []
+        },
+        {
+          "courseCode": "DC6006",
+          "courseName": "Quân sự chung",
+          "credits": 1.5,
+          "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+          "suggestedSemester": 1,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [],
+          "corequisiteCourseCodes": []
+        },
+        {
+          "courseCode": "IT6096",
+          "courseName": "Thiết kế phần mềm",
+          "credits": 3,
+          "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+          "suggestedSemester": 5,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [
+            "IT6097"
+          ],
+          "corequisiteCourseCodes": []
+        }
+      ]
+    },
+    "consumers": [
+      "TV2"
+    ]
+  },
+  "transcript": {
+    "operationId": "getTranscript",
+    "method": "GET",
+    "path": "/academic/transcript",
+    "httpStatus": 200,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "TranscriptResponse",
+    "response": {
+      "studentId": "2024604757",
+      "transcriptStatus": "CONFIRMED",
+      "sourceType": "DEMO_SEED",
+      "importSessionId": null,
+      "confirmedAt": "2026-10-01T08:00:00Z",
+      "dataRevision": "REV-2024604757-001",
+      "attempts": [
+        {
+          "courseCode": "BS6001",
+          "courseName": "Đại số tuyến tính",
+          "credits": 3,
+          "semesterCode": "2024_1",
+          "attemptNumber": 1,
+          "score10": 7,
+          "letterGrade": "B"
+        },
+        {
+          "courseCode": "BS6002",
+          "courseName": "Giải tích",
+          "credits": 3,
+          "semesterCode": "2024_1",
+          "attemptNumber": 1,
+          "score10": 7,
+          "letterGrade": "B"
+        },
+        {
+          "courseCode": "DC6004",
+          "courseName": "Đường lối QP&AN của ĐCS Việt Nam",
+          "credits": 3,
+          "semesterCode": "2024_1",
+          "attemptNumber": 1,
+          "score10": 8.2,
+          "letterGrade": "B+"
+        },
+        {
+          "courseCode": "DC6005",
+          "courseName": "Công tác quốc phòng và an ninh",
+          "credits": 2,
+          "semesterCode": "2024_1",
+          "attemptNumber": 1,
+          "score10": 8,
+          "letterGrade": "B+"
+        },
+        {
+          "courseCode": "DC6006",
+          "courseName": "Quân sự chung",
+          "credits": 1.5,
+          "semesterCode": "2024_1",
+          "attemptNumber": 1,
+          "score10": 8.7,
+          "letterGrade": "A"
+        },
+        {
+          "courseCode": "DC6007",
+          "courseName": "Kỹ thuật chiến đấu bộ binh và chiến thuật",
+          "credits": 2,
+          "semesterCode": "2024_1",
+          "attemptNumber": 1,
+          "score10": 8.7,
+          "letterGrade": "A"
+        },
+        {
+          "courseCode": "IT6011",
+          "courseName": "Nhập môn về kỹ thuật",
+          "credits": 2,
+          "semesterCode": "2024_1",
+          "attemptNumber": 1,
+          "score10": 7.9,
+          "letterGrade": "B+"
+        },
+        {
+          "courseCode": "IT6015",
+          "courseName": "Kỹ thuật lập trình",
+          "credits": 3,
+          "semesterCode": "2024_1",
+          "attemptNumber": 1,
+          "score10": 9.3,
+          "letterGrade": "A"
+        },
+        {
+          "courseCode": "LP6010",
+          "courseName": "Triết học Mác-Lênin",
+          "credits": 3,
+          "semesterCode": "2024_1",
+          "attemptNumber": 1,
+          "score10": 5.4,
+          "letterGrade": "D+"
+        },
+        {
+          "courseCode": "BS6018",
+          "courseName": "Giao tiếp liên văn hóa",
+          "credits": 2,
+          "semesterCode": "2024_2",
+          "attemptNumber": 1,
+          "score10": 6.4,
+          "letterGrade": "C+"
+        },
+        {
+          "courseCode": "IT6035",
+          "courseName": "Toán rời rạc",
+          "credits": 3,
+          "semesterCode": "2024_2",
+          "attemptNumber": 1,
+          "score10": 6.6,
+          "letterGrade": "C+"
+        },
+        {
+          "courseCode": "LP6004",
+          "courseName": "Tư tưởng Hồ Chí Minh",
+          "credits": 2,
+          "semesterCode": "2024_2",
+          "attemptNumber": 1,
+          "score10": 0,
+          "letterGrade": "F"
+        },
+        {
+          "courseCode": "LP6011",
+          "courseName": "Kinh tế chính trị Mác-Lênin",
+          "credits": 2,
+          "semesterCode": "2024_2",
+          "attemptNumber": 1,
+          "score10": 5.6,
+          "letterGrade": "C"
+        },
+        {
+          "courseCode": "LP6012",
+          "courseName": "Chủ nghĩa xã hội khoa học",
+          "credits": 2,
+          "semesterCode": "2024_2",
+          "attemptNumber": 1,
+          "score10": 5.3,
+          "letterGrade": "D+"
+        },
+        {
+          "courseCode": "IT6002",
+          "courseName": "Cấu trúc dữ liệu và giải thuật",
+          "credits": 3,
+          "semesterCode": "2025_1",
+          "attemptNumber": 1,
+          "score10": 6.6,
+          "letterGrade": "C+"
+        },
+        {
+          "courseCode": "IT6067",
+          "courseName": "Kiến trúc máy tính và hệ điều hành",
+          "credits": 3,
+          "semesterCode": "2025_1",
+          "attemptNumber": 1,
+          "score10": 7.7,
+          "letterGrade": "B+"
+        },
+        {
+          "courseCode": "IT6082",
+          "courseName": "Nhập môn công nghệ phần mềm",
+          "credits": 3,
+          "semesterCode": "2025_1",
+          "attemptNumber": 1,
+          "score10": 8.8,
+          "letterGrade": "A"
+        },
+        {
+          "courseCode": "IT6120",
+          "courseName": "Lập trình hướng đối tượng",
+          "credits": 3,
+          "semesterCode": "2025_1",
+          "attemptNumber": 1,
+          "score10": 8.9,
+          "letterGrade": "A"
+        },
+        {
+          "courseCode": "IT6126",
+          "courseName": "Hệ thống cơ sở dữ liệu",
+          "credits": 4,
+          "semesterCode": "2025_1",
+          "attemptNumber": 1,
+          "score10": 8.5,
+          "letterGrade": "A"
+        },
+        {
+          "courseCode": "IT6017",
+          "courseName": "Lập trình .NET",
+          "credits": 3,
+          "semesterCode": "2025_2",
+          "attemptNumber": 1,
+          "score10": 7.8,
+          "letterGrade": "B+"
+        },
+        {
+          "courseCode": "IT6019",
+          "courseName": "Lập trình Java",
+          "credits": 3,
+          "semesterCode": "2025_2",
+          "attemptNumber": 1,
+          "score10": 8.4,
+          "letterGrade": "B+"
+        },
+        {
+          "courseCode": "IT6094",
+          "courseName": "Trí tuệ nhân tạo",
+          "credits": 3,
+          "semesterCode": "2025_2",
+          "attemptNumber": 1,
+          "score10": 9.1,
+          "letterGrade": "A"
+        },
+        {
+          "courseCode": "IT6097",
+          "courseName": "Phân tích và đặc tả yêu cầu phần mềm",
+          "credits": 3,
+          "semesterCode": "2025_2",
+          "attemptNumber": 1,
+          "score10": 8.5,
+          "letterGrade": "A"
+        }
+      ]
+    },
+    "consumers": [
+      "TV2",
+      "TV4"
+    ]
+  },
+  "transcript-import-list": {
+    "operationId": "listTranscriptImports",
+    "method": "GET",
+    "path": "/academic/transcript/imports",
+    "httpStatus": 200,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "TranscriptImportListResponse",
+    "response": {
+      "sessions": [
+        {
+          "importSessionId": "imp-2024604757-20261014-01",
+          "status": "REVIEW_REQUIRED",
+          "sourceType": "PDF_TEXT",
+          "fileName": "BangDiem_2024604757.pdf",
+          "fileSizeBytes": 48213,
+          "pageCount": 2,
+          "sessionVersion": 1,
+          "rows": [
+            {
+              "rowId": "row-001",
+              "sourceText": "IT6015 Ky thuat lap trinh 3 9.3 A",
+              "courseCode": "IT6015",
+              "courseName": "Kỹ thuật lập trình",
+              "documentCourseName": "Ky thuat lap trinh",
+              "credits": 3,
+              "semesterCode": "2024_1",
+              "score10": 9.3,
+              "letterGrade": "A",
+              "included": true,
+              "confidence": null,
+              "issues": [
+                {
+                  "code": "COURSE_NAME_DIFFERS",
+                  "blocking": false,
+                  "message": "Tên trên tài liệu \"Ky thuat lap trinh\" khác tên trong CTĐT \"Kỹ thuật lập trình\"; khi xác nhận sẽ dùng tên CTĐT."
+                }
+              ]
+            },
+            {
+              "rowId": "row-002",
+              "sourceText": "IT6002 Cấu trúc dữ liệu và giải thuật 3 6.8 C+",
+              "courseCode": "IT6002",
+              "courseName": "Cấu trúc dữ liệu và giải thuật",
+              "documentCourseName": "Cấu trúc dữ liệu và giải thuật",
+              "credits": 3,
+              "semesterCode": "2025_1",
+              "score10": 6.8,
+              "letterGrade": "C+",
+              "included": true,
+              "confidence": null,
+              "issues": []
+            },
+            {
+              "rowId": "row-003",
+              "sourceText": "IT6O35 Toán rời rạc 3 6.6 C+",
+              "courseCode": "IT6O35",
+              "courseName": null,
+              "documentCourseName": "Toán rời rạc",
+              "credits": null,
+              "semesterCode": "2024_2",
+              "score10": 6.6,
+              "letterGrade": "C+",
+              "included": true,
+              "confidence": null,
+              "issues": [
+                {
+                  "code": "UNKNOWN_COURSE_CODE",
+                  "blocking": true,
+                  "message": "Mã IT6O35 không có trong CTĐT. Sửa mã học phần hoặc bỏ chọn dòng."
+                }
+              ]
+            },
+            {
+              "rowId": "row-004",
+              "sourceText": "IT6126 Hệ thống cơ sở dữ liệu 4",
+              "courseCode": "IT6126",
+              "courseName": "Hệ thống cơ sở dữ liệu",
+              "documentCourseName": "Hệ thống cơ sở dữ liệu",
+              "credits": 4,
+              "semesterCode": "2026_1",
+              "score10": null,
+              "letterGrade": null,
+              "included": true,
+              "confidence": null,
+              "issues": [
+                {
+                  "code": "MISSING_GRADE",
+                  "blocking": false,
+                  "message": "Chưa có điểm; học phần được ghi nhận là đang học."
+                }
+              ]
+            }
+          ],
+          "documentSummary": {
+            "studentIdOnDocument": "2024604757",
+            "fullNameOnDocument": "Lê Việt Hùng",
+            "reportedCpa": 3.18,
+            "reportedAccumulatedCredits": 61
+          },
+          "warnings": [
+            "CPA và số tín chỉ in trên tài liệu chỉ để đối chiếu; CPA chính thức do hệ thống tính từ bảng điểm sau khi bạn xác nhận."
+          ],
+          "blockingIssueCount": 1,
+          "createdAt": "2026-10-14T02:10:00Z",
+          "updatedAt": "2026-10-14T02:10:00Z",
+          "expiresAt": "2026-10-15T02:10:00Z",
+          "confirmedAt": null
+        }
+      ]
+    },
+    "consumers": [
+      "TV2"
+    ]
+  },
+  "transcript-import-upload": {
+    "operationId": "uploadTranscript",
+    "method": "POST",
+    "path": "/academic/transcript/imports",
+    "httpStatus": 200,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "TranscriptImportResponse",
+    "response": {
+      "importSessionId": "imp-2024604757-20261014-01",
+      "status": "REVIEW_REQUIRED",
+      "sourceType": "PDF_TEXT",
+      "fileName": "BangDiem_2024604757.pdf",
+      "fileSizeBytes": 48213,
+      "pageCount": 2,
+      "sessionVersion": 1,
+      "rows": [
+        {
+          "rowId": "row-001",
+          "sourceText": "IT6015 Ky thuat lap trinh 3 9.3 A",
+          "courseCode": "IT6015",
+          "courseName": "Kỹ thuật lập trình",
+          "documentCourseName": "Ky thuat lap trinh",
+          "credits": 3,
+          "semesterCode": "2024_1",
+          "score10": 9.3,
+          "letterGrade": "A",
+          "included": true,
+          "confidence": null,
+          "issues": [
+            {
+              "code": "COURSE_NAME_DIFFERS",
+              "blocking": false,
+              "message": "Tên trên tài liệu \"Ky thuat lap trinh\" khác tên trong CTĐT \"Kỹ thuật lập trình\"; khi xác nhận sẽ dùng tên CTĐT."
+            }
+          ]
+        },
+        {
+          "rowId": "row-002",
+          "sourceText": "IT6002 Cấu trúc dữ liệu và giải thuật 3 6.8 C+",
+          "courseCode": "IT6002",
+          "courseName": "Cấu trúc dữ liệu và giải thuật",
+          "documentCourseName": "Cấu trúc dữ liệu và giải thuật",
+          "credits": 3,
+          "semesterCode": "2025_1",
+          "score10": 6.8,
+          "letterGrade": "C+",
+          "included": true,
+          "confidence": null,
+          "issues": []
+        },
+        {
+          "rowId": "row-003",
+          "sourceText": "IT6O35 Toán rời rạc 3 6.6 C+",
+          "courseCode": "IT6O35",
+          "courseName": null,
+          "documentCourseName": "Toán rời rạc",
+          "credits": null,
+          "semesterCode": "2024_2",
+          "score10": 6.6,
+          "letterGrade": "C+",
+          "included": true,
+          "confidence": null,
+          "issues": [
+            {
+              "code": "UNKNOWN_COURSE_CODE",
+              "blocking": true,
+              "message": "Mã IT6O35 không có trong CTĐT. Sửa mã học phần hoặc bỏ chọn dòng."
+            }
+          ]
+        },
+        {
+          "rowId": "row-004",
+          "sourceText": "IT6126 Hệ thống cơ sở dữ liệu 4",
+          "courseCode": "IT6126",
+          "courseName": "Hệ thống cơ sở dữ liệu",
+          "documentCourseName": "Hệ thống cơ sở dữ liệu",
+          "credits": 4,
+          "semesterCode": "2026_1",
+          "score10": null,
+          "letterGrade": null,
+          "included": true,
+          "confidence": null,
+          "issues": [
+            {
+              "code": "MISSING_GRADE",
+              "blocking": false,
+              "message": "Chưa có điểm; học phần được ghi nhận là đang học."
+            }
+          ]
+        }
+      ],
+      "documentSummary": {
+        "studentIdOnDocument": "2024604757",
+        "fullNameOnDocument": "Lê Việt Hùng",
+        "reportedCpa": 3.18,
+        "reportedAccumulatedCredits": 61
+      },
+      "warnings": [
+        "CPA và số tín chỉ in trên tài liệu chỉ để đối chiếu; CPA chính thức do hệ thống tính từ bảng điểm sau khi bạn xác nhận."
+      ],
+      "blockingIssueCount": 1,
+      "createdAt": "2026-10-14T02:10:00Z",
+      "updatedAt": "2026-10-14T02:10:00Z",
+      "expiresAt": "2026-10-15T02:10:00Z",
+      "confirmedAt": null
+    },
+    "consumers": [
+      "TV2",
+      "TV3"
+    ]
+  },
+  "transcript-import-upload-too-large": {
+    "operationId": "uploadTranscript",
+    "method": "POST",
+    "path": "/academic/transcript/imports",
+    "httpStatus": 413,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "ApiErrorResponse",
+    "response": {
+      "code": "UPLOAD_TOO_LARGE",
+      "message": "File vượt giới hạn 5 MB hoặc 10 trang.",
+      "requestId": "req-2026-10-14-0006",
+      "timestamp": "2026-10-14T02:14:00Z",
+      "details": []
+    },
+    "consumers": [
+      "TV2"
+    ]
+  },
+  "transcript-import-upload-unsupported": {
+    "operationId": "uploadTranscript",
+    "method": "POST",
+    "path": "/academic/transcript/imports",
+    "httpStatus": 415,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "ApiErrorResponse",
+    "response": {
+      "code": "UNSUPPORTED_FILE_TYPE",
+      "message": "Chỉ nhận PDF, PNG hoặc JPEG. Hãy tải lại file hoặc nhập tay từng học phần.",
+      "requestId": "req-2026-10-14-0007",
+      "timestamp": "2026-10-14T02:15:00Z",
+      "details": []
+    },
+    "consumers": [
+      "TV2"
+    ]
+  },
+  "transcript-import-upload-limit": {
+    "operationId": "uploadTranscript",
+    "method": "POST",
+    "path": "/academic/transcript/imports",
+    "httpStatus": 429,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "ApiErrorResponse",
+    "response": {
+      "code": "IMPORT_LIMIT_REACHED",
+      "message": "Bạn đang có 3 phiên nhập chờ xem lại. Hãy xác nhận hoặc hủy bớt trước khi tải file mới.",
+      "requestId": "req-2026-10-14-0008",
+      "timestamp": "2026-10-14T02:16:00Z",
+      "details": []
+    },
+    "consumers": [
+      "TV2"
+    ]
+  },
+  "transcript-import-manual": {
+    "operationId": "startManualTranscriptImport",
+    "method": "POST",
+    "path": "/academic/transcript/imports/manual",
+    "httpStatus": 200,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "TranscriptImportResponse",
+    "response": {
+      "importSessionId": "imp-2024604757-20261014-02",
+      "status": "MANUAL_ENTRY_REQUIRED",
+      "sourceType": "MANUAL",
+      "fileName": null,
+      "fileSizeBytes": null,
+      "pageCount": null,
+      "sessionVersion": 1,
+      "rows": [],
+      "documentSummary": null,
+      "warnings": [
+        "Nhập từng học phần đã học, sau đó xem lại và xác nhận."
+      ],
+      "blockingIssueCount": 0,
+      "createdAt": "2026-10-14T02:20:00Z",
+      "updatedAt": "2026-10-14T02:20:00Z",
+      "expiresAt": "2026-10-15T02:20:00Z",
+      "confirmedAt": null
+    },
+    "consumers": [
+      "TV2"
+    ]
+  },
+  "transcript-import-get": {
+    "operationId": "getTranscriptImport",
+    "method": "GET",
+    "path": "/academic/transcript/imports/{importSessionId}",
+    "httpStatus": 200,
+    "pathParams": {
+      "importSessionId": "imp-2024604757-20261014-01"
+    },
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "TranscriptImportResponse",
+    "response": {
+      "importSessionId": "imp-2024604757-20261014-01",
+      "status": "REVIEW_REQUIRED",
+      "sourceType": "PDF_TEXT",
+      "fileName": "BangDiem_2024604757.pdf",
+      "fileSizeBytes": 48213,
+      "pageCount": 2,
+      "sessionVersion": 1,
+      "rows": [
+        {
+          "rowId": "row-001",
+          "sourceText": "IT6015 Ky thuat lap trinh 3 9.3 A",
+          "courseCode": "IT6015",
+          "courseName": "Kỹ thuật lập trình",
+          "documentCourseName": "Ky thuat lap trinh",
+          "credits": 3,
+          "semesterCode": "2024_1",
+          "score10": 9.3,
+          "letterGrade": "A",
+          "included": true,
+          "confidence": null,
+          "issues": [
+            {
+              "code": "COURSE_NAME_DIFFERS",
+              "blocking": false,
+              "message": "Tên trên tài liệu \"Ky thuat lap trinh\" khác tên trong CTĐT \"Kỹ thuật lập trình\"; khi xác nhận sẽ dùng tên CTĐT."
+            }
+          ]
+        },
+        {
+          "rowId": "row-002",
+          "sourceText": "IT6002 Cấu trúc dữ liệu và giải thuật 3 6.8 C+",
+          "courseCode": "IT6002",
+          "courseName": "Cấu trúc dữ liệu và giải thuật",
+          "documentCourseName": "Cấu trúc dữ liệu và giải thuật",
+          "credits": 3,
+          "semesterCode": "2025_1",
+          "score10": 6.8,
+          "letterGrade": "C+",
+          "included": true,
+          "confidence": null,
+          "issues": []
+        },
+        {
+          "rowId": "row-003",
+          "sourceText": "IT6O35 Toán rời rạc 3 6.6 C+",
+          "courseCode": "IT6O35",
+          "courseName": null,
+          "documentCourseName": "Toán rời rạc",
+          "credits": null,
+          "semesterCode": "2024_2",
+          "score10": 6.6,
+          "letterGrade": "C+",
+          "included": true,
+          "confidence": null,
+          "issues": [
+            {
+              "code": "UNKNOWN_COURSE_CODE",
+              "blocking": true,
+              "message": "Mã IT6O35 không có trong CTĐT. Sửa mã học phần hoặc bỏ chọn dòng."
+            }
+          ]
+        },
+        {
+          "rowId": "row-004",
+          "sourceText": "IT6126 Hệ thống cơ sở dữ liệu 4",
+          "courseCode": "IT6126",
+          "courseName": "Hệ thống cơ sở dữ liệu",
+          "documentCourseName": "Hệ thống cơ sở dữ liệu",
+          "credits": 4,
+          "semesterCode": "2026_1",
+          "score10": null,
+          "letterGrade": null,
+          "included": true,
+          "confidence": null,
+          "issues": [
+            {
+              "code": "MISSING_GRADE",
+              "blocking": false,
+              "message": "Chưa có điểm; học phần được ghi nhận là đang học."
+            }
+          ]
+        }
+      ],
+      "documentSummary": {
+        "studentIdOnDocument": "2024604757",
+        "fullNameOnDocument": "Lê Việt Hùng",
+        "reportedCpa": 3.18,
+        "reportedAccumulatedCredits": 61
+      },
+      "warnings": [
+        "CPA và số tín chỉ in trên tài liệu chỉ để đối chiếu; CPA chính thức do hệ thống tính từ bảng điểm sau khi bạn xác nhận."
+      ],
+      "blockingIssueCount": 1,
+      "createdAt": "2026-10-14T02:10:00Z",
+      "updatedAt": "2026-10-14T02:10:00Z",
+      "expiresAt": "2026-10-15T02:10:00Z",
+      "confirmedAt": null
+    },
+    "consumers": [
+      "TV2"
+    ]
+  },
+  "transcript-import-rows": {
+    "operationId": "updateTranscriptImportRows",
+    "method": "PUT",
+    "path": "/academic/transcript/imports/{importSessionId}/rows",
+    "httpStatus": 200,
+    "pathParams": {
+      "importSessionId": "imp-2024604757-20261014-01"
+    },
+    "requestSchema": "UpdateImportRowsRequest",
+    "request": {
+      "sessionVersion": 1,
+      "rows": [
+        {
+          "rowId": "row-001",
+          "sourceText": null,
+          "courseCode": "IT6015",
+          "courseName": null,
+          "documentCourseName": null,
+          "credits": null,
+          "semesterCode": "2024_1",
+          "score10": 9.3,
+          "letterGrade": "A",
+          "included": true,
+          "confidence": null,
+          "issues": []
+        },
+        {
+          "rowId": "row-002",
+          "sourceText": null,
+          "courseCode": "IT6002",
+          "courseName": null,
+          "documentCourseName": null,
+          "credits": null,
+          "semesterCode": "2025_1",
+          "score10": 6.8,
+          "letterGrade": "C+",
+          "included": true,
+          "confidence": null,
+          "issues": []
+        },
+        {
+          "rowId": "row-003",
+          "sourceText": null,
+          "courseCode": "IT6035",
+          "courseName": null,
+          "documentCourseName": null,
+          "credits": null,
+          "semesterCode": "2024_2",
+          "score10": 6.6,
+          "letterGrade": "C+",
+          "included": true,
+          "confidence": null,
+          "issues": []
+        },
+        {
+          "rowId": "row-004",
+          "sourceText": null,
+          "courseCode": "IT6126",
+          "courseName": null,
+          "documentCourseName": null,
+          "credits": null,
+          "semesterCode": "2026_1",
+          "score10": null,
+          "letterGrade": null,
+          "included": true,
+          "confidence": null,
+          "issues": []
+        }
+      ]
+    },
+    "responseSchema": "TranscriptImportResponse",
+    "response": {
+      "importSessionId": "imp-2024604757-20261014-01",
+      "status": "REVIEW_REQUIRED",
+      "sourceType": "PDF_TEXT",
+      "fileName": "BangDiem_2024604757.pdf",
+      "fileSizeBytes": 48213,
+      "pageCount": 2,
+      "sessionVersion": 2,
+      "rows": [
+        {
+          "rowId": "row-001",
+          "sourceText": "IT6015 Ky thuat lap trinh 3 9.3 A",
+          "courseCode": "IT6015",
+          "courseName": "Kỹ thuật lập trình",
+          "documentCourseName": "Ky thuat lap trinh",
+          "credits": 3,
+          "semesterCode": "2024_1",
+          "score10": 9.3,
+          "letterGrade": "A",
+          "included": true,
+          "confidence": null,
+          "issues": [
+            {
+              "code": "COURSE_NAME_DIFFERS",
+              "blocking": false,
+              "message": "Tên trên tài liệu \"Ky thuat lap trinh\" khác tên trong CTĐT \"Kỹ thuật lập trình\"; khi xác nhận sẽ dùng tên CTĐT."
+            }
+          ]
+        },
+        {
+          "rowId": "row-002",
+          "sourceText": "IT6002 Cấu trúc dữ liệu và giải thuật 3 6.8 C+",
+          "courseCode": "IT6002",
+          "courseName": "Cấu trúc dữ liệu và giải thuật",
+          "documentCourseName": "Cấu trúc dữ liệu và giải thuật",
+          "credits": 3,
+          "semesterCode": "2025_1",
+          "score10": 6.8,
+          "letterGrade": "C+",
+          "included": true,
+          "confidence": null,
+          "issues": []
+        },
+        {
+          "rowId": "row-003",
+          "sourceText": "IT6O35 Toán rời rạc 3 6.6 C+",
+          "courseCode": "IT6035",
+          "courseName": "Toán rời rạc",
+          "documentCourseName": "Toán rời rạc",
+          "credits": 3,
+          "semesterCode": "2024_2",
+          "score10": 6.6,
+          "letterGrade": "C+",
+          "included": true,
+          "confidence": null,
+          "issues": []
+        },
+        {
+          "rowId": "row-004",
+          "sourceText": "IT6126 Hệ thống cơ sở dữ liệu 4",
+          "courseCode": "IT6126",
+          "courseName": "Hệ thống cơ sở dữ liệu",
+          "documentCourseName": "Hệ thống cơ sở dữ liệu",
+          "credits": 4,
+          "semesterCode": "2026_1",
+          "score10": null,
+          "letterGrade": null,
+          "included": true,
+          "confidence": null,
+          "issues": [
+            {
+              "code": "MISSING_GRADE",
+              "blocking": false,
+              "message": "Chưa có điểm; học phần được ghi nhận là đang học."
+            }
+          ]
+        }
+      ],
+      "documentSummary": {
+        "studentIdOnDocument": "2024604757",
+        "fullNameOnDocument": "Lê Việt Hùng",
+        "reportedCpa": 3.18,
+        "reportedAccumulatedCredits": 61
+      },
+      "warnings": [
+        "CPA và số tín chỉ in trên tài liệu chỉ để đối chiếu; CPA chính thức do hệ thống tính từ bảng điểm sau khi bạn xác nhận."
+      ],
+      "blockingIssueCount": 0,
+      "createdAt": "2026-10-14T02:10:00Z",
+      "updatedAt": "2026-10-14T02:15:00Z",
+      "expiresAt": "2026-10-15T02:10:00Z",
+      "confirmedAt": null
+    },
+    "consumers": [
+      "TV2"
+    ]
+  },
+  "transcript-import-confirm": {
+    "operationId": "confirmTranscriptImport",
+    "method": "POST",
+    "path": "/academic/transcript/imports/{importSessionId}/confirm",
+    "httpStatus": 200,
+    "pathParams": {
+      "importSessionId": "imp-2024604757-20261014-01"
+    },
+    "requestSchema": "ConfirmTranscriptImportRequest",
+    "request": {
+      "sessionVersion": 2,
+      "dataRevision": "REV-2024604757-001"
+    },
+    "responseSchema": "TranscriptResponse",
+    "response": {
+      "studentId": "2024604757",
+      "transcriptStatus": "CONFIRMED",
+      "sourceType": "PDF_TEXT",
+      "importSessionId": "imp-2024604757-20261014-01",
+      "confirmedAt": "2026-10-14T02:16:00Z",
+      "dataRevision": "REV-2024604757-002",
+      "attempts": [
+        {
+          "courseCode": "IT6015",
+          "courseName": "Kỹ thuật lập trình",
+          "credits": 3,
+          "semesterCode": "2024_1",
+          "attemptNumber": 1,
+          "score10": 9.3,
+          "letterGrade": "A"
+        },
+        {
+          "courseCode": "IT6035",
+          "courseName": "Toán rời rạc",
+          "credits": 3,
+          "semesterCode": "2024_2",
+          "attemptNumber": 1,
+          "score10": 6.6,
+          "letterGrade": "C+"
+        },
+        {
+          "courseCode": "IT6002",
+          "courseName": "Cấu trúc dữ liệu và giải thuật",
+          "credits": 3,
+          "semesterCode": "2025_1",
+          "attemptNumber": 1,
+          "score10": 6.8,
+          "letterGrade": "C+"
+        },
+        {
+          "courseCode": "IT6126",
+          "courseName": "Hệ thống cơ sở dữ liệu",
+          "credits": 4,
+          "semesterCode": "2026_1",
+          "attemptNumber": 1,
+          "score10": null,
+          "letterGrade": null
+        }
+      ]
+    },
+    "consumers": [
+      "TV2"
+    ]
+  },
+  "transcript-import-confirm-blocked": {
+    "operationId": "confirmTranscriptImport",
+    "method": "POST",
+    "path": "/academic/transcript/imports/{importSessionId}/confirm",
+    "httpStatus": 422,
+    "pathParams": {
+      "importSessionId": "imp-2024604757-20261014-01"
+    },
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "ApiErrorResponse",
+    "response": {
+      "code": "IMPORT_HAS_BLOCKING_ISSUES",
+      "message": "Còn dòng cần sửa trước khi xác nhận bảng điểm.",
+      "requestId": "req-2026-10-14-0005",
+      "timestamp": "2026-10-14T02:13:00Z",
+      "details": [
+        "row-003: Mã IT6O35 không có trong CTĐT. Sửa mã học phần hoặc bỏ chọn dòng."
+      ]
+    },
+    "consumers": [
+      "TV2"
+    ]
+  },
+  "transcript-import-cancel": {
+    "operationId": "cancelTranscriptImport",
+    "method": "POST",
+    "path": "/academic/transcript/imports/{importSessionId}/cancel",
+    "httpStatus": 200,
+    "pathParams": {
+      "importSessionId": "imp-2024604757-20261014-01"
+    },
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "TranscriptImportResponse",
+    "response": {
+      "importSessionId": "imp-2024604757-20261014-01",
+      "status": "CANCELLED",
+      "sourceType": "PDF_TEXT",
+      "fileName": "BangDiem_2024604757.pdf",
+      "fileSizeBytes": 48213,
+      "pageCount": 2,
+      "sessionVersion": 1,
+      "rows": [
+        {
+          "rowId": "row-001",
+          "sourceText": "IT6015 Ky thuat lap trinh 3 9.3 A",
+          "courseCode": "IT6015",
+          "courseName": "Kỹ thuật lập trình",
+          "documentCourseName": "Ky thuat lap trinh",
+          "credits": 3,
+          "semesterCode": "2024_1",
+          "score10": 9.3,
+          "letterGrade": "A",
+          "included": true,
+          "confidence": null,
+          "issues": [
+            {
+              "code": "COURSE_NAME_DIFFERS",
+              "blocking": false,
+              "message": "Tên trên tài liệu \"Ky thuat lap trinh\" khác tên trong CTĐT \"Kỹ thuật lập trình\"; khi xác nhận sẽ dùng tên CTĐT."
+            }
+          ]
+        },
+        {
+          "rowId": "row-002",
+          "sourceText": "IT6002 Cấu trúc dữ liệu và giải thuật 3 6.8 C+",
+          "courseCode": "IT6002",
+          "courseName": "Cấu trúc dữ liệu và giải thuật",
+          "documentCourseName": "Cấu trúc dữ liệu và giải thuật",
+          "credits": 3,
+          "semesterCode": "2025_1",
+          "score10": 6.8,
+          "letterGrade": "C+",
+          "included": true,
+          "confidence": null,
+          "issues": []
+        },
+        {
+          "rowId": "row-003",
+          "sourceText": "IT6O35 Toán rời rạc 3 6.6 C+",
+          "courseCode": "IT6O35",
+          "courseName": null,
+          "documentCourseName": "Toán rời rạc",
+          "credits": null,
+          "semesterCode": "2024_2",
+          "score10": 6.6,
+          "letterGrade": "C+",
+          "included": true,
+          "confidence": null,
+          "issues": [
+            {
+              "code": "UNKNOWN_COURSE_CODE",
+              "blocking": true,
+              "message": "Mã IT6O35 không có trong CTĐT. Sửa mã học phần hoặc bỏ chọn dòng."
+            }
+          ]
+        },
+        {
+          "rowId": "row-004",
+          "sourceText": "IT6126 Hệ thống cơ sở dữ liệu 4",
+          "courseCode": "IT6126",
+          "courseName": "Hệ thống cơ sở dữ liệu",
+          "documentCourseName": "Hệ thống cơ sở dữ liệu",
+          "credits": 4,
+          "semesterCode": "2026_1",
+          "score10": null,
+          "letterGrade": null,
+          "included": true,
+          "confidence": null,
+          "issues": [
+            {
+              "code": "MISSING_GRADE",
+              "blocking": false,
+              "message": "Chưa có điểm; học phần được ghi nhận là đang học."
+            }
+          ]
+        }
+      ],
+      "documentSummary": {
+        "studentIdOnDocument": "2024604757",
+        "fullNameOnDocument": "Lê Việt Hùng",
+        "reportedCpa": 3.18,
+        "reportedAccumulatedCredits": 61
+      },
+      "warnings": [
+        "CPA và số tín chỉ in trên tài liệu chỉ để đối chiếu; CPA chính thức do hệ thống tính từ bảng điểm sau khi bạn xác nhận."
+      ],
+      "blockingIssueCount": 1,
+      "createdAt": "2026-10-14T02:10:00Z",
+      "updatedAt": "2026-10-14T02:12:00Z",
+      "expiresAt": "2026-10-15T02:10:00Z",
+      "confirmedAt": null
+    },
+    "consumers": [
+      "TV2"
+    ]
+  },
+  "certificates": {
+    "operationId": "listCertificates",
+    "method": "GET",
+    "path": "/academic/certificates",
+    "httpStatus": 200,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "CertificateListResponse",
+    "response": {
+      "certificates": [
+        {
+          "requirementCode": "FOREIGN_LANGUAGE",
+          "category": "NGOẠI NGỮ",
+          "name": "Chuẩn đầu ra Ngoại ngữ (TOEIC 550)",
+          "status": "ACHIEVED",
+          "verification": "DEMO_SEED",
+          "evidenceNote": "Đã hoàn thành chuẩn đầu ra ngoại ngữ TOEIC",
+          "achievedOn": null,
+          "updatedAt": "2026-10-01T08:00:00Z"
+        },
+        {
+          "requirementCode": "IT_SKILLS",
+          "category": "TIN HỌC",
+          "name": "Chuẩn đầu ra Tin học (MOS/IC3)",
+          "status": "NOT_ACHIEVED",
+          "verification": "DEMO_SEED",
+          "evidenceNote": "Chưa nộp chứng chỉ kỹ năng CNTT",
+          "achievedOn": null,
+          "updatedAt": "2026-10-01T08:00:00Z"
+        },
+        {
+          "requirementCode": "DEFENSE_EDUCATION",
+          "category": "GDQP_AN",
+          "name": "Chứng chỉ Giáo dục Quốc phòng - An ninh",
+          "status": "ACHIEVED",
+          "verification": "DEMO_SEED",
+          "evidenceNote": "Đã tích lũy đủ 4 học phần GDQP-AN",
+          "achievedOn": null,
+          "updatedAt": "2026-10-01T08:00:00Z"
+        },
+        {
+          "requirementCode": "PHYSICAL_EDUCATION",
+          "category": "GDTC",
+          "name": "Chứng chỉ Giáo dục Thể chất",
+          "status": "ACHIEVED",
+          "verification": "DEMO_SEED",
+          "evidenceNote": "Đã hoàn thành các học phần thể chất",
+          "achievedOn": null,
+          "updatedAt": "2026-10-01T08:00:00Z"
+        }
+      ]
+    },
+    "consumers": [
+      "TV2",
+      "TV3"
+    ]
+  },
+  "certificate-declare": {
+    "operationId": "declareCertificate",
+    "method": "PUT",
+    "path": "/academic/certificates/{requirementCode}",
+    "httpStatus": 200,
+    "pathParams": {
+      "requirementCode": "IT_SKILLS"
+    },
+    "requestSchema": "DeclareCertificateRequest",
+    "request": {
+      "status": "ACHIEVED",
+      "evidenceNote": "Đạt MOS Word, Excel, PowerPoint (thi tháng 9/2026)",
+      "achievedOn": "2026-09-20",
+      "dataRevision": "REV-2024604757-001"
+    },
+    "responseSchema": "CertificateStatusItem",
+    "response": {
+      "requirementCode": "IT_SKILLS",
+      "category": "TIN HỌC",
+      "name": "Chuẩn đầu ra Tin học (MOS/IC3)",
+      "status": "ACHIEVED",
+      "verification": "SELF_DECLARED",
+      "evidenceNote": "Đạt MOS Word, Excel, PowerPoint (thi tháng 9/2026)",
+      "achievedOn": "2026-09-20",
+      "updatedAt": "2026-10-14T02:30:00Z"
+    },
+    "consumers": [
+      "TV2",
+      "TV3"
+    ]
+  },
+  "certificate-declare-not-found": {
+    "operationId": "declareCertificate",
+    "method": "PUT",
+    "path": "/academic/certificates/{requirementCode}",
+    "httpStatus": 404,
+    "pathParams": {
+      "requirementCode": "TOEIC_900"
+    },
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "ApiErrorResponse",
+    "response": {
+      "code": "REQUIREMENT_NOT_FOUND",
+      "message": "Không có chuẩn đầu ra với mã này.",
+      "requestId": "req-2026-10-14-0009",
+      "timestamp": "2026-10-14T02:31:00Z",
+      "details": [
+        "requirementCode: TOEIC_900"
+      ]
+    },
+    "consumers": [
+      "TV2"
+    ]
+  },
   "academic-status": {
     "operationId": "getAcademicStatus",
     "method": "GET",
@@ -1131,7 +2776,7 @@ export const FIXTURES = Object.freeze({
         },
         {
           "category": "NGOẠI NGỮ",
-          "name": "Tiếng Anh TOEIC 500+",
+          "name": "Chuẩn đầu ra Ngoại ngữ (TOEIC 550)",
           "completed": true,
           "totalCreditsRequired": null,
           "accumulatedCredits": null,
@@ -1139,7 +2784,7 @@ export const FIXTURES = Object.freeze({
         },
         {
           "category": "TIN HỌC",
-          "name": "Chuẩn kỹ năng CNTT nâng cao (MOS)",
+          "name": "Chuẩn đầu ra Tin học (MOS/IC3)",
           "completed": false,
           "totalCreditsRequired": null,
           "accumulatedCredits": null,
@@ -1165,7 +2810,7 @@ export const FIXTURES = Object.freeze({
       "pendingActions": [
         {
           "certificateType": "MOS",
-          "requiredStandard": "Chuẩn kỹ năng CNTT nâng cao (MOS)",
+          "requiredStandard": "Chuẩn đầu ra Tin học (MOS/IC3)",
           "actionDescription": "Đăng ký thi và nộp chứng chỉ MOS trước đợt xét tốt nghiệp",
           "deadline": "2028-03-31",
           "status": "PENDING"

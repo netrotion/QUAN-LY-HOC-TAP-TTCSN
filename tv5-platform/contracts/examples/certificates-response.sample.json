@@ -1,0 +1,44 @@
+{
+  "certificates": [
+    {
+      "requirementCode": "FOREIGN_LANGUAGE",
+      "category": "NGOẠI NGỮ",
+      "name": "Chuẩn đầu ra Ngoại ngữ (TOEIC 550)",
+      "status": "ACHIEVED",
+      "verification": "DEMO_SEED",
+      "evidenceNote": "Đã hoàn thành chuẩn đầu ra ngoại ngữ TOEIC",
+      "achievedOn": null,
+      "updatedAt": "2026-10-01T08:00:00Z"
+    },
+    {
+      "requirementCode": "IT_SKILLS",
+      "category": "TIN HỌC",
+      "name": "Chuẩn đầu ra Tin học (MOS/IC3)",
+      "status": "NOT_ACHIEVED",
+      "verification": "DEMO_SEED",
+      "evidenceNote": "Chưa nộp chứng chỉ kỹ năng CNTT",
+      "achievedOn": null,
+      "updatedAt": "2026-10-01T08:00:00Z"
+    },
+    {
+      "requirementCode": "DEFENSE_EDUCATION",
+      "category": "GDQP_AN",
+      "name": "Chứng chỉ Giáo dục Quốc phòng - An ninh",
+      "status": "ACHIEVED",
+      "verification": "DEMO_SEED",
+      "evidenceNote": "Đã tích lũy đủ 4 học phần GDQP-AN",
+      "achievedOn": null,
+      "updatedAt": "2026-10-01T08:00:00Z"
+    },
+    {
+      "requirementCode": "PHYSICAL_EDUCATION",
+      "category": "GDTC",
+      "name": "Chứng chỉ Giáo dục Thể chất",
+      "status": "ACHIEVED",
+      "verification": "DEMO_SEED",
+      "evidenceNote": "Đã hoàn thành các học phần thể chất",
+      "achievedOn": null,
+      "updatedAt": "2026-10-01T08:00:00Z"
+    }
+  ]
+}

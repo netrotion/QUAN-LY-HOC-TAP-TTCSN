@@ -1,0 +1,7 @@
+{
+  "code": "UPLOAD_TOO_LARGE",
+  "message": "File vượt giới hạn 5 MB hoặc 10 trang.",
+  "requestId": "req-2026-10-14-0006",
+  "timestamp": "2026-10-14T02:14:00Z",
+  "details": []
+}

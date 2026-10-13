@@ -3,12 +3,14 @@
 openapi: "3.0.3"
 info:
   title: "HaUI Advisor API"
-  version: "1.0.0"
+  version: "1.1.0"
   description: |
-    contracts-v1 — hợp đồng chốt sau review prototype (Task 2.3) làm đầu vào Phase 3.
+    contracts-v1 — hợp đồng chốt sau review prototype (Task 2.3) làm đầu vào Phase 3. Bản 1.1.0 bổ sung tài khoản, hồ sơ, CTĐT, bảng điểm, nhập bảng điểm và chứng chỉ (Task 3.2).
 
     Quy tắc chung:
+    - Xác thực: session cookie (JSESSIONID) + CSRF (cookie XSRF-TOKEN, header X-XSRF-TOKEN) cho mọi request ghi, kể cả login. Chỉ vai trò STUDENT. Chưa đăng nhập → 401 UNAUTHENTICATED; thiếu CSRF/sai vai trò → 403 ACCESS_DENIED.
     - Danh tính sinh viên chỉ lấy từ phiên đăng nhập server (StudentContextProvider). Trường studentId trong request là readOnly: client không gửi, server bỏ qua nếu có.
+    - Nhập bảng điểm: tải lên/nhập tay → xem lại → xác nhận; trước khi xác nhận không ghi gì vào bảng điểm chính thức. Số liệu in trên tài liệu (CPA, tín chỉ tích lũy) chỉ để đối chiếu, không bao giờ là nguồn tính CPA.
     - dataRevision: token phiên bản dữ liệu học vụ; thao tác ghi gửi lại nguyên văn, cũ → 409 DATA_REVISION_STALE.
     - planVersion: phiên bản nội dung kế hoạch (optimistic lock), chỉ tăng khi lưu nội dung; lệch → 409 PLAN_VERSION_CONFLICT.
     - Vòng đời kế hoạch: lưu nháp luôn DRAFT; validate hợp lệ → VALIDATED; activate chỉ nhận VALIDATED (thẩm định lại, lỗi → 422) và lưu trữ bản ACTIVE cũ trong cùng giao dịch; sửa ACTIVE tạo DRAFT kế thừa.
@@ -22,8 +24,12 @@ servers:
 tags:
   - name: System
     description: "Thông tin hệ thống và health check"
+  - name: Auth
+    description: "Tài khoản HaUI Advisor, session cookie và CSRF (không đăng nhập cổng trường)"
+  - name: Student
+    description: "Hồ sơ sinh viên"
   - name: Academic
-    description: "Tình trạng học vụ và điều kiện học phần"
+    description: "CTĐT, bảng điểm, nhập bảng điểm, chứng chỉ, tình trạng học vụ và điều kiện học phần"
   - name: Planner
     description: "Sinh, thẩm định, lưu, kích hoạt và khôi phục kế hoạch học tập"
   - name: Simulation
@@ -33,6 +39,423 @@ tags:
   - name: Advisor
     description: "Trợ lý ảo học vụ"
 paths:
+  /auth/csrf:
+    get:
+      tags: [Auth]
+      summary: "Lấy CSRF token (đồng thời đặt cookie XSRF-TOKEN)"
+      operationId: getCsrfToken
+      x-implementation-status: IMPLEMENTED
+      responses:
+        '200':
+          description: "CSRF token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CsrfTokenResponse"
+  /auth/session:
+    get:
+      tags: [Auth]
+      summary: "Trạng thái phiên đăng nhập hiện tại"
+      operationId: getAuthSession
+      x-implementation-status: IMPLEMENTED
+      responses:
+        '200':
+          description: "Trạng thái phiên"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSessionResponse"
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: "Đăng nhập, tạo session cookie (đổi session id chống fixation)"
+      operationId: login
+      x-implementation-status: IMPLEMENTED
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        '200':
+          description: "Đã đăng nhập"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSessionResponse"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: "Tạo tài khoản sinh viên và đăng nhập"
+      operationId: registerAccount
+      x-implementation-status: IMPLEMENTED
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterAccountRequest"
+      responses:
+        '200':
+          description: "Đã tạo tài khoản và đăng nhập"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSessionResponse"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '409':
+          $ref: "#/components/responses/Conflict"
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: "Đăng xuất, hủy session"
+      operationId: logout
+      x-implementation-status: IMPLEMENTED
+      responses:
+        '204':
+          description: "Đã đăng xuất"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+  /students/me:
+    get:
+      tags: [Student]
+      summary: "Hồ sơ sinh viên đang đăng nhập"
+      operationId: getStudentProfile
+      x-implementation-status: IMPLEMENTED
+      responses:
+        '200':
+          description: "Hồ sơ"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentProfileResponse"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+    put:
+      tags: [Student]
+      summary: "Cập nhật hồ sơ"
+      operationId: updateStudentProfile
+      x-implementation-status: IMPLEMENTED
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStudentProfileRequest"
+      responses:
+        '200':
+          description: "Hồ sơ mới"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentProfileResponse"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '409':
+          $ref: "#/components/responses/Conflict"
+  /academic/curriculum:
+    get:
+      tags: [Academic]
+      summary: "CTĐT của sinh viên đang đăng nhập"
+      operationId: getCurriculum
+      x-implementation-status: IMPLEMENTED
+      responses:
+        '200':
+          description: "CTĐT"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurriculumResponse"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+  /academic/transcript:
+    get:
+      tags: [Academic]
+      summary: "Bảng điểm đã xác nhận"
+      operationId: getTranscript
+      x-implementation-status: IMPLEMENTED
+      responses:
+        '200':
+          description: "Bảng điểm"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptResponse"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+  /academic/transcript/imports:
+    get:
+      tags: [Academic]
+      summary: "Các phiên nhập gần nhất"
+      operationId: listTranscriptImports
+      x-implementation-status: IMPLEMENTED
+      responses:
+        '200':
+          description: "Phiên nhập"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptImportListResponse"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Academic]
+      summary: "Tải bảng điểm (PDF có text → parser; ảnh/PDF scan → OCR); không ghi bảng điểm trước khi xác nhận"
+      operationId: uploadTranscript
+      x-implementation-status: IMPLEMENTED
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: "PDF, PNG hoặc JPEG; tối đa 5 MB, 10 trang."
+      responses:
+        '200':
+          description: "Phiên chờ xem lại hoặc chờ nhập tay"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptImportResponse"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '413':
+          $ref: "#/components/responses/PayloadTooLarge"
+        '415':
+          $ref: "#/components/responses/UnsupportedMediaType"
+        '429':
+          $ref: "#/components/responses/TooManyRequests"
+  /academic/transcript/imports/manual:
+    post:
+      tags: [Academic]
+      summary: "Mở phiên nhập tay (không tải file)"
+      operationId: startManualTranscriptImport
+      x-implementation-status: IMPLEMENTED
+      responses:
+        '200':
+          description: "Phiên chờ nhập tay"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptImportResponse"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '429':
+          $ref: "#/components/responses/TooManyRequests"
+  "/academic/transcript/imports/{importSessionId}":
+    get:
+      tags: [Academic]
+      summary: "Chi tiết phiên nhập"
+      operationId: getTranscriptImport
+      x-implementation-status: IMPLEMENTED
+      parameters:
+        - name: importSessionId
+          in: path
+          required: true
+          description: "Mã phiên nhập thuộc sinh viên đang đăng nhập."
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Phiên nhập"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptImportResponse"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+  "/academic/transcript/imports/{importSessionId}/rows":
+    put:
+      tags: [Academic]
+      summary: "Sửa/thêm/bỏ chọn dòng khi xem lại"
+      operationId: updateTranscriptImportRows
+      x-implementation-status: IMPLEMENTED
+      parameters:
+        - name: importSessionId
+          in: path
+          required: true
+          description: "Mã phiên nhập thuộc sinh viên đang đăng nhập."
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateImportRowsRequest"
+      responses:
+        '200':
+          description: "Phiên sau khi sửa"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptImportResponse"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+        '409':
+          $ref: "#/components/responses/Conflict"
+  "/academic/transcript/imports/{importSessionId}/confirm":
+    post:
+      tags: [Academic]
+      summary: "Xác nhận: thay bảng điểm chính thức, tăng dataRevision"
+      operationId: confirmTranscriptImport
+      x-implementation-status: IMPLEMENTED
+      parameters:
+        - name: importSessionId
+          in: path
+          required: true
+          description: "Mã phiên nhập thuộc sinh viên đang đăng nhập."
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmTranscriptImportRequest"
+      responses:
+        '200':
+          description: "Bảng điểm mới"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptResponse"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+        '409':
+          $ref: "#/components/responses/Conflict"
+        '422':
+          $ref: "#/components/responses/UnprocessableEntity"
+  "/academic/transcript/imports/{importSessionId}/cancel":
+    post:
+      tags: [Academic]
+      summary: "Hủy phiên nhập, không ghi gì"
+      operationId: cancelTranscriptImport
+      x-implementation-status: IMPLEMENTED
+      parameters:
+        - name: importSessionId
+          in: path
+          required: true
+          description: "Mã phiên nhập thuộc sinh viên đang đăng nhập."
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Phiên đã hủy"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptImportResponse"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+        '409':
+          $ref: "#/components/responses/Conflict"
+  /academic/certificates:
+    get:
+      tags: [Academic]
+      summary: "Chuẩn đầu ra phi tín chỉ và trạng thái tự khai báo"
+      operationId: listCertificates
+      x-implementation-status: IMPLEMENTED
+      responses:
+        '200':
+          description: "Danh sách"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CertificateListResponse"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+  "/academic/certificates/{requirementCode}":
+    put:
+      tags: [Academic]
+      summary: "Tự khai báo trạng thái một chứng chỉ"
+      operationId: declareCertificate
+      x-implementation-status: IMPLEMENTED
+      parameters:
+        - name: requirementCode
+          in: path
+          required: true
+          description: "Mã chuẩn đầu ra."
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeclareCertificateRequest"
+      responses:
+        '200':
+          description: "Trạng thái mới"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CertificateStatusItem"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+        '409':
+          $ref: "#/components/responses/Conflict"
   /system/bootstrap:
     get:
       tags: [System]
@@ -80,6 +503,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AcademicStatusResponse"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
         '501':
@@ -106,6 +531,8 @@ paths:
                 $ref: "#/components/schemas/CourseEligibilityResponse"
         '400':
           $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
         '409':
@@ -134,6 +561,8 @@ paths:
                 $ref: "#/components/schemas/GenerateStudyPlanResponse"
         '400':
           $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
         '409':
@@ -162,6 +591,8 @@ paths:
                 $ref: "#/components/schemas/ValidateStudyPlanResponse"
         '400':
           $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
         '404':
@@ -181,6 +612,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/StudyPlanListResponse"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
     post:
@@ -203,6 +636,8 @@ paths:
                 $ref: "#/components/schemas/SaveStudyPlanResponse"
         '400':
           $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
         '404':
@@ -229,6 +664,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/StudyPlanDetailResponse"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
         '404':
@@ -261,6 +698,8 @@ paths:
                 $ref: "#/components/schemas/ActivateStudyPlanResponse"
         '400':
           $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
         '404':
@@ -295,6 +734,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/StudyPlanDetailResponse"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
         '404':
@@ -321,6 +762,8 @@ paths:
                 $ref: "#/components/schemas/ReconcileStudyPlanResponse"
         '400':
           $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
         '404':
@@ -351,6 +794,8 @@ paths:
                 $ref: "#/components/schemas/SimulateGradesResponse"
         '400':
           $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
         '409':
@@ -379,6 +824,8 @@ paths:
                 $ref: "#/components/schemas/RankRetakeCoursesResponse"
         '400':
           $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
         '409':
@@ -407,6 +854,8 @@ paths:
                 $ref: "#/components/schemas/CalculateTargetGradesResponse"
         '400':
           $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
         '409':
@@ -427,6 +876,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GraduationAuditResponse"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
         '501':
@@ -453,6 +904,8 @@ paths:
                 $ref: "#/components/schemas/ChatResponse"
         '400':
           $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
         '501':
@@ -460,27 +913,55 @@ paths:
 components:
   responses:
     BadRequest:
-      description: "VALIDATION_ERROR: body sai định dạng hoặc thiếu trường bắt buộc"
+      description: "VALIDATION_ERROR: body sai định dạng hoặc thiếu trường bắt buộc; CURRICULUM_NOT_FOUND"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+    Unauthorized:
+      description: "UNAUTHENTICATED: chưa đăng nhập/phiên hết hạn; INVALID_CREDENTIALS: sai mã sinh viên hoặc mật khẩu"
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ApiErrorResponse"
     Forbidden:
-      description: "Chưa đăng nhập hoặc thiếu CSRF token (Spring Security, không có body nghiệp vụ)"
+      description: "ACCESS_DENIED: thiếu/sai CSRF token hoặc tài khoản không phải STUDENT"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+    PayloadTooLarge:
+      description: "UPLOAD_TOO_LARGE: file vượt dung lượng hoặc số trang cho phép"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+    UnsupportedMediaType:
+      description: "UNSUPPORTED_FILE_TYPE: nội dung file không phải PDF, PNG hoặc JPEG"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+    TooManyRequests:
+      description: "IMPORT_LIMIT_REACHED: quá số phiên nhập đang chờ xem lại"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
     NotFound:
-      description: "PLAN_NOT_FOUND: không có kế hoạch thuộc sinh viên đang đăng nhập"
+      description: "PLAN_NOT_FOUND | IMPORT_SESSION_NOT_FOUND | REQUIREMENT_NOT_FOUND: không có tài nguyên thuộc sinh viên đang đăng nhập"
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ApiErrorResponse"
     Conflict:
-      description: "DATA_REVISION_STALE | PLAN_VERSION_CONFLICT | PLAN_NOT_EDITABLE"
+      description: "DATA_REVISION_STALE | PLAN_VERSION_CONFLICT | PLAN_NOT_EDITABLE | ACCOUNT_ALREADY_EXISTS | IMPORT_SESSION_CLOSED | IMPORT_VERSION_CONFLICT"
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ApiErrorResponse"
     UnprocessableEntity:
-      description: "PLAN_NOT_VALIDATED | PLAN_VALIDATION_FAILED (details = danh sách vi phạm)"
+      description: "PLAN_NOT_VALIDATED | PLAN_VALIDATION_FAILED | IMPORT_HAS_BLOCKING_ISSUES (details = danh sách vi phạm/dòng lỗi)"
       content:
         application/json:
           schema:
@@ -534,7 +1015,7 @@ components:
           format: date-time
     ApiErrorCode:
       type: string
-      description: "Mã lỗi nghiệp vụ. 400 VALIDATION_ERROR; 404 PLAN_NOT_FOUND; 409 DATA_REVISION_STALE, PLAN_VERSION_CONFLICT, PLAN_NOT_EDITABLE; 422 PLAN_NOT_VALIDATED, PLAN_VALIDATION_FAILED; 501 NOT_IMPLEMENTED."
+      description: "Mã lỗi nghiệp vụ. 400 VALIDATION_ERROR, CURRICULUM_NOT_FOUND; 401 UNAUTHENTICATED, INVALID_CREDENTIALS; 403 ACCESS_DENIED; 404 PLAN_NOT_FOUND, IMPORT_SESSION_NOT_FOUND, REQUIREMENT_NOT_FOUND; 409 DATA_REVISION_STALE, PLAN_VERSION_CONFLICT, PLAN_NOT_EDITABLE, ACCOUNT_ALREADY_EXISTS, IMPORT_SESSION_CLOSED, IMPORT_VERSION_CONFLICT; 413 UPLOAD_TOO_LARGE; 415 UNSUPPORTED_FILE_TYPE; 422 PLAN_NOT_VALIDATED, PLAN_VALIDATION_FAILED, IMPORT_HAS_BLOCKING_ISSUES; 429 IMPORT_LIMIT_REACHED; 501 NOT_IMPLEMENTED."
       enum:
         - VALIDATION_ERROR
         - PLAN_NOT_FOUND
@@ -544,6 +1025,19 @@ components:
         - PLAN_NOT_VALIDATED
         - PLAN_VALIDATION_FAILED
         - NOT_IMPLEMENTED
+        - UNAUTHENTICATED
+        - INVALID_CREDENTIALS
+        - ACCESS_DENIED
+        - ACCOUNT_ALREADY_EXISTS
+        - CURRICULUM_NOT_FOUND
+        - REQUIREMENT_NOT_FOUND
+        - IMPORT_SESSION_NOT_FOUND
+        - IMPORT_SESSION_CLOSED
+        - IMPORT_VERSION_CONFLICT
+        - IMPORT_HAS_BLOCKING_ISSUES
+        - IMPORT_LIMIT_REACHED
+        - UPLOAD_TOO_LARGE
+        - UNSUPPORTED_FILE_TYPE
     ApiErrorResponse:
       type: object
       description: "Body lỗi chung cho mọi response 4xx/5xx nghiệp vụ."
@@ -774,9 +1268,9 @@ components:
           description: "Tên học phần (theo CTĐT)."
           nullable: true
         credits:
-          type: integer
-          format: int32
-          description: "Số tín chỉ."
+          type: number
+          description: "Số tín chỉ (số thực; CTĐT có học phần 1.5 TC)."
+          minimum: 0
         targetGrade:
           type: string
           description: "Điểm chữ mục tiêu (dự kiến)."
@@ -1349,9 +1843,9 @@ components:
           type: string
           description: "Mã học phần."
         credits:
-          type: integer
-          format: int32
-          description: "Số tín chỉ."
+          type: number
+          description: "Số tín chỉ (số thực; CTĐT có học phần 1.5 TC)."
+          minimum: 0
         expectedGrade:
           type: string
           description: "Điểm chữ giả định."
@@ -1438,9 +1932,9 @@ components:
           description: "Tên học phần."
           nullable: true
         credits:
-          type: integer
-          format: int32
-          description: "Số tín chỉ."
+          type: number
+          description: "Số tín chỉ (số thực; CTĐT có học phần 1.5 TC)."
+          minimum: 0
         currentGrade:
           type: string
           description: "Điểm chữ hiện tại."
@@ -1524,9 +2018,9 @@ components:
           description: "Tên học phần."
           nullable: true
         credits:
-          type: integer
-          format: int32
-          description: "Số tín chỉ."
+          type: number
+          description: "Số tín chỉ (số thực; CTĐT có học phần 1.5 TC)."
+          minimum: 0
           nullable: true
         requiredGrade:
           type: string
@@ -1776,3 +2270,675 @@ components:
           description: "Mã/diễn giải cảnh báo, ví dụ TRANSCRIPT_REQUIRED, POLICY_SOURCE_UNAVAILABLE."
           items:
             type: string
+    AccountRole:
+      type: string
+      description: "Vai trò tài khoản; hệ thống chỉ có STUDENT."
+      enum: [STUDENT]
+    LoginRequest:
+      type: object
+      description: "Đăng nhập tài khoản HaUI Advisor (không phải tài khoản e-HaUI)."
+      required: [studentId, password]
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên dùng làm tên đăng nhập."
+        password:
+          type: string
+          description: "Mật khẩu."
+          format: password
+          writeOnly: true
+    RegisterAccountRequest:
+      type: object
+      description: "Tạo tài khoản sinh viên; mã sinh viên là khai báo, hệ thống không xác minh với trường."
+      required: [studentId, password, fullName, cohort, curriculumId]
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên (4-50 ký tự chữ, số, . _ -)."
+          pattern: "^[A-Za-z0-9._-]{4,50}$"
+        password:
+          type: string
+          description: "Mật khẩu, tối thiểu 8 ký tự."
+          format: password
+          writeOnly: true
+          minLength: 8
+        fullName:
+          type: string
+          description: "Họ tên."
+        email:
+          type: string
+          description: "Email liên hệ."
+          format: email
+          nullable: true
+        className:
+          type: string
+          description: "Lớp sinh hoạt."
+          example: "2024DHKTPM02"
+          nullable: true
+        cohort:
+          type: string
+          description: "Khóa."
+          example: K19
+        curriculumId:
+          type: string
+          description: "Mã CTĐT trong hệ thống."
+          example: curriculum-ktpm-haui-2024
+    AuthSessionResponse:
+      type: object
+      description: "Trạng thái phiên đăng nhập (session cookie)."
+      required: [authenticated]
+      properties:
+        authenticated:
+          type: boolean
+          description: "Đã đăng nhập."
+        studentId:
+          type: string
+          description: "Mã sinh viên đang đăng nhập."
+          nullable: true
+        fullName:
+          type: string
+          description: "Họ tên."
+          nullable: true
+        role:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/AccountRole"
+    CsrfTokenResponse:
+      type: object
+      description: "CSRF token: gửi lại trong header headerName cho mọi request ghi; cookie XSRF-TOKEN chứa cùng giá trị."
+      required: [headerName, parameterName, token]
+      properties:
+        headerName:
+          type: string
+          description: "Tên header."
+          example: X-XSRF-TOKEN
+        parameterName:
+          type: string
+          description: "Tên tham số form."
+          example: _csrf
+        token:
+          type: string
+          description: "Giá trị token."
+    StudentProfileResponse:
+      type: object
+      description: "Hồ sơ sinh viên đang đăng nhập. Không có GPA/CPA: số liệu học vụ do AcademicFacade tính từ bảng điểm đã xác nhận."
+      required: [studentId, fullName, cohort, curriculumId, transcriptStatus, dataRevision]
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên."
+        fullName:
+          type: string
+          description: "Họ tên."
+        email:
+          type: string
+          description: "Email liên hệ."
+          format: email
+          nullable: true
+        className:
+          type: string
+          description: "Lớp sinh hoạt."
+          nullable: true
+        cohort:
+          type: string
+          description: "Khóa."
+        curriculumId:
+          type: string
+          description: "Mã CTĐT trong hệ thống."
+          example: curriculum-ktpm-haui-2024
+        curriculumName:
+          type: string
+          description: "Tên CTĐT."
+          nullable: true
+        majorCode:
+          type: string
+          description: "Mã ngành/CTĐT."
+          example: CT1085
+          nullable: true
+        majorName:
+          type: string
+          description: "Tên ngành."
+          nullable: true
+        faculty:
+          type: string
+          description: "Trường/khoa quản lý."
+          nullable: true
+        transcriptStatus:
+          $ref: "#/components/schemas/TranscriptStatus"
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+        createdAt:
+          type: string
+          description: "Thời điểm tạo."
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          description: "Lần cập nhật gần nhất."
+          format: date-time
+          nullable: true
+    UpdateStudentProfileRequest:
+      type: object
+      description: "Cập nhật hồ sơ. Đổi curriculumId tăng dataRevision; trường để null giữ nguyên."
+      required: [dataRevision]
+      properties:
+        fullName:
+          type: string
+          description: "Họ tên."
+          nullable: true
+        email:
+          type: string
+          description: "Email liên hệ."
+          format: email
+          nullable: true
+        className:
+          type: string
+          description: "Lớp sinh hoạt."
+          nullable: true
+        cohort:
+          type: string
+          description: "Khóa."
+          nullable: true
+        curriculumId:
+          type: string
+          description: "Mã CTĐT trong hệ thống."
+          example: curriculum-ktpm-haui-2024
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+    CurriculumCourseItem:
+      type: object
+      description: "Một học phần trong CTĐT; mã học phần điều kiện giữ nguyên như CTĐT."
+      required: [courseCode, courseName, credits]
+      properties:
+        courseCode:
+          type: string
+          description: "Mã học phần."
+        courseName:
+          type: string
+          description: "Tên học phần."
+        credits:
+          type: number
+          description: "Số tín chỉ (số thực; CTĐT có học phần 1.5 TC)."
+          minimum: 0
+        knowledgeBlock:
+          type: string
+          description: "Khối kiến thức."
+          nullable: true
+        suggestedSemester:
+          type: integer
+          format: int32
+          description: "Học kỳ gợi ý trong CTĐT."
+          nullable: true
+        mandatory:
+          type: boolean
+          description: "Học phần bắt buộc."
+          nullable: true
+        prerequisiteCourseCodes:
+          type: array
+          description: "Học phần tiên quyết (phải đạt)."
+          items:
+            type: string
+          nullable: true
+        priorCourseCodes:
+          type: array
+          description: "Học phần học trước (phải đã học)."
+          items:
+            type: string
+          nullable: true
+        corequisiteCourseCodes:
+          type: array
+          description: "Học phần song hành."
+          items:
+            type: string
+          nullable: true
+    CurriculumResponse:
+      type: object
+      description: "CTĐT mà sinh viên đang theo (dữ liệu gốc, không tính trạng thái đạt/khóa)."
+      required: [curriculumId, curriculumName, courses]
+      properties:
+        curriculumId:
+          type: string
+          description: "Mã CTĐT trong hệ thống."
+          example: curriculum-ktpm-haui-2024
+        curriculumName:
+          type: string
+          description: "Tên CTĐT."
+        majorCode:
+          type: string
+          description: "Mã ngành/CTĐT."
+          nullable: true
+        majorName:
+          type: string
+          description: "Tên ngành."
+          nullable: true
+        faculty:
+          type: string
+          description: "Trường/khoa quản lý."
+          nullable: true
+        totalCreditsRequired:
+          type: integer
+          format: int32
+          description: "Tổng tín chỉ CTĐT yêu cầu."
+          nullable: true
+        status:
+          type: string
+          description: "Trạng thái nguồn dữ liệu CTĐT, ví dụ VERIFIED_GROUND_TRUTH, DEMO_UNVERIFIED."
+          nullable: true
+        source:
+          type: string
+          description: "Nguồn dữ liệu CTĐT."
+          nullable: true
+        courses:
+          type: array
+          description: "Học phần."
+          items:
+            $ref: "#/components/schemas/CurriculumCourseItem"
+    TranscriptStatus:
+      type: string
+      description: "NONE: chưa có bảng điểm xác nhận; CONFIRMED: đã xác nhận."
+      enum: [NONE, CONFIRMED]
+    TranscriptSourceType:
+      type: string
+      description: "Nguồn bảng điểm/phiên nhập."
+      enum: [PDF_TEXT, PDF_SCANNED, IMAGE, MANUAL, DEMO_SEED]
+    ImportSessionStatus:
+      type: string
+      description: "Chỉ CONFIRMED mới ghi vào bảng điểm chính thức."
+      enum: [REVIEW_REQUIRED, MANUAL_ENTRY_REQUIRED, CONFIRMED, CANCELLED, EXPIRED]
+    ImportIssueCode:
+      type: string
+      description: "Vấn đề trên dòng nhập; xem trường blocking."
+      enum:
+        - UNKNOWN_COURSE_CODE
+        - UNREADABLE_ROW
+        - INVALID_SEMESTER
+        - INVALID_SCORE
+        - DUPLICATE_ROW
+        - MISSING_GRADE
+        - COURSE_NAME_DIFFERS
+        - CREDITS_DIFFER
+        - LOW_CONFIDENCE
+    TranscriptAttemptItem:
+      type: object
+      description: "Một lần học trong bảng điểm đã xác nhận. Chỉ dữ liệu gốc; điểm hệ 4, đạt/không đạt, GPA/CPA do AcademicFacade suy ra."
+      required: [courseCode, courseName, credits, semesterCode, attemptNumber, score10, letterGrade]
+      properties:
+        courseCode:
+          type: string
+          description: "Mã học phần."
+        courseName:
+          type: string
+          description: "Tên học phần theo CTĐT."
+        credits:
+          type: number
+          description: "Số tín chỉ (số thực; CTĐT có học phần 1.5 TC)."
+          minimum: 0
+        semesterCode:
+          type: string
+          description: "Học kỳ học."
+          pattern: "^[0-9]{4}_(1|2|SUMMER)$"
+          example: "2026_1"
+        attemptNumber:
+          type: integer
+          format: int32
+          description: "Lần học thứ mấy của học phần (1 = lần đầu)."
+          minimum: 1
+        score10:
+          type: number
+          description: "Điểm hệ 10 đúng như bảng điểm; null = chưa có điểm (đang học)."
+          minimum: 0
+          maximum: 10
+          nullable: true
+        letterGrade:
+          type: string
+          description: "Điểm chữ đúng như bảng điểm (A, B+, B, C+, C, D+, D, F); null = chưa có điểm."
+          example: "B+"
+          nullable: true
+    TranscriptResponse:
+      type: object
+      description: "Bảng điểm chính thức; chỉ đổi khi xác nhận một phiên nhập."
+      required: [studentId, transcriptStatus, dataRevision, attempts]
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên."
+        transcriptStatus:
+          $ref: "#/components/schemas/TranscriptStatus"
+        sourceType:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/TranscriptSourceType"
+        importSessionId:
+          type: string
+          description: "Mã phiên nhập bảng điểm."
+          nullable: true
+        confirmedAt:
+          type: string
+          description: "Thời điểm xác nhận bảng điểm hiện hành."
+          format: date-time
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+        attempts:
+          type: array
+          description: "Các lần học, theo học kỳ."
+          items:
+            $ref: "#/components/schemas/TranscriptAttemptItem"
+    ImportRowIssueItem:
+      type: object
+      description: "Một vấn đề trên dòng nhập."
+      required: [code, blocking, message]
+      properties:
+        code:
+          $ref: "#/components/schemas/ImportIssueCode"
+        blocking:
+          type: boolean
+          description: "Chặn xác nhận cho tới khi sửa hoặc bỏ chọn dòng."
+        message:
+          type: string
+          description: "Diễn giải cho người dùng."
+    TranscriptImportRowItem:
+      type: object
+      description: "Một dòng chờ xem lại. Khi gửi lên server chỉ nhận rowId, courseCode, semesterCode, score10, letterGrade, included."
+      properties:
+        rowId:
+          type: string
+          description: "Mã dòng; null với dòng thêm tay."
+          nullable: true
+        sourceText:
+          type: string
+          description: "Dòng chữ gốc đọc được từ tài liệu (để đối chiếu)."
+          nullable: true
+        courseCode:
+          type: string
+          description: "Mã học phần."
+          nullable: true
+        courseName:
+          type: string
+          description: "Tên học phần theo CTĐT; null khi mã không có trong CTĐT."
+          nullable: true
+        documentCourseName:
+          type: string
+          description: "Tên học phần đúng như trên tài liệu."
+          nullable: true
+        credits:
+          type: number
+          description: "Số tín chỉ theo CTĐT."
+          minimum: 0
+          nullable: true
+        semesterCode:
+          type: string
+          description: "Học kỳ học."
+          pattern: "^[0-9]{4}_(1|2|SUMMER)$"
+          example: "2026_1"
+          nullable: true
+        score10:
+          type: number
+          description: "Điểm hệ 10 đúng như bảng điểm; null = chưa có điểm (đang học)."
+          minimum: 0
+          maximum: 10
+          nullable: true
+        letterGrade:
+          type: string
+          description: "Điểm chữ đúng như bảng điểm (A, B+, B, C+, C, D+, D, F); null = chưa có điểm."
+          example: "B+"
+          nullable: true
+        included:
+          type: boolean
+          description: "Đưa dòng này vào bảng điểm khi xác nhận."
+          nullable: true
+        confidence:
+          type: number
+          description: "Độ tin cậy OCR 0..1; null với parser/nhập tay."
+          minimum: 0
+          maximum: 1
+          nullable: true
+        issues:
+          type: array
+          description: "Vấn đề của dòng."
+          items:
+            $ref: "#/components/schemas/ImportRowIssueItem"
+          nullable: true
+    TranscriptDocumentSummary:
+      type: object
+      description: "Thông tin in trên tài liệu, chỉ để đối chiếu. reportedCpa/reportedAccumulatedCredits không bao giờ được lưu làm số liệu học vụ."
+      properties:
+        studentIdOnDocument:
+          type: string
+          description: "Mã sinh viên in trên tài liệu."
+          nullable: true
+        fullNameOnDocument:
+          type: string
+          description: "Họ tên in trên tài liệu."
+          nullable: true
+        reportedCpa:
+          type: number
+          description: "CPA in trên tài liệu (tham khảo, không dùng để tính)."
+          nullable: true
+        reportedAccumulatedCredits:
+          type: number
+          description: "Số tín chỉ tích lũy in trên tài liệu (tham khảo)."
+          nullable: true
+    TranscriptImportResponse:
+      type: object
+      description: "Phiên nhập bảng điểm: tải lên/nhập tay → xem lại → xác nhận."
+      required:
+        - importSessionId
+        - status
+        - sourceType
+        - sessionVersion
+        - rows
+        - warnings
+        - blockingIssueCount
+        - createdAt
+        - expiresAt
+      properties:
+        importSessionId:
+          type: string
+          description: "Mã phiên nhập bảng điểm."
+        status:
+          $ref: "#/components/schemas/ImportSessionStatus"
+        sourceType:
+          $ref: "#/components/schemas/TranscriptSourceType"
+        fileName:
+          type: string
+          description: "Tên file đã làm sạch; null khi nhập tay."
+          nullable: true
+        fileSizeBytes:
+          type: integer
+          format: int64
+          description: "Dung lượng file."
+          nullable: true
+        pageCount:
+          type: integer
+          format: int32
+          description: "Số trang (PDF) hoặc 1 (ảnh)."
+          nullable: true
+        sessionVersion:
+          type: integer
+          format: int32
+          description: "Phiên bản phiên nhập (optimistic lock); tăng khi sửa dòng."
+          minimum: 1
+        rows:
+          type: array
+          description: "Các dòng chờ xem lại."
+          items:
+            $ref: "#/components/schemas/TranscriptImportRowItem"
+        documentSummary:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/TranscriptDocumentSummary"
+        warnings:
+          type: array
+          description: "Cảnh báo không chặn thao tác (hiển thị cho người dùng)."
+          items:
+            type: string
+        blockingIssueCount:
+          type: integer
+          format: int32
+          description: "Số vấn đề chặn trên các dòng included."
+        createdAt:
+          type: string
+          description: "Thời điểm tạo."
+          format: date-time
+        updatedAt:
+          type: string
+          description: "Lần sửa gần nhất."
+          format: date-time
+          nullable: true
+        expiresAt:
+          type: string
+          description: "Hạn xem lại; quá hạn → EXPIRED."
+          format: date-time
+        confirmedAt:
+          type: string
+          description: "Thời điểm xác nhận."
+          format: date-time
+          nullable: true
+    TranscriptImportListResponse:
+      type: object
+      description: "Các phiên nhập gần nhất, mới trước."
+      required: [sessions]
+      properties:
+        sessions:
+          type: array
+          description: "Phiên nhập."
+          items:
+            $ref: "#/components/schemas/TranscriptImportResponse"
+    UpdateImportRowsRequest:
+      type: object
+      description: "Thay toàn bộ dòng của phiên sau khi sinh viên sửa."
+      required: [sessionVersion, rows]
+      properties:
+        sessionVersion:
+          type: integer
+          format: int32
+          description: "Phiên bản client đang giữ."
+          minimum: 1
+        rows:
+          type: array
+          description: "Danh sách dòng mới."
+          items:
+            $ref: "#/components/schemas/TranscriptImportRowItem"
+    ConfirmTranscriptImportRequest:
+      type: object
+      description: "Xác nhận phiên: thay bảng điểm chính thức bằng các dòng included, tăng dataRevision."
+      required: [sessionVersion, dataRevision]
+      properties:
+        sessionVersion:
+          type: integer
+          format: int32
+          description: "Phiên bản client đang giữ."
+          minimum: 1
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+    CertificateStatus:
+      type: string
+      description: "Trạng thái tự khai báo (không phải xác nhận của trường)."
+      enum: [ACHIEVED, NOT_ACHIEVED, UNKNOWN]
+    CertificateVerification:
+      type: string
+      description: "Nguồn trạng thái; hệ thống không xác minh với trường."
+      enum: [SELF_DECLARED, DEMO_SEED, NOT_DECLARED]
+    CertificateStatusItem:
+      type: object
+      description: "Trạng thái một chuẩn đầu ra phi tín chỉ của sinh viên."
+      required: [requirementCode, category, name, status, verification]
+      properties:
+        requirementCode:
+          type: string
+          description: "Mã chuẩn đầu ra."
+          example: IT_SKILLS
+        category:
+          type: string
+          description: "Nhóm điều kiện."
+        name:
+          type: string
+          description: "Tên chuẩn đầu ra."
+        status:
+          $ref: "#/components/schemas/CertificateStatus"
+        verification:
+          $ref: "#/components/schemas/CertificateVerification"
+        evidenceNote:
+          type: string
+          description: "Ghi chú minh chứng do sinh viên nhập."
+          maxLength: 500
+          nullable: true
+        achievedOn:
+          type: string
+          description: "Ngày đạt (yyyy-MM-dd)."
+          format: date
+          nullable: true
+        updatedAt:
+          type: string
+          description: "Lần khai báo gần nhất."
+          format: date-time
+          nullable: true
+    CertificateListResponse:
+      type: object
+      description: "Chuẩn đầu ra phi tín chỉ và trạng thái khai báo."
+      required: [certificates]
+      properties:
+        certificates:
+          type: array
+          description: "Danh sách."
+          items:
+            $ref: "#/components/schemas/CertificateStatusItem"
+    DeclareCertificateRequest:
+      type: object
+      description: "Sinh viên tự khai báo trạng thái chứng chỉ; tăng dataRevision."
+      required: [status, dataRevision]
+      properties:
+        status:
+          $ref: "#/components/schemas/CertificateStatus"
+        evidenceNote:
+          type: string
+          description: "Ghi chú minh chứng."
+          maxLength: 500
+          nullable: true
+        achievedOn:
+          type: string
+          description: "Ngày đạt (yyyy-MM-dd)."
+          format: date
+          nullable: true
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+    StudentAcademicRecord:
+      type: object
+      description: "[Port StudentAcademicRecordProvider] Dữ liệu học vụ gốc cho AcademicFacade: chỉ bảng điểm đã xác nhận và khai báo chứng chỉ, không có GPA/CPA."
+      required: [studentId, dataRevision, curriculumId, transcriptStatus, attempts, certificates]
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên."
+        dataRevision:
+          type: string
+          description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
+          example: REV-2024604757-001
+        curriculumId:
+          type: string
+          description: "Mã CTĐT trong hệ thống."
+          example: curriculum-ktpm-haui-2024
+        transcriptStatus:
+          $ref: "#/components/schemas/TranscriptStatus"
+        attempts:
+          type: array
+          description: "Bảng điểm đã xác nhận."
+          items:
+            $ref: "#/components/schemas/TranscriptAttemptItem"
+        certificates:
+          type: array
+          description: "Khai báo chứng chỉ."
+          items:
+            $ref: "#/components/schemas/CertificateStatusItem"

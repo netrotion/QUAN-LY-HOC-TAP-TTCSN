@@ -1,12 +1,16 @@
 {
   "milestone": "contracts-v1",
-  "contractVersion": "1.0.0",
+  "contractVersion": "1.1.0",
   "owner": "TV5",
   "rule": "Một dữ liệu chỉ có một tên trường; cùng tên trường thì cùng kiểu JSON ở mọi schema. Thêm trường mới phải đăng ký ở đây trong cùng PR.",
   "fields": {
     "accumulatedCredits": {
       "type": "integer",
       "meaning": "Số tín chỉ đã tích lũy (đã đạt); dùng cho cả cấp sinh viên và từng điều kiện tốt nghiệp"
+    },
+    "achievedOn": {
+      "type": "string",
+      "meaning": "Ngày đạt chứng chỉ (yyyy-MM-dd)"
     },
     "actionDescription": {
       "type": "string",
@@ -36,6 +40,26 @@
       "type": "array<string>",
       "meaning": "Kế hoạch ACTIVE cũ bị lưu trữ khi kích hoạt bản mới"
     },
+    "attemptNumber": {
+      "type": "integer",
+      "meaning": "Lần học thứ mấy của học phần (1 = lần đầu)"
+    },
+    "attempts": {
+      "type": "array<object>",
+      "meaning": "Các lần học trong bảng điểm đã xác nhận"
+    },
+    "authenticated": {
+      "type": "boolean",
+      "meaning": "Phiên hiện tại đã đăng nhập"
+    },
+    "blocking": {
+      "type": "boolean",
+      "meaning": "Vấn đề chặn xác nhận phiên nhập"
+    },
+    "blockingIssueCount": {
+      "type": "integer",
+      "meaning": "Số vấn đề chặn trên các dòng included của phiên nhập"
+    },
     "category": {
       "type": "string",
       "meaning": "Nhóm điều kiện tốt nghiệp"
@@ -44,9 +68,17 @@
       "type": "string",
       "meaning": "Loại chứng chỉ (MOS, TOEIC...)"
     },
+    "certificates": {
+      "type": "array<object>",
+      "meaning": "Danh sách trạng thái chuẩn đầu ra phi tín chỉ"
+    },
     "checklist": {
       "type": "array<object>",
       "meaning": "Danh sách điều kiện tốt nghiệp"
+    },
+    "className": {
+      "type": "string",
+      "meaning": "Lớp sinh hoạt của sinh viên"
     },
     "clientTimestamp": {
       "type": "string",
@@ -54,7 +86,7 @@
     },
     "code": {
       "type": "string",
-      "meaning": "Mã lỗi nghiệp vụ (ApiErrorCode)"
+      "meaning": "Mã phân loại của đối tượng chứa (ApiErrorCode với lỗi, ImportIssueCode với vấn đề dòng nhập)"
     },
     "cohort": {
       "type": "string",
@@ -76,6 +108,14 @@
       "type": "string",
       "meaning": "Học kỳ vừa có kết quả để đối chiếu"
     },
+    "confidence": {
+      "type": "number",
+      "meaning": "Độ tin cậy OCR của dòng (0..1)"
+    },
+    "confirmedAt": {
+      "type": "string",
+      "meaning": "Thời điểm xác nhận (bảng điểm hoặc phiên nhập)"
+    },
     "contractMilestone": {
       "type": "string",
       "meaning": "Mốc phát hành contracts (contracts-v1)"
@@ -87,6 +127,10 @@
     "conversationId": {
       "type": "string",
       "meaning": "Mã hội thoại do client sinh (UUID)"
+    },
+    "corequisiteCourseCodes": {
+      "type": "array<string>",
+      "meaning": "Mã học phần song hành theo CTĐT"
     },
     "courseCode": {
       "type": "string",
@@ -121,8 +165,8 @@
       "meaning": "Thời điểm tạo"
     },
     "credits": {
-      "type": "integer",
-      "meaning": "Số tín chỉ của học phần"
+      "type": "number",
+      "meaning": "Số tín chỉ của học phần (số thực)"
     },
     "currentCpa": {
       "type": "number",
@@ -135,6 +179,14 @@
     "currentGradePoints": {
       "type": "number",
       "meaning": "Điểm thang 4 hiện tại của học phần"
+    },
+    "curriculumId": {
+      "type": "string",
+      "meaning": "Mã CTĐT trong hệ thống"
+    },
+    "curriculumName": {
+      "type": "string",
+      "meaning": "Tên CTĐT"
     },
     "dataRevision": {
       "type": "string",
@@ -152,6 +204,14 @@
       "type": "array<string>",
       "meaning": "Chi tiết bổ sung của lỗi"
     },
+    "documentCourseName": {
+      "type": "string",
+      "meaning": "Tên học phần đúng như in trên tài liệu tải lên"
+    },
+    "documentSummary": {
+      "type": "object",
+      "meaning": "Thông tin in trên tài liệu tải lên (chỉ để đối chiếu)"
+    },
     "eligible": {
       "type": "boolean",
       "meaning": "Đủ điều kiện đăng ký học phần"
@@ -159,6 +219,14 @@
     "eligibleForGraduation": {
       "type": "boolean",
       "meaning": "Đủ điều kiện tốt nghiệp theo dữ liệu hiện có (dự kiến)"
+    },
+    "email": {
+      "type": "string",
+      "meaning": "Email liên hệ của sinh viên"
+    },
+    "evidenceNote": {
+      "type": "string",
+      "meaning": "Ghi chú minh chứng do sinh viên khai báo"
     },
     "expectedGpa": {
       "type": "number",
@@ -172,25 +240,77 @@
       "type": "number",
       "meaning": "Điểm thang 4 giả định trong What-if"
     },
+    "expiresAt": {
+      "type": "string",
+      "meaning": "Hạn xem lại phiên nhập"
+    },
+    "faculty": {
+      "type": "string",
+      "meaning": "Trường/khoa quản lý CTĐT"
+    },
+    "fileName": {
+      "type": "string",
+      "meaning": "Tên file tải lên đã làm sạch"
+    },
+    "fileSizeBytes": {
+      "type": "integer",
+      "meaning": "Dung lượng file tải lên (byte)"
+    },
     "fullName": {
       "type": "string",
       "meaning": "Họ tên sinh viên"
+    },
+    "fullNameOnDocument": {
+      "type": "string",
+      "meaning": "Họ tên in trên tài liệu tải lên"
     },
     "gpa": {
       "type": "number",
       "meaning": "GPA học kỳ gần nhất thực tế (thang 4); null khi thiếu dữ liệu"
     },
+    "headerName": {
+      "type": "string",
+      "meaning": "Tên header gửi CSRF token"
+    },
+    "importSessionId": {
+      "type": "string",
+      "meaning": "Mã phiên nhập bảng điểm"
+    },
     "includeSummerSemesters": {
       "type": "boolean",
       "meaning": "Cho phép xếp kỳ hè (học vượt)"
+    },
+    "included": {
+      "type": "boolean",
+      "meaning": "Dòng nhập được đưa vào bảng điểm khi xác nhận"
+    },
+    "issues": {
+      "type": "array<object>",
+      "meaning": "Vấn đề phát hiện trên dòng nhập"
+    },
+    "knowledgeBlock": {
+      "type": "string",
+      "meaning": "Khối kiến thức của học phần trong CTĐT"
     },
     "label": {
       "type": "string",
       "meaning": "Nhãn nút bấm"
     },
+    "letterGrade": {
+      "type": "string",
+      "meaning": "Điểm chữ của một lần học, đúng như bảng điểm"
+    },
     "majorCode": {
       "type": "string",
       "meaning": "Mã chương trình/ngành"
+    },
+    "majorName": {
+      "type": "string",
+      "meaning": "Tên ngành"
+    },
+    "mandatory": {
+      "type": "boolean",
+      "meaning": "Học phần bắt buộc trong CTĐT"
     },
     "maxCreditsPerSemester": {
       "type": "integer",
@@ -202,7 +322,7 @@
     },
     "message": {
       "type": "string",
-      "meaning": "Thông điệp văn bản (câu hỏi trong ChatRequest; thông báo trong response)"
+      "meaning": "Thông điệp văn bản (câu hỏi trong ChatRequest; thông báo trong response/vấn đề)"
     },
     "messagesJson": {
       "type": "string",
@@ -222,11 +342,23 @@
     },
     "name": {
       "type": "string",
-      "meaning": "Tên điều kiện tốt nghiệp"
+      "meaning": "Tên điều kiện tốt nghiệp/chuẩn đầu ra"
     },
     "onTrack": {
       "type": "boolean",
       "meaning": "Còn đúng lộ trình"
+    },
+    "pageCount": {
+      "type": "integer",
+      "meaning": "Số trang tài liệu tải lên"
+    },
+    "parameterName": {
+      "type": "string",
+      "meaning": "Tên tham số form gửi CSRF token"
+    },
+    "password": {
+      "type": "string",
+      "meaning": "Mật khẩu tài khoản HaUI Advisor (chỉ gửi lên, không bao giờ trả về)"
     },
     "payloadJson": {
       "type": "string",
@@ -255,6 +387,14 @@
     "plans": {
       "type": "array<object>",
       "meaning": "Danh sách kế hoạch"
+    },
+    "prerequisiteCourseCodes": {
+      "type": "array<string>",
+      "meaning": "Mã học phần tiên quyết theo CTĐT"
+    },
+    "priorCourseCodes": {
+      "type": "array<string>",
+      "meaning": "Mã học phần học trước theo CTĐT"
     },
     "priority": {
       "type": "integer",
@@ -288,6 +428,14 @@
       "type": "integer",
       "meaning": "Số tín chỉ còn phải học"
     },
+    "reportedAccumulatedCredits": {
+      "type": "number",
+      "meaning": "Số tín chỉ tích lũy in trên tài liệu (tham khảo, không dùng để tính)"
+    },
+    "reportedCpa": {
+      "type": "number",
+      "meaning": "CPA in trên tài liệu (tham khảo, không dùng để tính)"
+    },
     "requestId": {
       "type": "string",
       "meaning": "Mã truy vết request"
@@ -308,13 +456,33 @@
       "type": "string",
       "meaning": "Chuẩn chứng chỉ yêu cầu"
     },
+    "requirementCode": {
+      "type": "string",
+      "meaning": "Mã chuẩn đầu ra phi tín chỉ"
+    },
     "riskLevel": {
       "type": "string",
       "meaning": "Mức rủi ro học vụ"
     },
+    "role": {
+      "type": "string",
+      "meaning": "Vai trò tài khoản (chỉ STUDENT)"
+    },
+    "rowId": {
+      "type": "string",
+      "meaning": "Mã dòng trong phiên nhập"
+    },
+    "rows": {
+      "type": "array<object>",
+      "meaning": "Các dòng của phiên nhập"
+    },
     "runtimeMode": {
       "type": "string",
       "meaning": "Chế độ runtime"
+    },
+    "score10": {
+      "type": "number",
+      "meaning": "Điểm hệ 10 của một lần học, đúng như bảng điểm"
     },
     "section": {
       "type": "string",
@@ -340,6 +508,18 @@
       "type": "array<object>",
       "meaning": "Danh sách học kỳ của kế hoạch/phương án"
     },
+    "sessionVersion": {
+      "type": "integer",
+      "meaning": "Phiên bản phiên nhập (optimistic lock)"
+    },
+    "sessions": {
+      "type": "array<object>",
+      "meaning": "Danh sách phiên nhập"
+    },
+    "source": {
+      "type": "string",
+      "meaning": "Nguồn dữ liệu CTĐT"
+    },
     "sourceId": {
       "type": "string",
       "meaning": "Mã nguồn trong RAG source catalog"
@@ -347,6 +527,14 @@
     "sourcePlanId": {
       "type": "string",
       "meaning": "Kế hoạch gốc mà bản này được tạo từ (kế thừa ACTIVE hoặc restore)"
+    },
+    "sourceText": {
+      "type": "string",
+      "meaning": "Dòng chữ gốc đọc từ tài liệu"
+    },
+    "sourceType": {
+      "type": "string",
+      "meaning": "Nguồn bảng điểm/phiên nhập (PDF_TEXT, PDF_SCANNED, IMAGE, MANUAL, DEMO_SEED)"
     },
     "sources": {
       "type": "array<object>",
@@ -358,7 +546,7 @@
     },
     "status": {
       "type": "string",
-      "meaning": "Trạng thái của đối tượng chứa (StudyPlanStatus với kế hoạch; chuỗi trạng thái với môn/chứng chỉ)"
+      "meaning": "Trạng thái của đối tượng chứa (StudyPlanStatus, ImportSessionStatus, CertificateStatus; chuỗi trạng thái với môn/CTĐT)"
     },
     "statusMessage": {
       "type": "string",
@@ -370,7 +558,15 @@
     },
     "studentId": {
       "type": "string",
-      "meaning": "Mã sinh viên (server điền từ TrustedStudentContext)"
+      "meaning": "Mã sinh viên, cũng là tên đăng nhập (trong request học vụ: server điền từ TrustedStudentContext)"
+    },
+    "studentIdOnDocument": {
+      "type": "string",
+      "meaning": "Mã sinh viên in trên tài liệu tải lên"
+    },
+    "suggestedSemester": {
+      "type": "integer",
+      "meaning": "Học kỳ gợi ý của học phần trong CTĐT"
     },
     "summary": {
       "type": "string",
@@ -408,6 +604,10 @@
       "type": "string",
       "meaning": "Tiêu đề (hội thoại, tài liệu nguồn)"
     },
+    "token": {
+      "type": "string",
+      "meaning": "Giá trị CSRF token"
+    },
     "totalCredits": {
       "type": "integer",
       "meaning": "Tổng tín chỉ của đối tượng chứa (học kỳ hoặc toàn kế hoạch); bằng tổng credits bên trong"
@@ -416,6 +616,10 @@
       "type": "integer",
       "meaning": "Tổng tín chỉ yêu cầu (CTĐT hoặc từng điều kiện tốt nghiệp)"
     },
+    "transcriptStatus": {
+      "type": "string",
+      "meaning": "Trạng thái bảng điểm chính thức (NONE, CONFIRMED)"
+    },
     "updatedAt": {
       "type": "string",
       "meaning": "Thời điểm cập nhật/lưu gần nhất"
@@ -423,6 +627,10 @@
     "valid": {
       "type": "boolean",
       "meaning": "Kế hoạch không có vi phạm"
+    },
+    "verification": {
+      "type": "string",
+      "meaning": "Nguồn trạng thái chứng chỉ (SELF_DECLARED, DEMO_SEED, NOT_DECLARED)"
     },
     "version": {
       "type": "string",
@@ -533,6 +741,42 @@
     "maxCourses": {
       "replacedBy": "maxSuggestions",
       "was": "request FE TV2/TV3 rankRetake"
+    },
+    "score4": {
+      "replacedBy": "letterGrade (điểm hệ 4 do AcademicFacade suy ra)",
+      "was": "mock FE TV2 transcript-ingest"
+    },
+    "gradePoint4": {
+      "replacedBy": "letterGrade (điểm hệ 4 do AcademicFacade suy ra)",
+      "was": "fixture TV4 student-profiles (nội bộ TV4)"
+    },
+    "extractedCpa": {
+      "replacedBy": "reportedCpa",
+      "was": "mock FE TV2 transcript-ingest"
+    },
+    "extractedAccumulatedCredits": {
+      "replacedBy": "reportedAccumulatedCredits",
+      "was": "mock FE TV2 transcript-ingest"
+    },
+    "sourceFileName": {
+      "replacedBy": "fileName",
+      "was": "mock FE TV2 transcript-ingest"
+    },
+    "isMandatory": {
+      "replacedBy": "mandatory",
+      "was": "fixture TV4 curriculum (nội bộ TV4)"
+    },
+    "priorCourses": {
+      "replacedBy": "priorCourseCodes",
+      "was": "fixture TV4 curriculum (nội bộ TV4)"
+    },
+    "corequisites": {
+      "replacedBy": "corequisiteCourseCodes",
+      "was": "fixture TV4 curriculum (nội bộ TV4)"
+    },
+    "username": {
+      "replacedBy": "studentId",
+      "was": "tên đăng nhập = mã sinh viên"
     }
   },
   "javaBridges": [
@@ -544,7 +788,7 @@
         "tv4-academic AcademicSpecV1Test",
         "tv4-academic AcademicFacadeHarnessTest"
       ],
-      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+      "removeIn": "2.0.0 (sau khi owner tương ứng đổi sang tên mới; gỡ là thay đổi phá vỡ)"
     },
     {
       "member": "CalculateTargetGradesResponse#getFeasibilityWarnings",
@@ -552,7 +796,7 @@
       "usedBy": [
         "tv4-academic AcademicSpecV1Test"
       ],
-      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+      "removeIn": "2.0.0 (sau khi owner tương ứng đổi sang tên mới; gỡ là thay đổi phá vỡ)"
     },
     {
       "member": "ChatPlanProposal#getSuggestedSemesters",
@@ -560,7 +804,7 @@
       "usedBy": [
         "tv1-ai AdvisorFacadeTest"
       ],
-      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+      "removeIn": "2.0.0 (sau khi owner tương ứng đổi sang tên mới; gỡ là thay đổi phá vỡ)"
     },
     {
       "member": "GenerateStudyPlanResponse#getPlanId",
@@ -568,7 +812,7 @@
       "usedBy": [
         "tv1-ai DefaultAdvisorFacade"
       ],
-      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+      "removeIn": "2.0.0 (sau khi owner tương ứng đổi sang tên mới; gỡ là thay đổi phá vỡ)"
     },
     {
       "member": "GenerateStudyPlanResponse#<init>(8)",
@@ -579,7 +823,7 @@
         "tv4-academic DefaultAcademicFacade",
         "tv4-academic StudyPlanScheduler"
       ],
-      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+      "removeIn": "2.0.0 (sau khi owner tương ứng đổi sang tên mới; gỡ là thay đổi phá vỡ)"
     },
     {
       "member": "GraduationAuditResponse#getTotalCreditsEarned",
@@ -587,7 +831,7 @@
       "usedBy": [
         "tv4-academic AcademicSpecV1Test"
       ],
-      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+      "removeIn": "2.0.0 (sau khi owner tương ứng đổi sang tên mới; gỡ là thay đổi phá vỡ)"
     },
     {
       "member": "RetakeCourseRecommendation#getPotentialCpaGain",
@@ -597,7 +841,7 @@
         "tv4-academic AcademicSpecV1Test",
         "tv4-academic AcademicFacadeHarnessTest"
       ],
-      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+      "removeIn": "2.0.0 (sau khi owner tương ứng đổi sang tên mới; gỡ là thay đổi phá vỡ)"
     },
     {
       "member": "SimulateGradesResponse#getCpaDifference",
@@ -606,7 +850,7 @@
         "tv4-academic AcademicSpecV1Test",
         "tv4-academic AcademicFacadeHarnessTest"
       ],
-      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+      "removeIn": "2.0.0 (sau khi owner tương ứng đổi sang tên mới; gỡ là thay đổi phá vỡ)"
     },
     {
       "member": "SimulateGradesResponse#getProjectedNewCpa",
@@ -615,7 +859,7 @@
         "tv4-academic AcademicSpecV1Test",
         "tv4-academic AcademicFacadeHarnessTest"
       ],
-      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+      "removeIn": "2.0.0 (sau khi owner tương ứng đổi sang tên mới; gỡ là thay đổi phá vỡ)"
     },
     {
       "member": "SimulateGradesResponse#getProjectedSemesterGpa",
@@ -623,7 +867,37 @@
       "usedBy": [
         "tv4-academic AcademicSpecV1Test"
       ],
-      "removeIn": "contracts-v1.1 (sau khi owner tương ứng đổi sang tên mới)"
+      "removeIn": "2.0.0 (sau khi owner tương ứng đổi sang tên mới; gỡ là thay đổi phá vỡ)"
+    }
+  ],
+  "legacyJavaTypes": [
+    {
+      "member": "PlannedCourseItem.credits",
+      "javaType": "Integer",
+      "jsonType": "number",
+      "target": "BigDecimal",
+      "removeIn": "2.0.0"
+    },
+    {
+      "member": "SimulatedCourseGrade.credits",
+      "javaType": "Integer",
+      "jsonType": "number",
+      "target": "BigDecimal",
+      "removeIn": "2.0.0"
+    },
+    {
+      "member": "RetakeCourseRecommendation.credits",
+      "javaType": "Integer",
+      "jsonType": "number",
+      "target": "BigDecimal",
+      "removeIn": "2.0.0"
+    },
+    {
+      "member": "TargetCourseGradeRequirement.credits",
+      "javaType": "Integer",
+      "jsonType": "number",
+      "target": "BigDecimal",
+      "removeIn": "2.0.0"
     }
   ]
 }

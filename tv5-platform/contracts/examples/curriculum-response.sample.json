@@ -1,0 +1,142 @@
+{
+  "curriculumId": "curriculum-ktpm-haui-2024",
+  "curriculumName": "Chương trình đào tạo Kỹ sư Kỹ thuật phần mềm - HaUI (Khóa 2024)",
+  "majorCode": "CT1085",
+  "majorName": "Kỹ thuật phần mềm",
+  "faculty": "Trường Công nghệ thông tin và Truyền thông - Đại học Công nghiệp Hà Nội",
+  "totalCreditsRequired": 150,
+  "status": "VERIFIED_GROUND_TRUTH",
+  "source": "Cổng thông tin đào tạo sv.haui.edu.vn",
+  "courses": [
+    {
+      "courseCode": "IT6015",
+      "courseName": "Kỹ thuật lập trình",
+      "credits": 3,
+      "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+      "suggestedSemester": 2,
+      "mandatory": false,
+      "prerequisiteCourseCodes": [],
+      "priorCourseCodes": [
+        "ME6042"
+      ],
+      "corequisiteCourseCodes": []
+    },
+    {
+      "courseCode": "IT6002",
+      "courseName": "Cấu trúc dữ liệu và giải thuật",
+      "credits": 3,
+      "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+      "suggestedSemester": 3,
+      "mandatory": false,
+      "prerequisiteCourseCodes": [],
+      "priorCourseCodes": [
+        "IT6015",
+        "SC6208"
+      ],
+      "corequisiteCourseCodes": []
+    },
+    {
+      "courseCode": "IT6044",
+      "courseName": "Ứng dụng thuật toán",
+      "credits": 3,
+      "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+      "suggestedSemester": 4,
+      "mandatory": false,
+      "prerequisiteCourseCodes": [],
+      "priorCourseCodes": [
+        "IT6002",
+        "IT6015"
+      ],
+      "corequisiteCourseCodes": []
+    },
+    {
+      "courseCode": "IT6067",
+      "courseName": "Kiến trúc máy tính và hệ điều hành",
+      "credits": 3,
+      "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+      "suggestedSemester": 3,
+      "mandatory": false,
+      "prerequisiteCourseCodes": [],
+      "priorCourseCodes": [
+        "IT6015"
+      ],
+      "corequisiteCourseCodes": []
+    },
+    {
+      "courseCode": "IT6083",
+      "courseName": "Mạng máy tính",
+      "credits": 3,
+      "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+      "suggestedSemester": 5,
+      "mandatory": false,
+      "prerequisiteCourseCodes": [],
+      "priorCourseCodes": [
+        "IT6067",
+        "IT6203"
+      ],
+      "corequisiteCourseCodes": []
+    },
+    {
+      "courseCode": "LP6010",
+      "courseName": "Triết học Mác-Lênin",
+      "credits": 3,
+      "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+      "suggestedSemester": 1,
+      "mandatory": false,
+      "prerequisiteCourseCodes": [],
+      "priorCourseCodes": [],
+      "corequisiteCourseCodes": []
+    },
+    {
+      "courseCode": "LP6011",
+      "courseName": "Kinh tế chính trị Mác-Lênin",
+      "credits": 2,
+      "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+      "suggestedSemester": 2,
+      "mandatory": false,
+      "prerequisiteCourseCodes": [],
+      "priorCourseCodes": [
+        "LP6010"
+      ],
+      "corequisiteCourseCodes": []
+    },
+    {
+      "courseCode": "LP6004",
+      "courseName": "Tư tưởng Hồ Chí Minh",
+      "credits": 2,
+      "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+      "suggestedSemester": 6,
+      "mandatory": false,
+      "prerequisiteCourseCodes": [],
+      "priorCourseCodes": [
+        "LP6010",
+        "LP6011"
+      ],
+      "corequisiteCourseCodes": []
+    },
+    {
+      "courseCode": "DC6006",
+      "courseName": "Quân sự chung",
+      "credits": 1.5,
+      "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+      "suggestedSemester": 1,
+      "mandatory": false,
+      "prerequisiteCourseCodes": [],
+      "priorCourseCodes": [],
+      "corequisiteCourseCodes": []
+    },
+    {
+      "courseCode": "IT6096",
+      "courseName": "Thiết kế phần mềm",
+      "credits": 3,
+      "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+      "suggestedSemester": 5,
+      "mandatory": false,
+      "prerequisiteCourseCodes": [],
+      "priorCourseCodes": [
+        "IT6097"
+      ],
+      "corequisiteCourseCodes": []
+    }
+  ]
+}

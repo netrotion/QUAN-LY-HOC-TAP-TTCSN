@@ -1,0 +1,217 @@
+{
+  "studentId": "2024604757",
+  "transcriptStatus": "CONFIRMED",
+  "sourceType": "DEMO_SEED",
+  "importSessionId": null,
+  "confirmedAt": "2026-10-01T08:00:00Z",
+  "dataRevision": "REV-2024604757-001",
+  "attempts": [
+    {
+      "courseCode": "BS6001",
+      "courseName": "Đại số tuyến tính",
+      "credits": 3,
+      "semesterCode": "2024_1",
+      "attemptNumber": 1,
+      "score10": 7,
+      "letterGrade": "B"
+    },
+    {
+      "courseCode": "BS6002",
+      "courseName": "Giải tích",
+      "credits": 3,
+      "semesterCode": "2024_1",
+      "attemptNumber": 1,
+      "score10": 7,
+      "letterGrade": "B"
+    },
+    {
+      "courseCode": "DC6004",
+      "courseName": "Đường lối QP&AN của ĐCS Việt Nam",
+      "credits": 3,
+      "semesterCode": "2024_1",
+      "attemptNumber": 1,
+      "score10": 8.2,
+      "letterGrade": "B+"
+    },
+    {
+      "courseCode": "DC6005",
+      "courseName": "Công tác quốc phòng và an ninh",
+      "credits": 2,
+      "semesterCode": "2024_1",
+      "attemptNumber": 1,
+      "score10": 8,
+      "letterGrade": "B+"
+    },
+    {
+      "courseCode": "DC6006",
+      "courseName": "Quân sự chung",
+      "credits": 1.5,
+      "semesterCode": "2024_1",
+      "attemptNumber": 1,
+      "score10": 8.7,
+      "letterGrade": "A"
+    },
+    {
+      "courseCode": "DC6007",
+      "courseName": "Kỹ thuật chiến đấu bộ binh và chiến thuật",
+      "credits": 2,
+      "semesterCode": "2024_1",
+      "attemptNumber": 1,
+      "score10": 8.7,
+      "letterGrade": "A"
+    },
+    {
+      "courseCode": "IT6011",
+      "courseName": "Nhập môn về kỹ thuật",
+      "credits": 2,
+      "semesterCode": "2024_1",
+      "attemptNumber": 1,
+      "score10": 7.9,
+      "letterGrade": "B+"
+    },
+    {
+      "courseCode": "IT6015",
+      "courseName": "Kỹ thuật lập trình",
+      "credits": 3,
+      "semesterCode": "2024_1",
+      "attemptNumber": 1,
+      "score10": 9.3,
+      "letterGrade": "A"
+    },
+    {
+      "courseCode": "LP6010",
+      "courseName": "Triết học Mác-Lênin",
+      "credits": 3,
+      "semesterCode": "2024_1",
+      "attemptNumber": 1,
+      "score10": 5.4,
+      "letterGrade": "D+"
+    },
+    {
+      "courseCode": "BS6018",
+      "courseName": "Giao tiếp liên văn hóa",
+      "credits": 2,
+      "semesterCode": "2024_2",
+      "attemptNumber": 1,
+      "score10": 6.4,
+      "letterGrade": "C+"
+    },
+    {
+      "courseCode": "IT6035",
+      "courseName": "Toán rời rạc",
+      "credits": 3,
+      "semesterCode": "2024_2",
+      "attemptNumber": 1,
+      "score10": 6.6,
+      "letterGrade": "C+"
+    },
+    {
+      "courseCode": "LP6004",
+      "courseName": "Tư tưởng Hồ Chí Minh",
+      "credits": 2,
+      "semesterCode": "2024_2",
+      "attemptNumber": 1,
+      "score10": 0,
+      "letterGrade": "F"
+    },
+    {
+      "courseCode": "LP6011",
+      "courseName": "Kinh tế chính trị Mác-Lênin",
+      "credits": 2,
+      "semesterCode": "2024_2",
+      "attemptNumber": 1,
+      "score10": 5.6,
+      "letterGrade": "C"
+    },
+    {
+      "courseCode": "LP6012",
+      "courseName": "Chủ nghĩa xã hội khoa học",
+      "credits": 2,
+      "semesterCode": "2024_2",
+      "attemptNumber": 1,
+      "score10": 5.3,
+      "letterGrade": "D+"
+    },
+    {
+      "courseCode": "IT6002",
+      "courseName": "Cấu trúc dữ liệu và giải thuật",
+      "credits": 3,
+      "semesterCode": "2025_1",
+      "attemptNumber": 1,
+      "score10": 6.6,
+      "letterGrade": "C+"
+    },
+    {
+      "courseCode": "IT6067",
+      "courseName": "Kiến trúc máy tính và hệ điều hành",
+      "credits": 3,
+      "semesterCode": "2025_1",
+      "attemptNumber": 1,
+      "score10": 7.7,
+      "letterGrade": "B+"
+    },
+    {
+      "courseCode": "IT6082",
+      "courseName": "Nhập môn công nghệ phần mềm",
+      "credits": 3,
+      "semesterCode": "2025_1",
+      "attemptNumber": 1,
+      "score10": 8.8,
+      "letterGrade": "A"
+    },
+    {
+      "courseCode": "IT6120",
+      "courseName": "Lập trình hướng đối tượng",
+      "credits": 3,
+      "semesterCode": "2025_1",
+      "attemptNumber": 1,
+      "score10": 8.9,
+      "letterGrade": "A"
+    },
+    {
+      "courseCode": "IT6126",
+      "courseName": "Hệ thống cơ sở dữ liệu",
+      "credits": 4,
+      "semesterCode": "2025_1",
+      "attemptNumber": 1,
+      "score10": 8.5,
+      "letterGrade": "A"
+    },
+    {
+      "courseCode": "IT6017",
+      "courseName": "Lập trình .NET",
+      "credits": 3,
+      "semesterCode": "2025_2",
+      "attemptNumber": 1,
+      "score10": 7.8,
+      "letterGrade": "B+"
+    },
+    {
+      "courseCode": "IT6019",
+      "courseName": "Lập trình Java",
+      "credits": 3,
+      "semesterCode": "2025_2",
+      "attemptNumber": 1,
+      "score10": 8.4,
+      "letterGrade": "B+"
+    },
+    {
+      "courseCode": "IT6094",
+      "courseName": "Trí tuệ nhân tạo",
+      "credits": 3,
+      "semesterCode": "2025_2",
+      "attemptNumber": 1,
+      "score10": 9.1,
+      "letterGrade": "A"
+    },
+    {
+      "courseCode": "IT6097",
+      "courseName": "Phân tích và đặc tả yêu cầu phần mềm",
+      "credits": 3,
+      "semesterCode": "2025_2",
+      "attemptNumber": 1,
+      "score10": 8.5,
+      "letterGrade": "A"
+    }
+  ]
+}

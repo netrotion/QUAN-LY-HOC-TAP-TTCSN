@@ -1,0 +1,61 @@
+{
+  "sessionVersion": 1,
+  "rows": [
+    {
+      "rowId": "row-001",
+      "sourceText": null,
+      "courseCode": "IT6015",
+      "courseName": null,
+      "documentCourseName": null,
+      "credits": null,
+      "semesterCode": "2024_1",
+      "score10": 9.3,
+      "letterGrade": "A",
+      "included": true,
+      "confidence": null,
+      "issues": []
+    },
+    {
+      "rowId": "row-002",
+      "sourceText": null,
+      "courseCode": "IT6002",
+      "courseName": null,
+      "documentCourseName": null,
+      "credits": null,
+      "semesterCode": "2025_1",
+      "score10": 6.8,
+      "letterGrade": "C+",
+      "included": true,
+      "confidence": null,
+      "issues": []
+    },
+    {
+      "rowId": "row-003",
+      "sourceText": null,
+      "courseCode": "IT6035",
+      "courseName": null,
+      "documentCourseName": null,
+      "credits": null,
+      "semesterCode": "2024_2",
+      "score10": 6.6,
+      "letterGrade": "C+",
+      "included": true,
+      "confidence": null,
+      "issues": []
+    },
+    {
+      "rowId": "row-004",
+      "sourceText": null,
+      "courseCode": "IT6126",
+      "courseName": null,
+      "documentCourseName": null,
+      "credits": null,
+      "semesterCode": "2026_1",
+      "score10": null,
+      "letterGrade": null,
+      "included": true,
+      "confidence": null,
+      "issues": []
+    }
+  ]
+}

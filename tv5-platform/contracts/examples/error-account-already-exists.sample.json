@@ -1,0 +1,7 @@
+{
+  "code": "ACCOUNT_ALREADY_EXISTS",
+  "message": "Mã sinh viên này đã có tài khoản.",
+  "requestId": "req-2026-10-14-0004",
+  "timestamp": "2026-10-14T02:03:00Z",
+  "details": []
+}

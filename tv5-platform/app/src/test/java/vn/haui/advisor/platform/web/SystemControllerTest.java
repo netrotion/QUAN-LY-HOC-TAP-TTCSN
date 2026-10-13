@@ -23,13 +23,13 @@ public class SystemControllerTest {
     void testBootstrapEndpointReturnsCorrectInfoWithoutSecrets() throws Exception {
         mockMvc.perform(get("/api/v1/system/bootstrap"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.contractVersion", is("1.0.0")))
+                .andExpect(jsonPath("$.contractVersion", is("1.1.0")))
                 .andExpect(jsonPath("$.contractMilestone", is("contracts-v1")))
-                .andExpect(jsonPath("$.runtimeMode", is("in-memory")))
+                .andExpect(jsonPath("$.runtimeMode", is("database")))
                 .andExpect(jsonPath("$.modules.contracts", is("READY")))
                 .andExpect(jsonPath("$.modules.academic", is("NOT_IMPLEMENTED")))
                 .andExpect(jsonPath("$.modules.advisor", is("NOT_IMPLEMENTED")))
-                .andExpect(jsonPath("$.modules.persistence", is("IN_MEMORY")))
+                .andExpect(jsonPath("$.modules.persistence", is("PARTIAL")))
                 // Tuyệt đối không để lộ secrets, passwords, env
                 .andExpect(jsonPath("$.password").doesNotExist())
                 .andExpect(jsonPath("$.secret").doesNotExist())
@@ -48,6 +48,7 @@ public class SystemControllerTest {
     @Test
     void testUnauthenticatedAccessToProtectedEndpointsIsBlocked() throws Exception {
         mockMvc.perform(get("/api/v1/academic/status"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code", is("UNAUTHENTICATED")));
     }
 }

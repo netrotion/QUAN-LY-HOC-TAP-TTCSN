@@ -1,0 +1,9 @@
+{
+  "code": "REQUIREMENT_NOT_FOUND",
+  "message": "Không có chuẩn đầu ra với mã này.",
+  "requestId": "req-2026-10-14-0009",
+  "timestamp": "2026-10-14T02:31:00Z",
+  "details": [
+    "requirementCode: TOEIC_900"
+  ]
+}

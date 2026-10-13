@@ -1,0 +1,46 @@
+{
+  "studentId": "2024604757",
+  "transcriptStatus": "CONFIRMED",
+  "sourceType": "PDF_TEXT",
+  "importSessionId": "imp-2024604757-20261014-01",
+  "confirmedAt": "2026-10-14T02:16:00Z",
+  "dataRevision": "REV-2024604757-002",
+  "attempts": [
+    {
+      "courseCode": "IT6015",
+      "courseName": "Kỹ thuật lập trình",
+      "credits": 3,
+      "semesterCode": "2024_1",
+      "attemptNumber": 1,
+      "score10": 9.3,
+      "letterGrade": "A"
+    },
+    {
+      "courseCode": "IT6035",
+      "courseName": "Toán rời rạc",
+      "credits": 3,
+      "semesterCode": "2024_2",
+      "attemptNumber": 1,
+      "score10": 6.6,
+      "letterGrade": "C+"
+    },
+    {
+      "courseCode": "IT6002",
+      "courseName": "Cấu trúc dữ liệu và giải thuật",
+      "credits": 3,
+      "semesterCode": "2025_1",
+      "attemptNumber": 1,
+      "score10": 6.8,
+      "letterGrade": "C+"
+    },
+    {
+      "courseCode": "IT6126",
+      "courseName": "Hệ thống cơ sở dữ liệu",
+      "credits": 4,
+      "semesterCode": "2026_1",
+      "attemptNumber": 1,
+      "score10": null,
+      "letterGrade": null
+    }
+  ]
+}

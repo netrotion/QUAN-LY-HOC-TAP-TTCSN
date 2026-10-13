@@ -185,10 +185,13 @@ class ContractsSerializationTest {
     @Test
     @DisplayName("Mọi fixture dùng cùng sinh viên demo và dataRevision hợp lệ")
     void fixturesShareOneStudentWorld() throws Exception {
-        JsonNode demo = ContractTestSupport.manifest().get("demoStudent");
+        JsonNode manifest = ContractTestSupport.manifest();
         Map<String, String> revisionByStudent = new HashMap<>();
-        revisionByStudent.put(demo.get("studentId").asText(), demo.get("dataRevision").asText());
-        revisionByStudent.put("std-missing-unknown-v1", "REV-std-missing-unknown-v1-001");
+        revisionByStudent.put(manifest.get("demoStudent").get("studentId").asText(),
+                manifest.get("demoStudent").get("dataRevision").asText());
+        for (JsonNode other : manifest.get("otherStudents")) {
+            revisionByStudent.put(other.get("studentId").asText(), other.get("dataRevision").asText(null));
+        }
 
         List<String> problems = new ArrayList<>();
         for (ContractTestSupport.SampleRef sample : ContractTestSupport.manifestSamples()) {

@@ -79,6 +79,11 @@ class ContractNamingConsistencyTest {
     void dtoPropertyTypesMatchOpenApiTypes() throws Exception {
         Map<String, Map<String, Object>> schemas = ContractTestSupport.openApiSchemas();
         List<String> problems = new ArrayList<>();
+        // JSON number nhưng Java còn Integer (DTO 1.0.0), chỉ chấp nhận khi đã ghi trong glossary-v1.json#legacyJavaTypes
+        Set<String> legacyIntegers = new HashSet<>();
+        for (JsonNode legacy : ContractTestSupport.glossary().path("legacyJavaTypes")) {
+            legacyIntegers.add(legacy.get("member").asText());
+        }
 
         for (Class<?> dto : dtoClasses()) {
             if (dto.isEnum() || !schemas.containsKey(dto.getSimpleName())) {
@@ -93,12 +98,17 @@ class ContractNamingConsistencyTest {
                 }
                 String expected = openApiType(propertySchema);
                 String actual = javaType(property.getPrimaryType());
+                String member = dto.getSimpleName() + "." + property.getName();
+                if ("number".equals(expected) && "integer".equals(actual) && legacyIntegers.remove(member)) {
+                    continue;
+                }
                 if (!expected.equals(actual)) {
                     problems.add(dto.getSimpleName() + "." + property.getName()
                             + ": Java " + actual + " ≠ OpenAPI " + expected);
                 }
             }
         }
+        legacyIntegers.forEach(member -> problems.add(member + ": ghi trong legacyJavaTypes nhưng không còn lệch kiểu"));
         assertThat(problems).isEmpty();
     }
 

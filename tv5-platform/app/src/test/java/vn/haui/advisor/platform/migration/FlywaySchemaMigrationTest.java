@@ -12,11 +12,11 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("Flyway Schema Migration Test (V1 & V2 Comprehensive Domain)")
+@DisplayName("Flyway Schema Migration Test (V1, V2, V3)")
 public class FlywaySchemaMigrationTest {
 
     @Test
-    @DisplayName("Should successfully apply V1 and V2 migrations on test database and create all required tables")
+    @DisplayName("Should apply V1-V3 migrations on test database and create all required tables")
     void shouldApplyAllMigrationsSuccessfullyOnTestDatabase() throws Exception {
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:migration_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH");
@@ -31,7 +31,7 @@ public class FlywaySchemaMigrationTest {
 
         var result = flyway.migrate();
         assertTrue(result.success, "Flyway migration must report success");
-        assertEquals(2, result.migrationsExecuted, "Expected V1 and V2 migrations to be executed");
+        assertEquals(3, result.migrationsExecuted, "Expected V1, V2 and V3 migrations to be executed");
 
         // Verify that all core entities from PRD §8 & Task 2.2d exist in DB
         String[] requiredTables = {
@@ -54,7 +54,8 @@ public class FlywaySchemaMigrationTest {
                 "plan_actions",
                 "conversations",
                 "conversation_messages",
-                "knowledge_sources"
+                "knowledge_sources",
+                "curriculum_courses"
         };
 
         try (Connection conn = ds.getConnection();
@@ -63,6 +64,16 @@ public class FlywaySchemaMigrationTest {
                 try (ResultSet rs = stmt.executeQuery("SELECT count(*) FROM " + tableName)) {
                     assertTrue(rs.next(), "Table " + tableName + " must be queryable");
                 }
+            }
+
+            // V3: hồ sơ không còn lưu GPA/CPA (chỉ AcademicFacade tính), chuẩn đầu ra phi tín chỉ đã có
+            try (ResultSet rs = stmt.executeQuery("SELECT count(*) FROM information_schema.columns WHERE table_name = 'student_records' AND column_name IN ('gpa', 'cpa', 'accumulated_credits')")) {
+                assertTrue(rs.next());
+                assertEquals(0, rs.getInt(1), "student_records must not store derived GPA/CPA");
+            }
+            try (ResultSet rs = stmt.executeQuery("SELECT count(*) FROM audit_requirements")) {
+                assertTrue(rs.next());
+                assertEquals(4, rs.getInt(1), "Expected 4 non-credit graduation requirements");
             }
         }
     }

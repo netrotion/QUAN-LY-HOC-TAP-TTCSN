@@ -1,0 +1,7 @@
+{
+  "code": "ACCESS_DENIED",
+  "message": "Yêu cầu bị từ chối: thiếu CSRF token hoặc tài khoản không có quyền sinh viên.",
+  "requestId": "req-2026-10-14-0003",
+  "timestamp": "2026-10-14T02:02:00Z",
+  "details": []
+}

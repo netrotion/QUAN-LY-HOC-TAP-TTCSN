@@ -1,0 +1,19 @@
+{
+  "importSessionId": "imp-2024604757-20261014-02",
+  "status": "MANUAL_ENTRY_REQUIRED",
+  "sourceType": "MANUAL",
+  "fileName": null,
+  "fileSizeBytes": null,
+  "pageCount": null,
+  "sessionVersion": 1,
+  "rows": [],
+  "documentSummary": null,
+  "warnings": [
+    "Nhập từng học phần đã học, sau đó xem lại và xác nhận."
+  ],
+  "blockingIssueCount": 0,
+  "createdAt": "2026-10-14T02:20:00Z",
+  "updatedAt": "2026-10-14T02:20:00Z",
+  "expiresAt": "2026-10-15T02:20:00Z",
+  "confirmedAt": null
+}

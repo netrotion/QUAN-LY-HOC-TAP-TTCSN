@@ -63,6 +63,20 @@ class FakeProvidersTest {
     }
 
     @Test
+    @DisplayName("FixtureStudentAcademicRecordProvider: sinh viên demo có bảng điểm, sinh viên khác hồ sơ trống")
+    void fixtureStudentAcademicRecordProvider() {
+        FixtureStudentAcademicRecordProvider provider = new FixtureStudentAcademicRecordProvider();
+        StudentAcademicRecord demo = provider.getAcademicRecord(ContractFixtures.DEMO_STUDENT_ID);
+        assertThat(demo.getTranscriptStatus()).isEqualTo(TranscriptStatus.CONFIRMED);
+        assertThat(demo.getAttempts()).hasSize(23);
+        assertThat(demo.getCertificates()).hasSize(4);
+
+        StudentAcademicRecord other = provider.getAcademicRecord("2024610001");
+        assertThat(other.getTranscriptStatus()).isEqualTo(TranscriptStatus.NONE);
+        assertThat(other.getAttempts()).isEmpty();
+    }
+
+    @Test
     @DisplayName("FixtureAdvisorFacade trả chat-response fixture có planProposal.semesters")
     void fixtureAdvisorFacade() {
         ChatResponse response = new FixtureAdvisorFacade().chat(new ChatRequest(), new TrustedStudentContext());
