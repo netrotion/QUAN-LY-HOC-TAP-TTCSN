@@ -1,5 +1,5 @@
 import { StudyPlannerPage } from './pages/StudyPlannerPage.js';
-import { ChatAdvisorPage } from './pages/ChatAdvisorPage.js';
+import { ChatAdvisorPage, generateMockChatResponse } from './pages/ChatAdvisorPage.js';
 import { WhatIfSimulatorPage } from './pages/WhatIfSimulatorPage.js';
 import { StudentProfilePage } from './pages/StudentProfilePage.js';
 import { PlanHistoryModal } from './components/PlanHistoryModal.js';
@@ -68,7 +68,8 @@ export {
   PlanHistoryModal,
   CurriculumTreeModal,
   plannerStore,
-  PLAN_STATUSES
+  PLAN_STATUSES,
+  generateMockChatResponse
 };
 
 export const PACKAGE_INFO = {

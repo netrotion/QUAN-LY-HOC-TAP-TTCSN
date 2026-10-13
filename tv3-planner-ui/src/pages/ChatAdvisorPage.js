@@ -12,6 +12,113 @@ const QUICK_PROMPTS_MAN_2 = Object.freeze([
 ]);
 
 /**
+ * Tạo phản hồi mô phỏng cho AI Advisor Chat khi chưa kết nối API Backend Spring Boot.
+ * Tuân thủ quy tắc F23-008:
+ * - Câu hỏi tra cứu quy chế học vụ thuần túy (Kịch bản P04): planProposal: null, trích dẫn điều khoản quy chế, không ép mở Planner.
+ * - Câu hỏi yêu cầu lập lộ trình / kế hoạch học tập (Kịch bản P05): gắn planProposal kèm thẻ đề xuất phương án.
+ *
+ * @param {string} queryText - Nội dung tin nhắn của sinh viên
+ * @param {Object} [plan] - Bản kế hoạch hiện hành từ plannerStore (nếu có)
+ * @returns {Object} { answer, sources, planProposal }
+ */
+export function generateMockChatResponse(queryText, plan = null) {
+  const trimmed = (queryText || '').trim();
+  const lower = trimmed.toLowerCase();
+
+  // 1. Nhận diện ý định lập lộ trình / kế hoạch học tập (Kịch bản P05)
+  const isPlanRequest =
+    lower.includes('lộ trình') ||
+    lower.includes('kế hoạch') ||
+    lower.includes('học vượt') ||
+    lower.includes('lên lịch') ||
+    lower.includes('lập lịch') ||
+    lower.includes('phân bổ') ||
+    lower.includes('đề xuất môn') ||
+    lower.includes('phương án');
+
+  // 2. Nhận diện câu hỏi tra cứu quy chế / quy định / điều kiện học vụ thuần túy (Kịch bản P04)
+  const isRegulationQuery =
+    lower.includes('quy chế') ||
+    lower.includes('quy định') ||
+    lower.includes('cảnh báo') ||
+    lower.includes('thôi học') ||
+    lower.includes('chuẩn đầu ra') ||
+    lower.includes('điều kiện tốt nghiệp') ||
+    lower.includes('thang điểm') ||
+    lower.includes('gpa') ||
+    lower.includes('cpa') ||
+    lower.includes('cách tính') ||
+    lower.includes('rút học phần') ||
+    lower.includes('tối đa bao nhiêu tín chỉ') ||
+    lower.includes('hạn mức tín chỉ') ||
+    lower.includes('điều kiện') ||
+    lower.includes('tiêu chuẩn');
+
+  // Quy tắc F23-008: Nếu là câu hỏi quy chế hoặc KHÔNG có yêu cầu lập lộ trình -> KHÔNG ép mở Planner
+  if (!isPlanRequest || (isRegulationQuery && !lower.includes('lộ trình') && !lower.includes('kế hoạch') && !lower.includes('lập lịch') && !lower.includes('lên lịch') && !lower.includes('phương án'))) {
+    let answerText = `[AI Advisor]: Theo Quy chế đào tạo tín chỉ Đại học Công nghiệp Hà Nội (HaUI):`;
+    let sources = [
+      {
+        title: 'Quy chế đào tạo trình độ đại học theo hệ thống tín chỉ - HaUI',
+        section: 'Quy định đào tạo & Quản lý học vụ'
+      }
+    ];
+
+    if (lower.includes('cảnh báo')) {
+      answerText = `[AI Advisor]: Căn cứ Điều 16 Quy chế đào tạo HaUI (REG-HAUI-04 / BR-02):\n` +
+        `• Cảnh báo học vụ mức 1: Áp dụng khi điểm trung bình chung tích lũy (CPA) < 1.20 (Năm 1), < 1.40 (Năm 2), < 1.60 (Năm 3), < 1.80 (Năm 4 trở đi), hoặc tổng số tín chỉ nợ F vượt quá 24 tín chỉ.\n` +
+        `• Giới hạn khối lượng: Sinh viên bị cảnh báo học vụ chỉ được đăng ký tối đa 14 tín chỉ trong học kỳ chính tiếp theo để tập trung cải thiện kết quả.`;
+      sources = [
+        {
+          title: 'Quy chế đào tạo tín chỉ Đại học Công nghiệp Hà Nội (HaUI)',
+          section: 'Điều 16 - Cảnh báo kết quả học tập & Buộc thôi học (REG-HAUI-04)'
+        }
+      ];
+    } else if (lower.includes('tín chỉ') || lower.includes('tối đa')) {
+      answerText = `[AI Advisor]: Căn cứ Điều 14 Quy chế đào tạo HaUI (REG-HAUI-01 / BR-03, BR-04):\n` +
+        `• Học kỳ chính: Sinh viên được đăng ký tối thiểu 10 tín chỉ và tối đa 24 tín chỉ (đối với sinh viên có học lực bình thường).\n` +
+        `• Học kỳ hè: Sinh viên được đăng ký tối đa 12 tín chỉ để học lại hoặc học vượt.`;
+      sources = [
+        {
+          title: 'Quy chế đào tạo tín chỉ Đại học Công nghiệp Hà Nội (HaUI)',
+          section: 'Điều 14 - Đăng ký khối lượng học tập (REG-HAUI-01)'
+        }
+      ];
+    } else if (lower.includes('cải thiện') || lower.includes('học lại')) {
+      answerText = `[AI Advisor]: Căn cứ Điều 15 Quy chế đào tạo HaUI (REG-HAUI-03):\n` +
+        `• Học lại: Bắt buộc đối với các học phần bị điểm F (chưa đạt).\n` +
+        `• Học cải thiện: Chỉ áp dụng cho các học phần đạt điểm D, D+, C để nâng điểm CPA. Sinh viên đã đạt điểm B trở lên không được phép đăng ký học cải thiện.`;
+      sources = [
+        {
+          title: 'Quy chế đào tạo tín chỉ Đại học Công nghiệp Hà Nội (HaUI)',
+          section: 'Điều 15 - Học lại và học cải thiện điểm (REG-HAUI-03)'
+        }
+      ];
+    } else {
+      answerText = `[AI Advisor]: Theo Quy chế đào tạo tín chỉ HaUI, các quy định học vụ áp dụng cho câu hỏi "${trimmed}" được quy định chi tiết tại các văn bản quy chế hiện hành của nhà trường. Bạn có thể tra cứu chi tiết trong sổ tay sinh viên hoặc mục Quy chế đào tạo.`;
+    }
+
+    return {
+      answer: answerText,
+      sources,
+      planProposal: null
+    };
+  }
+
+  // Trường hợp yêu cầu lập lộ trình / kế hoạch học tập (Kịch bản P05)
+  return {
+    answer: `[AI Advisor]: Dựa trên hồ sơ của bạn (CPA 3.18, 108/145 TC), để đạt mục tiêu cho câu hỏi "${trimmed}", AI đề xuất bạn nên phân bổ 18 tín chỉ ở Kỳ 7: ưu tiên gỡ môn Toán rời rạc (3 TC), cải thiện OOP (4 TC) và 4 môn chuyên ngành.`,
+    sources: [
+      {
+        title: 'Quy chế đào tạo tín chỉ Đại học Công nghiệp Hà Nội (HaUI)',
+        section: 'Điều 14 - Điều kiện tiên quyết & Giới hạn 10-24 TC (BR-03/BR-04)'
+      }
+    ],
+    planProposal: plan || (typeof plannerStore !== 'undefined' ? plannerStore.getPlan() : null)
+  };
+}
+
+/**
  * Màn hình 2: Trợ lý ảo AI Chatbot Tư vấn Học vụ (AI Advisor Chat) — TV3
  *
  * Thực hiện yêu cầu nghiệp vụ:
@@ -81,17 +188,8 @@ export function ChatAdvisorPage({ api, ui } = {}) {
           clientTimestamp: new Date().toISOString()
         });
       } else {
-        // Fallback response mô phỏng khi chưa có API
-        response = {
-          answer: `[AI Advisor]: Dựa trên hồ sơ của bạn (CPA 3.18, 108/145 TC), để đạt mục tiêu cho câu hỏi "${trimmed}", AI đề xuất bạn nên phân bổ 18 tín chỉ ở Kỳ 7: ưu tiên gỡ môn Toán rời rạc (3 TC), cải thiện OOP (4 TC) và 4 môn chuyên ngành.`,
-          sources: [
-            {
-              title: 'Quy chế đào tạo tín chỉ Đại học Công nghiệp Hà Nội (HaUI)',
-              section: 'Điều 14 - Điều kiện tiên quyết & Giới hạn 10-24 TC (BR-03/BR-04)'
-            }
-          ],
-          planProposal: plannerStore.getPlan()
-        };
+        // Fallback response mô phỏng khi chưa có API (tuân thủ F23-008: P04 quy chế vs P05 lộ trình)
+        response = generateMockChatResponse(trimmed, plannerStore.getPlan());
       }
 
       // 2. Thêm tin nhắn phản hồi của AI
