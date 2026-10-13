@@ -472,4 +472,66 @@ test('10. Task 2.2a: Bảng Kiểm toán tốt nghiệp 100% tiêu chí & Bản 
   assert.equal(fs.existsSync(path.join(tv2Root, 'src/pages/GraduationAuditPage.jsx')), true);
 });
 
+test('11. F23-006: Nút lập kế hoạch bù đắp từ Audit phát CustomEvent(haui:planner:proposal) và nạp proposal vào plannerStore', async () => {
+  const {
+    buildAuditRemediationProposal,
+    dispatchAuditRemediationProposal,
+    getDynamicGraduationAudit,
+    selectStudentPreset
+  } = await import('../src/services/academicStore.js');
+
+  let plannerStore = null;
+  try {
+    const mod = await import('@haui/planner-ui');
+    plannerStore = mod.plannerStore;
+  } catch {
+    const fallbackMod = await import('../../tv3-planner-ui/src/index.js');
+    plannerStore = fallbackMod.plannerStore;
+  }
+
+  selectStudentPreset('at-risk');
+  const auditRes = getDynamicGraduationAudit();
+
+  // 1. Kiểm tra cấu trúc payload bù đắp từ Audit
+  const proposal = buildAuditRemediationProposal(auditRes);
+  assert.equal(proposal.sourceName, 'Graduation Audit (Kiểm toán tốt nghiệp)');
+  assert.equal(proposal.projectedCpa, 3.25);
+  assert.equal(Array.isArray(proposal.semesters), true);
+  assert.equal(proposal.semesters.length, 2);
+  assert.equal(proposal.semesters[0].totalCredits, 15, 'Học kỳ bù đắp 1 phải đủ 15 TC (tuân thủ sàn 10–24 TC BR-03)');
+  assert.equal(proposal.semesters[1].totalCredits, 10, 'Học kỳ cuối Đồ án TN phải đủ 10 TC');
+
+  const sem1Codes = proposal.semesters[0].courses.map((c) => c.courseCode);
+  assert.ok(sem1Codes.includes('MATH1002'), 'Phải bao gồm môn nợ tiên quyết MATH1002');
+  assert.ok(sem1Codes.includes('IT6010'), 'Phải bao gồm môn tự chọn chuyên ngành IT6010');
+  assert.ok(sem1Codes.includes('IT6015'), 'Phải bao gồm môn tự chọn chuyên ngành IT6015');
+
+  // 2. Kiểm tra dispatchAuditRemediationProposal nạp trực tiếp vào plannerStore.incomingProposal
+  plannerStore.dismissProposal();
+  assert.equal(plannerStore.getIncomingProposal(), null);
+
+  dispatchAuditRemediationProposal(auditRes, plannerStore);
+  const incoming = plannerStore.getIncomingProposal();
+  assert.ok(incoming, 'plannerStore phải nhận được incomingProposal từ Graduation Audit');
+  assert.equal(incoming.sourceName, 'Graduation Audit (Kiểm toán tốt nghiệp)');
+  assert.equal(incoming.projectedCpa, 3.25);
+  assert.equal(incoming.semesters.length, 2);
+
+  // Dọn dẹp trạng thái store sau test
+  plannerStore.dismissProposal();
+
+  // 3. Kiểm tra mã nguồn AcademicProgressPage.jsx phát sự kiện haui:planner:proposal trước khi navigate('/planner')
+  const tv2Root = path.resolve(__dirname, '..');
+  const progressCode = fs.readFileSync(path.join(tv2Root, 'src/pages/AcademicProgressPage.jsx'), 'utf-8');
+  assert.ok(
+    progressCode.includes("new CustomEvent('haui:planner:proposal'"),
+    'AcademicProgressPage.jsx phải phát CustomEvent haui:planner:proposal'
+  );
+  assert.ok(
+    progressCode.includes('dispatchAuditRemediationProposal(auditData, plannerStore)'),
+    'AcademicProgressPage.jsx phải nạp proposal vào plannerStore trước khi điều hướng'
+  );
+});
+
+
 

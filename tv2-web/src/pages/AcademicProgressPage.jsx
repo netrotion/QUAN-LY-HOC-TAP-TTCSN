@@ -1,9 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { plannerStore } from '@haui/planner-ui';
 import { api } from '../services/apiClient.js';
 import { HAUI_BUSINESS_RULES } from '../services/mockFixtures.js';
 import { Button, Card, EmptyState, Error as ErrorBox, Loading, Modal, Table } from '../components/ui/index.js';
-import { subscribeAcademicStore } from '../services/academicStore.js';
+import {
+  buildAuditRemediationProposal,
+  dispatchAuditRemediationProposal,
+  subscribeAcademicStore
+} from '../services/academicStore.js';
 
 /**
  * Màn hình 9: Bảng Kiểm toán Tốt nghiệp 100% & Cảnh báo Sớm (`/progress` & `/audit`) — TV2
@@ -394,6 +399,19 @@ export function AcademicProgressPage() {
               variant="primary"
               size="sm"
               onClick={() => {
+                const proposal = buildAuditRemediationProposal(auditData);
+                dispatchAuditRemediationProposal(auditData, plannerStore);
+                if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+                  window.dispatchEvent(
+                    new CustomEvent('haui:planner:proposal', {
+                      detail: {
+                        ...proposal,
+                        sourceName: 'Graduation Audit (Kiểm toán tốt nghiệp)',
+                        projectedCpa: 3.25
+                      }
+                    })
+                  );
+                }
                 setIsRemediationModalOpen(false);
                 navigate('/planner');
               }}

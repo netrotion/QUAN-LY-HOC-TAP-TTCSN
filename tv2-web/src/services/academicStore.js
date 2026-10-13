@@ -643,3 +643,133 @@ export function connectApi(apiInstance) {
   });
 }
 
+/**
+ * Đề xuất lộ trình bù đắp mặc định từ Kiểm toán Tốt nghiệp (F23-006 — P11)
+ * Phân bổ vào 2 học kỳ cuối tuân thủ quy chế 10–24 TC/kỳ chính (BR-03/BR-04):
+ * - Học kỳ 1 (2026-2027): Học lại MATH1002 (3 TC) + 2 môn Tự chọn chuyên ngành IT6010, IT6015 (6 TC) + 2 môn chuyên ngành (6 TC) = 15 TC.
+ * - Học kỳ 2 (2026-2027): Đồ án tốt nghiệp IT7008 (10 TC).
+ * - Kèm lịch nhắc hoàn thành chứng chỉ Tin học MOS/IC3 trước hạn chót 2027-03-31 (AC-05).
+ */
+export const AUDIT_REMEDIATION_PROPOSAL = Object.freeze({
+  sourceName: 'Graduation Audit (Kiểm toán tốt nghiệp)',
+  projectedCpa: 3.25,
+  projectedRank: 'Bằng Giỏi (CPA ≥ 3.20)',
+  aiRiskAdvice:
+    'Phương án bù đắp từ Kiểm toán tốt nghiệp (82%): Học lại MATH1002 (3 TC), bổ sung đủ 6 TC tự chọn chuyên ngành (IT6010, IT6015), thi chứng chỉ MOS/IC3 trước 2027-03-31 và làm Đồ án tốt nghiệp IT7008 (10 TC) ở học kỳ cuối.',
+  semesters: [
+    {
+      semesterCode: '2026_1',
+      semesterName: 'Học kỳ 1 (2026 - 2027) — Kỳ 7 (Bù đắp Audit)',
+      workloadAssessment: 'Cân bằng (15 / 24 TC)',
+      totalCredits: 15,
+      expectedGpa: 3.35,
+      courses: [
+        {
+          courseCode: 'MATH1002',
+          courseName: 'Toán rời rạc',
+          credits: 3,
+          courseType: 'Học lại (Nợ F)',
+          targetGrade: 'B+ (3.5)',
+          rationale: 'Gỡ môn nợ tiên quyết bắt buộc theo Audit tốt nghiệp (BR-01)'
+        },
+        {
+          courseCode: 'IT6010',
+          courseName: 'Phát triển ứng dụng Web hiện đại',
+          credits: 3,
+          courseType: 'Tự chọn chuyên ngành',
+          targetGrade: 'A (4.0)',
+          rationale: 'Bù đắp 3/6 TC khối Tự chọn chuyên ngành còn thiếu (Audit Checklist #3)'
+        },
+        {
+          courseCode: 'IT6015',
+          courseName: 'Kiến trúc phần mềm & Mẫu thiết kế',
+          credits: 3,
+          courseType: 'Tự chọn chuyên ngành',
+          targetGrade: 'A (4.0)',
+          rationale: 'Hoàn thành 100% (6/6 TC) khối Tự chọn chuyên ngành để vượt mốc 85% nhận Đồ án (BR-09)'
+        },
+        {
+          courseCode: 'IT6002',
+          courseName: 'Lập trình mạng',
+          credits: 3,
+          courseType: 'Bắt buộc chuyên ngành',
+          targetGrade: 'B+ (3.5)',
+          rationale: 'Tích lũy đủ khối lượng học kỳ chính 10–24 TC (BR-03)'
+        },
+        {
+          courseCode: 'IT4001',
+          courseName: 'Cơ sở dữ liệu nâng cao',
+          credits: 3,
+          courseType: 'Bắt buộc chuyên ngành',
+          targetGrade: 'B (3.0)',
+          rationale: 'Hoàn tất khối kiến thức chuyên ngành bắt buộc'
+        }
+      ]
+    },
+    {
+      semesterCode: '2026_2',
+      semesterName: 'Học kỳ 2 (2026 - 2027) — Kỳ 8 (Đồ án Tốt nghiệp)',
+      workloadAssessment: 'Tập trung Đồ án TN (10 / 24 TC)',
+      totalCredits: 10,
+      expectedGpa: 3.6,
+      courses: [
+        {
+          courseCode: 'IT7008',
+          courseName: 'Đồ án tốt nghiệp Kỹ thuật phần mềm',
+          credits: 10,
+          courseType: 'Tốt nghiệp',
+          targetGrade: 'A (4.0)',
+          rationale: 'Đạt ≥ 85% tín chỉ CTĐT và không nợ môn tiên quyết theo BR-09'
+        }
+      ]
+    }
+  ]
+});
+
+/**
+ * Xây dựng payload đề xuất bù đắp từ kết quả Kiểm toán tốt nghiệp hiện hành (F23-006)
+ * @param {Object} [auditData]
+ */
+export function buildAuditRemediationProposal(auditData = null) {
+  const effectiveAudit = auditData || getDynamicGraduationAudit();
+  const totalRequired = effectiveAudit?.totalCreditsRequired ?? 135;
+  const totalEarned = effectiveAudit?.totalCreditsEarned ?? 112;
+
+  return {
+    ...JSON.parse(JSON.stringify(AUDIT_REMEDIATION_PROPOSAL)),
+    auditCompletedPercentage: effectiveAudit?.completedPercentage ?? 82,
+    missingCredits: Math.max(0, totalRequired - totalEarned),
+    pendingActions: Array.isArray(effectiveAudit?.pendingActions)
+      ? JSON.parse(JSON.stringify(effectiveAudit.pendingActions))
+      : []
+  };
+}
+
+/**
+ * Phát đề xuất lộ trình bù đắp từ Audit sang Planner qua cả plannerStore và CustomEvent('haui:planner:proposal') (F23-006)
+ * @param {Object} [auditData]
+ * @param {Object} [plannerStoreTarget]
+ */
+export function dispatchAuditRemediationProposal(auditData = null, plannerStoreTarget = null) {
+  const proposal = buildAuditRemediationProposal(auditData);
+
+  if (plannerStoreTarget && typeof plannerStoreTarget.setIncomingProposal === 'function') {
+    plannerStoreTarget.setIncomingProposal(proposal, proposal.sourceName);
+  }
+
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    try {
+      window.dispatchEvent(
+        new CustomEvent('haui:planner:proposal', {
+          detail: proposal
+        })
+      );
+    } catch {
+      // Bỏ qua nếu môi trường thực thi không hỗ trợ CustomEvent
+    }
+  }
+
+  return proposal;
+}
+
+
