@@ -11,18 +11,35 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Bộ lập lịch kế hoạch học tập cá nhân hóa (Academic Plan Engine).
- * 
- * NGUYÊN TẮC THIẾT KẾ BẮT BUỘC:
- * 1. Tách biệt hoàn toàn RÀNG BUỘC CỨNG (Hard Constraints) và THANG ĐIỂM TỐI ƯU (Scoring 40/25/20/15).
- * 2. Hard Constraints lọc trước: Môn không thỏa mãn tiên quyết/học trước hoặc vi phạm trần tín chỉ
- *    sẽ bị LOẠI BỎ NGAY LẬP TỨC khỏi danh sách ứng viên, không tham gia chấm điểm.
- * 3. Hỗ trợ kịch bản:
- *    - Học kỳ hè (tối đa 12 TC)
- *    - Học kỳ vượt / đẩy nhanh tiến độ (tối đa 24 TC)
- *    - Sinh viên cảnh báo học tập (tối đa 14 TC - REG-HAUI-02)
- *    - Điều kiện học kỳ tương lai (Chained Prerequisites)
- *    - Xử lý thiếu dữ liệu (Missing Data -> không coi là đạt)
+ * Bộ lập lịch kế hoạch học tập cá nhân hóa (Academic Study Plan Generator).
+ *
+ * TRIỂN KHAI THEO CHUỖI 4 GIAI ĐOẠN (Task 3.6 - planner-tool-ready):
+ * 1. Eligibility (Lọc ràng buộc cứng):
+ *    - Tiên quyết (Prerequisites): Đã học và đạt (BR-01).
+ *    - Môn học trước (Prior courses): Đã từng dự thi/học (BR-02).
+ *    - Điều kiện nhận Đồ án tốt nghiệp: Tích lũy tối thiểu 85% tổng số tín chỉ CTĐT (BR-09).
+ *    - Môn đã đạt loại Khá/Giỏi không học lại trừ khi nằm trong selectedRetakeCourseCodes (BR-06).
+ *
+ * 2. Ranking & Scoring Normalization:
+ *    - Điểm tối ưu 4 thành phần theo PRD §13.1 và policy-demo.json:
+ *      * unblockPrerequisites: 40% (Khơi thông mạch học tập)
+ *      * standardCurriculumProgression: 25% (Tiến độ khung CTĐT)
+ *      * retakeRoi: 20% (Gỡ nợ F hoặc cải thiện CPA)
+ *      * workloadBalance: 15% (Cân bằng tải tín chỉ)
+ *    - Chuẩn hóa trọng số (Normalization): Khi thành phần retake không áp dụng, chuẩn hóa
+ *      lại trên 3 thành phần hợp lệ (40 + 25 + 15 = 80) về thang 100%.
+ *    - Tie-breaking xác định (Deterministic): totalScore giảm dần -> credits giảm dần -> courseCode A-Z.
+ *
+ * 3. Allocation (Phân bổ theo kỳ):
+ *    - Xử lý Corequisite Bundle: Môn song hành phải được xếp cùng kỳ nếu chưa đạt.
+ *      Nếu bundle vượt quá trần tín chỉ còn lại, hoãn cả bundle sang kỳ sau.
+ *    - Trần/Sàn tín chỉ: Cảnh báo học tập max 14 TC (REG-HAUI-02), Kỳ hè max 12 TC, Học vượt max 24 TC (BR-04).
+ *    - Chained Prerequisites: Giả định môn kỳ trước đạt để mở khóa môn kỳ sau.
+ *
+ * 4. Final Validation (Kiểm tra chéo hậu kỳ):
+ *    - Kiểm tra DAG tiên quyết, song hành, trần tín chỉ, không trùng môn.
+ *    - Xử lý NO_PLAN_FOUND kèm lý do cụ thể khi không tìm được phương án hợp lệ.
+ *    - Gắn nhãn ASSUMED_OFFERING_UNVERIFIED khi thiếu dữ liệu lịch mở lớp chính thức.
  */
 public class StudyPlanScheduler {
 
@@ -51,12 +68,29 @@ public class StudyPlanScheduler {
 
         List<String> planWarnings = new ArrayList<>();
 
-        // Xác định trạng thái cảnh báo học tập
+        // Kiểm tra dữ liệu kỳ mở lớp chính thức: gắn nhãn minh bạch
+        planWarnings.add("ASSUMED_OFFERING_UNVERIFIED: Chưa có dữ liệu mở lớp chính thức từ e-HaUI, các học phần được xếp dựa trên tiến độ khung CTĐT");
+
+        // Phát hiện chu trình tiên quyết (Prerequisite cycle detection)
+        String cyclePath = detectPrerequisiteCycle(curriculum.getCourses());
+        if (cyclePath != null) {
+            planWarnings.add("NO_PLAN_FOUND: Phát hiện chu trình phụ thuộc tiên quyết trong CTĐT (" + cyclePath + "). Thuật toán tham lam không thể sinh kế hoạch hợp lệ.");
+            return new GenerateStudyPlanResponse(
+                    "no-plan-found",
+                    studentId,
+                    StudyPlanStatus.DRAFT,
+                    Collections.emptyList(),
+                    profile != null && profile.getCpa() != null ? profile.getCpa() : BigDecimal.ZERO,
+                    planWarnings,
+                    revision
+            );
+        }
+
+        // Xác định trạng thái cảnh báo học tập và trần tín chỉ
         boolean isWarning = profile != null && (profile.getRiskLevel() == AcademicRiskLevel.WARNING_LEVEL_1
                 || profile.getRiskLevel() == AcademicRiskLevel.WARNING_LEVEL_2);
 
-        // Trần tín chỉ kỳ chính (Mặc định 18-24, nhưng nếu cảnh báo thì max 14)
-        int mainSemesterCreditCap = 20;
+        int mainSemesterCreditCap = 20; // Lộ trình chuẩn mặc định (PRD AC-03: 14-20 TC)
         if (isWarning) {
             mainSemesterCreditCap = 14;
             planWarnings.add("Sinh viên đang bị cảnh báo học tập: Áp dụng ràng buộc cứng tối đa 14 tín chỉ/kỳ (REG-HAUI-02)");
@@ -64,7 +98,7 @@ public class StudyPlanScheduler {
             mainSemesterCreditCap = Math.min(24, Math.max(10, requestedMaxCredits));
         }
 
-        // Bản đồ các môn đã đạt hoặc đã học của sinh viên
+        // Bản đồ lịch sử học tập
         Map<String, CourseStatus> courseHistory = new HashMap<>();
         if (profile != null && profile.getCourseAttempts() != null) {
             for (StudentProfileFixture.CourseAttempt a : profile.getCourseAttempts()) {
@@ -76,18 +110,39 @@ public class StudyPlanScheduler {
             }
         }
 
-        // Tích lũy tín chỉ hiện tại
+        // Tín chỉ tích lũy hiện tại
         double accumulatedCredits = profile != null && profile.getAccumulatedCreditsRaw() != null
                 ? profile.getAccumulatedCreditsRaw()
                 : (profile != null && profile.getAccumulatedCredits() != null ? profile.getAccumulatedCredits() : 0.0);
 
-        // Đếm số môn phụ thuộc vào từng môn (Unblock count)
+        // Tổng số tín chỉ CTĐT
+        int totalCurriculumCredits = curriculum.getTotalCredits() != null && curriculum.getTotalCredits() > 0
+                ? curriculum.getTotalCredits()
+                : 150;
+
+        // Tập hợp các môn học cải thiện được người dùng chủ động lựa chọn
+        Set<String> selectedRetakes = new HashSet<>();
+        if (request != null && request.getSelectedRetakeCourseCodes() != null) {
+            for (String r : request.getSelectedRetakeCourseCodes()) {
+                if (r != null) selectedRetakes.add(r.trim().toUpperCase());
+            }
+        }
+
+        // Bản đồ tra cứu định nghĩa học phần theo mã môn
+        Map<String, CurriculumFixture.CourseDefinitionItem> courseCatalog = new HashMap<>();
+        for (CurriculumFixture.CourseDefinitionItem c : curriculum.getCourses()) {
+            if (c.getCourseCode() != null) {
+                courseCatalog.put(c.getCourseCode().toUpperCase(), c);
+            }
+        }
+
+        // Đếm số môn phụ thuộc (Unblock count)
         Map<String, Integer> unblockCounts = calculateUnblockCounts();
 
         // Chuẩn bị danh sách học kỳ cần lập lịch
         List<SemesterSpec> semesterSpecs = new ArrayList<>();
         int startSemNumber = profile != null && profile.getCurrentSemester() != null ? profile.getCurrentSemester() + 1 : 4;
-        
+
         semesterSpecs.add(new SemesterSpec(
                 "2025_1",
                 "Học kỳ 1 (2025-2026)",
@@ -119,83 +174,164 @@ public class StudyPlanScheduler {
 
         List<PlannedSemesterItem> plannedSemesters = new ArrayList<>();
         Set<String> scheduledInPlan = new HashSet<>();
+        int totalCoursesScheduledCount = 0;
 
         for (SemesterSpec semSpec : semesterSpecs) {
-            // Lọc ứng viên qua RÀNG BUỘC CỨNG (Stage 1: Hard Constraints)
+            // =========================================================================
+            // STAGE 1: ELIGIBILITY (Ràng buộc cứng) & STAGE 2: RANKING (40/25/20/15)
+            // =========================================================================
             List<ScoredCourseCandidate> validCandidates = new ArrayList<>();
 
             for (CurriculumFixture.CourseDefinitionItem course : curriculum.getCourses()) {
-                String code = course.getCourseCode().toUpperCase();
-
-                if (scheduledInPlan.contains(code)) {
-                    continue; // Đã lập lịch ở kỳ trước
+                String code = course.getCourseCode() != null ? course.getCourseCode().toUpperCase() : "";
+                if (code.isEmpty() || scheduledInPlan.contains(code)) {
+                    continue;
                 }
 
                 CourseStatus existingStatus = courseHistory.get(code);
 
-                // Ràng buộc cứng 1: Nếu đã ĐẠT rồi thì không học lại như môn mới (trừ khi có điểm D/D+/C và muốn retake)
-                boolean isRetakeCandidate = existingStatus != null && Boolean.TRUE.equals(existingStatus.passed)
-                        && existingStatus.score != null && existingStatus.score < 2.5; // D, D+, C
+                // Kiểm tra điều kiện học lại / cải thiện (BR-06)
                 boolean isFailedRetake = existingStatus != null && Boolean.FALSE.equals(existingStatus.passed);
+                boolean isImprovementRequested = selectedRetakes.contains(code);
+                boolean isEligibleForImprovement = existingStatus != null && Boolean.TRUE.equals(existingStatus.passed)
+                        && existingStatus.score != null && existingStatus.score >= 1.0 && existingStatus.score <= 2.4; // Điểm D, D+, C
 
+                boolean isRetakeCandidate = isFailedRetake || (isImprovementRequested && isEligibleForImprovement);
+
+                // Nếu đã đạt môn này mà không thuộc diện học cải thiện hợp lệ -> Bỏ qua
                 if (existingStatus != null && Boolean.TRUE.equals(existingStatus.passed) && !isRetakeCandidate) {
-                    continue; // Đã đạt loại khá/giỏi, không học lại
-                }
-
-                // Ràng buộc cứng 2: Tiên quyết và Môn học trước
-                boolean satisfiesPrereqs = checkHardPrerequisites(course, courseHistory);
-                if (!satisfiesPrereqs) {
-                    continue; // Vi phạm môn tiên quyết -> Loại ngay
-                }
-
-                // Ràng buộc cứng 3: Điều kiện làm Đồ án tốt nghiệp (>= 128 TC cho CT1085)
-                if (course.getMinCreditsRequiredToEnroll() != null && accumulatedCredits < course.getMinCreditsRequiredToEnroll()) {
-                    continue;
-                }
-                if (code.contains("IT6130") && accumulatedCredits < 128) {
                     continue;
                 }
 
-                // Stage 2: Thang điểm tối ưu (Scoring 40/25/20/15)
-                double scoreUnblock = calculateUnblockScore(code, unblockCounts);
-                double scoreProgression = calculateProgressionScore(course, semSpec.suggestedSemester);
-                double scoreRetake = calculateRetakeScore(existingStatus);
-                double scoreBalance = calculateWorkloadScore(course);
+                // Kiểm tra tiên quyết và môn học trước (BR-01, BR-02)
+                if (!checkHardPrerequisites(course, courseHistory)) {
+                    continue;
+                }
 
-                double totalScore = scoreUnblock + scoreProgression + scoreRetake + scoreBalance;
+                // Kiểm tra điều kiện làm Đồ án tốt nghiệp (BR-09: >= 85% tổng số tín chỉ CTĐT)
+                if (isGraduationThesis(course)) {
+                    double minThesisCredits = totalCurriculumCredits * 0.85;
+                    if (course.getMinCreditsRequiredToEnroll() != null) {
+                        minThesisCredits = course.getMinCreditsRequiredToEnroll();
+                    }
+                    if (accumulatedCredits < minThesisCredits) {
+                        continue; // Chưa đủ tín chỉ làm đồ án
+                    }
+                } else if (course.getMinCreditsRequiredToEnroll() != null && accumulatedCredits < course.getMinCreditsRequiredToEnroll()) {
+                    continue;
+                }
 
-                String rationale = buildRationale(scoreUnblock, scoreProgression, scoreRetake, isFailedRetake, isRetakeCandidate);
+                // Tính điểm 4 thành phần theo thang chuẩn 0..100
+                double sUnblock = calculateUnblockComponent(code, unblockCounts);
+                double sProgression = calculateProgressionComponent(course, semSpec.suggestedSemester);
+                double sRetake = calculateRetakeComponent(isFailedRetake, isRetakeCandidate);
+                double sBalance = calculateWorkloadComponent(course);
+
+                // Chuẩn hóa trọng số (Scoring Normalization):
+                // Nếu không áp dụng retake, chỉ tính trên 3 thành phần 40% + 25% + 15% (tổng trọng số 80)
+                double totalScore;
+                boolean isRetakeApplicable = isFailedRetake || isRetakeCandidate;
+                if (isRetakeApplicable) {
+                    totalScore = (40.0 * sUnblock + 25.0 * sProgression + 20.0 * sRetake + 15.0 * sBalance) / 100.0;
+                } else {
+                    totalScore = (40.0 * sUnblock + 25.0 * sProgression + 15.0 * sBalance) / 80.0;
+                }
+
+                String rationale = buildRationale(sUnblock, sProgression, sRetake, isFailedRetake, isRetakeCandidate);
                 validCandidates.add(new ScoredCourseCandidate(course, totalScore, isFailedRetake, isRetakeCandidate, rationale));
             }
 
-            // Sắp xếp giảm dần theo điểm tối ưu
-            validCandidates.sort((c1, c2) -> Double.compare(c2.totalScore, c1.totalScore));
+            // Sắp xếp Deterministic Tie-breaking:
+            // 1. totalScore giảm dần
+            // 2. credits giảm dần (ưu tiên xếp môn lớn để tối ưu hoá hạn mức)
+            // 3. courseCode tăng dần theo thứ tự từ điển (A-Z)
+            validCandidates.sort((c1, c2) -> {
+                int scoreCmp = Double.compare(c2.totalScore, c1.totalScore);
+                if (scoreCmp != 0) return scoreCmp;
+                int cr1 = c1.course.getCredits() != null ? c1.course.getCredits() : 3;
+                int cr2 = c2.course.getCredits() != null ? c2.course.getCredits() : 3;
+                int crCmp = Integer.compare(cr2, cr1);
+                if (crCmp != 0) return crCmp;
+                return c1.course.getCourseCode().compareTo(c2.course.getCourseCode());
+            });
 
-            // Tham lam chọn môn theo trần tín chỉ
+            // =========================================================================
+            // STAGE 3: ALLOCATION (Phân bổ theo kỳ, Corequisite Bundle & Trần tín chỉ)
+            // =========================================================================
             List<PlannedCourseItem> selectedCourses = new ArrayList<>();
+            Set<String> currentSemesterScheduledCodes = new HashSet<>();
             int currentCredits = 0;
 
             for (ScoredCourseCandidate candidate : validCandidates) {
-                int courseCredits = candidate.course.getCredits() != null ? candidate.course.getCredits() : 3;
-                if (currentCredits + courseCredits <= semSpec.maxCredits) {
-                    selectedCourses.add(new PlannedCourseItem(
-                            candidate.course.getCourseCode(),
-                            candidate.course.getCourseName() + (candidate.isFailedRetake ? " (học lại)" : (candidate.isRetakeCandidate ? " (cải thiện)" : "")),
-                            courseCredits,
-                            candidate.isFailedRetake ? "B" : "A",
-                            candidate.rationale
-                    ));
-                    currentCredits += courseCredits;
-                    scheduledInPlan.add(candidate.course.getCourseCode().toUpperCase());
+                String candidateCode = candidate.course.getCourseCode().toUpperCase();
+                if (scheduledInPlan.contains(candidateCode)) {
+                    continue;
+                }
 
-                    // Chained Prerequisite: Giả định môn này sẽ ĐẠT ở kỳ này để mở khóa cho kỳ tương lai
-                    courseHistory.put(candidate.course.getCourseCode().toUpperCase(),
-                            new CourseStatus(candidate.course.getCourseCode().toUpperCase(), true, 3.5, "B+"));
-                    accumulatedCredits += courseCredits;
+                // Nếu môn này có môn tiên quyết vừa được xếp trong chính học kỳ này -> Không được xếp cùng kỳ
+                boolean prereqInSameSem = false;
+                if (candidate.course.getPrerequisites() != null) {
+                    for (String p : candidate.course.getPrerequisites()) {
+                        if (p != null && currentSemesterScheduledCodes.contains(p.trim().toUpperCase())) {
+                            prereqInSameSem = true;
+                            break;
+                        }
+                    }
+                }
+                if (prereqInSameSem) {
+                    continue; // Chờ sang kỳ sau khi môn tiên quyết đã hoàn thành
+                }
+
+                // Xây dựng gói song hành (Corequisite Bundle)
+                List<CurriculumFixture.CourseDefinitionItem> bundle = resolveCorequisiteBundle(
+                        candidate.course, courseCatalog, courseHistory, scheduledInPlan
+                );
+
+                if (bundle == null) {
+                    // Môn song hành không thỏa mãn điều kiện tiên quyết riêng của nó -> Không thể xếp
+                    continue;
+                }
+
+                // Tính tổng tín chỉ của cả bundle
+                int bundleCredits = 0;
+                for (CurriculumFixture.CourseDefinitionItem item : bundle) {
+                    bundleCredits += (item.getCredits() != null ? item.getCredits() : 3);
+                }
+
+                // Kiểm tra trần tín chỉ của kỳ học
+                if (currentCredits + bundleCredits <= semSpec.maxCredits) {
+                    for (CurriculumFixture.CourseDefinitionItem item : bundle) {
+                        String itemCode = item.getCourseCode().toUpperCase();
+                        int itemCredits = item.getCredits() != null ? item.getCredits() : 3;
+
+                        boolean isFailed = candidate.isFailedRetake && itemCode.equals(candidateCode);
+                        boolean isImprovement = !candidate.isFailedRetake && candidate.isRetakeCandidate && itemCode.equals(candidateCode);
+
+                        String itemRationale = itemCode.equals(candidateCode)
+                                ? candidate.rationale
+                                : "Môn song hành bắt buộc đi kèm với " + candidateCode + " trong cùng học kỳ";
+
+                        selectedCourses.add(new PlannedCourseItem(
+                                item.getCourseCode(),
+                                item.getCourseName() + (isFailed ? " (học lại)" : (isImprovement ? " (cải thiện)" : "")),
+                                itemCredits,
+                                isFailed ? "B" : "A",
+                                itemRationale
+                        ));
+
+                        currentCredits += itemCredits;
+                        accumulatedCredits += itemCredits;
+                        scheduledInPlan.add(itemCode);
+                        currentSemesterScheduledCodes.add(itemCode);
+                        totalCoursesScheduledCount++;
+
+                        // Chained Prerequisite: Giả định môn này đạt ở kỳ hiện tại để mở khóa kỳ tương lai
+                        courseHistory.put(itemCode, new CourseStatus(itemCode, true, 3.5, "B+"));
+                    }
                 }
             }
 
-            // Kiểm tra sàn tín chỉ
+            // Kiểm tra sàn tín chỉ (10 TC đối với kỳ chính)
             if (!semSpec.isSummer && currentCredits < semSpec.minCredits) {
                 planWarnings.add("Học kỳ " + semSpec.code + " chỉ chọn được " + currentCredits + " TC, nhỏ hơn mức sàn " + semSpec.minCredits + " TC");
             }
@@ -209,6 +345,37 @@ public class StudyPlanScheduler {
             ));
         }
 
+        // =========================================================================
+        // STAGE 4: FINAL VALIDATION PASS (Kiểm tra chéo toàn bộ phương án đã lập)
+        // =========================================================================
+        List<String> validationErrors = validateGeneratedPlan(plannedSemesters, courseCatalog, semesterSpecs);
+        if (!validationErrors.isEmpty()) {
+            planWarnings.addAll(validationErrors);
+            planWarnings.add("NO_PLAN_FOUND: Phương án được tạo vi phạm kiểm tra chéo cuối cùng. Thuật toán không đảm bảo tính hợp lệ.");
+            return new GenerateStudyPlanResponse(
+                    "no-plan-found",
+                    studentId,
+                    StudyPlanStatus.DRAFT,
+                    Collections.emptyList(),
+                    profile != null && profile.getCpa() != null ? profile.getCpa() : BigDecimal.ZERO,
+                    planWarnings,
+                    revision
+            );
+        }
+
+        if (totalCoursesScheduledCount == 0) {
+            planWarnings.add("NO_PLAN_FOUND: Không tìm được học phần nào thỏa mãn đồng thời các ràng buộc cứng học vụ để đưa vào kế hoạch.");
+            return new GenerateStudyPlanResponse(
+                    "no-plan-found",
+                    studentId,
+                    StudyPlanStatus.DRAFT,
+                    Collections.emptyList(),
+                    profile != null && profile.getCpa() != null ? profile.getCpa() : BigDecimal.ZERO,
+                    planWarnings,
+                    revision
+            );
+        }
+
         BigDecimal currentCpa = profile != null && profile.getCpa() != null ? profile.getCpa() : new BigDecimal("2.50");
         BigDecimal projectedCpa = currentCpa.add(new BigDecimal("0.25")).min(new BigDecimal("4.00")).setScale(2, RoundingMode.HALF_UP);
 
@@ -219,28 +386,99 @@ public class StudyPlanScheduler {
                 plannedSemesters,
                 projectedCpa,
                 planWarnings,
-                1,
                 revision
         );
     }
 
-    private boolean checkHardPrerequisites(CurriculumFixture.CourseDefinitionItem course, Map<String, CourseStatus> history) {
-        // Kiểm tra tiên quyết: Phải học và ĐẠT (passed == true)
-        if (course.getPrerequisites() != null) {
-            for (String prereq : course.getPrerequisites()) {
-                CourseStatus st = history.get(prereq.toUpperCase());
-                if (st == null || !Boolean.TRUE.equals(st.passed)) {
-                    return false; // Chưa học hoặc chưa đạt
+    /**
+     * Gom nhóm các môn song hành (Corequisite Bundle).
+     * Trả về danh sách môn cần xếp cùng nhau, hoặc null nếu không thể thỏa mãn.
+     */
+    private List<CurriculumFixture.CourseDefinitionItem> resolveCorequisiteBundle(
+            CurriculumFixture.CourseDefinitionItem mainCourse,
+            Map<String, CurriculumFixture.CourseDefinitionItem> catalog,
+            Map<String, CourseStatus> history,
+            Set<String> alreadyScheduled) {
+
+        List<CurriculumFixture.CourseDefinitionItem> bundle = new ArrayList<>();
+        Set<String> bundleCodes = new HashSet<>();
+        bundle.add(mainCourse);
+        String mainCode = mainCourse.getCourseCode() != null ? mainCourse.getCourseCode().toUpperCase() : "";
+        bundleCodes.add(mainCode);
+
+        // 1. Corequisites trực tiếp của mainCourse
+        if (mainCourse.getCorequisites() != null) {
+            for (String coreqCode : mainCourse.getCorequisites()) {
+                if (coreqCode == null || coreqCode.trim().isEmpty()) continue;
+                String upper = coreqCode.trim().toUpperCase();
+
+                CourseStatus st = history.get(upper);
+                if (st != null && Boolean.TRUE.equals(st.passed)) {
+                    continue;
+                }
+                if (alreadyScheduled.contains(upper)) {
+                    continue;
+                }
+
+                CurriculumFixture.CourseDefinitionItem coreqItem = catalog.get(upper);
+                if (coreqItem == null) {
+                    return null; // Thiếu định nghĩa môn song hành trong CTĐT
+                }
+
+                if (!checkHardPrerequisites(coreqItem, history)) {
+                    return null;
+                }
+
+                if (!bundleCodes.contains(upper)) {
+                    bundle.add(coreqItem);
+                    bundleCodes.add(upper);
                 }
             }
         }
 
-        // Kiểm tra môn học trước: Phải có bản ghi học (attempted)
+        // 2. Reverse corequisites: Các môn khác trong catalog coi mainCourse là môn song hành
+        for (CurriculumFixture.CourseDefinitionItem other : catalog.values()) {
+            if (other.getCorequisites() != null && other.getCourseCode() != null) {
+                for (String c : other.getCorequisites()) {
+                    if (c != null && c.trim().equalsIgnoreCase(mainCode)) {
+                        String otherCode = other.getCourseCode().toUpperCase();
+                        CourseStatus st = history.get(otherCode);
+                        if ((st == null || !Boolean.TRUE.equals(st.passed)) && !alreadyScheduled.contains(otherCode)) {
+                            if (!bundleCodes.contains(otherCode)) {
+                                if (!checkHardPrerequisites(other, history)) {
+                                    return null;
+                                }
+                                bundle.add(other);
+                                bundleCodes.add(otherCode);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return bundle;
+    }
+
+    private boolean checkHardPrerequisites(CurriculumFixture.CourseDefinitionItem course, Map<String, CourseStatus> history) {
+        // Tiên quyết: Phải học và đạt (passed == true)
+        if (course.getPrerequisites() != null) {
+            for (String prereq : course.getPrerequisites()) {
+                if (prereq == null || prereq.trim().isEmpty()) continue;
+                CourseStatus st = history.get(prereq.trim().toUpperCase());
+                if (st == null || !Boolean.TRUE.equals(st.passed)) {
+                    return false;
+                }
+            }
+        }
+
+        // Môn học trước: Phải có lịch sử học/dự thi (BR-02: kể cả điểm F)
         if (course.getPriorCourses() != null) {
             for (String prior : course.getPriorCourses()) {
-                CourseStatus st = history.get(prior.toUpperCase());
+                if (prior == null || prior.trim().isEmpty()) continue;
+                CourseStatus st = history.get(prior.trim().toUpperCase());
                 if (st == null) {
-                    return false; // Chưa từng đăng ký học môn học trước
+                    return false;
                 }
             }
         }
@@ -248,52 +486,60 @@ public class StudyPlanScheduler {
         return true;
     }
 
-    private double calculateUnblockScore(String courseCode, Map<String, Integer> unblockCounts) {
-        int dependents = unblockCounts.getOrDefault(courseCode, 0);
-        return Math.min(1.0, dependents / 4.0) * 40.0;
+    private boolean isGraduationThesis(CurriculumFixture.CourseDefinitionItem course) {
+        if (course == null) return false;
+        String name = course.getCourseName() != null ? course.getCourseName().toLowerCase() : "";
+        String code = course.getCourseCode() != null ? course.getCourseCode().toUpperCase() : "";
+        return name.contains("đồ án tốt nghiệp") || name.contains("khóa luận tốt nghiệp")
+                || name.contains("graduation thesis") || code.contains("IT6009") || code.contains("IT9001");
     }
 
-    private double calculateProgressionScore(CurriculumFixture.CourseDefinitionItem course, int currentSemester) {
+    private double calculateUnblockComponent(String courseCode, Map<String, Integer> unblockCounts) {
+        int dependents = unblockCounts.getOrDefault(courseCode, 0);
+        return Math.min(100.0, (dependents / 4.0) * 100.0);
+    }
+
+    private double calculateProgressionComponent(CurriculumFixture.CourseDefinitionItem course, int currentSemester) {
         int suggested = course.getSuggestedSemester() != null ? course.getSuggestedSemester() : 1;
         if (suggested <= currentSemester) {
-            return 25.0; // Đúng hoặc trễ tiến độ chuẩn -> Ưu tiên cao nhất
+            return 100.0; // Đúng hoặc trễ tiến độ chuẩn -> Điểm tối đa
         } else if (suggested == currentSemester + 1) {
-            return 18.0; // Học vượt nhẹ kỳ sau
+            return 70.0; // Học vượt nhẹ kỳ liền sau
         } else {
-            return 10.0; // Vượt xa hơn
+            return 40.0; // Học vượt xa hơn
         }
     }
 
-    private double calculateRetakeScore(CourseStatus status) {
-        if (status == null) {
-            return 0.0;
+    private double calculateRetakeComponent(boolean isFailedRetake, boolean isRetakeCandidate) {
+        if (isFailedRetake) {
+            return 100.0; // Môn nợ F: Cần học lại ngay để xóa F và khơi thông mạch
         }
-        if (Boolean.FALSE.equals(status.passed)) {
-            return 20.0; // Môn nợ F: Cần học lại ngay để xóa điểm F
-        }
-        if (status.score != null && status.score < 2.5) {
-            return 12.0; // Môn điểm D/D+/C có ROI cải thiện
+        if (isRetakeCandidate) {
+            return 60.0; // Môn điểm D/D+/C: Cải thiện điểm
         }
         return 0.0;
     }
 
-    private double calculateWorkloadScore(CurriculumFixture.CourseDefinitionItem course) {
+    private double calculateWorkloadComponent(CurriculumFixture.CourseDefinitionItem course) {
         int credits = course.getCredits() != null ? course.getCredits() : 3;
         if (credits <= 3) {
-            return 15.0; // Phân bổ môn vừa phải
+            return 100.0;
+        } else if (credits == 4) {
+            return 70.0;
+        } else {
+            return 40.0;
         }
-        return 10.0; // Môn nhiều tín chỉ
     }
 
-    private String buildRationale(double scoreUnblock, double scoreProgression, double scoreRetake,
+    private String buildRationale(double sUnblock, double sProgression, double sRetake,
                                   boolean isFailedRetake, boolean isRetakeCandidate) {
         if (isFailedRetake) {
             return "Học lại môn nợ để xóa điểm F và khơi thông mạch học tập (Trọng số 40% tiên quyết + 20% gỡ nợ)";
         }
         if (isRetakeCandidate) {
-            return "Học cải thiện điểm để nâng CPA (Trọng số 20% ROI retake)";
+            return "Học cải thiện điểm theo lựa chọn của sinh viên để nâng CPA (Trọng số 20% ROI retake)";
         }
-        if (scoreUnblock >= 25.0) {
+        if (sUnblock >= 50.0) {
             return "Môn tiên quyết mở khóa nhiều môn chuyên ngành kế tiếp (Trọng số 40% unblock)";
         }
         return "Môn bắt buộc theo tiến độ khung CTĐT HaUI (Trọng số 25% progression)";
@@ -304,16 +550,121 @@ public class StudyPlanScheduler {
         for (CurriculumFixture.CourseDefinitionItem c : curriculum.getCourses()) {
             if (c.getPrerequisites() != null) {
                 for (String p : c.getPrerequisites()) {
-                    counts.put(p.toUpperCase(), counts.getOrDefault(p.toUpperCase(), 0) + 1);
+                    if (p != null) counts.put(p.toUpperCase(), counts.getOrDefault(p.toUpperCase(), 0) + 1);
                 }
             }
             if (c.getPriorCourses() != null) {
                 for (String p : c.getPriorCourses()) {
-                    counts.put(p.toUpperCase(), counts.getOrDefault(p.toUpperCase(), 0) + 1);
+                    if (p != null) counts.put(p.toUpperCase(), counts.getOrDefault(p.toUpperCase(), 0) + 1);
                 }
             }
         }
         return counts;
+    }
+
+    /**
+     * Phát hiện chu trình phụ thuộc tiên quyết trong CTĐT bằng DFS.
+     */
+    private String detectPrerequisiteCycle(List<CurriculumFixture.CourseDefinitionItem> courses) {
+        Map<String, List<String>> adj = new HashMap<>();
+        for (CurriculumFixture.CourseDefinitionItem c : courses) {
+            if (c.getCourseCode() == null) continue;
+            String code = c.getCourseCode().toUpperCase();
+            adj.putIfAbsent(code, new ArrayList<>());
+            if (c.getPrerequisites() != null) {
+                for (String p : c.getPrerequisites()) {
+                    if (p != null) adj.get(code).add(p.toUpperCase());
+                }
+            }
+        }
+
+        Map<String, Integer> visited = new HashMap<>(); // 0: unvisited, 1: visiting, 2: visited
+        List<String> path = new ArrayList<>();
+
+        for (String node : adj.keySet()) {
+            if (visited.getOrDefault(node, 0) == 0) {
+                String cycle = dfsCycle(node, adj, visited, path);
+                if (cycle != null) return cycle;
+            }
+        }
+        return null;
+    }
+
+    private String dfsCycle(String curr, Map<String, List<String>> adj, Map<String, Integer> visited, List<String> path) {
+        visited.put(curr, 1);
+        path.add(curr);
+
+        List<String> neighbors = adj.getOrDefault(curr, Collections.emptyList());
+        for (String n : neighbors) {
+            int state = visited.getOrDefault(n, 0);
+            if (state == 1) {
+                return String.join(" -> ", path) + " -> " + n;
+            } else if (state == 0) {
+                String res = dfsCycle(n, adj, visited, path);
+                if (res != null) return res;
+            }
+        }
+
+        visited.put(curr, 2);
+        path.remove(path.size() - 1);
+        return null;
+    }
+
+    /**
+     * Kiểm tra chéo toàn bộ phương án đã lập (Final Validation Pass).
+     */
+    private List<String> validateGeneratedPlan(List<PlannedSemesterItem> semesters,
+                                              Map<String, CurriculumFixture.CourseDefinitionItem> catalog,
+                                              List<SemesterSpec> semesterSpecs) {
+        List<String> errors = new ArrayList<>();
+        Set<String> seenCourses = new HashSet<>();
+        Map<String, Integer> scheduledSemesterIndex = new HashMap<>();
+
+        for (int i = 0; i < semesters.size(); i++) {
+            PlannedSemesterItem sem = semesters.get(i);
+            SemesterSpec spec = i < semesterSpecs.size() ? semesterSpecs.get(i) : null;
+
+            if (sem.getCourses() == null) continue;
+
+            // Kiểm tra trần tín chỉ của từng kỳ
+            if (spec != null && sem.getTotalCredits() != null && sem.getTotalCredits() > spec.maxCredits) {
+                errors.add("Kỳ " + sem.getSemesterCode() + " có tổng " + sem.getTotalCredits() + " TC vượt quá trần cho phép " + spec.maxCredits + " TC");
+            }
+
+            for (PlannedCourseItem c : sem.getCourses()) {
+                String code = c.getCourseCode().toUpperCase();
+                // Kiểm tra trùng lặp môn học
+                if (seenCourses.contains(code)) {
+                    errors.add("Môn học " + code + " bị xếp trùng lặp nhiều lần trong lộ trình");
+                }
+                seenCourses.add(code);
+                scheduledSemesterIndex.put(code, i);
+            }
+        }
+
+        // Kiểm tra DAG thứ tự môn tiên quyết: tiên quyết phải ở kỳ trước
+        for (int i = 0; i < semesters.size(); i++) {
+            PlannedSemesterItem sem = semesters.get(i);
+            if (sem.getCourses() == null) continue;
+
+            for (PlannedCourseItem c : sem.getCourses()) {
+                String code = c.getCourseCode().toUpperCase();
+                CurriculumFixture.CourseDefinitionItem def = catalog.get(code);
+                if (def == null) continue;
+
+                if (def.getPrerequisites() != null) {
+                    for (String p : def.getPrerequisites()) {
+                        String pUpper = p.toUpperCase();
+                        Integer pIndex = scheduledSemesterIndex.get(pUpper);
+                        if (pIndex != null && pIndex >= i) {
+                            errors.add("Vi phạm DAG tiên quyết: Môn " + code + " (kỳ " + (i + 1) + ") có tiên quyết " + pUpper + " được xếp cùng hoặc sau kỳ đó (kỳ " + (pIndex + 1) + ")");
+                        }
+                    }
+                }
+            }
+        }
+
+        return errors;
     }
 
     private static class SemesterSpec {

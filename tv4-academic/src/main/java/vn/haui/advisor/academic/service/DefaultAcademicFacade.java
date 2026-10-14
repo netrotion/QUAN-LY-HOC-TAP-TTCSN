@@ -52,7 +52,8 @@ public class DefaultAcademicFacade implements AcademicFacade {
         return Set.of(
                 AcademicCapability.GET_ACADEMIC_STATUS,
                 AcademicCapability.CHECK_COURSE_ELIGIBILITY,
-                AcademicCapability.RUN_GRADUATION_AUDIT
+                AcademicCapability.RUN_GRADUATION_AUDIT,
+                AcademicCapability.GENERATE_STUDY_PLAN
         );
     }
 
@@ -171,79 +172,21 @@ public class DefaultAcademicFacade implements AcademicFacade {
     @Override
     public GenerateStudyPlanResponse generateStudyPlan(GenerateStudyPlanRequest request) {
         String studentId = request != null ? request.getStudentId() : null;
-        String targetSemester = request != null && request.getTargetGraduationSemester() != null
-                ? request.getTargetGraduationSemester()
-                : "2026_1";
-        String revision = request != null ? request.getDataRevision() : "rev-v0";
 
         StudentProfileFixture profile = profiles.get(studentId);
-
-        // Sử dụng StudyPlanScheduler nếu là sinh viên CT1085 hoặc có yêu cầu lập lịch nâng cao (hè, vượt tín chỉ, cảnh báo)
-        if (profile != null && ("CT1085".equalsIgnoreCase(profile.getMajorCode())
-                || request.getIncludeSummerSemesters() != null
-                || (request.getMaxCreditsPerSemester() != null && request.getMaxCreditsPerSemester() > 20)
-                || profile.getRiskLevel() == AcademicRiskLevel.WARNING_LEVEL_1
-                || profile.getRiskLevel() == AcademicRiskLevel.WARNING_LEVEL_2)) {
-            CurriculumFixture targetCurriculum = "CT1085".equalsIgnoreCase(profile.getMajorCode())
-                    ? AcademicFixtures.getCurriculumV1()
-                    : this.curriculum;
-            return new StudyPlanScheduler(this.policy, targetCurriculum).plan(profile, request);
+        if (profile == null) {
+            profile = AcademicFixtures.getStudentProfilesV1().get(studentId);
         }
 
-        List<PlannedCourseItem> plannedCourses = new ArrayList<>();
-        List<String> warnings = new ArrayList<>();
-
-        // 1. Ưu tiên 40%: Môn nợ là tiên quyết của nhiều môn sau
-        if (profile != null && profile.getCourseAttempts() != null) {
-            for (StudentProfileFixture.CourseAttempt a : profile.getCourseAttempts()) {
-                Boolean passed = a.getPassed() != null ? a.getPassed() : GradeCalculator.isPassed(a.getLetterGrade());
-                if (Boolean.FALSE.equals(passed)) {
-                    plannedCourses.add(new PlannedCourseItem(
-                            a.getCourseCode(),
-                            a.getCourseName() + " (học lại)",
-                            a.getCredits() != null ? a.getCredits() : 3,
-                            "B",
-                            "Gỡ nút thắt môn tiên quyết để mở khóa môn kỳ sau (Trọng số 40%)"
-                    ));
-                }
-            }
+        // Chọn khung chương trình tương ứng với sinh viên (CT1085 KTPM hoặc CNTT mặc định)
+        CurriculumFixture targetCurriculum = this.curriculum;
+        if (profile != null && "CT1085".equalsIgnoreCase(profile.getMajorCode())) {
+            targetCurriculum = AcademicFixtures.getCurriculumV1();
+        } else if (targetCurriculum == null) {
+            targetCurriculum = AcademicFixtures.getCurriculum();
         }
 
-        // 2. Môn tiến độ CTĐT (Trọng số 25%)
-        plannedCourses.add(new PlannedCourseItem(
-                "IT6002",
-                "Lập trình mạng",
-                3,
-                "A",
-                "Môn cơ sở chuyên ngành theo tiến độ CTĐT (Trọng số 25%)"
-        ));
-
-        int totalCredits = plannedCourses.stream().mapToInt(PlannedCourseItem::getCredits).sum();
-        if (totalCredits < 10) {
-            warnings.add("Cần duy trì tối thiểu 10 tín chỉ theo quy chế nếu không phải kỳ cuối");
-        }
-
-        PlannedSemesterItem semesterItem = new PlannedSemesterItem(
-                targetSemester,
-                "Học kỳ " + targetSemester,
-                plannedCourses,
-                totalCredits,
-                new BigDecimal("3.50")
-        );
-
-        BigDecimal currentCpa = profile != null && profile.getCpa() != null ? profile.getCpa() : new BigDecimal("2.45");
-        BigDecimal projectedCpa = currentCpa.add(new BigDecimal("0.13")).setScale(2, RoundingMode.HALF_UP);
-
-        return new GenerateStudyPlanResponse(
-                "plan-" + (studentId != null ? studentId : "demo") + "-v0",
-                studentId,
-                StudyPlanStatus.DRAFT,
-                List.of(semesterItem),
-                projectedCpa,
-                warnings,
-                1,
-                revision
-        );
+        return new StudyPlanScheduler(this.policy, targetCurriculum).plan(profile, request);
     }
 
     @Override
