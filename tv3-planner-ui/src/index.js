@@ -4,7 +4,12 @@ import { WhatIfSimulatorPage } from './pages/WhatIfSimulatorPage.js';
 import { StudentProfilePage } from './pages/StudentProfilePage.js';
 import { PlanHistoryModal } from './components/PlanHistoryModal.js';
 import { CurriculumTreeModal } from './components/CurriculumTreeModal.js';
-import { plannerStore, PLAN_STATUSES } from './services/plannerStore.js';
+import {
+  plannerStore,
+  PLAN_STATUSES,
+  validatePlanFormat,
+  evaluatePlanRules
+} from './services/plannerStore.js';
 
 /**
  * HaUI Advisor - Planner UI Feature Package (TV3)
@@ -69,6 +74,8 @@ export {
   CurriculumTreeModal,
   plannerStore,
   PLAN_STATUSES,
+  validatePlanFormat,
+  evaluatePlanRules,
   generateMockChatResponse
 };
 

@@ -47,8 +47,14 @@ export function StudyPlannerPage({ api, ui } = {}) {
   const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
   const [selectedSemesterForAdd, setSelectedSemesterForAdd] = useState('2026_1');
 
-  // Thẩm định quy chế
+  // Chuyển môn giữa các học kỳ
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
+  const [moveCourseTarget, setMoveCourseTarget] = useState(null); // { fromSemesterCode, course }
+  const [selectedTargetSemester, setSelectedTargetSemester] = useState('');
+
+  // Thẩm định quy chế & Lưu nháp
   const [validating, setValidating] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Đăng ký lắng nghe thay đổi từ plannerStore
   useEffect(() => {
@@ -134,11 +140,62 @@ export function StudyPlannerPage({ api, ui } = {}) {
     }
   }, [api, plan, showToast]);
 
-  // Hành động: Lưu bản nháp (Save Draft)
-  const handleSaveDraft = useCallback(() => {
-    const res = plannerStore.saveDraft();
+  // Hành động: Mở modal chuyển môn
+  const handleOpenMoveModal = useCallback(
+    (fromSemesterCode, course) => {
+      const otherSemesters = (plan?.semesters || []).filter((s) => s.semesterCode !== fromSemesterCode);
+      setMoveCourseTarget({ fromSemesterCode, course });
+      setSelectedTargetSemester(otherSemesters[0]?.semesterCode || '');
+      setIsMoveModalOpen(true);
+    },
+    [plan]
+  );
+
+  // Hành động: Xác nhận chuyển môn sang học kỳ đích
+  const handleConfirmMove = useCallback(() => {
+    if (!moveCourseTarget || !selectedTargetSemester) return;
+    const res = plannerStore.moveCourse(
+      moveCourseTarget.fromSemesterCode,
+      selectedTargetSemester,
+      moveCourseTarget.course.courseCode
+    );
+    setIsMoveModalOpen(false);
     showToast(res.message);
-  }, [showToast]);
+  }, [moveCourseTarget, selectedTargetSemester, showToast]);
+
+  // Hành động: Lưu bản nháp (Save Draft)
+  // DRAFT lưu được khi đúng định dạng; Lưu lỗi KHÔNG làm mất nội dung đang chỉnh sửa
+  const handleSaveDraft = useCallback(async () => {
+    setSaving(true);
+    try {
+      const storeRes = plannerStore.saveDraft();
+      if (!storeRes.success) {
+        showToast(`⚠️ ${storeRes.message}`);
+        return;
+      }
+
+      // Nếu có backend API từ TV2 thì gọi đồng bộ (mock hoặc live)
+      if (api && api.planner && typeof api.planner.save === 'function') {
+        await api.planner.save(plannerStore.getPlan());
+      } else if (api && typeof api.post === 'function') {
+        try {
+          await api.post('/planner/plans', {
+            planName: plannerStore.getPlan().planName,
+            semesters: plannerStore.getPlan().semesters
+          });
+        } catch {
+          // Bỏ qua nếu backend chưa hỗ trợ endpoint này
+        }
+      }
+
+      showToast(storeRes.message);
+    } catch (err) {
+      // Lưu lỗi không mất nội dung: thông báo lỗi nhưng giữ nguyên kế hoạch trong store
+      showToast(`⚠️ Lỗi khi lưu máy chủ: ${err?.message || 'Sự cố kết nối'}. Nội dung nháp vẫn được giữ nguyên.`);
+    } finally {
+      setSaving(false);
+    }
+  }, [api, showToast]);
 
   // Hành động: Kích hoạt kế hoạch (Bắt đầu theo dõi)
   // F23-005: store từ chối nếu kế hoạch chưa VALIDATED hoặc còn vi phạm quy chế
@@ -288,7 +345,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
       Button
         ? React.createElement(
             Button,
-            { variant: 'secondary', size: 'sm', onClick: handleSaveDraft },
+            { variant: 'secondary', size: 'sm', loading: saving, onClick: handleSaveDraft },
             '💾 Lưu bản nháp'
           )
         : null,
@@ -689,19 +746,34 @@ export function StudyPlannerPage({ api, ui } = {}) {
         key: 'actions',
         title: 'Thao tác',
         align: 'center',
-        width: '90px',
+        width: '140px',
         render: (_, row) =>
-          Button
-            ? React.createElement(
-                Button,
-                {
-                  variant: 'ghost',
-                  size: 'sm',
-                  onClick: () => handleRemoveCourse(semester.semesterCode, row.courseCode)
-                },
-                'Bỏ'
-              )
-            : React.createElement('button', { onClick: () => handleRemoveCourse(semester.semesterCode, row.courseCode) }, 'Bỏ')
+          React.createElement(
+            'div',
+            { style: { display: 'flex', gap: '4px', justifyContent: 'center' } },
+            Button
+              ? React.createElement(
+                  Button,
+                  {
+                    variant: 'secondary',
+                    size: 'sm',
+                    onClick: () => handleOpenMoveModal(semester.semesterCode, row)
+                  },
+                  'Chuyển'
+                )
+              : null,
+            Button
+              ? React.createElement(
+                  Button,
+                  {
+                    variant: 'ghost',
+                    size: 'sm',
+                    onClick: () => handleRemoveCourse(semester.semesterCode, row.courseCode)
+                  },
+                  'Bỏ'
+                )
+              : React.createElement('button', { onClick: () => handleRemoveCourse(semester.semesterCode, row.courseCode) }, 'Bỏ')
+          )
       }
     ];
 
@@ -875,6 +947,94 @@ export function StudyPlannerPage({ api, ui } = {}) {
     : null;
 
   // ==========================================
+  // MODAL CHUYỂN MÔN GIỮA CÁC KỲ (MOVE COURSE MODAL)
+  // ==========================================
+  const targetSemestersList = (plan?.semesters || []).filter(
+    (s) => s.semesterCode !== moveCourseTarget?.fromSemesterCode
+  );
+
+  const moveCourseModal = Modal && moveCourseTarget
+    ? React.createElement(
+        Modal,
+        {
+          isOpen: isMoveModalOpen,
+          onClose: () => setIsMoveModalOpen(false),
+          title: `Chuyển môn ${moveCourseTarget.course?.courseCode} sang học kỳ khác`,
+          subtitle: `Học phần: ${moveCourseTarget.course?.courseName} (${moveCourseTarget.course?.credits} tín chỉ)`,
+          size: 'md',
+          footer: React.createElement(
+            'div',
+            { style: { display: 'flex', justifyContent: 'flex-end', gap: '8px' } },
+            Button
+              ? React.createElement(Button, { variant: 'ghost', size: 'sm', onClick: () => setIsMoveModalOpen(false) }, 'Hủy')
+              : null,
+            Button
+              ? React.createElement(
+                  Button,
+                  { variant: 'primary', size: 'sm', onClick: handleConfirmMove },
+                  'Xác nhận Chuyển'
+                )
+              : null
+          )
+        },
+        React.createElement(
+          'div',
+          { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+          React.createElement(
+            'p',
+            { style: { fontSize: '13px', color: '#475569', margin: 0 } },
+            `Chọn học kỳ đích để chuyển môn học từ ${
+              plan.semesters.find((s) => s.semesterCode === moveCourseTarget.fromSemesterCode)?.semesterName ||
+              moveCourseTarget.fromSemesterCode
+            }:`
+          ),
+          React.createElement(
+            'div',
+            { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+            targetSemestersList.map((sem) => {
+              const isSelected = selectedTargetSemester === sem.semesterCode;
+              const alreadyHas = sem.courses.some((c) => c.courseCode === moveCourseTarget.course?.courseCode);
+
+              return React.createElement(
+                'div',
+                {
+                  key: sem.semesterCode,
+                  onClick: () => !alreadyHas && setSelectedTargetSemester(sem.semesterCode),
+                  style: {
+                    padding: '12px 14px',
+                    borderRadius: '8px',
+                    border: isSelected ? '2px solid #0284c7' : '1px solid #e2e8f0',
+                    background: isSelected ? '#f0f9ff' : alreadyHas ? '#f8fafc' : '#ffffff',
+                    cursor: alreadyHas ? 'not-allowed' : 'pointer',
+                    opacity: alreadyHas ? 0.6 : 1,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }
+                },
+                React.createElement(
+                  'div',
+                  null,
+                  React.createElement('div', { style: { fontWeight: 600, fontSize: '13px', color: '#0f172a' } }, sem.semesterName),
+                  React.createElement(
+                    'div',
+                    { style: { fontSize: '11px', color: '#64748b', marginTop: '2px' } },
+                    alreadyHas
+                      ? '⚠️ Đã có môn này trong học kỳ'
+                      : `Hiện có ${sem.totalCredits} TC → Dự kiến sau chuyển: ${Number(sem.totalCredits) + Number(moveCourseTarget.course?.credits)} TC`
+                  )
+                ),
+                isSelected
+                  ? React.createElement('span', { style: { color: '#0284c7', fontWeight: 700, fontSize: '16px' } }, '✓')
+                  : null
+              );
+            })
+          )
+        )
+      )
+    : null;
+
+  // ==========================================
   // RENDER TỔNG THỂ TRANG
   // ==========================================
   return React.createElement(
@@ -892,6 +1052,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
     // Các Modals bổ trợ
     activateModal,
     addCourseModal,
+    moveCourseModal,
     React.createElement(PlanHistoryModal, {
       isOpen: isHistoryModalOpen,
       onClose: () => setIsHistoryModalOpen(false),

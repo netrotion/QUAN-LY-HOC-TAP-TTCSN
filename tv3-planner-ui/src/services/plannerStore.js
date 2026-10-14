@@ -300,6 +300,42 @@ const createPlanId = (prefix) => {
 };
 
 /**
+ * Kiểm tra tính hợp lệ về mặt cấu trúc và định dạng dữ liệu của kế hoạch.
+ * Yêu cầu: "DRAFT lưu được khi dữ liệu đúng định dạng; kích hoạt phải kiểm tra nghiệp vụ."
+ */
+export function validatePlanFormat(plan) {
+  if (!plan || typeof plan !== 'object') {
+    return { valid: false, errors: ['Kế hoạch không hợp lệ hoặc rỗng.'] };
+  }
+  if (!Array.isArray(plan.semesters)) {
+    return { valid: false, errors: ['Kế hoạch phải có mảng học kỳ (semesters).'] };
+  }
+  const errors = [];
+  for (const sem of plan.semesters) {
+    if (!sem || typeof sem !== 'object') {
+      errors.push('Học kỳ không hợp lệ.');
+      continue;
+    }
+    if (!sem.semesterCode) {
+      errors.push('Học kỳ thiếu mã học kỳ (semesterCode).');
+    }
+    if (!Array.isArray(sem.courses)) {
+      errors.push(`Học kỳ ${sem.semesterCode || ''} thiếu mảng môn học (courses).`);
+      continue;
+    }
+    for (const course of sem.courses) {
+      if (!course || !course.courseCode) {
+        errors.push('Môn học thiếu mã môn học (courseCode).');
+      }
+      if (typeof course.credits !== 'number' || course.credits <= 0) {
+        errors.push(`Môn học ${course?.courseCode || ''} có số tín chỉ không hợp lệ (phải > 0).`);
+      }
+    }
+  }
+  return { valid: errors.length === 0, errors };
+}
+
+/**
  * Kiểm tra quy chế tín chỉ HaUI trên một kế hoạch (hàm thuần, không đổi trạng thái).
  * Dùng chung cho validatePlan() và chốt chặn trong activatePlan().
  */
@@ -565,13 +601,61 @@ class PlannerStore {
     return true;
   }
 
-  // Lưu bản nháp (Save Draft) — lưu không phải kích hoạt, không đổi nội dung nên giữ nguyên kết quả thẩm định
+  // Chuyển một môn học từ học kỳ này sang học kỳ khác
+  moveCourse(fromSemesterCode, toSemesterCode, courseCode) {
+    if (fromSemesterCode === toSemesterCode) {
+      return { success: false, message: 'Học kỳ nguồn và học kỳ đích giống nhau.' };
+    }
+    const fromSem = this.plan.semesters?.find((s) => s.semesterCode === fromSemesterCode);
+    const toSem = this.plan.semesters?.find((s) => s.semesterCode === toSemesterCode);
+    if (!fromSem || !toSem) {
+      return { success: false, message: 'Không tìm thấy học kỳ nguồn hoặc học kỳ đích.' };
+    }
+
+    const courseIndex = fromSem.courses?.findIndex((c) => c.courseCode === courseCode);
+    if (courseIndex === -1 || courseIndex === undefined) {
+      return { success: false, message: `Môn ${courseCode} không có trong học kỳ nguồn.` };
+    }
+
+    if (toSem.courses?.some((c) => c.courseCode === courseCode)) {
+      return { success: false, message: `Môn ${courseCode} đã có trong học kỳ đích.` };
+    }
+
+    this.markEdited();
+
+    const freshFromSem = this.plan.semesters.find((s) => s.semesterCode === fromSemesterCode);
+    const freshToSem = this.plan.semesters.find((s) => s.semesterCode === toSemesterCode);
+
+    const [movedCourse] = freshFromSem.courses.splice(courseIndex, 1);
+    freshToSem.courses.push(movedCourse);
+
+    freshFromSem.totalCredits = sumCredits(freshFromSem.courses);
+    freshToSem.totalCredits = sumCredits(freshToSem.courses);
+
+    this.notify();
+    return {
+      success: true,
+      message: `Đã chuyển môn ${courseCode} từ ${freshFromSem.semesterName || fromSemesterCode} sang ${freshToSem.semesterName || toSemesterCode}.`
+    };
+  }
+
+  // Lưu bản nháp (Save Draft) — DRAFT lưu được khi dữ liệu đúng định dạng, không bắt buộc đạt chuẩn quy chế học vụ
   saveDraft(customName) {
     if (this.plan.status === PLAN_STATUSES.ACTIVE) {
       return {
         success: false,
         code: 'NO_CHANGES',
         message: 'Kế hoạch đang áp dụng chưa có thay đổi nào để lưu thành bản nháp.'
+      };
+    }
+
+    const formatCheck = validatePlanFormat(this.plan);
+    if (!formatCheck.valid) {
+      return {
+        success: false,
+        code: 'INVALID_FORMAT',
+        errors: formatCheck.errors,
+        message: `Dữ liệu kế hoạch không đúng định dạng: ${formatCheck.errors.join('; ')}`
       };
     }
 
