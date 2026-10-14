@@ -332,6 +332,7 @@ export function AcademicProgressPage() {
               Kiểm tra lại
             </Button>
           </div>
+        }
       >
         {loading && <Loading label="Đang rà soát 100% hồ sơ điều kiện tốt nghiệp..." />}
 
