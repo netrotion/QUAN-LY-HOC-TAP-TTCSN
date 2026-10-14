@@ -10,6 +10,8 @@ import vn.haui.advisor.academic.model.StudentProfileFixture;
 import vn.haui.advisor.contracts.dto.*;
 import vn.haui.advisor.contracts.ports.AcademicFacade;
 
+import vn.haui.advisor.contracts.ports.StudentAcademicRecordProvider;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
@@ -19,17 +21,39 @@ public class DefaultAcademicFacade implements AcademicFacade {
     private final PolicyDemo policy;
     private final CurriculumFixture curriculum;
     private final Map<String, StudentProfileFixture> profiles;
+    private final StudentAcademicRecordProvider recordProvider;
 
     public DefaultAcademicFacade() {
-        this(AcademicFixtures.getPolicyDemo(), AcademicFixtures.getCurriculum(), AcademicFixtures.getStudentProfiles());
+        this(null, AcademicFixtures.getPolicyDemo(), AcademicFixtures.getCurriculum(), AcademicFixtures.getStudentProfiles());
+    }
+
+    public DefaultAcademicFacade(StudentAcademicRecordProvider recordProvider) {
+        this(recordProvider, AcademicFixtures.getPolicyDemo(), AcademicFixtures.getCurriculum(), AcademicFixtures.getStudentProfiles());
     }
 
     public DefaultAcademicFacade(PolicyDemo policy,
                                  CurriculumFixture curriculum,
                                  Map<String, StudentProfileFixture> profiles) {
+        this(null, policy, curriculum, profiles);
+    }
+
+    public DefaultAcademicFacade(StudentAcademicRecordProvider recordProvider,
+                                 PolicyDemo policy,
+                                 CurriculumFixture curriculum,
+                                 Map<String, StudentProfileFixture> profiles) {
+        this.recordProvider = recordProvider;
         this.policy = policy != null ? policy : AcademicFixtures.getPolicyDemo();
         this.curriculum = curriculum != null ? curriculum : AcademicFixtures.getCurriculum();
         this.profiles = profiles != null ? new HashMap<>(profiles) : new HashMap<>();
+    }
+
+    @Override
+    public Set<AcademicCapability> readyCapabilities() {
+        return Set.of(
+                AcademicCapability.GET_ACADEMIC_STATUS,
+                AcademicCapability.CHECK_COURSE_ELIGIBILITY,
+                AcademicCapability.RUN_GRADUATION_AUDIT
+        );
     }
 
     @Override
@@ -37,6 +61,33 @@ public class DefaultAcademicFacade implements AcademicFacade {
         String studentId = request != null ? request.getStudentId() : null;
         String revision = request != null ? request.getDataRevision() : "rev-v0";
 
+        // 1. Thử lấy dữ liệu từ SPI Provider nếu có
+        if (recordProvider != null && studentId != null) {
+            try {
+                StudentAcademicRecord record = recordProvider.getAcademicRecord(studentId);
+                if (record != null) {
+                    List<TranscriptAttemptItem> attempts = record.getAttempts() != null ? record.getAttempts() : Collections.emptyList();
+                    BigDecimal cpa = GradeCalculator.calculateCpaFromAttempts(attempts);
+                    int accumulatedCredits = GradeCalculator.calculateAccumulatedCreditsFromAttempts(attempts);
+                    int debtCredits = GradeCalculator.calculateDebtCreditsFromAttempts(attempts);
+
+                    int totalRequired = 135;
+                    List<String> warnings = new ArrayList<>();
+                    if (debtCredits > 0) {
+                        warnings.add("Hiện đang có " + debtCredits + " tín chỉ học phần chưa đạt");
+                    }
+
+                    AcademicRiskLevel risk = RuleEvaluator.evaluateRiskLevel(cpa, 1, debtCredits);
+                    String dataRev = record.getDataRevision() != null ? record.getDataRevision() : revision;
+                    return new AcademicStatusResponse(studentId, null, cpa, accumulatedCredits, totalRequired, risk, warnings, dataRev);
+                }
+            } catch (Exception e) {
+                return new AcademicStatusResponse(studentId, null, null, 0, 135,
+                        AcademicRiskLevel.NORMAL, List.of("Lỗi khi tải hồ sơ sinh viên từ provider: " + e.getMessage()), revision);
+            }
+        }
+
+        // 2. Fallback sang profiles fixture
         StudentProfileFixture profile = profiles.get(studentId);
         if (profile == null) {
             return new AcademicStatusResponse(studentId, null, null, 0, 135,
@@ -95,6 +146,17 @@ public class DefaultAcademicFacade implements AcademicFacade {
         String revision = request != null ? request.getDataRevision() : "rev-v0";
 
         StudentProfileFixture profile = profiles.get(studentId);
+        List<TranscriptAttemptItem> transcriptAttempts = null;
+        if (recordProvider != null && studentId != null) {
+            try {
+                StudentAcademicRecord record = recordProvider.getAcademicRecord(studentId);
+                if (record != null && record.getAttempts() != null) {
+                    transcriptAttempts = record.getAttempts();
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
         CurriculumFixture targetCurriculum = this.curriculum;
         if (profile != null && "CT1085".equalsIgnoreCase(profile.getMajorCode())) {
             targetCurriculum = AcademicFixtures.getCurriculumV1();
@@ -103,7 +165,7 @@ public class DefaultAcademicFacade implements AcademicFacade {
                 targetCurriculum = AcademicFixtures.getCurriculumV1();
             }
         }
-        return RuleEvaluator.checkEligibility(courseCode, profile, targetCurriculum, revision);
+        return RuleEvaluator.checkEligibility(courseCode, profile, transcriptAttempts, targetCurriculum, Collections.emptyList(), revision);
     }
 
     @Override
@@ -338,13 +400,72 @@ public class DefaultAcademicFacade implements AcademicFacade {
         String revision = request != null ? request.getDataRevision() : "rev-v0";
 
         StudentProfileFixture profile = profiles.get(studentId);
-        int earnedCredits = profile != null && profile.getAccumulatedCredits() != null ? profile.getAccumulatedCredits() : 0;
-        int totalRequired = profile != null && profile.getTotalCreditsRequired() != null ? profile.getTotalCreditsRequired() : 135;
+        int earnedCredits = 0;
+        int totalRequired = 135;
+        BigDecimal cpa = null;
+        List<AuditChecklistItem> checklist = new ArrayList<>();
+        List<AuditCertificateAction> actions = new ArrayList<>();
+
+        if (recordProvider != null && studentId != null) {
+            try {
+                StudentAcademicRecord record = recordProvider.getAcademicRecord(studentId);
+                if (record != null) {
+                    List<TranscriptAttemptItem> attempts = record.getAttempts() != null ? record.getAttempts() : Collections.emptyList();
+                    earnedCredits = GradeCalculator.calculateAccumulatedCreditsFromAttempts(attempts);
+                    cpa = GradeCalculator.calculateCpaFromAttempts(attempts);
+
+                    if (record.getCertificates() != null) {
+                        for (CertificateStatusItem cert : record.getCertificates()) {
+                            boolean completed = cert.getStatus() == CertificateStatus.ACHIEVED;
+                            checklist.add(new AuditChecklistItem(
+                                    cert.getCategory() != null ? cert.getCategory() : "CHỨNG CHỈ",
+                                    cert.getName(),
+                                    completed,
+                                    null,
+                                    null,
+                                    completed ? "Đã đạt chuẩn đầu ra" : "Chưa hoàn thành"
+                            ));
+                            if (!completed) {
+                                actions.add(new AuditCertificateAction(
+                                        cert.getRequirementCode(),
+                                        cert.getName(),
+                                        "Đăng ký nộp chứng chỉ " + cert.getName() + " trước kỳ xét tốt nghiệp",
+                                        "Trước kỳ tốt nghiệp",
+                                        "Chưa nộp"
+                                ));
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        if (earnedCredits == 0 && profile != null) {
+            earnedCredits = profile.getAccumulatedCredits() != null ? profile.getAccumulatedCredits() : 0;
+            totalRequired = profile.getTotalCreditsRequired() != null ? profile.getTotalCreditsRequired() : 135;
+            cpa = profile.getCpa();
+            if (profile.getCertificates() != null) {
+                for (StudentProfileFixture.CertificateItem cert : profile.getCertificates()) {
+                    checklist.add(new AuditChecklistItem(
+                            cert.getCategory(),
+                            cert.getName(),
+                            cert.isCompleted(),
+                            null,
+                            null,
+                            cert.getStatusMessage()
+                    ));
+                }
+            }
+            if (profile.getPendingActions() != null) {
+                actions.addAll(profile.getPendingActions());
+            }
+        }
 
         int percentage = totalRequired > 0 ? (earnedCredits * 100 / totalRequired) : 0;
 
-        List<AuditChecklistItem> checklist = new ArrayList<>();
-        checklist.add(new AuditChecklistItem(
+        // Đảm bảo có mục tín chỉ tích lũy trong checklist
+        checklist.add(0, new AuditChecklistItem(
                 "TÍN CHỈ TÍCH LŨY",
                 "Tổng số tín chỉ tích lũy",
                 earnedCredits >= totalRequired,
@@ -353,7 +474,7 @@ public class DefaultAcademicFacade implements AcademicFacade {
                 earnedCredits >= totalRequired ? "Đã hoàn thành 100%" : "Còn thiếu " + (totalRequired - earnedCredits) + " tín chỉ"
         ));
 
-        checklist.add(new AuditChecklistItem(
+        checklist.add(1, new AuditChecklistItem(
                 "KHỐI ĐẠI CƯƠNG",
                 "Khối kiến thức giáo dục đại cương",
                 true,
@@ -362,27 +483,9 @@ public class DefaultAcademicFacade implements AcademicFacade {
                 "Đã hoàn thành 100%"
         ));
 
-        List<AuditCertificateAction> actions = new ArrayList<>();
-        if (profile != null && profile.getCertificates() != null) {
-            for (StudentProfileFixture.CertificateItem cert : profile.getCertificates()) {
-                checklist.add(new AuditChecklistItem(
-                        cert.getCategory(),
-                        cert.getName(),
-                        cert.isCompleted(),
-                        null,
-                        null,
-                        cert.getStatusMessage()
-                ));
-            }
-        }
-
-        if (profile != null && profile.getPendingActions() != null) {
-            actions.addAll(profile.getPendingActions());
-        }
-
         boolean allCertCompleted = checklist.stream().allMatch(AuditChecklistItem::isCompleted);
         boolean eligible = (earnedCredits >= totalRequired) && allCertCompleted &&
-                (profile != null && profile.getCpa() != null && profile.getCpa().compareTo(new BigDecimal("2.00")) >= 0);
+                (cpa != null && cpa.compareTo(new BigDecimal("2.00")) >= 0);
 
         return new GraduationAuditResponse(studentId, eligible, percentage, earnedCredits, totalRequired, checklist, actions, revision);
     }
