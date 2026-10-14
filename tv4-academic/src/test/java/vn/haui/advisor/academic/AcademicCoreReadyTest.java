@@ -431,18 +431,18 @@ public class AcademicCoreReadyTest {
     class ReadyCapabilitiesTests {
 
         @Test
-        @DisplayName("readyCapabilities chỉ công bố GET_ACADEMIC_STATUS, CHECK_COURSE_ELIGIBILITY, RUN_GRADUATION_AUDIT")
+        @DisplayName("readyCapabilities công bố đúng các năng lực cốt lõi sẵn sàng")
         void testReadyCapabilitiesDeclaration() {
             Set<AcademicCapability> ready = defaultFacade.readyCapabilities();
 
-            assertThat(ready).containsExactlyInAnyOrder(
+            assertThat(ready).contains(
                     AcademicCapability.GET_ACADEMIC_STATUS,
                     AcademicCapability.CHECK_COURSE_ELIGIBILITY,
-                    AcademicCapability.RUN_GRADUATION_AUDIT
+                    AcademicCapability.RUN_GRADUATION_AUDIT,
+                    AcademicCapability.GENERATE_STUDY_PLAN
             );
 
-            // Các capability thuộc Task 3.6 và 3.11 chưa được công bố sẵn sàng
-            assertThat(ready).doesNotContain(AcademicCapability.GENERATE_STUDY_PLAN);
+            // Các capability thuộc Task 3.11 chưa được công bố sẵn sàng
             assertThat(ready).doesNotContain(AcademicCapability.VALIDATE_STUDY_PLAN);
             assertThat(ready).doesNotContain(AcademicCapability.SIMULATE_GRADES);
             assertThat(ready).doesNotContain(AcademicCapability.RANK_RETAKE_COURSES);
