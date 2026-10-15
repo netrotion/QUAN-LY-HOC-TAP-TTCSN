@@ -5,10 +5,13 @@ import { Button, Card, Error as ErrorBox, Loading, Modal, Table } from '../compo
 
 /**
  * Màn hình 4 & Luồng phụ B: Chi tiết & Sơ đồ Cây quan hệ môn học (`/curriculum`) — TV2
- * Căn cứ:
- * - Màn hình 4 UI Flow: Interactive Node Graph (Node Xanh lá / Node Đỏ rung cảnh báo / Node Vàng viền đậm AI đề xuất / Node Xám khóa)
- * - Panel Chi tiết học phần & Nút điều hướng: [ Quay lại đề xuất ], [ Thêm môn này vào kế hoạch ]
- * - Mục 5 Edge Cases & AC-02: Hiển thị Popup cảnh báo đỏ và vô hiệu hóa nút [ Thêm môn ] khi vi phạm môn tiên quyết.
+ * Tái thiết kế toàn diện theo Prototype "Clinical Blueprint on Frosted Paper":
+ * - Header Breadcrumb + Controls chuyển đổi chế độ xem: Sơ đồ luồng (Flowchart) vs Dạng bảng
+ * - 4 Thẻ Fast Stats đếm nhanh tiến độ tín chỉ (Đã hoàn thành, Đang học, Đủ điều kiện, Bị khóa)
+ * - Canvas Sơ đồ luồng nhiều học kỳ với các Node thẻ môn học bo góc 20px
+ * - Khối Drawer chi tiết học phần bên phải hiển thị HỌC PHẦN TIÊN QUYẾT và CHUỖI ẢNH HƯỞNG
+ * - Nút "+ Thêm môn vào kế hoạch" điều hướng sang TV3 Planner mang theo course_id và plan_id
+ * - Thẩm định điều kiện tiên quyết (Rule Engine) qua POST /api/v1/academic/eligibility
  */
 export function CurriculumTreePage() {
   const navigate = useNavigate();
@@ -16,12 +19,15 @@ export function CurriculumTreePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Bộ lọc theo Màn hình 4 UI Flow: theo kỳ, theo chuyên ngành hẹp, theo khối kiến thức, theo màu Node
-  const [blockFilter, setBlockFilter] = useState('ALL');
-  const [specializationFilter, setSpecializationFilter] = useState('ALL');
-  const [nodeColorFilter, setNodeColorFilter] = useState('ALL');
+  // Chế độ xem: 'flowchart' (Sơ đồ luồng) | 'table' (Dạng bảng)
+  const [viewMode, setViewMode] = useState('flowchart');
 
-  // Học phần đang được chọn trên Sơ đồ cây tương tác (Interactive Node Graph)
+  // Bộ lọc
+  const [blockFilter, setBlockFilter] = useState('ALL');
+  const [nodeColorFilter, setNodeColorFilter] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Học phần đang được chọn trên Sơ đồ cây tương tác
   const [selectedCourse, setSelectedCourse] = useState(null);
 
   // State kiểm tra điều kiện tiên quyết & Popup cảnh báo AC-02 (POST /api/v1/academic/eligibility)
@@ -29,7 +35,6 @@ export function CurriculumTreePage() {
   const [eligibilityResult, setEligibilityResult] = useState(null);
   const [checkingEligibility, setCheckingEligibility] = useState(false);
   const [eligibilityError, setEligibilityError] = useState(null);
-  const [addedToPlanBanner, setAddedToPlanBanner] = useState(null);
 
   const loadCurriculum = useCallback(async () => {
     setLoading(true);
@@ -63,7 +68,6 @@ export function CurriculumTreePage() {
     setCheckingEligibility(true);
     setEligibilityError(null);
     setEligibilityResult(null);
-    setAddedToPlanBanner(null);
 
     try {
       const res = await api.academic.checkEligibility({ courseCode: course.courseCode });
@@ -75,22 +79,40 @@ export function CurriculumTreePage() {
     }
   };
 
+  const handleAddCourseToPlanner = (course) => {
+    const courseId = course?.course_id || course?.courseCode || 'IT6001';
+    const activePlanId = 'plan-2026-9001';
+    navigate(`/planner?course_id=${encodeURIComponent(courseId)}&plan_id=${encodeURIComponent(activePlanId)}`);
+  };
+
   const allCourses = curriculum?.courses || [];
+
   const filteredCourses = allCourses.filter((c) => {
     if (blockFilter !== 'ALL' && c.block !== blockFilter) return false;
-    if (specializationFilter !== 'ALL' && c.specialization !== specializationFilter) return false;
     if (nodeColorFilter !== 'ALL' && c.nodeColor !== nodeColorFilter) return false;
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      const matchCode = c.courseCode?.toLowerCase().includes(q);
+      const matchName = c.courseName?.toLowerCase().includes(q);
+      if (!matchCode && !matchName) return false;
+    }
     return true;
   });
 
-  // Nhóm các môn theo Học kỳ để vẽ Sơ đồ cây tương tác (Interactive Node Graph)
-  const semesterGroups = [1, 2, 3, 4, 5, 8]
+  // Nhóm các môn theo Học kỳ
+  const semesterGroups = [1, 2, 3, 4, 5, 6, 7, 8]
     .map((sem) => ({
       semester: sem,
       label: sem === 8 ? 'Học kỳ 8 (Đồ án TN)' : `Học kỳ ${sem}`,
       courses: filteredCourses.filter((c) => c.semester === sem)
     }))
     .filter((g) => g.courses.length > 0);
+
+  // Thống kê nhanh theo 4 trạng thái
+  const countPassed = allCourses.filter((c) => c.nodeColor === 'GREEN').length;
+  const countInProgress = allCourses.filter((c) => c.nodeColor === 'YELLOW').length;
+  const countBlocked = allCourses.filter((c) => c.nodeColor === 'RED').length;
+  const countLocked = allCourses.filter((c) => c.nodeColor === 'GRAY').length;
 
   const columns = [
     {
@@ -108,7 +130,8 @@ export function CurriculumTreePage() {
     },
     {
       key: 'courseName',
-      title: 'Tên học phần'
+      title: 'Tên học phần',
+      render: (val) => <strong>{val}</strong>
     },
     {
       key: 'block',
@@ -123,8 +146,8 @@ export function CurriculumTreePage() {
     },
     {
       key: 'prerequisites',
-      title: 'Tiên quyết (BR-01/BR-02)',
-      width: '190px',
+      title: 'TIÊN QUYẾT',
+      width: '180px',
       render: (prereqs) =>
         Array.isArray(prereqs) && prereqs.length > 0 ? (
           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
@@ -135,45 +158,31 @@ export function CurriculumTreePage() {
             ))}
           </div>
         ) : (
-          <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>Không</span>
+          <span style={{ color: 'var(--color-text-muted)', fontSize: '12px' }}>Không</span>
         )
     },
     {
       key: 'unlocks',
-      title: 'Mở khóa môn sau',
+      title: 'CHUỖI ẢNH HƯỞNG',
       width: '180px',
       render: (unlocks) =>
         Array.isArray(unlocks) && unlocks.length > 0 ? (
-          <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--color-primary)' }}>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-primary)' }}>
             &rarr; {unlocks.join(', ')}
           </span>
         ) : (
-          <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>—</span>
-        )
-    },
-    {
-      key: 'letterGrade',
-      title: 'Điểm',
-      align: 'center',
-      width: '95px',
-      render: (val, row) =>
-        val === null ? (
-          <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>null</span>
-        ) : (
-          <strong>
-            {val} ({row.score10})
-          </strong>
+          <span style={{ color: 'var(--color-text-muted)', fontSize: '12px' }}>—</span>
         )
     },
     {
       key: 'nodeColor',
-      title: 'Loại Node (Màn 4)',
+      title: 'Trạng thái Node',
       width: '175px',
       render: (nodeColor) => {
         const map = {
           GREEN: { cls: 'haui-badge--success', label: '🟢 Đã hoàn thành' },
-          RED: { cls: 'haui-badge--error', label: '🔴 Trượt / Nợ tiên quyết' },
-          YELLOW: { cls: 'haui-badge--warning', label: '🟡 AI Đề xuất kỳ tới' },
+          RED: { cls: 'haui-badge--error', label: '🔴 Trượt / Bị chặn' },
+          YELLOW: { cls: 'haui-badge--warning', label: '🟡 AI Đề xuất / Đang học' },
           GRAY: { cls: 'haui-badge--neutral', label: '🔒 Chưa đủ ĐK (Khóa)' }
         };
         const item = map[nodeColor] || { cls: 'haui-badge--neutral', label: nodeColor };
@@ -184,332 +193,469 @@ export function CurriculumTreePage() {
       key: 'action',
       title: 'Thao tác',
       align: 'right',
-      width: '150px',
+      width: '160px',
       render: (_, row) => (
-        <Button
-          variant={row.nodeColor === 'GRAY' ? 'danger' : 'secondary'}
-          size="sm"
+        <button
+          type="button"
+          className="haui-pill-btn-canvas"
+          style={{ fontSize: '12px', padding: '4px 10px' }}
           onClick={(e) => {
             e.stopPropagation();
             handleCheckCourseEligibility(row);
           }}
         >
           {row.nodeColor === 'GRAY' ? '🔒 Kiểm tra chặn' : '+ Thêm vào KH'}
-        </Button>
+        </button>
       )
     }
   ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-      {/* Header & Bộ lọc đa chiều theo Màn hình 4 UI Flow */}
-      <Card
-        variant="status-info"
-        title="Màn hình 4: Chi tiết & Sơ đồ Cây Quan hệ Môn học (Course Dependency Tree)"
-        subtitle="Trực quan hóa môn tiên quyết (BR-01), môn học trước (BR-02), chuỗi môn bị chặn dây chuyền và đề xuất của AI (DEMO_UNVERIFIED)"
-        headerAction={
-          <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
-            <Button variant="secondary" size="sm" onClick={() => navigate('/recommendations')}>
-              &larr; Quay lại đề xuất (Màn 3)
-            </Button>
-            <Button variant="primary" size="sm" onClick={() => navigate('/planner')}>
-              Mở Xác nhận Kế hoạch (Màn 5) &rarr;
-            </Button>
-          </div>
-        }
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-          {/* Chú giải 4 màu Node theo Màn hình 4 UI Flow */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', alignItems: 'center' }}>
-            <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
-              Lọc theo Trạng thái Node:
+      {/* SECTION 1: BREADCRUMB & PAGE TITLE & CONTROLS */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
+            <span style={{ cursor: 'pointer', color: 'var(--color-ink)' }} onClick={() => navigate('/dashboard')}>
+              Trang chủ
             </span>
-            {[
-              { key: 'ALL', label: `Tất cả (${allCourses.length})` },
-              { key: 'GREEN', label: '🟢 Node Xanh lá (Đã hoàn thành)' },
-              { key: 'RED', label: '🔴 Node Đỏ (Trượt / Nợ môn - Cảnh báo)' },
-              { key: 'YELLOW', label: '🟡 Node Vàng viền đậm (AI đề xuất kỳ tới)' },
-              { key: 'GRAY', label: '🔒 Node Xám (Chưa đủ ĐK học - Khóa)' }
-            ].map((item) => (
-              <Button
-                key={item.key}
-                variant={nodeColorFilter === item.key ? 'primary' : 'secondary'}
-                size="sm"
-                onClick={() => setNodeColorFilter(item.key)}
-              >
-                {item.label}
-              </Button>
-            ))}
+            <span>/</span>
+            <span style={{ color: 'var(--color-mid-gray)' }}>Cây môn học &amp; Lộ trình tiên quyết</span>
+          </div>
+          <h1 style={{ fontSize: '30px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+            Cây môn học &amp; Sơ đồ tiên quyết
+          </h1>
+          <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-mid-gray)', maxWidth: '780px' }}>
+            Trực quan hóa cấu trúc 145 tín chỉ ngành Công nghệ Thông tin (Chuyên ngành KTPM), liên kết luồng môn học tiên quyết và tiến độ thực tế của sinh viên.
+          </p>
+        </div>
+
+        {/* Export & Flow Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'inline-flex', padding: '3px', backgroundColor: 'var(--color-canvas)', borderRadius: '9999px', border: '1px solid var(--color-hairline)' }}>
+            <button
+              type="button"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '6px 14px',
+                borderRadius: '9999px',
+                border: 'none',
+                backgroundColor: viewMode === 'flowchart' ? 'var(--color-paper)' : 'transparent',
+                color: viewMode === 'flowchart' ? 'var(--color-ink)' : 'var(--color-mid-gray)',
+                fontWeight: viewMode === 'flowchart' ? 600 : 400,
+                fontSize: '12px',
+                cursor: 'pointer',
+                boxShadow: viewMode === 'flowchart' ? '0 1px 3px rgba(0, 0, 0, 0.08)' : 'none'
+              }}
+              onClick={() => setViewMode('flowchart')}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>account_tree</span>
+              <span>Sơ đồ luồng (Flowchart)</span>
+            </button>
+            <button
+              type="button"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '6px 14px',
+                borderRadius: '9999px',
+                border: 'none',
+                backgroundColor: viewMode === 'table' ? 'var(--color-paper)' : 'transparent',
+                color: viewMode === 'table' ? 'var(--color-ink)' : 'var(--color-mid-gray)',
+                fontWeight: viewMode === 'table' ? 600 : 400,
+                fontSize: '12px',
+                cursor: 'pointer',
+                boxShadow: viewMode === 'table' ? '0 1px 3px rgba(0, 0, 0, 0.08)' : 'none'
+              }}
+              onClick={() => setViewMode('table')}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>view_list</span>
+              <span>Dạng bảng</span>
+            </button>
           </div>
 
-          {/* Bộ lọc theo Khối kiến thức & Chuyên ngành hẹp */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-4)', alignItems: 'center' }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
-              <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
-                Khối kiến thức:
-              </span>
-              {['ALL', 'Đại cương', 'Cơ sở ngành', 'Chuyên ngành', 'Tự chọn', 'Tốt nghiệp'].map((blk) => (
-                <Button
-                  key={blk}
-                  variant={blockFilter === blk ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setBlockFilter(blk)}
-                >
-                  {blk === 'ALL' ? 'Tất cả khối' : blk}
-                </Button>
-              ))}
-            </div>
+          <button
+            type="button"
+            className="haui-pill-btn-dark"
+            onClick={() => window.print()}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>download</span>
+            <span>Xuất lộ trình PDF</span>
+          </button>
+        </div>
+      </div>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
-              <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
-                Chuyên ngành hẹp:
-              </span>
-              {['ALL', 'Chung CNTT/KTPM', 'Kỹ thuật phần mềm', 'Trí tuệ nhân tạo / KTPM'].map((spec) => (
-                <Button
-                  key={spec}
-                  variant={specializationFilter === spec ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setSpecializationFilter(spec)}
-                >
-                  {spec === 'ALL' ? 'Tất cả CN' : spec}
-                </Button>
-              ))}
+      {/* SECTION 2: FAST STATS COUNTER BADGES */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+        {/* Thẻ 1: Đã hoàn thành */}
+        <div className="haui-stat-card" style={{ flexDirection: 'row', alignItems: 'center', gap: '14px', padding: '16px 20px' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>check_circle</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--color-mid-gray)', letterSpacing: '0.04em' }}>
+              Đã hoàn thành
+            </span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '2px' }}>
+              <span style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-ink)' }}>{countPassed} môn</span>
+              <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>&bull; Đạt</span>
             </div>
           </div>
         </div>
-      </Card>
 
-      {loading && <Loading label="Đang dựng Sơ đồ Cây quan hệ môn học..." />}
+        {/* Thẻ 2: Đang học */}
+        <div className="haui-stat-card" style={{ flexDirection: 'row', alignItems: 'center', gap: '14px', padding: '16px 20px' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>pending</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--color-mid-gray)', letterSpacing: '0.04em' }}>
+              Đang học &bull; Kỳ 6
+            </span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '2px' }}>
+              <span style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-ink)' }}>{countInProgress} môn</span>
+              <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>&bull; 14 TC</span>
+            </div>
+          </div>
+        </div>
 
-      {error && !loading && (
-        <ErrorBox
-          title="Không thể tải dữ liệu Sơ đồ Cây CTĐT"
-          error={error}
-          onRetry={loadCurriculum}
-        />
-      )}
+        {/* Thẻ 3: Đủ điều kiện */}
+        <div className="haui-stat-card" style={{ flexDirection: 'row', alignItems: 'center', gap: '14px', padding: '16px 20px' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>lock_open</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--color-mid-gray)', letterSpacing: '0.04em' }}>
+              Đủ điều kiện đăng ký
+            </span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '2px' }}>
+              <span style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-ink)' }}>12 TC</span>
+              <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>&bull; Kỳ tới</span>
+            </div>
+          </div>
+        </div>
 
-      {!loading && !error && (
-        <>
-          {/* Sơ đồ cây tương tác (Interactive Node Graph) + Panel Chi tiết học phần */}
-          <div className="haui-grid" style={{ gridTemplateColumns: '2fr 1fr', alignItems: 'start' }}>
-            <Card
-              title="Sơ đồ Cây Phụ thuộc Môn học Tương tác (Interactive Node Graph)"
-              subtitle="Click vào bất kỳ Node môn học nào để xem chuỗi tiên quyết và kiểm tra thêm vào kế hoạch"
+        {/* Thẻ 4: Bị khóa / Nợ môn */}
+        <div className="haui-stat-card" style={{ flexDirection: 'row', alignItems: 'center', gap: '14px', padding: '16px 20px' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '9999px', backgroundColor: 'rgba(231, 0, 11, 0.08)', color: 'var(--color-ember)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>lock</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--color-ember)', letterSpacing: '0.04em', fontWeight: 600 }}>
+              Chưa đủ điều kiện (Khóa)
+            </span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '2px' }}>
+              <span style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-ember)' }}>{countBlocked + countLocked} môn</span>
+              <span style={{ fontSize: '12px', color: 'var(--color-ember)' }}>&bull; Nợ tiên quyết</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* FILTER CONTROLS BAR */}
+      <div className="haui-stat-card" style={{ padding: '14px 20px', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)', fontWeight: 500 }}>Lọc theo trạng thái:</span>
+          {[
+            { key: 'ALL', label: `Tất cả (${allCourses.length})` },
+            { key: 'GREEN', label: '🟢 Đã hoàn thành' },
+            { key: 'RED', label: '🔴 Nợ / Bị chặn' },
+            { key: 'YELLOW', label: '🟡 AI Đề xuất / Đang học' },
+            { key: 'GRAY', label: '🔒 Bị khóa' }
+          ].map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              style={{
+                padding: '4px 12px',
+                borderRadius: '9999px',
+                border: '1px solid var(--color-hairline)',
+                fontSize: '12px',
+                fontWeight: nodeColorFilter === item.key ? 600 : 400,
+                backgroundColor: nodeColorFilter === item.key ? 'var(--color-ink)' : 'var(--color-surface-alt)',
+                color: nodeColorFilter === item.key ? 'var(--color-paper)' : 'var(--color-ink)',
+                cursor: 'pointer'
+              }}
+              onClick={() => setNodeColorFilter(item.key)}
             >
-              <div className="haui-tree-semester-grid">
-                {semesterGroups.map((group) => (
-                  <div key={group.semester} className="haui-tree-column">
-                    <div className="haui-tree-column__header">
-                      <span>{group.label}</span>
-                      <span>{group.courses.reduce((s, c) => s + c.credits, 0)} TC</span>
-                    </div>
+              {item.label}
+            </button>
+          ))}
+        </div>
 
-                    {group.courses.map((course) => {
-                      const isSelected = selectedCourse?.courseCode === course.courseCode;
-                      return (
-                        <div
-                          key={course.courseCode}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => setSelectedCourse(course)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              setSelectedCourse(course);
-                            }
-                          }}
-                          className={`haui-tree-node haui-tree-node--${course.nodeColor} ${
-                            isSelected ? 'haui-tree-node--selected' : ''
-                          }`.trim()}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                            <code style={{ fontWeight: 700, fontSize: 'var(--text-xs)' }}>
-                              {course.nodeColor === 'GRAY' && '🔒 '}
-                              {course.nodeColor === 'RED' && '⚠️ '}
-                              {course.nodeColor === 'YELLOW' && '⭐ '}
-                              {course.nodeColor === 'GREEN' && '✓ '}
-                              {course.courseCode}
-                            </code>
-                            <span style={{ fontSize: '11px', fontWeight: 600 }}>
-                              {course.credits} TC
-                            </span>
-                          </div>
+        {/* Search Input */}
+        <div style={{ position: 'relative', width: '260px' }}>
+          <span className="material-symbols-outlined" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '16px', color: 'var(--color-mid-gray)' }}>
+            search
+          </span>
+          <input
+            type="text"
+            placeholder="Tìm theo mã hoặc tên môn..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              backgroundColor: 'var(--color-surface-alt)',
+              border: '1px solid var(--color-hairline)',
+              borderRadius: '9999px',
+              padding: '6px 12px 6px 32px',
+              fontSize: '12px',
+              color: 'var(--color-ink)',
+              outline: 'none'
+            }}
+          />
+        </div>
+      </div>
 
-                          <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', lineHeight: 1.3, marginBottom: '6px' }}>
-                            {course.courseName}
-                          </div>
+      {loading && <Loading label="Đang tải sơ đồ cây môn học từ Cổng đào tạo HaUI..." />}
+      {error && <ErrorBox title="Lỗi tải sơ đồ cây" error={error} onRetry={loadCurriculum} />}
 
-                          <div style={{ fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span>
-                              {course.letterGrade
-                                ? `Điểm: ${course.letterGrade} (${course.score10})`
-                                : course.nodeColor === 'YELLOW'
-                                  ? 'AI Đề xuất kỳ tới'
-                                  : 'Chưa học (null)'}
-                            </span>
-                            {course.unlocks?.length > 0 && (
-                              <span title={`Là tiên quyết của: ${course.unlocks.join(', ')}`}>
-                                &rarr; Mở {course.unlocks.length} môn
-                              </span>
-                            )}
-                          </div>
+      {/* SECTION 3: INTERACTIVE CANVAS (FLOWCHART) + DRAWER */}
+      {!loading && !error && viewMode === 'flowchart' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px', alignItems: 'start' }}>
+          {/* Main Tree Canvas (8 cols) */}
+          <div style={{ gridColumn: 'span 8', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              {semesterGroups.map((group) => (
+                <div
+                  key={group.semester}
+                  style={{
+                    backgroundColor: 'var(--color-surface-alt)',
+                    borderRadius: '20px',
+                    border: '1px solid var(--color-hairline)',
+                    padding: '16px 12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px'
+                  }}
+                >
+                  <div style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--color-mid-gray)', paddingBottom: '8px', borderBottom: '1px solid var(--color-hairline)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{group.label}</span>
+                    <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)' }}>
+                      {group.courses.length} HP
+                    </span>
+                  </div>
+
+                  {group.courses.map((course) => {
+                    const isSelected = selectedCourse?.courseCode === course.courseCode;
+                    const isRed = course.nodeColor === 'RED';
+                    const isGreen = course.nodeColor === 'GREEN';
+                    const isYellow = course.nodeColor === 'YELLOW';
+
+                    return (
+                      <div
+                        key={course.courseCode}
+                        style={{
+                          backgroundColor: 'var(--color-paper)',
+                          borderRadius: '16px',
+                          border: isSelected
+                            ? '2px solid var(--color-ink)'
+                            : isRed
+                            ? '1.5px solid var(--color-ember)'
+                            : '1px solid var(--color-hairline)',
+                          padding: '12px',
+                          cursor: 'pointer',
+                          boxShadow: isSelected ? '0 4px 12px rgba(0, 0, 0, 0.08)' : '0 1px 3px rgba(0, 0, 0, 0.03)',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onClick={() => setSelectedCourse(course)}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'monospace', color: 'var(--color-ink)' }}>
+                            {course.courseCode}
+                          </span>
+                          <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>{course.credits} TC</span>
                         </div>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            </Card>
+                        <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)', lineHeight: 1.3, marginBottom: '8px' }}>
+                          {course.courseName}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px' }}>
+                          <span
+                            style={{
+                              padding: '2px 8px',
+                              borderRadius: '9999px',
+                              backgroundColor: 'var(--color-canvas)',
+                              color: isRed ? 'var(--color-ember)' : isGreen ? 'var(--color-ink)' : 'var(--color-mid-gray)',
+                              fontWeight: 500
+                            }}
+                          >
+                            {isRed ? 'Nợ môn / Bị chặn' : isGreen ? 'Đã đạt' : isYellow ? 'Đang học' : 'Chưa học'}
+                          </span>
+                          {course.unlocks?.length > 0 && (
+                            <span style={{ color: 'var(--color-mid-gray)' }}>
+                              &rarr; {course.unlocks.length}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
 
-            {/* Panel Chi tiết học phần (khi click vào 1 môn trên Sơ đồ cây — Màn hình 4 & Luồng phụ B) */}
-            <Card
-              variant={
-                selectedCourse?.nodeColor === 'RED'
-                  ? 'status-error'
-                  : selectedCourse?.nodeColor === 'YELLOW'
-                    ? 'status-warning'
-                    : 'status-info'
-              }
-              title={
-                selectedCourse
-                  ? `Chi tiết: ${selectedCourse.courseCode} — ${selectedCourse.courseName}`
-                  : 'Panel Chi tiết Học phần'
-              }
-              subtitle={
-                selectedCourse
-                  ? `${selectedCourse.block} • Chuyên ngành: ${selectedCourse.specialization}`
-                  : 'Chọn 1 học phần trên sơ đồ cây để xem chi tiết'
-              }
-              footer={
-                selectedCourse && (
-                  <div style={{ display: 'flex', gap: 'var(--space-2)', width: '100%', justifyContent: 'space-between' }}>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => navigate('/recommendations')}
-                    >
-                      Quay lại đề xuất
-                    </Button>
-                    <Button
-                      variant={selectedCourse.nodeColor === 'GRAY' ? 'danger' : 'primary'}
-                      size="sm"
-                      onClick={() => handleCheckCourseEligibility(selectedCourse)}
-                    >
-                      {selectedCourse.nodeColor === 'GRAY'
-                        ? '🔒 Thử thêm môn (Kiểm tra chặn AC-02)'
-                        : '+ Thêm môn này vào kế hoạch'}
-                    </Button>
-                  </div>
-                )
-              }
-            >
-              {selectedCourse ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', fontSize: 'var(--text-sm)' }}>
+          {/* Right Detail Panel / Drawer (4 cols) */}
+          <div className="haui-stat-card" style={{ gridColumn: 'span 4', position: 'sticky', top: '80px', gap: '16px' }}>
+            {selectedCourse ? (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '12px', borderBottom: '1px solid var(--color-hairline)' }}>
                   <div>
-                    <strong>Mô tả học phần:</strong>
-                    <p style={{ margin: '4px 0 0', color: 'var(--color-text-secondary)', fontSize: 'var(--text-xs)' }}>
-                      {selectedCourse.description}
+                    <span style={{ fontSize: '12px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--color-mid-gray)' }}>
+                      {selectedCourse.courseCode} &bull; Kỳ {selectedCourse.semester}
+                    </span>
+                    <h3 style={{ margin: '4px 0 0', fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)' }}>
+                      {selectedCourse.courseName}
+                    </h3>
+                  </div>
+                  <span
+                    style={{
+                      padding: '3px 10px',
+                      borderRadius: '9999px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      backgroundColor: selectedCourse.nodeColor === 'RED' ? 'rgba(231, 0, 11, 0.1)' : 'var(--color-canvas)',
+                      color: selectedCourse.nodeColor === 'RED' ? 'var(--color-ember)' : 'var(--color-ink)'
+                    }}
+                  >
+                    {selectedCourse.nodeColor === 'RED' ? 'Bị chặn' : selectedCourse.nodeColor === 'GREEN' ? 'Đã đạt' : 'Đang theo dõi'}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
+                  <div>
+                    <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Mô tả học phần
+                    </span>
+                    <p style={{ margin: '4px 0 0', color: 'var(--color-ink)', lineHeight: 1.4 }}>
+                      {selectedCourse.description || 'Học phần nền tảng thuộc chương trình đào tạo Kỹ sư Công nghệ Thông tin Đại học Công nghiệp Hà Nội.'}
                     </p>
                   </div>
 
-                  <div className="haui-grid haui-grid--2" style={{ gap: 'var(--space-2)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', padding: '10px 12px', backgroundColor: 'var(--color-surface-alt)', borderRadius: '14px' }}>
                     <div>
-                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>TÍN CHỈ / SỐ TIẾT:</span>
-                      <div style={{ fontWeight: 600 }}>
-                        {selectedCourse.credits} TC ({selectedCourse.lectureHours} LT / {selectedCourse.labHours} TH)
-                      </div>
+                      <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>Số tín chỉ:</span>
+                      <div style={{ fontWeight: 600, color: 'var(--color-ink)' }}>{selectedCourse.credits} TC</div>
                     </div>
                     <div>
-                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>ĐỘ KHÓ ĐÁNH GIÁ:</span>
-                      <div style={{ fontWeight: 600 }}>{selectedCourse.difficulty}</div>
+                      <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>Khối kiến thức:</span>
+                      <div style={{ fontWeight: 600, color: 'var(--color-ink)' }}>{selectedCourse.block}</div>
                     </div>
                   </div>
 
+                  {/* Section HỌC PHẦN TIÊN QUYẾT */}
                   <div>
-                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                      HỌC PHẦN TIÊN QUYẾT / HỌC TRƯỚC ({selectedCourse.relationType || 'Không'}):
+                    <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-mid-gray)', letterSpacing: '0.04em' }}>
+                      TIÊN QUYẾT (HỌC PHẦN BẮT BUỘC ĐẠT TRƯỚC):
                     </span>
-                    <div style={{ marginTop: '4px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
                       {selectedCourse.prerequisites?.length > 0 ? (
-                        selectedCourse.prerequisites.map((code) => (
-                          <span key={code} className="haui-badge haui-badge--warning" style={{ marginRight: '6px' }}>
-                            Cần đạt: {code}
-                          </span>
+                        selectedCourse.prerequisites.map((pCode) => (
+                          <div
+                            key={pCode}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '8px 12px',
+                              backgroundColor: 'var(--color-canvas)',
+                              borderRadius: '12px'
+                            }}
+                          >
+                            <span style={{ fontWeight: 600, color: 'var(--color-ink)' }}>{pCode}</span>
+                            <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>Bắt buộc qua môn</span>
+                          </div>
                         ))
                       ) : (
-                        <span className="haui-badge haui-badge--success">Không yêu cầu môn tiên quyết</span>
+                        <div style={{ padding: '8px 12px', backgroundColor: 'var(--color-canvas)', borderRadius: '12px', color: 'var(--color-mid-gray)', fontSize: '12px' }}>
+                          Không yêu cầu môn tiên quyết
+                        </div>
                       )}
                     </div>
                   </div>
 
+                  {/* Section CHUỖI ẢNH HƯỞNG */}
                   <div>
-                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                      CHUỖI ẢNH HƯỞNG (CÁC MÔN CẦN MÔN NÀY LÀM TIÊN QUYẾT):
+                    <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-mid-gray)', letterSpacing: '0.04em' }}>
+                      CHUỖI ẢNH HƯỞNG (CÁC MÔN CẦN MÔN NÀY ĐỂ MỞ):
                     </span>
-                    <div style={{ marginTop: '4px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
                       {selectedCourse.unlocks?.length > 0 ? (
-                        selectedCourse.unlocks.map((code) => (
-                          <span key={code} className="haui-badge haui-badge--info" style={{ marginRight: '6px' }}>
-                            Mở khóa &rarr; {code}
-                          </span>
+                        selectedCourse.unlocks.map((uCode) => (
+                          <div
+                            key={uCode}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '8px 12px',
+                              backgroundColor: 'var(--color-canvas)',
+                              borderRadius: '12px'
+                            }}
+                          >
+                            <span style={{ fontWeight: 600, color: 'var(--color-ink)' }}>&rarr; {uCode}</span>
+                            <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>Mở khóa</span>
+                          </div>
                         ))
                       ) : (
-                        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+                        <div style={{ padding: '8px 12px', backgroundColor: 'var(--color-canvas)', borderRadius: '12px', color: 'var(--color-mid-gray)', fontSize: '12px' }}>
                           Không chặn môn tiếp theo
-                        </span>
+                        </div>
                       )}
                     </div>
-                  </div>
-
-                  <div
-                    style={{
-                      padding: '10px 12px',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: 'var(--color-bg-muted)',
-                      border: '1px solid var(--color-border)',
-                      fontSize: 'var(--text-xs)'
-                    }}
-                  >
-                    <strong>Ghi chú Cố vấn:</strong> {selectedCourse.instructorNote}
                   </div>
                 </div>
-              ) : null}
-            </Card>
-          </div>
 
-          {/* Bảng Tra cứu toàn bộ Danh mục CTĐT (Luồng phụ B: Curriculum Explorer) */}
-          <Card
-            title="Luồng phụ B: Danh mục Khung Chương trình Đào tạo Chi tiết (Curriculum Explorer)"
-            subtitle="Click vào từng dòng để xem trên Panel Chi tiết hoặc bấm kiểm tra Rule Engine tiên quyết"
-          >
-            <Table
-              columns={columns}
-              data={filteredCourses}
-              rowKey="courseCode"
-              onRowClick={(row) => setSelectedCourse(row)}
-              emptyTitle="Không có học phần nào thuộc bộ lọc này"
-              emptyDescription="Hãy đặt lại bộ lọc về 'Tất cả' để xem toàn bộ cây chương trình đào tạo."
-              emptyAction={
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => {
-                    setBlockFilter('ALL');
-                    setSpecializationFilter('ALL');
-                    setNodeColorFilter('ALL');
-                  }}
-                >
-                  Đặt lại bộ lọc
-                </Button>
-              }
-              striped
-              hoverable
-            />
-          </Card>
-        </>
+                {/* Action CTA Buttons */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '12px', borderTop: '1px solid var(--color-hairline)' }}>
+                  <button
+                    type="button"
+                    className="haui-pill-btn-dark"
+                    style={{ justifyContent: 'center' }}
+                    onClick={() => handleAddCourseToPlanner(selectedCourse)}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add</span>
+                    <span>+ Thêm môn này vào kế hoạch</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="haui-pill-btn-canvas"
+                    style={{ justifyContent: 'center' }}
+                    onClick={() => handleCheckCourseEligibility(selectedCourse)}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>verified_user</span>
+                    <span>Kiểm tra điều kiện tiên quyết</span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', color: 'var(--color-mid-gray)', padding: '24px 0' }}>
+                Chọn một môn học trên sơ đồ luồng để xem chi tiết
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
-      {/* Modal Kiểm tra Tiên quyết & Xử lý Ngoại lệ Mục 5 UI Flow / AC-02 */}
+      {/* TABLE VIEW (Dạng Bảng) */}
+      {!loading && !error && viewMode === 'table' && (
+        <div className="haui-stat-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <Table
+            columns={columns}
+            data={filteredCourses}
+            rowKey="courseCode"
+            onRowClick={(row) => setSelectedCourse(row)}
+            striped
+            hoverable
+          />
+        </div>
+      )}
+
+      {/* Modal Kiểm tra Tiên quyết & Xử lý Ngoại lệ AC-02 */}
       <Modal
         isOpen={eligibilityModalOpen}
         onClose={() => setEligibilityModalOpen(false)}
@@ -518,25 +664,32 @@ export function CurriculumTreePage() {
         size="md"
         footer={
           <>
-            <Button variant="secondary" size="sm" onClick={() => setEligibilityModalOpen(false)}>
+            <button
+              type="button"
+              className="haui-pill-btn-canvas"
+              onClick={() => setEligibilityModalOpen(false)}
+            >
               Đóng (ESC)
-            </Button>
-            {/* Theo Mục 5 Edge Cases & AC-02: Nút [ Thêm môn ] bị vô hiệu hóa nếu vi phạm môn tiên quyết! */}
-            <Button
-              variant={eligibilityResult?.eligible ? 'primary' : 'danger'}
-              size="sm"
+            </button>
+            <button
+              type="button"
+              className={eligibilityResult?.eligible ? 'haui-pill-btn-dark' : 'haui-pill-btn-canvas'}
               disabled={!eligibilityResult?.eligible}
+              style={{
+                opacity: !eligibilityResult?.eligible ? 0.5 : 1,
+                cursor: !eligibilityResult?.eligible ? 'not-allowed' : 'pointer'
+              }}
               onClick={() => {
                 setEligibilityModalOpen(false);
                 const courseId = selectedCourse?.course_id || selectedCourse?.courseCode;
-                const activePlanId = 'default-plan';
+                const activePlanId = 'plan-2026-9001';
                 navigate(`/planner?course_id=${encodeURIComponent(courseId)}&plan_id=${encodeURIComponent(activePlanId)}`);
               }}
             >
               {eligibilityResult?.eligible
                 ? '+ Thêm môn vào Kế hoạch học tập (TV3 Planner) →'
                 : '🚫 Đã khóa nút [Thêm môn] (Vi phạm tiên quyết BR-01)'}
-            </Button>
+            </button>
           </>
         }
       >
@@ -556,16 +709,15 @@ export function CurriculumTreePage() {
               <div
                 style={{
                   padding: '12px 16px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--color-error-bg)',
-                  border: '1px solid var(--color-error-border)',
-                  borderLeft: '4px solid var(--color-error)',
-                  color: 'var(--color-error-text)',
-                  fontSize: 'var(--text-sm)'
+                  borderRadius: '16px',
+                  backgroundColor: 'rgba(231, 0, 11, 0.05)',
+                  border: '1px solid rgba(231, 0, 11, 0.2)',
+                  color: 'var(--color-ink)',
+                  fontSize: '13px'
                 }}
               >
-                <strong>🚨 Cảnh báo Vi phạm Tiên quyết (AC-02 / BR-01):</strong>
-                <p style={{ margin: '6px 0 0' }}>
+                <strong style={{ color: 'var(--color-ember)' }}>🚨 Cảnh báo Vi phạm Tiên quyết (AC-02 / BR-01):</strong>
+                <p style={{ margin: '6px 0 0', color: 'var(--color-mid-gray)' }}>
                   AI gợi ý: <em>&ldquo;Bạn cần học và đạt môn Toán rời rạc (MATH1002) trước khi đăng ký môn {selectedCourse?.courseName}.&rdquo;</em> Nút <code>[ Thêm môn ]</code> đã bị vô hiệu hóa tự động.
                 </p>
               </div>
@@ -573,56 +725,19 @@ export function CurriculumTreePage() {
               <div
                 style={{
                   padding: '12px 16px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--color-success-bg)',
-                  border: '1px solid var(--color-success-border)',
-                  color: 'var(--color-success-text)',
-                  fontSize: 'var(--text-sm)'
+                  borderRadius: '16px',
+                  backgroundColor: 'var(--color-canvas)',
+                  border: '1px solid var(--color-hairline)',
+                  color: 'var(--color-ink)',
+                  fontSize: '13px'
                 }}
               >
-                <strong>✓ Thỏa mãn điều kiện tiên quyết:</strong> Học phần này đủ điều kiện đưa vào Kế hoạch học tập kỳ tới.
+                <strong>✓ Đủ điều kiện đăng ký học phần:</strong>
+                <p style={{ margin: '4px 0 0', color: 'var(--color-mid-gray)' }}>
+                  Bạn đã thỏa mãn toàn bộ điều kiện tiên quyết và điều kiện tín chỉ để thêm môn học này vào Kế hoạch học kỳ tới.
+                </p>
               </div>
             )}
-
-            {addedToPlanBanner && (
-              <div
-                style={{
-                  padding: '10px 14px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--color-primary-light)',
-                  color: 'var(--color-primary)',
-                  fontWeight: 600,
-                  fontSize: 'var(--text-xs)'
-                }}
-              >
-                ✓ {addedToPlanBanner}
-              </div>
-            )}
-
-            {Array.isArray(eligibilityResult.missingPrerequisites) &&
-              eligibilityResult.missingPrerequisites.length > 0 && (
-                <div>
-                  <strong>Học phần tiên quyết còn nợ:</strong>
-                  <ul style={{ margin: '4px 0 0', paddingLeft: '20px', color: 'var(--color-error-text)', fontSize: 'var(--text-sm)' }}>
-                    {eligibilityResult.missingPrerequisites.map((m, idx) => (
-                      <li key={idx}>{m}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-            {Array.isArray(eligibilityResult.warnings) && eligibilityResult.warnings.length > 0 && (
-              <div>
-                <strong>Chi tiết thẩm định từ Rule Engine:</strong>
-                <ul style={{ margin: '4px 0 0', paddingLeft: '20px', color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)' }}>
-                  {eligibilityResult.warnings.map((w, idx) => (
-                    <li key={idx}>{w}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <pre className="haui-code-block">{JSON.stringify(eligibilityResult, null, 2)}</pre>
           </div>
         )}
       </Modal>

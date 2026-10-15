@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { api } from '../../services/apiClient.js';
-import { Button } from '../ui/Button.jsx';
 import {
   STUDENT_PRESETS,
   logoutStudent,
@@ -9,25 +8,30 @@ import {
 } from '../../services/academicStore.js';
 
 const ROUTE_TITLES = Object.freeze({
-  '/': 'Màn hình 1: Trang chủ Dashboard Sinh viên (Student Academic Dashboard)',
-  '/dashboard': 'Màn hình 1: Trang chủ Dashboard Sinh viên (Student Academic Dashboard)',
-  '/login': 'Xác thực & Đăng nhập Sinh viên (Student Authentication)',
-  '/transcript': 'Nạp & Bóc tách Bảng điểm Cá nhân (Transcript Ingestion Wizard)',
-  '/chat': 'Màn hình 2: Trợ lý ảo AI Chatbot (AI Advisor Chat Interface — TV3)',
-  '/recommendations': 'Màn hình 3: Kết quả Phân tích & Đề xuất Lộ trình Học tập (TV3)',
-  '/curriculum': 'Màn hình 4: Chi tiết & Sơ đồ Cây Quan hệ Môn học (Course Dependency Tree)',
-  '/curriculum/tree': 'Màn hình 4: Chi tiết & Sơ đồ Cây Quan hệ Môn học (Course Dependency Tree)',
-  '/planner': 'Màn hình 5: Tùy chỉnh & Xác nhận Kế hoạch Học tập (Plan Finalization — TV3)',
-  '/what-if': 'Màn hình 6, 7, 8: Giả lập Điểm số, Tối ưu Học cải thiện & Tính điểm ngược (TV3)',
-  '/progress': 'Màn hình 9: Bảng Điểm & Học vụ / Kiểm toán Tốt nghiệp (Degree Audit)',
-  '/audit': 'Màn hình 9: Bảng Kiểm toán Tốt nghiệp 100% (Graduation Degree Audit)',
-  '/demo-ui': 'Showcase Shared UI Library V0 & Singleton Mock API Client (ui-api-v0)'
+  '/': 'Tổng quan học tập',
+  '/dashboard': 'Tổng quan học tập',
+  '/login': 'Xác thực & Đăng nhập Sinh viên',
+  '/transcript': 'Nhập & Bóc tách Bảng điểm Cá nhân',
+  '/chat': 'Trợ lý ảo AI Chatbot (AI Advisor)',
+  '/recommendations': 'Kết quả Phân tích & Đề xuất Lộ trình',
+  '/curriculum': 'Cây môn học & Chuỗi quan hệ tiên quyết',
+  '/curriculum/tree': 'Cây môn học & Chuỗi quan hệ tiên quyết',
+  '/planner': 'Kế hoạch học tập (Study Planner)',
+  '/what-if': 'What-if mô phỏng điểm & Tối ưu học cải thiện',
+  '/progress': 'Hồ sơ sinh viên & Bảng điểm học vụ',
+  '/audit': 'Kiểm toán tốt nghiệp 100% tiêu chí',
+  '/demo-ui': 'Cài đặt hệ thống & Mock API Showcase'
 });
 
 /**
- * Header / Topbar của Web Host (TV2 — design-base-v1)
- * Hiển thị nút thu gọn sidebar, tiêu đề màn hình, huy hiệu trạng thái học tập (Academic Status),
- * công tắc chế độ Mock API (FIXTURE_ONLY) và tóm tắt thông tin sinh viên từ Session Context.
+ * Topbar / Header Component của Web Host (TV2 — design-base-v1)
+ * Phong cách "Clinical Blueprint on Frosted Paper" chuẩn xác theo prototype:
+ * - Search bar pill bo góc tròn với placeholder tìm kiếm môn học
+ * - Nút AI Advisor pill "Tư vấn lộ trình nhanh với AI"
+ * - Nút thông báo với ember dot cảnh báo
+ * - Badge Cảnh báo học vụ (BR-07)
+ * - Persona Switcher chuyển đổi nhanh 3 tài khoản mẫu
+ * - Nút thu gọn / mở rộng sidebar
  *
  * @param {{ collapsed?: boolean, onToggleCollapse?: () => void }} props
  */
@@ -35,6 +39,7 @@ export function Topbar({ collapsed = false, onToggleCollapse }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [apiConfig, setApiConfig] = useState(() => api.getConfig());
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     return api.subscribe((nextConfig) => {
@@ -42,38 +47,74 @@ export function Topbar({ collapsed = false, onToggleCollapse }) {
     });
   }, []);
 
-  const pageTitle =
-    ROUTE_TITLES[location.pathname] ||
-    (location.pathname.startsWith('/planner')
-      ? 'Màn hình 5: Tùy chỉnh & Xác nhận Kế hoạch Học tập (TV3)'
-      : 'HaUI Advisor — Hệ thống Trợ lý Ảo Tư vấn Lộ trình Học tập');
-
   const student = apiConfig.sessionStudent;
 
-  const handleToggleMock = () => {
-    if (apiConfig.isProduction) return;
-    api.setMockMode(!apiConfig.mockEnabled);
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/curriculum?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
   };
 
   return (
     <header className="haui-topbar">
+      {/* 1. Left: Collapse Button + Search Bar Pill */}
       <div className="haui-topbar__left">
         {typeof onToggleCollapse === 'function' && (
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            type="button"
+            className="haui-topbar__collapse-btn"
             onClick={onToggleCollapse}
-            title={collapsed ? 'Mở rộng menu (268px)' : 'Thu gọn menu (72px)'}
-            style={{ fontSize: '15px', padding: '0 8px', minWidth: '32px' }}
+            title={collapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
+            aria-label={collapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
           >
-            {collapsed ? '☰' : '⇤'}
-          </Button>
+            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+              {collapsed ? 'menu' : 'menu_open'}
+            </span>
+          </button>
         )}
-        <h2 className="haui-topbar__heading">{pageTitle}</h2>
-        <span className="haui-badge haui-badge--primary">design-base-v1</span>
+
+        <form onSubmit={handleSearchSubmit} className="haui-topbar__search-form">
+          <span className="material-symbols-outlined haui-topbar__search-icon">
+            search
+          </span>
+          <input
+            type="text"
+            className="haui-topbar__search-input"
+            placeholder="Tìm môn học, mã môn, chuẩn tốt nghiệp..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </form>
       </div>
 
+      {/* 2. Right: AI Action + Notification + Academic Status + Persona Switcher + Profile */}
       <div className="haui-topbar__right">
+        {/* Quick AI Action Pill */}
+        <Link
+          to="/chat"
+          className="haui-topbar__ai-btn"
+          title="Tư vấn lộ trình nhanh với AI"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
+            auto_awesome
+          </span>
+          <span className="haui-topbar__ai-text">Tư vấn lộ trình nhanh với AI</span>
+        </Link>
+
+        {/* Notification Button with Ember Dot */}
+        <button
+          type="button"
+          className="haui-topbar__icon-btn"
+          title="Thông báo học vụ"
+          onClick={() => navigate('/audit')}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+            notifications
+          </span>
+          <span className="haui-topbar__ember-dot" />
+        </button>
+
         {/* Academic Status Badge (BR-07 / US-12) */}
         <span
           className={`haui-badge ${
@@ -93,71 +134,32 @@ export function Topbar({ collapsed = false, onToggleCollapse }) {
         </span>
 
         {/* Quick Persona Switcher for Reviewers */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <select
-            className="haui-input"
-            style={{ padding: '2px 8px', height: '28px', fontSize: '11px', fontWeight: 600 }}
-            value={student?.id || 'at-risk'}
-            onChange={(e) => {
-              const presetKey = e.target.value;
-              selectStudentPreset(presetKey);
-              const p = STUDENT_PRESETS[presetKey];
-              if (p) api.setSessionStudent(p);
-            }}
-            title="Chuyển nhanh tài khoản mẫu (Prototype Task 2.2a)"
-          >
-            <option value="normal">👤 Chuẩn (KTPM K17 - CPA 3.2)</option>
-            <option value="at-risk">🚨 Nguy cơ (KTPM K17 - CPA 1.85)</option>
-            <option value="empty">⚪ Trắng (CNTT K19 - 0 TC)</option>
-          </select>
-        </div>
-
-        {!apiConfig.isProduction && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <span
-              className={`haui-badge ${
-                apiConfig.mockEnabled ? 'haui-badge--warning' : 'haui-badge--success'
-              }`}
-              title={
-                apiConfig.mockEnabled
-                  ? 'Đang sử dụng Mock Interceptor cục bộ (FIXTURE_ONLY)'
-                  : 'Đang gọi trực tiếp tới Spring Boot Backend (/api/v1)'
-              }
-            >
-              {apiConfig.mockEnabled ? 'API: MOCK (FIXTURE_ONLY)' : 'API: LIVE (/api/v1)'}
-            </span>
-          </div>
-        )}
-
-        {/* Student Profile Capsule (Session Identity) */}
-        <div
-          className="haui-student-pill"
-          title="Danh tính sinh viên được trích xuất từ Server Session Context (Quy tắc 6 AGENTS.md)"
-        >
-          <span className="haui-student-pill__avatar" aria-hidden="true">
-            {student?.avatarChar || (student?.fullName ? student.fullName.charAt(0) : 'A')}
-          </span>
-          <div>
-            <strong style={{ color: 'var(--color-text-primary)' }}>{student.fullName}</strong>
-            <span style={{ marginLeft: '6px' }}>
-              ({student.studentId} &bull; {student.cohort?.split(' ')?.[0] || 'K17'})
-            </span>
-          </div>
-        </div>
-
-        {/* Logout Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            logoutStudent();
-            navigate('/login');
+        <select
+          className="haui-input haui-topbar__persona-select"
+          value={student?.id || 'at-risk'}
+          onChange={(e) => {
+            const presetKey = e.target.value;
+            selectStudentPreset(presetKey);
+            const p = STUDENT_PRESETS[presetKey];
+            if (p) api.setSessionStudent(p);
           }}
-          title="Đăng xuất khỏi phiên làm việc hiện tại"
-          style={{ fontSize: '12px', padding: '4px 8px' }}
+          title="Chuyển nhanh tài khoản mẫu (Task 2.2a)"
         >
-          Đăng xuất
-        </Button>
+          <option value="normal">👤 Chuẩn (KTPM K17 - CPA 3.2)</option>
+          <option value="at-risk">🚨 Nguy cơ (KTPM K17 - CPA 1.85)</option>
+          <option value="empty">⚪ Trắng (CNTT K19 - 0 TC)</option>
+        </select>
+
+        {/* Student Avatar */}
+        <Link
+          to="/progress"
+          className="haui-topbar__avatar-btn"
+          title={`Hồ sơ: ${student?.fullName || 'Sinh viên'}`}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+            person
+          </span>
+        </Link>
       </div>
     </header>
   );

@@ -66,11 +66,13 @@ const RECOMMENDED_NEXT_SEMESTER_COURSES = Object.freeze([
 
 /**
  * Màn hình 1: Trang chủ Dashboard Sinh viên (`/`) — TV2 Web Host
- * Đóng gói mốc bàn giao `design-base-v1` (Task 2.1):
- * - UI Shell & Hệ thống Design Tokens (18px pill / 24px cards).
- * - Interactive Prototype với thanh State Switcher (Loaded, Skeleton, Empty, Error).
- * - Đầy đủ 4 Metric Cards (CPA 2.45, GPA null/UNKNOWN, 102/135 TC progress bar, Cảnh báo học vụ).
- * - Khối môn nợ cần gỡ gấp và Lộ trình đề xuất học kỳ kế tiếp (18 TC).
+ * Tái thiết kế toàn diện theo Prototype "Clinical Blueprint on Frosted Paper":
+ * - Header chào mừng & Thanh lối tắt Quick Actions bo tròn dạng pill
+ * - 4 Thẻ chỉ số tổng quan (GPA, Tín chỉ, Điểm rèn luyện, Chuẩn tốt nghiệp)
+ * - Biểu đồ trực quan Biến thiên GPA & Tín chỉ 6 học kỳ (SVG) + Cấu trúc 5 khối kiến thức
+ * - Bảng theo dõi Học phần đang học kèm cảnh báo môn tiên quyết MATH1002
+ * - Thẻ Cố vấn AI Advisor với khuyến nghị lộ trình tối ưu
+ * - Khối kế hoạch đã lưu Task 3.9 & Hỗ trợ chuyển đổi trạng thái mẫu
  */
 export function DashboardPage({ mountedRouteSummary }) {
   const navigate = useNavigate();
@@ -149,6 +151,8 @@ export function DashboardPage({ mountedRouteSummary }) {
   const activePersona =
     STUDENT_PERSONAS.find((p) => p.id === activePersonaId) || STUDENT_PERSONAS[0];
 
+  const studentSession = api.getConfig().sessionStudent;
+
   const creditPercent = academicStatus
     ? Number(
         (
@@ -156,7 +160,15 @@ export function DashboardPage({ mountedRouteSummary }) {
           100
         ).toFixed(1)
       )
-    : 75.6;
+    : 74.5;
+
+  const cpaValue =
+    academicStatus?.cpa !== null && academicStatus?.cpa !== undefined
+      ? Number(academicStatus.cpa).toFixed(2)
+      : '3.24';
+
+  const accumulatedCredits = academicStatus?.accumulatedCredits || 108;
+  const totalRequiredCredits = academicStatus?.totalCreditsRequired || 145;
 
   // Render Skeleton Layout khi xem trạng thái 'loading'
   if (componentState === 'loading' || (loading && componentState === 'loaded' && !academicStatus)) {
@@ -343,7 +355,7 @@ export function DashboardPage({ mountedRouteSummary }) {
   // Trạng thái Loaded mặc định
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-      {/* 1. State Switcher Bar (Task 2.1 Showcase) */}
+      {/* 0. State Switcher Bar (Task 2.1 Showcase) */}
       <div className="haui-state-switcher" role="region" aria-label="Bộ chọn trạng thái giao diện mẫu">
         <div className="haui-state-switcher__label">
           <span>🎛️ Showcase Component States (design-base-v1):</span>
@@ -385,160 +397,630 @@ export function DashboardPage({ mountedRouteSummary }) {
         </div>
       </div>
 
-      {/* 2. Widget Cảnh báo rủi ro học vụ sớm (Early Warning Alert Box — US-12 / BR-01) */}
-      <div className="haui-alert-box" role="region" aria-label="Cảnh báo rủi ro học vụ sớm">
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span style={{ fontSize: '20px' }} aria-hidden="true">
-              🚨
+      {/* SECTION 1: WELCOME & QUICK ACTIONS */}
+      <section style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: '16px', paddingBottom: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
+            <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-mid-gray)' }}>
+              Cổng Thông Tin Học Vụ Đại Học Công Nghiệp Hà Nội
             </span>
-            <strong style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-primary)' }}>
-              Cảnh báo rủi ro học vụ sớm (Early Warning — US-12 / FR-18):
-            </strong>
-            <span className="haui-badge haui-badge--warning">BR-01 / BR-07</span>
           </div>
-          <p style={{ margin: '0 0 12px', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
-            Bạn đang nợ môn <strong>Toán rời rạc (3 TC — MATH1002)</strong> – Đây là môn tiên quyết trực tiếp của{' '}
-            <strong>Cấu trúc dữ liệu &amp; Giải thuật (IT6001)</strong> ở học kỳ tới! Điểm CPA hiện tại là <strong>2.45</strong>,
-            tiệm cận ngưỡng trung bình nguy hiểm. Nếu không học lại ngay, bạn sẽ bị hoãn dây chuyền ít nhất 3 môn chuyên ngành.
+          <h1 style={{ fontSize: '30px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+            Tổng quan học tập
+          </h1>
+          <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-mid-gray)', maxWidth: '640px' }}>
+            Chào <strong style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{studentSession?.fullName || 'Nguyễn Văn An'}</strong> (Mã SV: {studentSession?.studentId || '2020601234'}) &bull; Khóa 16 ngành Công nghệ Thông tin &bull; Khoa CNTT - HaUI
           </p>
+        </div>
 
-          {/* Cụm Nút CTA nổi bật */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => navigate('/transcript')}
-              title="Mở luồng nạp và bóc tách bảng điểm 3 bước (Task 2.2a)"
-            >
-              📑 Nhập Bảng Điểm (3 Bước) &rarr;
-            </Button>
-            <Button variant="secondary" size="sm" onClick={() => navigate('/chat')}>
-              💬 Nhờ AI tư vấn kỳ mới
-            </Button>
-            <Button variant="secondary" size="sm" onClick={() => navigate('/what-if')}>
-              🧮 Mô phỏng điểm CPA (What-if)
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => navigate('/planner?plan_id=plan-2026-9001')}
-              title="Mở kế hoạch học tập đã lưu gần nhất (Kế hoạch cũ) của sinh viên"
-            >
-              📂 Mở Kế hoạch Học tập Đã lưu (Kế hoạch cũ)
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => navigate('/audit')}
-              title="Mở Bảng Kiểm toán Tốt nghiệp 100% tiêu chí & In báo cáo học vụ"
-            >
-              🎓 Kiểm toán Tốt nghiệp &amp; Báo cáo in
-            </Button>
-            <Button variant="secondary" size="sm" onClick={() => navigate('/planner')}>
-              📅 Xem lộ trình học tập
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                setIsIngestModalOpen(true);
-                if (!ingestResult && !ingestError) {
-                  handleRunTranscriptIngestion({ fileName: 'Bang_Diem_eHaUI_std-2026-001.pdf' });
-                }
-              }}
-            >
-              📄 Cập nhật Bảng điểm (e-HaUI)
-            </Button>
-            <Link to="/demo-ui">
-              <Button variant="ghost" size="sm">
-                🧩 Mở Showcase Demo UI V0 &rarr;
-              </Button>
+        {/* Quick Actions Pills */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px' }}>
+          <button
+            type="button"
+            className="haui-pill-btn-dark"
+            onClick={() => navigate('/transcript')}
+            title="Mở luồng nạp và bóc tách bảng điểm"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+              upload_file
+            </span>
+            <span>Cập nhật bảng điểm</span>
+          </button>
+
+          <button
+            type="button"
+            className="haui-pill-btn-paper"
+            onClick={() => navigate('/planner')}
+            title="Mở giao diện lập kế hoạch học tập kỳ tới"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+              calendar_add_on
+            </span>
+            <span>Lập kế hoạch kỳ tới</span>
+          </button>
+
+          <button
+            type="button"
+            className="haui-pill-btn-canvas"
+            onClick={() => navigate('/chat')}
+            title="Hỏi trợ lý ảo cố vấn lộ trình AI"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+              smart_toy
+            </span>
+            <span>Hỏi AI Cố Vấn</span>
+          </button>
+        </div>
+      </section>
+
+      {/* SECTION 2: 4 CORE STAT CARDS */}
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+        {/* Stat 1: CPA */}
+        <div className="haui-stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                GPA Tích lũy
+              </span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
+                <span style={{ fontSize: '30px', fontWeight: 600, color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>
+                  {cpaValue}
+                </span>
+                <span style={{ fontSize: '14px', color: 'var(--color-mid-gray)' }}>/ 4.00</span>
+              </div>
+            </div>
+            <span className="haui-stat-trend">
+              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>trending_up</span>
+              +0.12
+            </span>
+          </div>
+          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+              <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>
+                Xếp loại: {Number(cpaValue) >= 3.2 ? 'Giỏi' : Number(cpaValue) >= 2.5 ? 'Khá' : 'Trung bình'}
+              </span>
+              <span style={{ color: 'var(--color-mid-gray)' }}>Mục tiêu: 3.20 - 3.59</span>
+            </div>
+            <div className="haui-progress-bar-minimal">
+              <div
+                className="haui-progress-bar-fill"
+                style={{ width: `${Math.min(100, (Number(cpaValue) / 4.0) * 100)}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Stat 2: Credits */}
+        <div className="haui-stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Tín chỉ tích lũy
+              </span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
+                <span style={{ fontSize: '30px', fontWeight: 600, color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>
+                  {accumulatedCredits}
+                </span>
+                <span style={{ fontSize: '14px', color: 'var(--color-mid-gray)' }}>/ {totalRequiredCredits} TC</span>
+              </div>
+            </div>
+            <span className="haui-stat-trend">
+              {creditPercent}%
+            </span>
+          </div>
+          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+              <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Chương trình CNTT K16</span>
+              <span style={{ color: 'var(--color-mid-gray)' }}>Còn thiếu {totalRequiredCredits - accumulatedCredits} TC</span>
+            </div>
+            <div className="haui-progress-bar-minimal">
+              <div className="haui-progress-bar-fill" style={{ width: `${creditPercent}%` }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Stat 3: Training Point */}
+        <div className="haui-stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Điểm rèn luyện TB
+              </span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
+                <span style={{ fontSize: '30px', fontWeight: 600, color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>
+                  86
+                </span>
+                <span style={{ fontSize: '14px', color: 'var(--color-mid-gray)' }}>/ 100</span>
+              </div>
+            </div>
+            <span className="haui-stat-trend">
+              <span style={{ width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
+              Loại Tốt
+            </span>
+          </div>
+          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+              <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Đạt điều kiện tốt nghiệp</span>
+              <span style={{ color: 'var(--color-mid-gray)' }}>Kỳ 6: 88 điểm</span>
+            </div>
+            <div className="haui-progress-bar-minimal">
+              <div className="haui-progress-bar-fill" style={{ width: '86%' }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Stat 4: Graduation Standard */}
+        <div className="haui-stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Tiến độ chuẩn tốt nghiệp
+              </span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
+                <span style={{ fontSize: '30px', fontWeight: 600, color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>
+                  4
+                </span>
+                <span style={{ fontSize: '14px', color: 'var(--color-mid-gray)' }}>/ 6 điều kiện</span>
+              </div>
+            </div>
+            <span className="haui-stat-trend">
+              66.7%
+            </span>
+          </div>
+          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+              <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>B1 VSTEP &bull; IC3: Đạt</span>
+              <span style={{ color: 'var(--color-mid-gray)' }}>Khóa luận: Chờ</span>
+            </div>
+            <div className="haui-progress-bar-minimal">
+              <div className="haui-progress-bar-fill" style={{ width: '66.7%' }} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 3: CHARTS & CURRICULUM ARCHITECTURE (2 COLUMNS: 60% / 40%) */}
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px' }}>
+        {/* GPA & Credits Evolution (60% -> col-span-7) */}
+        <div className="haui-stat-card" style={{ gridColumn: 'span 7' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px', paddingBottom: '16px' }}>
+            <div>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.01em' }}>
+                Biến thiên GPA &amp; Tín chỉ theo 6 học kỳ
+              </h2>
+              <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
+                Quá trình phấn đấu từ Học kỳ 1 đến Học kỳ 6 (Năm học 2021 - 2024)
+              </p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '10px', height: '10px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
+                GPA kỳ (Hệ 4)
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: 'var(--color-canvas)' }} />
+                Số tín chỉ
+              </span>
+            </div>
+          </div>
+
+          {/* Minimal SVG Visual Chart */}
+          <div style={{ width: '100%', paddingTop: '16px', paddingBottom: '8px' }}>
+            <div style={{ position: 'relative', width: '100%', height: '190px' }}>
+              {/* Background Grid Lines */}
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none', opacity: 0.3 }}>
+                <div style={{ width: '100%', borderTop: '1px solid var(--color-hairline)' }} />
+                <div style={{ width: '100%', borderTop: '1px solid var(--color-hairline)' }} />
+                <div style={{ width: '100%', borderTop: '1px solid var(--color-hairline)' }} />
+                <div style={{ width: '100%', borderTop: '1px solid var(--color-hairline)' }} />
+              </div>
+
+              {/* SVG Chart Curve & Sparkline points */}
+              <svg style={{ width: '100%', height: '100%', overflow: 'visible' }} preserveAspectRatio="none" viewBox="0 0 600 160">
+                <defs>
+                  <linearGradient id="gpaGradient" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#0a0a0a" stopOpacity="0.12" />
+                    <stop offset="100%" stopColor="#0a0a0a" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+                {/* Credit Volume Bars in Canvas Tone */}
+                <rect fill="#f5f5f5" height="95" rx="6" width="30" x="35" y="60" />
+                <rect fill="#f5f5f5" height="100" rx="6" width="30" x="135" y="55" />
+                <rect fill="#f5f5f5" height="105" rx="6" width="30" x="235" y="50" />
+                <rect fill="#f5f5f5" height="87" rx="6" width="30" x="335" y="68" />
+                <rect fill="#f5f5f5" height="95" rx="6" width="30" x="435" y="60" />
+                <rect fill="#f5f5f5" height="80" rx="6" width="30" x="535" y="75" />
+                {/* Path Area Fill */}
+                <path d="M 50 120 L 150 95 L 250 68 L 350 78 L 450 56 L 550 48 L 550 155 L 50 155 Z" fill="url(#gpaGradient)" />
+                {/* GPA Polyline */}
+                <path d="M 50 120 L 150 95 L 250 68 L 350 78 L 450 56 L 550 48" fill="none" stroke="#0a0a0a" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                {/* Node Points */}
+                <circle cx="50" cy="120" fill="#0a0a0a" r="4.5" />
+                <circle cx="150" cy="95" fill="#0a0a0a" r="4.5" />
+                <circle cx="250" cy="68" fill="#0a0a0a" r="4.5" />
+                <circle cx="350" cy="78" fill="#0a0a0a" r="4.5" />
+                <circle cx="450" cy="56" fill="#0a0a0a" r="4.5" />
+                <circle cx="550" cy="48" fill="#0a0a0a" r="5.5" stroke="#ffffff" strokeWidth="2" />
+              </svg>
+            </div>
+
+            {/* Horizontal Label Axis */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', textAlign: 'center', paddingTop: '12px', fontSize: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>2.85</span>
+                <span style={{ color: 'var(--color-mid-gray)' }}>HK 1 (18TC)</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>3.02</span>
+                <span style={{ color: 'var(--color-mid-gray)' }}>HK 2 (19TC)</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>3.15</span>
+                <span style={{ color: 'var(--color-mid-gray)' }}>HK 3 (20TC)</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>3.10</span>
+                <span style={{ color: 'var(--color-mid-gray)' }}>HK 4 (17TC)</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>3.20</span>
+                <span style={{ color: 'var(--color-mid-gray)' }}>HK 5 (18TC)</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>3.24</span>
+                <span style={{ color: 'var(--color-mid-gray)' }}>HK 6 (16TC)</span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
+            <span>Tích lũy bình quân: <strong style={{ color: 'var(--color-ink)', fontWeight: 500 }}>18.0 TC/kỳ</strong></span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--color-ink)', fontWeight: 500 }}>
+              Dự kiến tốt nghiệp: Tháng 06/2025
+              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>arrow_forward</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Curriculum Knowledge Blocks (40% -> col-span-5) */}
+        <div className="haui-stat-card" style={{ gridColumn: 'span 5' }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.01em' }}>
+                Cấu trúc khối kiến thức
+              </h2>
+              <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>Đã tích lũy: {accumulatedCredits}/{totalRequiredCredits} TC</span>
+            </div>
+            <p style={{ margin: '0 0 20px', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
+              Tiến độ hoàn thành 5 khối theo CTĐT Khoa CNTT
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Item 1 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Kiến thức đại cương</span>
+                  <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>32/32 TC (100%)</span>
+                </div>
+                <div className="haui-progress-bar-minimal">
+                  <div className="haui-progress-bar-fill" style={{ width: '100%' }} />
+                </div>
+              </div>
+
+              {/* Item 2 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Cơ sở ngành CNTT</span>
+                  <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>45/45 TC (100%)</span>
+                </div>
+                <div className="haui-progress-bar-minimal">
+                  <div className="haui-progress-bar-fill" style={{ width: '100%' }} />
+                </div>
+              </div>
+
+              {/* Item 3 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Chuyên ngành bắt buộc (KTPM)</span>
+                  <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>25/38 TC (65.8%)</span>
+                </div>
+                <div className="haui-progress-bar-minimal">
+                  <div className="haui-progress-bar-fill" style={{ width: '65.8%' }} />
+                </div>
+              </div>
+
+              {/* Item 4 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Tự chọn định hướng &amp; Thực tập</span>
+                  <span style={{ color: 'var(--color-mid-gray)' }}>6/20 TC (30.0%)</span>
+                </div>
+                <div className="haui-progress-bar-minimal">
+                  <div className="haui-progress-bar-fill" style={{ width: '30%' }} />
+                </div>
+              </div>
+
+              {/* Item 5 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Khóa luận / Đồ án tốt nghiệp</span>
+                  <span style={{ color: 'var(--color-mid-gray)' }}>0/10 TC (0%)</span>
+                </div>
+                <div className="haui-progress-bar-minimal">
+                  <div className="haui-progress-bar-fill" style={{ width: '4%' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+            <span style={{ color: 'var(--color-mid-gray)' }}>Cần hoàn thành ở Kỳ 7 &amp; 8</span>
+            <Link to="/curriculum" style={{ color: 'var(--color-ink)', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              Xem sơ đồ cây môn
+              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>chevron_right</span>
             </Link>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* 3. Bốn Thẻ chỉ số tổng quan (Metric Cards) */}
-      <div className="haui-grid haui-grid--4">
-        {/* Thẻ 1: CPA Tích lũy */}
-        <Card
-          variant="status-info"
-          title="CPA Tích lũy"
-          subtitle="Thang điểm 4.0 (Quy chế BR-05)"
-          headerAction={<span className="haui-badge haui-badge--info">CPA 4.0</span>}
-        >
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-            <span style={{ fontSize: 'var(--text-3xl)', fontWeight: 700, color: 'var(--color-primary)' }}>
-              {academicStatus?.cpa !== null && academicStatus?.cpa !== undefined
-                ? Number(academicStatus.cpa).toFixed(2)
-                : '2.45'}
-            </span>
-            <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>/ 4.00</span>
+      {/* SECTION 4: CURRENT ENROLLED COURSES TABLE & PREREQUISITES */}
+      <section className="haui-stat-card" style={{ gap: '20px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.01em' }}>
+                Học phần đang học (Kỳ 2 - Năm học 2023 - 2024)
+              </h2>
+              <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', fontWeight: 500, backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
+                5 môn &bull; 14 TC
+              </span>
+            </div>
+            <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
+              Theo dõi tiến độ điểm đánh giá thành phần và điều kiện tiên quyết chuyên ngành
+            </p>
           </div>
-          <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="haui-badge haui-badge--warning">Trung bình</span>
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
-              Cách Khá (2.50) đúng 0.05 điểm
-            </span>
-          </div>
-        </Card>
 
-        {/* Thẻ 2: Tín chỉ tích lũy & Progress Bar */}
-        <Card
-          variant="status-success"
-          title="Số tín chỉ tích lũy"
-          subtitle="Tiến độ hoàn thành toàn khóa"
-          headerAction={<span className="haui-badge haui-badge--success">{creditPercent}%</span>}
-        >
-          <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-success-text)' }}>
-            {academicStatus?.accumulatedCredits || 102} / {academicStatus?.totalCreditsRequired || 135} TC
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              type="button"
+              className="haui-pill-btn-canvas"
+              style={{ fontSize: '12px', padding: '6px 12px' }}
+              onClick={() => navigate('/curriculum')}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>filter_list</span>
+              Lọc môn học
+            </button>
           </div>
-          <div className="haui-progress-track" style={{ marginTop: '10px' }}>
-            <div
-              className="haui-progress-fill"
-              style={{ width: `${creditPercent}%`, backgroundColor: 'var(--color-success)' }}
-            />
-          </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: '6px' }}>
-            Còn thiếu {(academicStatus?.totalCreditsRequired || 135) - (academicStatus?.accumulatedCredits || 102)} tín chỉ để tốt nghiệp
-          </div>
-        </Card>
+        </div>
 
-        {/* Thẻ 3: Tình trạng học vụ (Academic Status) */}
-        <Card
-          variant="status-warning"
-          title="Tình trạng Học vụ"
-          subtitle="Đối chiếu ngưỡng cảnh báo BR-07"
-          headerAction={<span className="haui-badge haui-badge--warning">Cảnh báo</span>}
-        >
-          <div style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--color-warning-text)' }}>
-            Cảnh báo mức 1 (Đỏ cam)
-          </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', marginTop: '8px' }}>
-            Nợ 1 môn tiên quyết (MATH1002 - 3 TC). Cần gỡ ngay học kỳ tới để tránh bị xử lý học vụ.
-          </div>
-        </Card>
+        {/* Data Table Container */}
+        <div style={{ overflowX: 'auto', width: '100%' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+            <thead>
+              <tr style={{ color: 'var(--color-mid-gray)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em', backgroundColor: '#fafafa' }}>
+                <th style={{ padding: '12px 16px', borderRadius: '12px 0 0 12px' }}>Mã &amp; Tên học phần</th>
+                <th style={{ padding: '12px 12px' }}>Tín chỉ</th>
+                <th style={{ padding: '12px 16px' }}>Giảng viên phụ trách</th>
+                <th style={{ padding: '12px 16px' }}>Đánh giá quá trình</th>
+                <th style={{ padding: '12px 16px' }}>Trạng thái / Lưu ý</th>
+                <th style={{ padding: '12px 12px', textAlign: 'right', borderRadius: '0 12px 12px 0' }}>Chi tiết</th>
+              </tr>
+            </thead>
+            <tbody>
+              {/* Row 1 */}
+              <tr style={{ borderBottom: '1px solid var(--color-hairline)' }}>
+                <td style={{ padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Lập trình Web nâng cao</span>
+                    <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>IT6015 &bull; Khoa CNTT</span>
+                  </div>
+                </td>
+                <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>3 TC</td>
+                <td style={{ padding: '14px 16px', color: 'var(--color-mid-gray)' }}>TS. Trần Văn Minh</td>
+                <td style={{ padding: '14px 16px' }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--color-canvas)', padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', color: 'var(--color-ink)' }}>
+                    <span>Quá trình:</span>
+                    <strong>8.5</strong>
+                  </div>
+                </td>
+                <td style={{ padding: '14px 16px' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
+                    Đang học
+                  </span>
+                </td>
+                <td style={{ padding: '14px 12px', textAlign: 'right' }}>
+                  <button type="button" className="haui-sidebar__profile-logout" title="Xem chi tiết môn">
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>more_horiz</span>
+                  </button>
+                </td>
+              </tr>
 
-        {/* Thẻ 4: GPA Học kỳ hiện tại (Bảo toàn dữ liệu khuyết Rule 5) */}
-        <Card
-          variant="default"
-          title="GPA Học kỳ hiện tại"
-          subtitle="Bảo toàn dữ liệu khuyết (Rule 5)"
-          headerAction={<span className="haui-badge haui-badge--neutral">UNKNOWN</span>}
-        >
-          <div style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--color-text-secondary)' }}>
-            {academicStatus?.gpa === null ? 'null (UNKNOWN)' : academicStatus?.gpa || 'null (UNKNOWN)'}
-          </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: '8px' }}>
-            Chưa khóa sổ học kỳ hiện tại; hệ thống giữ nguyên <code>null</code> thay vì gán 0.
-          </div>
-        </Card>
-      </div>
+              {/* Row 2 */}
+              <tr style={{ borderBottom: '1px solid var(--color-hairline)' }}>
+                <td style={{ padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Phân tích &amp; Thiết kế hệ thống</span>
+                    <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>IT6018 &bull; Khoa CNTT</span>
+                  </div>
+                </td>
+                <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>3 TC</td>
+                <td style={{ padding: '14px 16px', color: 'var(--color-mid-gray)' }}>ThS. Lê Hoàng Yến</td>
+                <td style={{ padding: '14px 16px' }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--color-canvas)', padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', color: 'var(--color-ink)' }}>
+                    <span>Quá trình:</span>
+                    <strong>8.0</strong>
+                  </div>
+                </td>
+                <td style={{ padding: '14px 16px' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
+                    Đang học
+                  </span>
+                </td>
+                <td style={{ padding: '14px 12px', textAlign: 'right' }}>
+                  <button type="button" className="haui-sidebar__profile-logout" title="Xem chi tiết môn">
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>more_horiz</span>
+                  </button>
+                </td>
+              </tr>
 
-      {/* 4. Khối Môn học cần chú ý & Lộ trình đề xuất học kỳ kế tiếp */}
+              {/* Row 3 */}
+              <tr style={{ borderBottom: '1px solid var(--color-hairline)' }}>
+                <td style={{ padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Trí tuệ nhân tạo</span>
+                    <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>IT6020 &bull; Khoa CNTT</span>
+                  </div>
+                </td>
+                <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>3 TC</td>
+                <td style={{ padding: '14px 16px', color: 'var(--color-mid-gray)' }}>PGS.TS. Phạm Quốc Hùng</td>
+                <td style={{ padding: '14px 16px' }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--color-canvas)', padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', color: 'var(--color-ink)' }}>
+                    <span>Quá trình:</span>
+                    <strong>7.5</strong>
+                  </div>
+                </td>
+                <td style={{ padding: '14px 16px' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
+                    Đang học
+                  </span>
+                </td>
+                <td style={{ padding: '14px 12px', textAlign: 'right' }}>
+                  <button type="button" className="haui-sidebar__profile-logout" title="Xem chi tiết môn">
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>more_horiz</span>
+                  </button>
+                </td>
+              </tr>
+
+              {/* Row 4 (Alert Prerequisite Row - MATH1002) */}
+              <tr style={{ borderBottom: '1px solid var(--color-hairline)' }}>
+                <td style={{ padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Toán rời rạc (MATH1002)</span>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '9999px', backgroundColor: 'var(--color-ember)' }} title="Môn nợ tiên quyết cần gỡ gấp" />
+                    </div>
+                    <span style={{ fontSize: '12px', color: 'var(--color-error)' }}>
+                      Môn tiên quyết trực tiếp của IT6001 (Cấu trúc dữ liệu &amp; Giải thuật) &bull; Điểm F
+                    </span>
+                  </div>
+                </td>
+                <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>3 TC</td>
+                <td style={{ padding: '14px 16px', color: 'var(--color-mid-gray)' }}>TS. Đỗ Ngọc Sơn</td>
+                <td style={{ padding: '14px 16px' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--color-ember)', fontWeight: 600 }}>Điểm F (0.0)</span>
+                </td>
+                <td style={{ padding: '14px 16px' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ember)', fontWeight: 600 }}>
+                    Nợ tiên quyết
+                  </span>
+                </td>
+                <td style={{ padding: '14px 12px', textAlign: 'right' }}>
+                  <button
+                    type="button"
+                    className="haui-pill-btn-dark"
+                    style={{ fontSize: '11px', padding: '4px 10px' }}
+                    onClick={() => navigate('/planner')}
+                  >
+                    Gỡ nợ kỳ tới
+                  </button>
+                </td>
+              </tr>
+
+              {/* Row 5 */}
+              <tr>
+                <td style={{ padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Tiếng Anh chuyên ngành CNTT</span>
+                    <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>FL6005 &bull; Bộ môn Ngoại ngữ</span>
+                  </div>
+                </td>
+                <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>2 TC</td>
+                <td style={{ padding: '14px 16px', color: 'var(--color-mid-gray)' }}>ThS. Vũ Thị Mai</td>
+                <td style={{ padding: '14px 16px' }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--color-canvas)', padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', color: 'var(--color-ink)' }}>
+                    <span>Quá trình:</span>
+                    <strong>9.0</strong>
+                  </div>
+                </td>
+                <td style={{ padding: '14px 16px' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
+                    Đang học
+                  </span>
+                </td>
+                <td style={{ padding: '14px 12px', textAlign: 'right' }}>
+                  <button type="button" className="haui-sidebar__profile-logout" title="Xem chi tiết môn">
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>more_horiz</span>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* SECTION 5: SMART AI ADVISOR RECOMMENDATION CARD */}
+      <section className="haui-stat-card" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', maxWidth: '780px' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)', color: 'var(--color-paper)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>smart_toy</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.01em' }}>
+                Lời khuyên từ AI Advisor cho bạn
+              </h2>
+              <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-mid-gray)' }}>
+                Tối ưu hóa học kỳ
+              </span>
+            </div>
+            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '14px', color: 'var(--color-mid-gray)' }}>
+              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-ink)', marginTop: '2px', flexShrink: 0 }}>check_circle</span>
+                <span>
+                  Bạn đã tích lũy <strong style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{accumulatedCredits} tín chỉ</strong>, hoàn toàn đủ điều kiện theo quy chế HaUI để đăng ký <strong style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Khóa luận tốt nghiệp (10 TC)</strong> vào Học kỳ 1 năm sau nếu hoàn thành toàn bộ 14 tín chỉ trong kỳ hiện tại.
+                </span>
+              </li>
+              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-ember)', marginTop: '2px', flexShrink: 0 }}>info</span>
+                <span>
+                  Lưu ý học phần <strong style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Kiến trúc phần mềm</strong> (dự kiến đăng ký Kỳ 7) yêu cầu môn tiên quyết <strong style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Lập trình hướng đối tượng (IT6002)</strong> của bạn đã đạt điểm B+ (Hợp lệ).
+                </span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Action CTA Group */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignSelf: 'center', minWidth: '180px' }}>
+          <button
+            type="button"
+            className="haui-pill-btn-dark"
+            onClick={() => navigate('/planner')}
+            style={{ justifyContent: 'center' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>alt_route</span>
+            <span>Phân bổ môn Kỳ 7</span>
+          </button>
+          <button
+            type="button"
+            className="haui-pill-btn-canvas"
+            onClick={() => navigate('/what-if')}
+            style={{ justifyContent: 'center' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>insights</span>
+            <span>Mô phỏng What-if</span>
+          </button>
+        </div>
+      </section>
+
+      {/* SECTION 6: LỘ TRÌNH ĐỀ XUẤT 18 TÍN CHỈ & MÔN NỢ TIÊN QUYẾT */}
       <div className="haui-grid haui-grid--2">
-        {/* Khối Môn nợ & Môn tiên quyết cần gỡ gấp */}
+        {/* Khối Môn Nợ Tiên Quyết */}
         <Card
           title="Môn Nợ & Môn Tiên Quyết Cần Gỡ Gấp (Urgent Retakes)"
           subtitle="Các học phần không đạt làm tắc nghẽn cây môn học theo BR-01 & BR-07"
@@ -578,7 +1060,7 @@ export function DashboardPage({ mountedRouteSummary }) {
           </div>
         </Card>
 
-        {/* Khối Lộ trình đề xuất học kỳ kế tiếp */}
+        {/* Khối Lộ Trình Đề Xuất 18 Tín Chỉ */}
         <Card
           title="Lộ trình Học kỳ Kế tiếp Đề xuất (Next Semester Plan)"
           subtitle="Gợi ý tối ưu 18 Tín chỉ (Tuân thủ BR-03: Khung 10 – 24 TC)"
@@ -636,7 +1118,7 @@ export function DashboardPage({ mountedRouteSummary }) {
         </Card>
       </div>
 
-      {/* 5. Khối Tiến độ Học vụ & Kế hoạch Học tập Đã lưu (Task 3.9) */}
+      {/* SECTION 7: TIẾN ĐỘ HỌC VỤ & KẾ HOẠCH HỌC TẬP ĐÃ LƯU (Task 3.9) */}
       <Card
         title="Tiến độ Học vụ & Kế hoạch Học tập Đã lưu (Task 3.9)"
         subtitle="Theo dõi tiến độ tích lũy thực tế và kế hoạch học tập đã đăng ký/lưu trữ gần nhất"
@@ -649,7 +1131,7 @@ export function DashboardPage({ mountedRouteSummary }) {
               onClick={() => navigate('/audit')}
               title="Mở bảng kiểm toán tốt nghiệp và in báo cáo"
             >
-              🎓 Kiểm toán Tốt nghiệp (Audit)
+              🎓 {'Kiểm toán Tốt nghiệp & Báo cáo in'}
             </Button>
             <Button
               variant="primary"
@@ -657,7 +1139,7 @@ export function DashboardPage({ mountedRouteSummary }) {
               onClick={() => navigate('/planner?plan_id=plan-2026-9001')}
               title="Mở kế hoạch học tập cũ đã lưu trên hệ thống"
             >
-              📂 Mở Kế hoạch cũ (ACTIVE) &rarr;
+              📂 Mở Kế hoạch Học tập Đã lưu (Kế hoạch cũ) &rarr;
             </Button>
           </div>
         }
@@ -709,50 +1191,7 @@ export function DashboardPage({ mountedRouteSummary }) {
         </div>
       </Card>
 
-      {/* 6. Thanh tiến độ Chương trình đào tạo (Degree Progress Bar theo 5 Khối kiến thức) */}
-      <Card
-        title="Thanh Tiến độ Chương trình Đào tạo theo Khối Kiến thức (Degree Progress Bar)"
-        subtitle="Phân rã tỷ lệ hoàn thành từng khối kiến thức ngành Kỹ thuật phần mềm / CNTT"
-        headerAction={
-          <Link to="/curriculum">
-            <Button variant="secondary" size="sm">
-              🌳 Xem Sơ đồ Cây Môn học (Màn hình 4) &rarr;
-            </Button>
-          </Link>
-        }
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-          {(academicStatus?.knowledgeBlocks || []).map((blk) => (
-            <div key={blk.blockId}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '6px',
-                  fontSize: 'var(--text-sm)'
-                }}
-              >
-                <strong>{blk.name}</strong>
-                <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-xs)' }}>
-                  Đã tích lũy: <strong>{blk.accumulatedCredits ?? 0}</strong> / {blk.totalCreditsRequired ?? 30} TC ({blk.percentage}%)
-                </span>
-              </div>
-              <div className="haui-progress-track">
-                <div
-                  className="haui-progress-fill"
-                  style={{
-                    width: `${blk.percentage}%`,
-                    backgroundColor: blk.color || 'var(--color-primary)'
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* 6. 4 Phân khúc Sinh viên Mục tiêu từ 1-Page Brief & PRD Mục 2 */}
+      {/* SECTION 8: 4 Phân khúc Sinh viên Mục tiêu từ 1-Page Brief & PRD Mục 2 */}
       <Card
         title="Đối tượng Mục tiêu (4 Phân khúc Sinh viên HaUI — 1-Page Brief & PRD Mục 2)"
         subtitle="Chọn từng nhóm sinh viên để đối chiếu đặc điểm, nỗi đau học vụ và kịch bản tư vấn của HaUI Advisor"
@@ -812,69 +1251,6 @@ export function DashboardPage({ mountedRouteSummary }) {
           </div>
         </div>
       </Card>
-
-      {/* 7. Điểm nối TV2 -> TV3 và Trạng thái hệ thống */}
-      <div className="haui-grid haui-grid--2">
-        <Card
-          title="Điểm nối Dependency Injection (TV2 → TV3)"
-          subtitle="Danh sách các route sinh viên được mount qua createStudentRoutes({ api, ui })"
-          headerAction={
-            <span className="haui-badge haui-badge--success">
-              {mountedRouteSummary?.routes?.length || 0} Routes Active
-            </span>
-          }
-        >
-          <Table
-            columns={[
-              {
-                key: 'path',
-                title: 'Đường dẫn Route',
-                render: (val) => (
-                  <Link to={val}>
-                    <code style={{ fontWeight: 600 }}>{val}</code>
-                  </Link>
-                )
-              },
-              {
-                key: 'title',
-                title: 'Màn hình theo UI Flow'
-              },
-              {
-                key: 'status',
-                title: 'Trạng thái',
-                render: (val) => (
-                  <span className="haui-badge haui-badge--warning">{val}</span>
-                )
-              }
-            ]}
-            data={mountedRouteSummary?.routes || []}
-            rowKey="path"
-            striped
-          />
-        </Card>
-
-        <Card
-          title="Trạng thái Runtime & Hợp đồng Hệ thống"
-          subtitle="Thông tin từ /api/v1/system/bootstrap & /api/v1/system/health"
-          headerAction={
-            <span className="haui-badge haui-badge--info">
-              {healthInfo?.status || 'UNKNOWN'}
-            </span>
-          }
-        >
-          <pre className="haui-code-block">
-            {JSON.stringify(
-              {
-                bootstrap: bootstrapInfo,
-                health: healthInfo,
-                contractHandoff: mountedRouteSummary?.contractStatus
-              },
-              null,
-              2
-            )}
-          </pre>
-        </Card>
-      </div>
 
       {/* Modal Luồng phụ A: Nhập & Đồng bộ Bảng điểm (FR-02 / AC-01) */}
       <Modal

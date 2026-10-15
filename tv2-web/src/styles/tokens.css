@@ -9,41 +9,42 @@
 
 :root {
   /* ==========================================================================
-     1. Surface & Canvas Colors (Three-tone Surface Stack - Monochrome Black & White)
+     1. Surface & Canvas Colors (Three-tone Surface Stack - Prototype Monochromatic)
      ========================================================================== */
-  --color-canvas: #f8f9fa;          /* Page background, muted surface fills */
+  --color-canvas: #f5f5f5;          /* Page background, muted surface fills */
   --color-paper: #ffffff;           /* Card surfaces, popover backgrounds, modals */
-  --color-surface-alt: #f4f4f5;     /* Sidebar background, subtle card variants, input rest */
+  --color-surface-alt: #fafafa;     /* Sidebar background, subtle card variants, input rest */
   --color-surface-card: #ffffff;    /* Primary card surface */
-  --color-bg-app: #f8f9fa;          /* Alias for canvas */
+  --color-bg-app: #f5f5f5;          /* Alias for canvas */
   --color-bg-surface: #ffffff;      /* Alias for paper */
   --color-bg-elevated: #ffffff;     /* Elevated popups */
-  --color-bg-muted: #f4f4f5;        /* Secondary panel fills */
-  --color-bg-subtle: #f4f4f5;       /* Tonal division without borders */
-  --color-bg-code: #000000;         /* High-contrast code container */
+  --color-bg-muted: #fafafa;        /* Secondary panel fills */
+  --color-bg-subtle: #f5f5f5;       /* Tonal division without borders */
+  --color-bg-code: #0a0a0a;         /* High-contrast code container */
 
-  /* Sidebar Minimalist Pitch Black Theme */
-  --color-bg-sidebar: #09090b;
-  --color-bg-sidebar-hover: #18181b;
-  --color-bg-sidebar-active: #ffffff;
-  --color-text-sidebar: #a1a1aa;
-  --color-text-sidebar-active: #09090b;
-  --color-border-sidebar: #27272a;
+  /* Sidebar Prototype Frosted Light Theme */
+  --color-bg-sidebar: #fafafa;
+  --color-bg-sidebar-hover: #f5f5f5;
+  --color-bg-sidebar-active: #0a0a0a;
+  --color-text-sidebar: #737373;
+  --color-text-sidebar-active: #ffffff;
+  --color-border-sidebar: #e5e5e5;
 
   /* ==========================================================================
      2. Neutral & Ink Typography Colors
      ========================================================================== */
-  --color-ink: #000000;             /* Primary text, headings, button labels */
-  --color-ink-soft: #18181b;        /* Filled button backgrounds, secondary text */
-  --color-mid-gray: #71717a;        /* Muted body text, placeholders, helper labels */
-  --color-hairline: #e4e4e7;        /* Borders, input outlines, card hairline edges */
+  --color-ink: #0a0a0a;             /* Primary text, headings, button labels */
+  --color-ink-soft: #171717;        /* Filled button backgrounds, secondary text */
+  --color-mid-gray: #737373;        /* Muted body text, placeholders, helper labels */
+  --color-hairline: #e5e5e5;        /* Borders, input outlines, card hairline edges */
+  --color-ember: #e7000b;           /* Red decorative accent (logo dot, badges, alerts) */
 
-  --color-text-primary: #09090b;    /* Primary body/heading text */
-  --color-text-secondary: #3f3f46;  /* Secondary text */
-  --color-text-muted: #71717a;      /* Muted captions */
-  --color-text-disabled: #a1a1aa;   /* Disabled controls */
+  --color-text-primary: #0a0a0a;    /* Primary body/heading text */
+  --color-text-secondary: #404040;  /* Secondary text */
+  --color-text-muted: #737373;      /* Muted captions */
+  --color-text-disabled: #a3a3a3;   /* Disabled controls */
   --color-text-inverse: #ffffff;    /* High contrast inverted text on dark fills */
-  --color-text-code: #f4f4f5;
+  --color-text-code: #f5f5f5;
 
   /* ==========================================================================
      3. Primary Monochrome Identity (Black & White Theme)

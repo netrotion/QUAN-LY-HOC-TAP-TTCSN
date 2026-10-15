@@ -12,10 +12,13 @@ import { MOCK_TRANSCRIPT_INGESTION_PREVIEW } from '../services/mockFixtures.js';
 
 /**
  * Màn hình Bóc tách & Nhập Bảng điểm (`/transcript` & `/academic/import`) — Task 2.2a
- * Luồng 3 bước:
- * Bước 1: Nạp dữ liệu (Tải file PDF/Ảnh từ e-HaUI, Demo file mẫu, Xử lý lỗi định dạng sai, Nhập tay)
- * Bước 2: Xem lại & Điều chỉnh (Review & Inline Edit các môn điểm thấp / nghi ngờ)
- * Bước 3: Xác nhận & Cập nhật kết quả (Confirm -> Ghi vào Store -> Chuyển hướng Dashboard)
+ * Tái thiết kế toàn diện theo Prototype "Clinical Blueprint on Frosted Paper":
+ * - Stepper 3 bước với capsule pill layout
+ * - Phương thức 1: Kéo thả Dropzone tệp (.xlsx, .csv, .pdf) có feedback tự động
+ * - Phương thức 2: Nhập thủ công & bộ lọc giai đoạn đào tạo (Học kỳ 1..6)
+ * - Validation Preview Banner Box đối soát dữ liệu & kiểm tra tính hợp lệ
+ * - Bảng dữ liệu bảng điểm với chức năng Inline Edit (sửa điểm 10, điểm chữ, tín chỉ)
+ * - Thẻ chỉ số tổng kết CPA & Tín chỉ tích lũy trước khi xác nhận cập nhật
  */
 export function TranscriptImportPage() {
   const navigate = useNavigate();
@@ -32,9 +35,12 @@ export function TranscriptImportPage() {
   const [isProcessingFile, setIsProcessingFile] = useState(false);
   const [uploadError, setUploadError] = useState(null);
 
+  // Search & Filter trong bảng dữ liệu
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSemesterFilter, setSelectedSemesterFilter] = useState('ALL');
+
   // Danh sách các môn bóc tách / nhập tay (Editable trong Bước 2)
   const [draftRecords, setDraftRecords] = useState(() => {
-    // Nếu sinh viên đã có bảng điểm thì khởi tạo từ bảng điểm hiện hành, nếu chưa thì rỗng
     return initialSnapshot.transcriptRecords.length > 0
       ? [...initialSnapshot.transcriptRecords]
       : [];
@@ -45,6 +51,7 @@ export function TranscriptImportPage() {
     courseCode: '',
     courseName: '',
     credits: 3,
+    semester: 6,
     letterGrade: 'B',
     score10: 7.5
   });
@@ -87,17 +94,17 @@ export function TranscriptImportPage() {
     }
   };
 
-  // Xử lý người dùng chọn file thật từ máy
+  // Xử lý người dùng chọn file từ máy
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setUploadError(null);
-    const validExtensions = /\.(pdf|png|jpg|jpeg)$/i;
+    const validExtensions = /\.(pdf|png|jpg|jpeg|xlsx|xls|csv)$/i;
 
     if (!validExtensions.test(file.name)) {
       setUploadError(
-        `Định dạng file "${file.name}" không được hỗ trợ! Vui lòng chọn tệp tin định dạng PDF hoặc Ảnh (PNG, JPG) xuất từ portal e-HaUI.`
+        `Định dạng file "${file.name}" không được hỗ trợ! Vui lòng chọn tệp tin định dạng PDF, Excel (.xlsx, .csv) hoặc Ảnh xuất từ portal e-HaUI.`
       );
       setSelectedFile(null);
       return;
@@ -127,7 +134,8 @@ export function TranscriptImportPage() {
       } else if (field === 'letterGrade') {
         const valUpper = String(value).toUpperCase().trim();
         target.letterGrade = valUpper;
-        target.status = valUpper === 'F' ? 'FAILED' : (valUpper === 'D' || valUpper === 'D+') ? 'PASSED_LOW' : 'PASSED';
+        target.status =
+          valUpper === 'F' ? 'FAILED' : valUpper === 'D' || valUpper === 'D+' ? 'PASSED_LOW' : 'PASSED';
       }
 
       updated[index] = target;
@@ -140,6 +148,13 @@ export function TranscriptImportPage() {
     setDraftRecords((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Xóa toàn bộ môn
+  const handleClearAllRecords = () => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa tất cả môn học trong danh sách đối soát?')) {
+      setDraftRecords([]);
+    }
+  };
+
   // Thêm môn học thủ công
   const handleAddCourseSubmit = (e) => {
     if (e) e.preventDefault();
@@ -150,6 +165,7 @@ export function TranscriptImportPage() {
       courseCode: newCourseForm.courseCode.toUpperCase().trim(),
       courseName: newCourseForm.courseName.trim(),
       credits: Number(newCourseForm.credits || 3),
+      semester: Number(newCourseForm.semester || 6),
       score10: Number(newCourseForm.score10),
       letterGrade: newCourseForm.letterGrade || converted.letterGrade || 'B',
       status: converted.status || 'PASSED'
@@ -160,6 +176,7 @@ export function TranscriptImportPage() {
       courseCode: '',
       courseName: '',
       credits: 3,
+      semester: 6,
       letterGrade: 'B',
       score10: 7.5
     });
@@ -171,7 +188,6 @@ export function TranscriptImportPage() {
     commitTranscriptRecords(draftRecords, {
       fileName: selectedFile?.name || 'Nhap_Thu_Cong.csv'
     });
-
     navigate('/dashboard');
   };
 
@@ -181,166 +197,166 @@ export function TranscriptImportPage() {
   const projectedCpa = serverSummary.cpa ?? 0;
   const failedCourses = serverSummary.failedCourses;
 
-  // Columns cấu hình cho Bảng xem lại & chỉnh sửa inline (Bước 2)
-  const reviewColumns = [
-    {
-      key: 'courseCode',
-      title: 'Mã HP',
-      width: '120px',
-      render: (val, row, idx) => (
-        <code style={{ fontWeight: 700, color: 'var(--color-primary)' }}>{val}</code>
-      )
-    },
-    {
-      key: 'courseName',
-      title: 'Tên học phần',
-      render: (val) => <strong>{val}</strong>
-    },
-    {
-      key: 'credits',
-      title: 'Số TC',
-      width: '90px',
-      align: 'center',
-      render: (val, row, idx) => (
-        <input
-          type="number"
-          min="1"
-          max="12"
-          className="haui-input"
-          style={{ width: '60px', textAlign: 'center', padding: '4px' }}
-          value={val}
-          onChange={(e) => handleUpdateRecord(idx, 'credits', Number(e.target.value))}
-        />
-      )
-    },
-    {
-      key: 'score10',
-      title: 'Điểm 10',
-      width: '95px',
-      align: 'center',
-      render: (val, row, idx) => (
-        <input
-          type="number"
-          step="0.1"
-          min="0"
-          max="10"
-          className="haui-input"
-          style={{ width: '65px', textAlign: 'center', padding: '4px' }}
-          value={val ?? ''}
-          placeholder="N/A"
-          onChange={(e) => handleUpdateRecord(idx, 'score10', e.target.value === '' ? null : Number(e.target.value))}
-        />
-      )
-    },
-    {
-      key: 'letterGrade',
-      title: 'Điểm chữ',
-      width: '100px',
-      align: 'center',
-      render: (val, row, idx) => (
-        <select
-          className="haui-input"
-          style={{ width: '70px', padding: '4px', textAlign: 'center' }}
-          value={val || ''}
-          onChange={(e) => handleUpdateRecord(idx, 'letterGrade', e.target.value)}
-        >
-          <option value="">N/A</option>
-          <option value="A">A (4.0)</option>
-          <option value="B+">B+ (3.5)</option>
-          <option value="B">B (3.0)</option>
-          <option value="C+">C+ (2.5)</option>
-          <option value="C">C (2.0)</option>
-          <option value="D+">D+ (1.5)</option>
-          <option value="D">D (1.0)</option>
-          <option value="F">F (0.0)</option>
-        </select>
-      )
-    },
-    {
-      key: 'gradeEvaluation',
-      title: 'Quy chế BR-05',
-      width: '100px',
-      align: 'center',
-      render: (_, row) => <strong>{row.letterGrade || '—'}</strong>
-    },
-    {
-      key: 'status',
-      title: 'Đánh giá / Tình trạng',
-      width: '150px',
-      render: (_, row) => {
-        if (row.letterGrade === 'F' || row.status === 'FAILED') {
-          return <span className="haui-badge haui-badge--error">🚨 Nợ môn (F)</span>;
-        }
-        if (row.letterGrade === 'D' || row.letterGrade === 'D+') {
-          return <span className="haui-badge haui-badge--warning">⚠️ Cần cải thiện</span>;
-        }
-        if (row.status === 'IN_PROGRESS' || !row.letterGrade) {
-          return <span className="haui-badge haui-badge--neutral">⏳ Đang học</span>;
-        }
-        return <span className="haui-badge haui-badge--success">✓ Đạt môn</span>;
-      }
-    },
-    {
-      key: 'actions',
-      title: 'Thao tác',
-      width: '85px',
-      align: 'center',
-      render: (_, __, idx) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleDeleteRecord(idx)}
-          style={{ color: 'var(--color-error)', padding: '2px 8px' }}
-          title="Xóa môn này khỏi bảng điểm"
-        >
-          ✕
-        </Button>
-      )
+  // Lọc môn theo từ khóa tìm kiếm và học kỳ
+  const filteredRecords = draftRecords.filter((rec) => {
+    if (selectedSemesterFilter !== 'ALL' && rec.semester && String(rec.semester) !== String(selectedSemesterFilter)) {
+      return false;
     }
-  ];
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      const codeMatch = rec.courseCode?.toLowerCase().includes(q);
+      const nameMatch = rec.courseName?.toLowerCase().includes(q);
+      return codeMatch || nameMatch;
+    }
+    return true;
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-      {/* Header & Page Title */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: 'var(--text-2xl)', fontWeight: 'var(--font-bold)', color: 'var(--color-text-primary)' }}>
-            Nạp & Bóc Tách Bảng Điểm Cá Nhân (Transcript Ingestion)
-          </h2>
-          <p style={{ margin: '4px 0 0', color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
+      {/* 1. Header & Page Title */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
+            <span
+              style={{ cursor: 'pointer', color: 'var(--color-ink)' }}
+              onClick={() => navigate('/dashboard')}
+            >
+              Trang chủ
+            </span>
+            <span>/</span>
+            <span style={{ color: 'var(--color-mid-gray)' }}>Nhập bảng điểm cá nhân</span>
+          </div>
+          <h1 style={{ fontSize: '30px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+            Nạp &amp; Bóc Tách Bảng Điểm Cá Nhân
+          </h1>
+          <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-mid-gray)', maxWidth: '680px' }}>
             Hỗ trợ nhập tự động từ tệp PDF/Ảnh cổng đào tạo e-HaUI hoặc nhập thủ công từng môn học
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
-            &larr; Về Dashboard
-          </Button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            type="button"
+            className="haui-pill-btn-paper"
+            onClick={() => navigate('/dashboard')}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_back</span>
+            <span>Về Dashboard</span>
+          </button>
         </div>
       </div>
 
-      {/* Wizard Step Indicator (3 bước) */}
-      <div className="haui-stepper-container">
-        <div className={`haui-stepper-step ${currentStep >= 1 ? 'haui-stepper-step--active' : ''}`}>
-          <div className="haui-stepper-circle">1</div>
-          <div className="haui-stepper-text">
-            <strong>Bước 1: Nạp Dữ Liệu</strong>
-            <span>Tải file hoặc Nhập tay</span>
+      {/* 2. Wizard Stepper Indicator (3 Bước) */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px 24px',
+          backgroundColor: 'var(--color-paper)',
+          borderRadius: 'var(--radius-cards)',
+          border: '1px solid var(--color-hairline)',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)'
+        }}
+      >
+        {/* Step 1 */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            opacity: currentStep >= 1 ? 1 : 0.5,
+            cursor: 'pointer'
+          }}
+          onClick={() => setCurrentStep(1)}
+        >
+          <div
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '9999px',
+              backgroundColor: currentStep >= 1 ? 'var(--color-ink)' : 'var(--color-canvas)',
+              color: currentStep >= 1 ? 'var(--color-paper)' : 'var(--color-mid-gray)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: '14px'
+            }}
+          >
+            1
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <strong style={{ fontSize: '14px', color: 'var(--color-ink)' }}>Bước 1: Nạp Dữ Liệu</strong>
+            <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>Tải file hoặc Nhập tay</span>
           </div>
         </div>
-        <div className="haui-stepper-divider" />
-        <div className={`haui-stepper-step ${currentStep >= 2 ? 'haui-stepper-step--active' : ''}`}>
-          <div className="haui-stepper-circle">2</div>
-          <div className="haui-stepper-text">
-            <strong>Bước 2: Xem Lại & Điều Chỉnh</strong>
-            <span>Kiểm tra & Sửa điểm</span>
+
+        <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--color-hairline)', margin: '0 20px' }} />
+
+        {/* Step 2 */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            opacity: currentStep >= 2 ? 1 : 0.5,
+            cursor: draftRecords.length > 0 ? 'pointer' : 'default'
+          }}
+          onClick={() => draftRecords.length > 0 && setCurrentStep(2)}
+        >
+          <div
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '9999px',
+              backgroundColor: currentStep >= 2 ? 'var(--color-ink)' : 'var(--color-canvas)',
+              color: currentStep >= 2 ? 'var(--color-paper)' : 'var(--color-mid-gray)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: '14px'
+            }}
+          >
+            2
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <strong style={{ fontSize: '14px', color: 'var(--color-ink)' }}>{'Bước 2: Xem Lại & Điều Chỉnh'}</strong>
+            <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>Kiểm tra &amp; Sửa điểm</span>
           </div>
         </div>
-        <div className="haui-stepper-divider" />
-        <div className={`haui-stepper-step ${currentStep >= 3 ? 'haui-stepper-step--active' : ''}`}>
-          <div className="haui-stepper-circle">3</div>
-          <div className="haui-stepper-text">
-            <strong>Bước 3: Xác Nhận & Cập Nhật</strong>
-            <span>Ghi nhận vào Hồ sơ</span>
+
+        <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--color-hairline)', margin: '0 20px' }} />
+
+        {/* Step 3 */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            opacity: currentStep >= 3 ? 1 : 0.5
+          }}
+        >
+          <div
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '9999px',
+              backgroundColor: currentStep >= 3 ? 'var(--color-ink)' : 'var(--color-canvas)',
+              color: currentStep >= 3 ? 'var(--color-paper)' : 'var(--color-mid-gray)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: '14px'
+            }}
+          >
+            3
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <strong style={{ fontSize: '14px', color: 'var(--color-ink)' }}>{'Bước 3: Xác Nhận & Cập Nhật'}</strong>
+            <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>Ghi nhận vào Hồ sơ</span>
           </div>
         </div>
       </div>
@@ -349,164 +365,208 @@ export function TranscriptImportPage() {
           BƯỚC 1: NẠP DỮ LIỆU (Tải File hoặc Nhập tay)
           ========================================================================= */}
       {currentStep === 1 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-          {/* Hướng dẫn khi chưa có bảng điểm (Empty State Guide) */}
-          <Card title="Hướng dẫn xuất bảng điểm từ Cổng thông tin e-HaUI (Dành cho Sinh viên)" variant="surface">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-4)' }}>
-              <div className="haui-guide-step">
-                <span className="haui-guide-step-badge">1</span>
-                <div>
-                  <strong>Đăng nhập e-HaUI</strong>
-                  <p style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
-                    Truy cập portal <code>portal.haui.edu.vn</code> bằng tài khoản sinh viên của bạn.
-                  </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* 2 Cột Phương thức nạp dữ liệu */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px' }}>
+            {/* Phương thức 1: Tải file tự động (7 cols) */}
+            <div className="haui-stat-card" style={{ gridColumn: 'span 7', gap: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
+                  <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)', margin: 0 }}>
+                    Phương thức 1: Nhập bảng điểm tự động
+                  </h2>
                 </div>
+                <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-mid-gray)' }}>
+                  Hỗ trợ .xlsx, .csv, .pdf
+                </span>
               </div>
-              <div className="haui-guide-step">
-                <span className="haui-guide-step-badge">2</span>
-                <div>
-                  <strong>Xuất Bảng Điểm Toàn Khóa</strong>
-                  <p style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
-                    Vào mục <em>Tra cứu kết quả học tập &rarr; In Bảng Điểm &rarr; Lưu dạng PDF hoặc chụp ảnh rõ nét.</em>
-                  </p>
-                </div>
-              </div>
-              <div className="haui-guide-step">
-                <span className="haui-guide-step-badge">3</span>
-                <div>
-                  <strong>Tải Lên HaUI Advisor</strong>
-                  <p style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
-                    Kéo thả tệp PDF vào khung bên dưới để AI tự động nhận dạng điểm số và lập kế hoạch.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </Card>
 
-          {/* Toggle Chọn Phương Thức: Tải File vs Nhập Tay */}
-          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <Button
-              variant={inputMethod === 'upload' ? 'primary' : 'secondary'}
-              size="sm"
-              onClick={() => setInputMethod('upload')}
-            >
-              📄 Tải File Bảng Điểm (PDF / Ảnh)
-            </Button>
-            <Button
-              variant={inputMethod === 'manual' ? 'primary' : 'secondary'}
-              size="sm"
-              onClick={() => setInputMethod('manual')}
-            >
-              ✍️ Nhập Thủ Công Từng Môn Học
-            </Button>
-          </div>
-
-          {/* Nhánh 1: Tải File */}
-          {inputMethod === 'upload' && (
-            <Card title="Kéo thả hoặc Chọn Tệp Bảng Điểm" variant="surface">
               {uploadError && (
-                <div className="haui-callout haui-callout--error" style={{ marginBottom: 'var(--space-4)' }}>
-                  <div style={{ fontWeight: 600 }}>⚠️ Lỗi tải bảng điểm</div>
-                  <div style={{ fontSize: 'var(--text-xs)', marginTop: '2px' }}>{uploadError}</div>
-                  <div style={{ marginTop: 'var(--space-2)' }}>
-                    <Button variant="secondary" size="sm" onClick={() => setUploadError(null)}>
-                      Thử lại với tệp khác
-                    </Button>
-                  </div>
+                <div
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: '16px',
+                    backgroundColor: 'var(--color-error-bg)',
+                    border: '1px solid var(--color-error-border)',
+                    color: 'var(--color-error-text)',
+                    fontSize: '13px'
+                  }}
+                >
+                  <strong>⚠️ Lỗi tải bảng điểm:</strong> {uploadError}
                 </div>
               )}
 
-              <div className="haui-dropzone">
-                <div style={{ fontSize: '36px', marginBottom: 'var(--space-2)' }}>📑</div>
-                <strong style={{ fontSize: 'var(--text-md)', color: 'var(--color-text-primary)' }}>
-                  Chọn hoặc Kéo thả tệp bảng điểm tại đây
-                </strong>
-                <p style={{ margin: '4px 0 var(--space-4)', color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>
-                  Hỗ trợ: PDF, PNG, JPG (Dung lượng tối đa 10MB) xuất từ hệ thống e-HaUI
+              {/* Dropzone Area */}
+              <div
+                style={{
+                  borderRadius: '20px',
+                  padding: '32px 24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  backgroundColor: 'var(--color-surface-alt)',
+                  border: '1px dashed var(--color-hairline)',
+                  transition: 'background-color 0.15s ease'
+                }}
+                onClick={() => document.getElementById('transcriptFileInput')?.click()}
+              >
+                <div
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '9999px',
+                    backgroundColor: 'var(--color-paper)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--color-ink)',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
+                    marginBottom: '12px'
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>cloud_upload</span>
+                </div>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: 500, color: 'var(--color-ink)' }}>
+                  Kéo thả tệp tin hoặc nhấn để chọn
                 </p>
-
+                <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)', maxWidth: '380px' }}>
+                  Tự động nhận diện bảng điểm từ Cổng thông tin đào tạo HaUI (portal.haui.edu.vn)
+                </p>
                 <input
                   type="file"
                   id="transcriptFileInput"
                   style={{ display: 'none' }}
-                  accept=".pdf,image/png,image/jpeg"
+                  accept=".pdf,image/png,image/jpeg,.xlsx,.xls,.csv"
                   onChange={handleFileChange}
                 />
-                <Button
-                  variant="primary"
-                  size="md"
-                  disabled={isProcessingFile}
-                  onClick={() => document.getElementById('transcriptFileInput')?.click()}
-                >
-                  {isProcessingFile ? 'Đang bóc tách dữ liệu...' : 'Chọn Tệp Tin Từ Máy Tính'}
-                </Button>
               </div>
 
-              {/* Fast Test Action Buttons */}
-              <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                  🧪 Phím tắt thử nghiệm nhanh cho Giảng viên & Hội đồng Đánh giá:
-                </span>
-                <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={handleUseDemoFile}
-                    disabled={isProcessingFile}
-                    title="Nạp ngay 7 môn học mẫu chuẩn K17 để test luồng review"
-                  >
-                    ⚡ Dùng File Demo Mẫu (e-HaUI PDF)
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleSimulateInvalidFile}
-                    disabled={isProcessingFile}
-                    style={{ color: 'var(--color-error)' }}
-                    title="Kiểm thử nhánh bắt lỗi định dạng file sai quy chuẩn (.docx)"
-                  >
-                    ⚠️ Mô phỏng File Sai Định Dạng (.docx)
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {/* Nhánh 2: Nhập Tay (Manual Entry) */}
-          {inputMethod === 'manual' && (
-            <Card title="Nhập Thủ Công Kết Quả Các Môn Học Đã Tích Lũy" variant="surface">
-              <p style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
-                Nếu chưa có file xuất từ e-HaUI, bạn có thể tự nhập danh sách các môn đã học.
-                Sau đó chuyển sang Bước 2 để rà soát lại.
-              </p>
-
-              {draftRecords.length === 0 ? (
-                <EmptyState
-                  icon="📝"
-                  title="Chưa có môn học nào được thêm"
-                  description="Hãy thêm môn học đầu tiên để bắt đầu tính toán điểm CPA và tín chỉ tích lũy."
-                  actionLabel="+ Thêm Môn Học Đầu Tiên"
-                  onAction={() => setShowAddModal(true)}
-                />
-              ) : (
-                <div>
-                  <Table
-                    columns={reviewColumns.filter((c) => c.key !== 'actions')}
-                    data={draftRecords}
-                    rowKey="courseCode"
-                  />
-                  <div style={{ marginTop: 'var(--space-4)', display: 'flex', justifyContent: 'space-between' }}>
-                    <Button variant="secondary" size="sm" onClick={() => setShowAddModal(true)}>
-                      + Thêm Môn Học Khác
-                    </Button>
-                    <Button variant="primary" size="md" onClick={() => setCurrentStep(2)}>
-                      Tiếp Tục Sang Bước 2: Xem Lại &rarr;
-                    </Button>
+              {/* Upload Simulated Status Card */}
+              {selectedFile ? (
+                <div style={{ backgroundColor: 'var(--color-surface-alt)', borderRadius: '18px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '9999px', backgroundColor: 'var(--color-paper)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-ink)', flexShrink: 0, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>description</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                      <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {selectedFile.name}
+                      </span>
+                      <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>
+                        Đã tải lên và trích xuất thành công {draftRecords.length} môn học
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
+                    <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-ink)' }}>Sẵn sàng</span>
                   </div>
                 </div>
-              )}
-            </Card>
-          )}
+              ) : null}
+
+              {/* Fast Test Action Buttons for Reviewers */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', paddingTop: '8px' }}>
+                <button
+                  type="button"
+                  className="haui-pill-btn-paper"
+                  style={{ fontSize: '12px', padding: '6px 14px' }}
+                  onClick={handleUseDemoFile}
+                  disabled={isProcessingFile}
+                  title="Nạp ngay file mẫu Bang_Diem_eHaUI_Chuan_K17.pdf"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>bolt</span>
+                  <span>Bang_Diem_eHaUI_Chuan_K17.pdf</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="haui-pill-btn-canvas"
+                  style={{ fontSize: '12px', padding: '6px 14px', color: 'var(--color-ember)' }}
+                  onClick={handleSimulateInvalidFile}
+                  disabled={isProcessingFile}
+                  title="Mô phỏng File Sai Định Dạng (.docx)"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>warning</span>
+                  <span>Mô phỏng File Sai Định Dạng</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Phương thức 2: Nhập thủ công & Điều chỉnh (5 cols) */}
+            <div className="haui-stat-card" style={{ gridColumn: 'span 5', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
+                  <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)', margin: 0 }}>
+                    Phương thức 2: Nhập thủ công &amp; Điều chỉnh
+                  </h2>
+                </div>
+                <p style={{ margin: '0 0 16px', fontSize: '14px', color: 'var(--color-mid-gray)' }}>
+                  Bổ sung môn học chuyển đổi điểm, môn học lại hoặc chỉnh sửa trực tiếp thông tin điểm từng học phần.
+                </p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+                  <button
+                    type="button"
+                    className="haui-pill-btn-dark"
+                    style={{ justifyContent: 'center' }}
+                    onClick={() => setShowAddModal(true)}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add</span>
+                    <span>+ Thêm môn học</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="haui-pill-btn-canvas"
+                    style={{ justifyContent: 'center' }}
+                    onClick={() => {
+                      if (draftRecords.length === 0) {
+                        handleUseDemoFile();
+                      } else {
+                        setCurrentStep(2);
+                      }
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>tune</span>
+                    <span>Quy đổi thang điểm</span>
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>Xem nhanh theo giai đoạn đào tạo:</span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {['ALL', '1', '2', '3', '4', '5', '6'].map((sem) => (
+                      <span
+                        key={sem}
+                        style={{
+                          padding: '4px 12px',
+                          borderRadius: '9999px',
+                          fontSize: '12px',
+                          fontWeight: selectedSemesterFilter === sem ? 500 : 400,
+                          backgroundColor: selectedSemesterFilter === sem ? 'var(--color-ink)' : 'var(--color-canvas)',
+                          color: selectedSemesterFilter === sem ? 'var(--color-paper)' : 'var(--color-mid-gray)',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => setSelectedSemesterFilter(sem)}
+                      >
+                        {sem === 'ALL' ? 'Tất cả kỳ' : `Học kỳ ${sem}`}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ backgroundColor: 'var(--color-surface-alt)', borderRadius: '18px', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--color-mid-gray)', marginTop: '16px' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--color-ink)' }}>info</span>
+                <span>Dữ liệu nhập thủ công sẽ tự động gộp vào thuật toán gợi ý môn học tự chọn KTPM/CNTT.</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -514,54 +574,283 @@ export function TranscriptImportPage() {
           BƯỚC 2: XEM LẠI & ĐIỀU CHỈNH (REVIEW STATE)
           ========================================================================= */}
       {currentStep === 2 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-          {/* Banner Thông Báo Bóc Tách Thành Công */}
-          <div className="haui-callout haui-callout--success">
-            <div style={{ fontWeight: 600 }}>
-              ✓ Bóc tách thành công {draftRecords.length} học phần từ nguồn dữ liệu!
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Validation Preview Banner Box */}
+          <div
+            style={{
+              backgroundColor: 'var(--color-paper)',
+              padding: '20px 24px',
+              borderRadius: 'var(--radius-cards)',
+              border: '1px solid var(--color-hairline)',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', maxWidth: '780px' }}>
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas)',
+                  color: 'var(--color-ink)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>verified</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '18px', fontWeight: 500, color: 'var(--color-ink)' }}>
+                    Bản xem trước &amp; Kiểm tra tính hợp lệ
+                  </span>
+                  <span style={{ padding: '2px 10px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', fontSize: '12px', fontWeight: 500, color: 'var(--color-ink)' }}>
+                    {draftRecords.filter((r) => r.status === 'PASSED').length}/{draftRecords.length} môn hợp lệ
+                  </span>
+                </div>
+                <p style={{ margin: '4px 0 0', fontSize: '14px', color: 'var(--color-mid-gray)' }}>
+                  {failedCourses.length > 0 ? (
+                    <>
+                      Phát hiện <strong style={{ color: 'var(--color-ember)' }}>{failedCourses.length} môn nợ</strong> ({failedCourses.map((f) => f.courseCode).join(', ')}). Bạn có thể bấm vào dòng để sửa điểm nếu vừa thi lại đạt.
+                    </>
+                  ) : (
+                    'Toàn bộ các học phần đã trích xuất hợp lệ theo chuẩn thang điểm 4.0 và 10 của Đại học Công nghiệp Hà Nội.'
+                  )}
+                </p>
+              </div>
             </div>
-            <div style={{ fontSize: 'var(--text-xs)', marginTop: '2px' }}>
-              Vui lòng kiểm tra lại điểm số. Bạn có thể <strong>sửa trực tiếp số tín chỉ, điểm chữ hoặc điểm 10</strong> trên từng dòng bên dưới trước khi xác nhận lưu vào hệ thống.
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                type="button"
+                className="haui-pill-btn-canvas"
+                onClick={() => setCurrentStep(1)}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                className="haui-pill-btn-dark"
+                onClick={() => setCurrentStep(3)}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>sync</span>
+                <span>Xác nhận &amp; Cập nhật vào hệ thống</span>
+              </button>
             </div>
           </div>
 
-          {/* Cảnh báo các môn nợ / điểm thấp cần chú ý */}
-          {failedCourses.length > 0 && (
-            <div className="haui-callout haui-callout--warning">
-              <strong>⚠️ Phát hiện {failedCourses.length} môn học nợ / điểm F:</strong>
-              <div style={{ fontSize: 'var(--text-xs)', marginTop: '2px' }}>
-                Học phần: {failedCourses.map((f) => `${f.courseCode} (${f.courseName})`).join(', ')}.
-                Hệ thống sẽ tự động đưa các môn này vào danh sách ưu tiên gỡ nợ trong Kế hoạch học tập.
+          {/* Data Table Container Card */}
+          <div className="haui-stat-card" style={{ padding: 0, overflow: 'hidden' }}>
+            {/* Table Controls Toolbar */}
+            <div style={{ padding: '20px 24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px', borderBottom: '1px solid var(--color-hairline)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                {/* Search input */}
+                <div style={{ position: 'relative', width: '280px' }}>
+                  <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '18px', color: 'var(--color-mid-gray)' }}>
+                    search
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Tìm theo mã hoặc tên môn..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    style={{
+                      width: '100%',
+                      backgroundColor: 'var(--color-surface-alt)',
+                      border: '1px solid var(--color-hairline)',
+                      borderRadius: '9999px',
+                      padding: '8px 14px 8px 36px',
+                      fontSize: '13px',
+                      color: 'var(--color-ink)',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                {/* Term Select */}
+                <select
+                  value={selectedSemesterFilter}
+                  onChange={(e) => setSelectedSemesterFilter(e.target.value)}
+                  style={{
+                    backgroundColor: 'var(--color-surface-alt)',
+                    border: '1px solid var(--color-hairline)',
+                    borderRadius: '9999px',
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    color: 'var(--color-ink)',
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="ALL">Tất cả các học kỳ</option>
+                  <option value="6">Kỳ 6 - Năm học 2023-2024</option>
+                  <option value="5">Kỳ 5 - Năm học 2022-2023</option>
+                  <option value="4">Kỳ 4 - Năm học 2022-2023</option>
+                  <option value="3">Kỳ 3 - Năm học 2021-2022</option>
+                  <option value="2">Kỳ 2 - Năm học 2021-2022</option>
+                  <option value="1">Kỳ 1 - Năm học 2021-2022</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="haui-pill-btn-canvas"
+                  style={{ fontSize: '12px', padding: '6px 12px' }}
+                  onClick={() => setShowAddModal(true)}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add</span>
+                  <span>Thêm môn</span>
+                </button>
+                <button
+                  type="button"
+                  className="haui-pill-btn-canvas"
+                  style={{ fontSize: '12px', padding: '6px 12px', color: 'var(--color-ember)' }}
+                  onClick={handleClearAllRecords}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete_sweep</span>
+                  <span>Xóa tất cả</span>
+                </button>
               </div>
             </div>
-          )}
 
-          {/* Bảng Dữ Liệu Review có khả năng Inline Edit */}
-          <Card
-            title={`Bảng Điểm Bóc Tách (${draftRecords.length} môn học)`}
-            variant="surface"
-            extra={
-              <Button variant="secondary" size="sm" onClick={() => setShowAddModal(true)}>
-                + Thêm Học Phần Mới
-              </Button>
-            }
-          >
-            <Table columns={reviewColumns} data={draftRecords} rowKey="courseCode" />
-          </Card>
-
-          {/* Thanh Nút Điều Hướng Bước 2 */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Button variant="secondary" size="md" onClick={() => setCurrentStep(1)}>
-              &larr; Quay Lại Chọn Tệp Khác
-            </Button>
-            <Button
-              variant="primary"
-              size="md"
-              disabled={draftRecords.length === 0}
-              onClick={() => setCurrentStep(3)}
-            >
-              Tiếp Tục Sang Bước 3: Xác Nhận & Cập Nhật &rarr;
-            </Button>
+            {/* Table Body */}
+            <div style={{ overflowX: 'auto', width: '100%' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ backgroundColor: 'var(--color-surface-alt)', color: 'var(--color-mid-gray)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <th style={{ padding: '12px 18px', fontWeight: 600 }}>Mã môn</th>
+                    <th style={{ padding: '12px 18px', fontWeight: 600 }}>Tên môn học</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 600, textAlign: 'center' }}>Số TC</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 600, textAlign: 'center' }}>Học kỳ</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 600, textAlign: 'center' }}>Điểm 10</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 600, textAlign: 'center' }}>Điểm chữ</th>
+                    <th style={{ padding: '12px 18px', fontWeight: 600 }}>Trạng thái dữ liệu</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 600, textAlign: 'center' }}>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRecords.map((row, idx) => (
+                    <tr
+                      key={row.courseCode + idx}
+                      style={{
+                        borderBottom: '1px solid var(--color-hairline)',
+                        backgroundColor: row.status === 'FAILED' ? 'rgba(231, 0, 11, 0.03)' : 'transparent'
+                      }}
+                    >
+                      <td style={{ padding: '12px 18px', fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-ink)' }}>
+                        {row.courseCode}
+                      </td>
+                      <td style={{ padding: '12px 18px', fontWeight: 500, color: 'var(--color-ink)' }}>
+                        {row.courseName}
+                      </td>
+                      <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                        <input
+                          type="number"
+                          min="1"
+                          max="12"
+                          value={row.credits}
+                          onChange={(e) => handleUpdateRecord(idx, 'credits', Number(e.target.value))}
+                          style={{
+                            width: '45px',
+                            textAlign: 'center',
+                            padding: '3px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--color-hairline)',
+                            background: 'var(--color-canvas)',
+                            fontSize: '12px'
+                          }}
+                        />
+                      </td>
+                      <td style={{ padding: '12px 14px', textAlign: 'center', color: 'var(--color-mid-gray)' }}>
+                        Kỳ {row.semester || 6}
+                      </td>
+                      <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="10"
+                          value={row.score10 ?? ''}
+                          placeholder="N/A"
+                          onChange={(e) => handleUpdateRecord(idx, 'score10', e.target.value === '' ? null : Number(e.target.value))}
+                          style={{
+                            width: '55px',
+                            textAlign: 'center',
+                            padding: '3px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--color-hairline)',
+                            background: 'var(--color-canvas)',
+                            fontSize: '12px',
+                            fontFamily: 'monospace'
+                          }}
+                        />
+                      </td>
+                      <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                        <select
+                          value={row.letterGrade || ''}
+                          onChange={(e) => handleUpdateRecord(idx, 'letterGrade', e.target.value)}
+                          style={{
+                            padding: '3px 6px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--color-hairline)',
+                            background: 'var(--color-canvas)',
+                            fontSize: '12px',
+                            fontWeight: 600
+                          }}
+                        >
+                          <option value="">N/A</option>
+                          <option value="A">A (4.0)</option>
+                          <option value="B+">B+ (3.5)</option>
+                          <option value="B">B (3.0)</option>
+                          <option value="C+">C+ (2.5)</option>
+                          <option value="C">C (2.0)</option>
+                          <option value="D+">D+ (1.5)</option>
+                          <option value="D">D (1.0)</option>
+                          <option value="F">F (0.0)</option>
+                        </select>
+                      </td>
+                      <td style={{ padding: '12px 18px' }}>
+                        {row.letterGrade === 'F' || row.status === 'FAILED' ? (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ember)', fontWeight: 600 }}>
+                            <span style={{ width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ember)' }} />
+                            Nợ môn (F)
+                          </span>
+                        ) : row.letterGrade === 'D' || row.letterGrade === 'D+' ? (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
+                            <span style={{ width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-mid-gray)' }} />
+                            Điểm D (Cải thiện)
+                          </span>
+                        ) : (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
+                            <span style={{ width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
+                            Hợp lệ
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                        <button
+                          type="button"
+                          className="haui-sidebar__profile-logout"
+                          style={{ color: 'var(--color-ember)' }}
+                          title="Xóa môn này"
+                          onClick={() => handleDeleteRecord(idx)}
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -570,71 +859,96 @@ export function TranscriptImportPage() {
           BƯỚC 3: XÁC NHẬN & CẬP NHẬT KẾT QUẢ (CONFIRM STATE)
           ========================================================================= */}
       {currentStep === 3 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-          <Card title="Xác Nhận & Cập Nhật Kết Quả Vào Hồ Sơ Học Vụ" variant="status-primary">
-            <p style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
-              Kiểm tra các chỉ số tổng hợp được tính toán tự động từ bảng điểm bạn vừa đối soát.
-              Khi bấm <strong>"Xác nhận & Cập nhật kết quả"</strong>, dữ liệu Dashboard và Cây môn học sẽ đồng bộ ngay lập tức.
-            </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="haui-stat-card" style={{ gap: '20px' }}>
+            <div>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)', margin: '0 0 6px' }}>
+                Xác Nhận &amp; Cập Nhật Kết Quả Vào Hồ Sơ Học Vụ
+              </h2>
+              <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-mid-gray)' }}>
+                Kiểm tra các chỉ số tổng hợp được tính toán tự động từ bảng điểm bạn vừa đối soát. Khi bấm <strong>"Xác nhận &amp; Cập nhật kết quả"</strong>, dữ liệu Dashboard và Cây môn học sẽ đồng bộ ngay lập tức.
+              </p>
+            </div>
 
-            {/* Thẻ chỉ số tổng kết mới */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
-              <div className="haui-metric-tile">
-                <span className="haui-metric-tile__label">CPA Mới Tính Toán</span>
-                <span className="haui-metric-tile__value" style={{ color: projectedCpa < 2.0 ? 'var(--color-error)' : 'var(--color-primary)' }}>
-                  {projectedCpa.toFixed(2)}
+            {/* 4 Thẻ chỉ số tổng kết mới */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              <div style={{ padding: '16px', backgroundColor: 'var(--color-surface-alt)', borderRadius: '16px', border: '1px solid var(--color-hairline)' }}>
+                <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  CPA Mới Tính Toán
                 </span>
-                <span className="haui-metric-tile__desc">
+                <div style={{ fontSize: '28px', fontWeight: 700, color: projectedCpa < 2.0 ? 'var(--color-ember)' : 'var(--color-ink)', marginTop: '4px' }}>
+                  {projectedCpa.toFixed(2)}
+                </div>
+                <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>
                   {projectedCpa >= 3.2 ? 'Giỏi' : projectedCpa >= 2.5 ? 'Khá' : projectedCpa >= 2.0 ? 'Trung bình' : 'Yếu (Cảnh báo)'}
                 </span>
               </div>
 
-              <div className="haui-metric-tile">
-                <span className="haui-metric-tile__label">Tín Chỉ Đã Tích Lũy</span>
-                <span className="haui-metric-tile__value">{totalEarnedCredits} / 135</span>
-                <span className="haui-metric-tile__desc">
+              <div style={{ padding: '16px', backgroundColor: 'var(--color-surface-alt)', borderRadius: '16px', border: '1px solid var(--color-hairline)' }}>
+                <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Tín Chỉ Đã Tích Lũy
+                </span>
+                <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--color-ink)', marginTop: '4px' }}>
+                  {totalEarnedCredits} / 135
+                </div>
+                <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>
                   Đạt {((totalEarnedCredits / 135) * 100).toFixed(1)}% tiến độ CTĐT
                 </span>
               </div>
 
-              <div className="haui-metric-tile">
-                <span className="haui-metric-tile__label">Tổng Số Môn Học</span>
-                <span className="haui-metric-tile__value">{draftRecords.length}</span>
-                <span className="haui-metric-tile__desc">
+              <div style={{ padding: '16px', backgroundColor: 'var(--color-surface-alt)', borderRadius: '16px', border: '1px solid var(--color-hairline)' }}>
+                <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Tổng Số Môn Học
+                </span>
+                <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--color-ink)', marginTop: '4px' }}>
+                  {draftRecords.length}
+                </div>
+                <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>
                   {draftRecords.filter((r) => r.status === 'PASSED').length} đạt &bull; {failedCourses.length} nợ
                 </span>
               </div>
 
-              <div className="haui-metric-tile">
-                <span className="haui-metric-tile__label">Trạng Thái Học Vụ Dự Kiến</span>
-                <span className="haui-metric-tile__value" style={{ fontSize: 'var(--text-lg)' }}>
-                  {projectedCpa < 2.0 || failedCourses.length > 0 ? '⚠️ Cảnh báo Mức 1' : '✓ Bình thường'}
+              <div style={{ padding: '16px', backgroundColor: 'var(--color-surface-alt)', borderRadius: '16px', border: '1px solid var(--color-hairline)' }}>
+                <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Trạng Thái Học Vụ Dự Kiến
                 </span>
-                <span className="haui-metric-tile__desc">Theo quy chế HaUI BR-07</span>
+                <div style={{ fontSize: '20px', fontWeight: 700, color: projectedCpa < 2.0 || failedCourses.length > 0 ? 'var(--color-ember)' : 'var(--color-ink)', marginTop: '8px' }}>
+                  {projectedCpa < 2.0 || failedCourses.length > 0 ? '⚠️ Cảnh báo Mức 1' : '✓ Bình thường'}
+                </div>
+                <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>
+                  Theo quy chế HaUI BR-07
+                </span>
               </div>
             </div>
 
             {/* Cảnh báo nợ môn nếu có */}
             {failedCourses.length > 0 && (
-              <div className="haui-callout haui-callout--error" style={{ marginBottom: 'var(--space-4)' }}>
-                <strong>Lưu ý quan trọng trước khi lưu:</strong>
-                <p style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)' }}>
-                  Bạn đang có {failedCourses.length} môn học bị điểm F ({failedCourses.map((f) => f.courseCode).join(', ')}).
-                  Sau khi lưu, hệ thống sẽ tự động cập nhật Sơ đồ Cây môn học sang trạng thái Đỏ (Blocked) cho các môn học sau môn này.
+              <div style={{ padding: '14px 18px', backgroundColor: 'rgba(231, 0, 11, 0.05)', borderRadius: '16px', border: '1px solid rgba(231, 0, 11, 0.2)', color: 'var(--color-ink)', fontSize: '13px' }}>
+                <strong style={{ color: 'var(--color-ember)' }}>Lưu ý quan trọng trước khi lưu:</strong>
+                <p style={{ margin: '4px 0 0', color: 'var(--color-mid-gray)' }}>
+                  Bạn đang có {failedCourses.length} môn học bị điểm F ({failedCourses.map((f) => f.courseCode).join(', ')}). Sau khi lưu, hệ thống sẽ tự động cập nhật Sơ đồ Cây môn học sang trạng thái Đỏ (Blocked) cho các môn học sau môn này.
                 </p>
               </div>
             )}
 
             {/* Nút Hành Động Xác Nhận */}
-            <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--color-border)' }}>
-              <Button variant="secondary" size="md" onClick={() => setCurrentStep(2)}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '12px', borderTop: '1px solid var(--color-hairline)' }}>
+              <button
+                type="button"
+                className="haui-pill-btn-canvas"
+                onClick={() => setCurrentStep(2)}
+              >
                 &larr; Quay Lại Điều Chỉnh Thêm
-              </Button>
-              <Button variant="primary" size="md" onClick={handleConfirmAndSave}>
-                ✓ Xác Nhận & Cập Nhật Kết Quả Ngay
-              </Button>
+              </button>
+              <button
+                type="button"
+                className="haui-pill-btn-dark"
+                onClick={handleConfirmAndSave}
+              >
+                ✓ Xác Nhận &amp; Cập Nhật Kết Quả Ngay
+              </button>
             </div>
-          </Card>
+          </div>
         </div>
       )}
 
@@ -643,14 +957,14 @@ export function TranscriptImportPage() {
         <div className="haui-modal-backdrop" onClick={() => setShowAddModal(false)}>
           <div className="haui-modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="haui-modal-header">
-              <h3>Thêm Môn Học Mới</h3>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Thêm Môn Học Mới</h3>
               <button className="haui-modal-close" onClick={() => setShowAddModal(false)}>
                 ✕
               </button>
             </div>
             <form onSubmit={handleAddCourseSubmit}>
-              <div className="haui-modal-body">
-                <div style={{ marginBottom: 'var(--space-3)' }}>
+              <div className="haui-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
                   <label className="haui-form-label">Mã học phần:</label>
                   <input
                     type="text"
@@ -661,7 +975,7 @@ export function TranscriptImportPage() {
                     required
                   />
                 </div>
-                <div style={{ marginBottom: 'var(--space-3)' }}>
+                <div>
                   <label className="haui-form-label">Tên học phần:</label>
                   <input
                     type="text"
@@ -672,7 +986,7 @@ export function TranscriptImportPage() {
                     required
                   />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
                   <div>
                     <label className="haui-form-label">Số tín chỉ:</label>
                     <input
@@ -716,12 +1030,19 @@ export function TranscriptImportPage() {
                 </div>
               </div>
               <div className="haui-modal-footer">
-                <Button variant="secondary" size="sm" type="button" onClick={() => setShowAddModal(false)}>
+                <button
+                  type="button"
+                  className="haui-pill-btn-canvas"
+                  onClick={() => setShowAddModal(false)}
+                >
                   Hủy
-                </Button>
-                <Button variant="primary" size="sm" type="submit">
+                </button>
+                <button
+                  type="submit"
+                  className="haui-pill-btn-dark"
+                >
                   Thêm Vào Bảng Điểm
-                </Button>
+                </button>
               </div>
             </form>
           </div>
