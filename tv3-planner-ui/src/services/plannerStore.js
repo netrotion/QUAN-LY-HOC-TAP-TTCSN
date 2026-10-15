@@ -554,6 +554,11 @@ class PlannerStore {
     this.notify();
   }
 
+  // Alias tương thích cho dismissProposal
+  rejectProposal() {
+    this.dismissProposal();
+  }
+
   // Ghi đè một phần nội dung kế hoạch (giữ nguyên định danh/trạng thái do store quản lý)
   setPlan(nextPlan = {}) {
     const { planId, version, status, ...content } = clone(nextPlan);

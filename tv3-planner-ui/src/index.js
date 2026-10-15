@@ -1,7 +1,7 @@
 import { StudyPlannerPage } from './pages/StudyPlannerPage.js';
-import { ChatAdvisorPage, generateMockChatResponse } from './pages/ChatAdvisorPage.js';
+import { ChatAdvisorPage, generateMockChatResponse, QUICK_PROMPTS_MAN_2 } from './pages/ChatAdvisorPage.js';
 import { WhatIfSimulatorPage, WHAT_IF_TOOLS } from './pages/WhatIfSimulatorPage.js';
-import { StudentProfilePage } from './pages/StudentProfilePage.js';
+import { StudentProfilePage, SAMPLE_K16_PROFILE } from './pages/StudentProfilePage.js';
 import { PlanHistoryModal } from './components/PlanHistoryModal.js';
 import { CurriculumTreeModal } from './components/CurriculumTreeModal.js';
 import {
@@ -77,7 +77,9 @@ export {
   PLAN_STATUSES,
   validatePlanFormat,
   evaluatePlanRules,
-  generateMockChatResponse
+  generateMockChatResponse,
+  QUICK_PROMPTS_MAN_2,
+  SAMPLE_K16_PROFILE
 };
 
 export const PACKAGE_INFO = {
