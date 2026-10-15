@@ -270,110 +270,163 @@ export function StudyPlannerPage({ api, ui } = {}) {
     {
       style: {
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        flexWrap: 'wrap',
-        gap: '16px',
+        flexDirection: 'column',
+        gap: '8px',
         marginBottom: '20px'
       }
     },
+    // Breadcrumb
     React.createElement(
       'div',
-      { style: { maxWidth: '720px' } },
+      {
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: '12px',
+          color: 'var(--color-mid-gray, #737373)'
+        }
+      },
+      React.createElement(
+        'span',
+        {
+          style: { cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }
+        },
+        React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '15px' } }, 'home'),
+        'Trang chủ'
+      ),
+      React.createElement('span', { style: { color: 'var(--color-hairline, #e5e5e5)' } }, '/'),
+      React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500 } }, 'Kế hoạch học tập cá nhân')
+    ),
+    // Title & Actions Bar
+    React.createElement(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }
+      },
       React.createElement(
         'div',
-        { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
+        { style: { maxWidth: '780px' } },
         React.createElement(
-          'h2',
-          { style: { fontSize: '24px', fontWeight: 700, color: '#0f172a', margin: 0 } },
-          'Kế hoạch Học tập Mục tiêu (Study Planner)'
+          'div',
+          { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
+          React.createElement(
+            'h1',
+            {
+              style: {
+                fontSize: '28px',
+                fontWeight: 700,
+                letterSpacing: '-0.02em',
+                color: 'var(--color-ink, #0a0a0a)',
+                margin: 0
+              }
+            },
+            'Kế hoạch học tập cá nhân'
+          ),
+          React.createElement(
+            'span',
+            {
+              style: {
+                fontSize: '11px',
+                fontWeight: 600,
+                padding: '3px 10px',
+                borderRadius: '9999px',
+                background: plan?.status === PLAN_STATUSES.ACTIVE ? 'var(--color-ink, #0a0a0a)' : plan?.status === PLAN_STATUSES.VALIDATED ? '#dcfce7' : 'var(--color-surface-alt, #fafafa)',
+                color: plan?.status === PLAN_STATUSES.ACTIVE ? '#ffffff' : plan?.status === PLAN_STATUSES.VALIDATED ? '#15803d' : 'var(--color-mid-gray, #737373)',
+                border: '1px solid var(--color-hairline, #e5e5e5)',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)'
+              }
+            },
+            plan?.status === PLAN_STATUSES.ACTIVE
+              ? `● Kế hoạch đang theo dõi (ACTIVE)`
+              : `Bản nháp ${plan?.version || 'v2.4'} (Chưa kích hoạt)`
+          ),
+          React.createElement(
+            'span',
+            {
+              style: {
+                fontSize: '11px',
+                padding: '3px 10px',
+                borderRadius: '9999px',
+                background: 'var(--color-canvas, #f5f5f5)',
+                color: 'var(--color-ink-soft, #171717)',
+                border: '1px solid var(--color-hairline, #e5e5e5)'
+              }
+            },
+            'Khóa 16 · CNTT/KTPM'
+          )
         ),
         React.createElement(
-          'span',
+          'p',
           {
             style: {
-              fontSize: '11px',
-              fontWeight: 600,
-              padding: '2px 8px',
-              borderRadius: '18px',
-              background: plan?.status === PLAN_STATUSES.ACTIVE ? '#0a0a0a' : plan?.status === PLAN_STATUSES.VALIDATED ? '#dcfce7' : '#f1f5f9',
-              color: plan?.status === PLAN_STATUSES.ACTIVE ? '#ffffff' : plan?.status === PLAN_STATUSES.VALIDATED ? '#15803d' : '#475569',
-              border: '1px solid var(--color-hairline, #e5e5e5)'
+              color: 'var(--color-mid-gray, #737373)',
+              marginTop: '6px',
+              fontSize: '13px',
+              lineHeight: 1.5,
+              margin: '6px 0 0'
             }
           },
-          `Phiên bản: ${plan?.version || 'v2.4'} · Trạng thái: ${plan?.status || 'DRAFT'}`
-        ),
-        React.createElement(
-          'span',
-          {
-            style: {
-              fontSize: '11px',
-              padding: '2px 8px',
-              borderRadius: '18px',
-              background: '#f8fafc',
-              color: '#64748b',
-              border: '1px solid #e2e8f0'
-            }
-          },
-          'Khóa 16 · CNTT/KTPM'
+          'Xây dựng lộ trình đăng ký môn học cho các học kỳ tiếp theo. Hệ thống kiểm tra số tín chỉ tối đa/tối thiểu (10–24 TC) và điều kiện tiên quyết theo quy chế đào tạo tín chỉ Đại học Công nghiệp Hà Nội (HaUI).'
         )
       ),
+      // Nút chức năng ở góc phải
       React.createElement(
-        'p',
-        { style: { color: '#475569', marginTop: '6px', fontSize: '14px', lineHeight: 1.5 } },
-        'Xây dựng lộ trình đăng ký môn học nhiều kỳ tiếp theo. Hệ thống kiểm tra ràng buộc 10–24 tín chỉ thời gian thực (BR-03/BR-04), điều kiện tiên quyết và hỗ trợ kích hoạt theo dõi tiến độ chính thức.'
+        'div',
+        { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' } },
+        Button
+          ? React.createElement(
+              Button,
+              { variant: 'ghost', size: 'sm', onClick: () => setIsTreeModalOpen(true) },
+              '🌳 Xem Cây môn học (Tùy chọn)'
+            )
+          : null,
+        Button
+          ? React.createElement(
+              Button,
+              { variant: 'secondary', size: 'sm', onClick: () => setIsHistoryModalOpen(true) },
+              '📜 Lịch sử & Mở lại'
+            )
+          : null,
+        Button
+          ? React.createElement(
+              Button,
+              { variant: 'secondary', size: 'sm', loading: saving, onClick: handleSaveDraft },
+              '💾 Lưu bản nháp'
+            )
+          : null,
+        Button
+          ? React.createElement(
+              Button,
+              {
+                variant: 'secondary',
+                size: 'sm',
+                loading: validating,
+                onClick: handleValidatePlan
+              },
+              '✓ Kiểm tra điều kiện'
+            )
+          : null,
+        Button
+          ? React.createElement(
+              Button,
+              {
+                variant: 'primary',
+                size: 'sm',
+                disabled: !isValidated,
+                title: isValidated ? undefined : 'Cần "Kiểm tra điều kiện" và đạt trạng thái VALIDATED trước khi kích hoạt',
+                onClick: () => isValidated && setIsActivateModalOpen(true)
+              },
+              '▶ Bắt đầu theo dõi (Kích hoạt)'
+            )
+          : null
       )
-    ),
-    // Nút chức năng ở góc phải
-    React.createElement(
-      'div',
-      { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' } },
-      Button
-        ? React.createElement(
-            Button,
-            { variant: 'ghost', size: 'sm', onClick: () => setIsTreeModalOpen(true) },
-            '🌳 Xem Cây môn học (Tùy chọn)'
-          )
-        : null,
-      Button
-        ? React.createElement(
-            Button,
-            { variant: 'secondary', size: 'sm', onClick: () => setIsHistoryModalOpen(true) },
-            '📜 Lịch sử & Mở lại'
-          )
-        : null,
-      Button
-        ? React.createElement(
-            Button,
-            { variant: 'secondary', size: 'sm', loading: saving, onClick: handleSaveDraft },
-            '💾 Lưu bản nháp'
-          )
-        : null,
-      Button
-        ? React.createElement(
-            Button,
-            {
-              variant: 'secondary',
-              size: 'sm',
-              loading: validating,
-              onClick: handleValidatePlan
-            },
-            '✓ Kiểm tra điều kiện'
-          )
-        : null,
-      Button
-        ? React.createElement(
-            Button,
-            {
-              variant: 'primary',
-              size: 'sm',
-              disabled: !isValidated,
-              title: isValidated ? undefined : 'Cần "Kiểm tra điều kiện" và đạt trạng thái VALIDATED trước khi kích hoạt',
-              onClick: () => isValidated && setIsActivateModalOpen(true)
-            },
-            '▶ Bắt đầu theo dõi (Kích hoạt)'
-          )
-        : null
     )
   );
 
@@ -540,91 +593,183 @@ export function StudyPlannerPage({ api, ui } = {}) {
     {
       style: {
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
         gap: '16px',
         marginBottom: '20px'
       }
     },
     // Thẻ 1: Tiến độ tích lũy
-    Card
-      ? React.createElement(
-          Card,
-          { variant: 'default', padding: 'sm' },
-          React.createElement('div', { style: { fontSize: '12px', color: '#64748b' } }, 'Tổng TC cần tích lũy'),
-          React.createElement(
-            'div',
-            { style: { fontSize: '22px', fontWeight: 700, color: '#0f172a', marginTop: '4px' } },
-            `${totalPlannedCredits} `,
-            React.createElement('span', { style: { fontSize: '13px', fontWeight: 400, color: '#64748b' } }, `/ ${plan.remainingCredits || 37} TC còn thiếu`)
-          ),
-          React.createElement(
-            'div',
-            { style: { fontSize: '11px', color: '#16a34a', marginTop: '4px', fontWeight: 600 } },
-            `Đã tích lũy ${plan.totalEarnedCredits || 108} / ${plan.totalRequiredCredits || 145} TC (74.5%)`
-          )
+    React.createElement(
+      'div',
+      {
+        className: 'haui-stat-card',
+        style: {
+          padding: '20px',
+          borderRadius: 'var(--radius-cards, 24px)',
+          backgroundColor: 'var(--color-paper, #ffffff)',
+          border: '1px solid var(--color-hairline, #e5e5e5)',
+          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between'
+        }
+      },
+      React.createElement(
+        'div',
+        { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+        React.createElement('span', { style: { fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-mid-gray, #737373)', letterSpacing: '0.04em' } }, 'TỔNG TC CẦN TÍCH LŨY'),
+        React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px', color: 'var(--color-mid-gray, #737373)' } }, 'assignment_turned_in')
+      ),
+      React.createElement(
+        'div',
+        { style: { margin: '14px 0 10px', display: 'flex', alignItems: 'baseline', gap: '6px' } },
+        React.createElement('span', { style: { fontSize: '30px', fontWeight: 700, color: 'var(--color-ink, #0a0a0a)', lineHeight: 1 } }, totalPlannedCredits),
+        React.createElement('span', { style: { fontSize: '14px', color: 'var(--color-mid-gray, #737373)' } }, `/ ${plan.remainingCredits || 37} Tín chỉ`)
+      ),
+      React.createElement(
+        'div',
+        { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+        React.createElement(
+          'div',
+          { className: 'haui-progress-bar-minimal' },
+          React.createElement('div', { className: 'haui-progress-bar-minimal__fill', style: { width: '74.5%', backgroundColor: 'var(--color-ink, #0a0a0a)' } })
+        ),
+        React.createElement(
+          'div',
+          { style: { display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } },
+          React.createElement('span', null, `Đã hoàn thành ${plan.totalEarnedCredits || 108} TC`),
+          React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 600 } }, '74.5%')
         )
-      : null,
+      )
+    ),
+
     // Thẻ 2: Phân bổ lộ trình
-    Card
-      ? React.createElement(
-          Card,
-          { variant: 'default', padding: 'sm' },
-          React.createElement('div', { style: { fontSize: '12px', color: '#64748b' } }, 'Phân bổ lộ trình'),
-          React.createElement(
-            'div',
-            { style: { fontSize: '22px', fontWeight: 700, color: '#0f172a', marginTop: '4px' } },
-            `${plan.semesters.length} học kỳ`
-          ),
-          React.createElement(
-            'div',
-            { style: { fontSize: '11px', color: '#64748b', marginTop: '4px' } },
-            '2 học kỳ chính + 1 kỳ hè (Chuẩn 4 năm)'
-          )
-        )
-      : null,
+    React.createElement(
+      'div',
+      {
+        className: 'haui-stat-card',
+        style: {
+          padding: '20px',
+          borderRadius: 'var(--radius-cards, 24px)',
+          backgroundColor: 'var(--color-paper, #ffffff)',
+          border: '1px solid var(--color-hairline, #e5e5e5)',
+          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between'
+        }
+      },
+      React.createElement(
+        'div',
+        { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+        React.createElement('span', { style: { fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-mid-gray, #737373)', letterSpacing: '0.04em' } }, 'PHÂN BỔ LỘ TRÌNH'),
+        React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px', color: 'var(--color-mid-gray, #737373)' } }, 'calendar_view_week')
+      ),
+      React.createElement(
+        'div',
+        { style: { margin: '14px 0 10px', display: 'flex', alignItems: 'baseline', gap: '6px' } },
+        React.createElement('span', { style: { fontSize: '30px', fontWeight: 700, color: 'var(--color-ink, #0a0a0a)', lineHeight: 1 } }, plan.semesters.length),
+        React.createElement('span', { style: { fontSize: '14px', color: 'var(--color-mid-gray, #737373)' } }, 'học kỳ chính + 1 kỳ hè')
+      ),
+      React.createElement(
+        'div',
+        { style: { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--color-ink, #0a0a0a)', fontWeight: 500 } },
+        React.createElement('span', { style: { width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ink, #0a0a0a)' } }),
+        React.createElement('span', null, 'Đúng tiến độ chuẩn 4 năm')
+      )
+    ),
+
     // Thẻ 3: CPA dự kiến
-    Card
-      ? React.createElement(
-          Card,
-          { variant: 'default', padding: 'sm' },
-          React.createElement('div', { style: { fontSize: '12px', color: '#64748b' } }, 'Mô phỏng CPA tốt nghiệp'),
-          React.createElement(
-            'div',
-            { style: { fontSize: '22px', fontWeight: 700, color: '#0284c7', marginTop: '4px' } },
-            `${plan.projectedCpa || '3.32'} / 4.00`
-          ),
-          React.createElement(
-            'div',
-            { style: { fontSize: '11px', color: '#16a34a', marginTop: '4px', fontWeight: 600 } },
-            plan.projectedRank || 'Bằng Giỏi (CPA ≥ 3.20)'
-          )
-        )
-      : null,
-    // Thẻ 4: Kiểm tra quy chế HaUI
-    Card
-      ? React.createElement(
-          Card,
+    React.createElement(
+      'div',
+      {
+        className: 'haui-stat-card',
+        style: {
+          padding: '20px',
+          borderRadius: 'var(--radius-cards, 24px)',
+          backgroundColor: 'var(--color-paper, #ffffff)',
+          border: '1px solid var(--color-hairline, #e5e5e5)',
+          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between'
+        }
+      },
+      React.createElement(
+        'div',
+        { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+        React.createElement('span', { style: { fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-mid-gray, #737373)', letterSpacing: '0.04em' } }, 'MÔ PHỎNG GPA TỐT NGHIỆP'),
+        React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px', color: 'var(--color-mid-gray, #737373)' } }, 'trending_up')
+      ),
+      React.createElement(
+        'div',
+        { style: { margin: '14px 0 10px', display: 'flex', alignItems: 'baseline', gap: '6px' } },
+        React.createElement('span', { style: { fontSize: '30px', fontWeight: 700, color: 'var(--color-ink, #0a0a0a)', lineHeight: 1 } }, plan.projectedCpa || '3.32'),
+        React.createElement('span', { style: { fontSize: '14px', color: 'var(--color-mid-gray, #737373)' } }, '/ 4.00 (Hệ 4)')
+      ),
+      React.createElement(
+        'div',
+        { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+        React.createElement(
+          'span',
           {
-            variant: validationResult ? (validationResult.valid ? 'status-success' : 'status-error') : 'default',
-            padding: 'sm'
+            style: {
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              backgroundColor: 'var(--color-canvas, #f5f5f5)',
+              color: 'var(--color-ink, #0a0a0a)',
+              fontSize: '11px',
+              fontWeight: 600,
+              border: '1px solid var(--color-hairline, #e5e5e5)'
+            }
           },
-          React.createElement('div', { style: { fontSize: '12px', color: '#64748b' } }, 'Kiểm tra quy chế HaUI'),
-          React.createElement(
-            'div',
-            { style: { fontSize: '18px', fontWeight: 700, color: '#0f172a', marginTop: '4px' } },
-            validationResult
-              ? validationResult.valid
-                ? '✓ 100% Hợp lệ'
-                : '⚠️ Có cảnh báo'
-              : 'Sẵn sàng kiểm tra'
-          ),
-          React.createElement(
-            'div',
-            { style: { fontSize: '11px', color: '#64748b', marginTop: '4px' } },
-            'Thỏa mãn quy định 10-24 TC (BR-03/04)'
-          )
+          plan.projectedRank || 'Bằng Giỏi (CPA ≥ 3.20)'
+        ),
+        React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Dự phóng kế hoạch')
+      )
+    ),
+
+    // Thẻ 4: Kiểm tra quy chế HaUI
+    React.createElement(
+      'div',
+      {
+        className: 'haui-stat-card',
+        style: {
+          padding: '20px',
+          borderRadius: 'var(--radius-cards, 24px)',
+          backgroundColor: 'var(--color-paper, #ffffff)',
+          border: '1px solid var(--color-hairline, #e5e5e5)',
+          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between'
+        }
+      },
+      React.createElement(
+        'div',
+        { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+        React.createElement('span', { style: { fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-mid-gray, #737373)', letterSpacing: '0.04em' } }, 'KIỂM TRA QUY CHẾ HAUI'),
+        React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px', color: validationResult?.valid === false ? 'var(--color-ember, #e7000b)' : 'var(--color-mid-gray, #737373)' } }, 'notification_important')
+      ),
+      React.createElement(
+        'div',
+        { style: { margin: '14px 0 10px', display: 'flex', alignItems: 'baseline', gap: '6px' } },
+        React.createElement(
+          'span',
+          { style: { fontSize: '22px', fontWeight: 700, color: 'var(--color-ink, #0a0a0a)', lineHeight: 1 } },
+          validationResult
+            ? validationResult.valid
+              ? '✓ 100% Hợp lệ'
+              : '⚠️ Có cảnh báo'
+            : 'Sẵn sàng kiểm tra'
         )
-      : null
+      ),
+      React.createElement(
+        'div',
+        { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } },
+        'Thỏa mãn quy định 10-24 TC (BR-03/04)'
+      )
+    )
   );
 
   // ==========================================

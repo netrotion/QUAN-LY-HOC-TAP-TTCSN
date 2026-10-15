@@ -23,7 +23,7 @@ export const SAMPLE_K16_PROFILE = Object.freeze({
 
 /**
  * Màn hình Hồ sơ Sinh viên & Tùy chọn Học tập cá nhân (Student Profile) — TV3
- * Dựa trên prototype `ho_so_sinh_vien/code.html` và yêu cầu Task 3.12:
+ * Dựa trên prototype `student_profile/code.html` và yêu cầu Task 3.12:
  *
  * 1. Hiển thị thông tin hành chính, học vụ cá nhân (MSSV, Họ tên, Ngành, CPA 3.18, GPA, 108/145 TC).
  * 2. Thiết lập mục tiêu học tập cá nhân (Mục tiêu CPA 3.20/3.60, lộ trình chuẩn 4 năm vs học vượt 3.5 năm, chuyên ngành hẹp).
@@ -66,6 +66,16 @@ export function StudentProfilePage({
   const [error, setError] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
 
+  // Form fields editable
+  const [fullNameInput, setFullNameInput] = useState('');
+  const [dobInput, setDobInput] = useState('2002-08-15');
+  const [genderInput, setGenderInput] = useState('Nam');
+  const [personalEmailInput, setPersonalEmailInput] = useState('vanan.dev@gmail.com');
+  const [phoneInput, setPhoneInput] = useState('0987 654 321');
+  const [addressInput, setAddressInput] = useState('Bắc Ninh, Việt Nam');
+  const [advisorClassInput, setAdvisorClassInput] = useState('');
+  const [trackDirectionInput, setTrackDirectionInput] = useState('ktpm-httt');
+
   // Tùy chọn mục tiêu cá nhân
   const [targetCpa, setTargetCpa] = useState('3.20');
   const [graduationPace, setGraduationPace] = useState('STANDARD'); // 'STANDARD' (4 năm) | 'FAST' (3.5 năm)
@@ -107,6 +117,14 @@ export function StudentProfilePage({
       navigateTo('/planner');
     }
   }, [onOpenPlanner, navigateTo]);
+
+  // Cập nhật form state khi profileData thay đổi
+  useEffect(() => {
+    if (profileData) {
+      setFullNameInput(profileData.fullName || '');
+      setAdvisorClassInput(profileData.advisorClass || '');
+    }
+  }, [profileData]);
 
   // Tải dữ liệu hồ sơ sinh viên
   const handleFetchProfile = useCallback(async () => {
@@ -174,65 +192,244 @@ export function StudentProfilePage({
     showToast('Đang ở trạng thái: Chưa có hồ sơ sinh viên (Chưa nạp bảng điểm).');
   }, [showToast]);
 
-  // Lưu tùy chọn mục tiêu cá nhân
+  // Lưu tùy chọn mục tiêu cá nhân & hồ sơ
   const handleSavePreferences = useCallback(() => {
-    showToast(`Đã lưu thành công mục tiêu CPA: ${targetCpa}, tiến độ: ${graduationPace === 'FAST' ? 'Học vượt 3.5 năm' : 'Chuẩn 4 năm'}!`);
-  }, [targetCpa, graduationPace, showToast]);
+    if (profileData) {
+      setProfileData({
+        ...profileData,
+        fullName: fullNameInput,
+        advisorClass: advisorClassInput
+      });
+    }
+    showToast(`Đã lưu thành công thông tin hồ sơ và mục tiêu CPA: ${targetCpa}!`);
+  }, [profileData, fullNameInput, advisorClassInput, targetCpa, showToast]);
 
-  // Header trang
+  // Hủy thay đổi form
+  const handleCancelChanges = useCallback(() => {
+    if (profileData) {
+      setFullNameInput(profileData.fullName || '');
+      setAdvisorClassInput(profileData.advisorClass || '');
+    }
+    showToast('Đã hủy các thay đổi chưa lưu.');
+  }, [profileData, showToast]);
+
+  // Trích xuất chữ cái đại diện Avatar (ví dụ: Nguyễn Văn An -> NA)
+  const getAvatarInitials = (name) => {
+    if (!name) return 'SV';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  // Header trang chuẩn theo prototype student_profile/code.html
   const headerSection = React.createElement(
     'div',
     {
       style: {
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        flexWrap: 'wrap',
-        gap: '16px',
-        marginBottom: '20px'
+        flexDirection: 'column',
+        gap: '12px',
+        marginBottom: '24px'
       }
     },
+    // Breadcrumb
     React.createElement(
       'div',
-      null,
+      {
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: '12px',
+          color: 'var(--color-mid-gray, #737373)'
+        }
+      },
       React.createElement(
-        'h2',
-        { style: { fontSize: '24px', fontWeight: 700, color: '#0f172a', margin: 0 } },
-        'Hồ sơ Sinh viên & Tùy chọn Lộ trình (Student Profile)'
+        'span',
+        {
+          style: { cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }
+        },
+        React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '15px' } }, 'home'),
+        'Trang chủ'
       ),
-      React.createElement(
-        'p',
-        { style: { color: '#475569', marginTop: '4px', fontSize: '14px' } },
-        'Quản lý thông tin học vụ, tiến độ tích lũy tín chỉ và tùy chỉnh mục tiêu điểm số cá nhân hóa.'
-      )
+      React.createElement('span', { style: { color: 'var(--color-hairline, #e5e5e5)' } }, '/'),
+      React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500 } }, 'Hồ sơ sinh viên')
     ),
+    // Title bar
     React.createElement(
       'div',
-      { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' } },
-      Button ? React.createElement(Button, { variant: 'secondary', size: 'sm', onClick: handleLoadSampleProfile }, 'Hồ sơ chuẩn (K16)') : null,
-      Button ? React.createElement(Button, { variant: 'ghost', size: 'sm', onClick: handleSetEmptyProfile }, 'Chưa có hồ sơ') : null,
-      Button
-        ? React.createElement(
-            Button,
+      {
+        style: {
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }
+      },
+      React.createElement(
+        'div',
+        { style: { maxWidth: '780px' } },
+        React.createElement(
+          'div',
+          { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' } },
+          React.createElement(
+            'h1',
             {
-              variant: 'ghost',
-              size: 'sm',
-              onClick: () => setError({ code: 'ERR_PROFILE', message: 'Mô phỏng lỗi máy chủ khi tải hồ sơ.' })
+              style: {
+                fontSize: '28px',
+                fontWeight: 700,
+                letterSpacing: '-0.02em',
+                color: 'var(--color-ink, #0a0a0a)',
+                margin: 0
+              }
             },
-            'Mô phỏng Lỗi'
-          )
-        : null,
-      Button
-        ? React.createElement(
-            Button,
+            'Hồ sơ sinh viên'
+          ),
+          React.createElement(
+            'span',
             {
-              variant: 'primary',
-              size: 'sm',
-              onClick: handleOpenTranscript
+              style: {
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 12px',
+                borderRadius: '9999px',
+                backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                color: 'var(--color-ink, #0a0a0a)',
+                fontSize: '12px',
+                fontWeight: 500,
+                border: '1px solid var(--color-hairline, #e5e5e5)'
+              }
             },
-            '📎 Nhập bảng điểm (TV2)'
+            React.createElement('span', {
+              style: { width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ink, #0a0a0a)' }
+            }),
+            'Đang theo học - Kỳ 6/8'
+          ),
+          React.createElement(
+            'span',
+            {
+              style: {
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '4px 12px',
+                borderRadius: '9999px',
+                backgroundColor: 'var(--color-paper, #ffffff)',
+                color: 'var(--color-mid-gray, #737373)',
+                fontSize: '12px',
+                border: '1px solid var(--color-hairline, #e5e5e5)'
+              }
+            },
+            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '14px', color: 'var(--color-ink, #0a0a0a)' } }, 'verified'),
+            'Dữ liệu hồ sơ gốc (Chính thức)'
+          ),
+          React.createElement(
+            'span',
+            {
+              style: {
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 12px',
+                borderRadius: '9999px',
+                backgroundColor: 'var(--color-paper, #ffffff)',
+                color: 'var(--color-mid-gray, #737373)',
+                fontSize: '12px',
+                border: '1px solid var(--color-hairline, #e5e5e5)'
+              }
+            },
+            React.createElement('span', {
+              style: { width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: '#e7000b' }
+            }),
+            'Dữ liệu hiệu chỉnh cục bộ (Chưa đồng bộ sv.haui)'
           )
-        : null
+        ),
+        React.createElement(
+          'p',
+          {
+            style: {
+              color: 'var(--color-mid-gray, #737373)',
+              marginTop: '6px',
+              fontSize: '14px',
+              lineHeight: 1.5,
+              margin: '6px 0 0'
+            }
+          },
+          'Quản lý và cập nhật thông tin cá nhân, định hướng ngành và chương trình đào tạo tại Trường Đại học Công nghiệp Hà Nội.'
+        )
+      ),
+      // Desktop Action buttons
+      React.createElement(
+        'div',
+        { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' } },
+        Button ? React.createElement(Button, { variant: 'secondary', size: 'sm', onClick: handleLoadSampleProfile }, 'Hồ sơ chuẩn (K16)') : null,
+        Button ? React.createElement(Button, { variant: 'ghost', size: 'sm', onClick: handleSetEmptyProfile }, 'Chưa có hồ sơ') : null,
+        Button
+          ? React.createElement(
+              Button,
+              {
+                variant: 'ghost',
+                size: 'sm',
+                onClick: () => setError({ code: 'ERR_PROFILE', message: 'Mô phỏng lỗi máy chủ khi tải hồ sơ.' })
+              },
+              'Mô phỏng Lỗi'
+            )
+          : null,
+        Button
+          ? React.createElement(
+              Button,
+              {
+                variant: 'secondary',
+                size: 'sm',
+                onClick: handleOpenTranscript
+              },
+              '📎 Nhập bảng điểm (TV2)'
+            )
+          : null,
+        React.createElement(
+          'button',
+          {
+            type: 'button',
+            onClick: handleCancelChanges,
+            style: {
+              padding: '8px 16px',
+              borderRadius: '9999px',
+              backgroundColor: 'var(--color-canvas, #f5f5f5)',
+              border: '1px solid var(--color-hairline, #e5e5e5)',
+              color: 'var(--color-ink, #0a0a0a)',
+              fontSize: '13px',
+              fontWeight: 500,
+              cursor: 'pointer'
+            }
+          },
+          'Hủy thay đổi'
+        ),
+        React.createElement(
+          'button',
+          {
+            type: 'button',
+            onClick: handleSavePreferences,
+            style: {
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 20px',
+              borderRadius: '9999px',
+              backgroundColor: '#0a0a0a',
+              color: '#ffffff',
+              fontSize: '13px',
+              fontWeight: 600,
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 1px 8px rgba(0, 0, 0, 0.08)'
+            }
+          },
+          React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'check'),
+          'Lưu thay đổi'
+        )
+      )
     )
   );
 
@@ -243,17 +440,23 @@ export function StudentProfilePage({
           style: {
             padding: '10px 16px',
             marginBottom: '16px',
-            borderRadius: '12px',
+            borderRadius: '9999px',
             background: '#0a0a0a',
             color: '#ffffff',
             fontSize: '13px',
             fontWeight: 500,
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center'
+            alignItems: 'center',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.12)'
           }
         },
-        React.createElement('span', null, `✓ ${toastMessage}`),
+        React.createElement(
+          'span',
+          { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+          React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'task_alt'),
+          toastMessage
+        ),
         React.createElement(
           'button',
           {
@@ -315,8 +518,9 @@ export function StudentProfilePage({
                 padding: '40px',
                 textAlign: 'center',
                 background: '#ffffff',
-                borderRadius: '16px',
-                border: '1px solid #e2e8f0'
+                borderRadius: '24px',
+                border: '1px solid var(--color-hairline, #e5e5e5)',
+                boxShadow: '0 1px 8px rgba(0,0,0,0.04)'
               }
             },
             React.createElement('h3', { style: { color: '#0f172a' } }, 'Chưa có thông tin hồ sơ sinh viên'),
@@ -359,230 +563,1281 @@ export function StudentProfilePage({
     );
   }
 
-  // TRẠNG THÁI ĐÃ CÓ HỒ SƠ
+  // TRẠNG THÁI ĐÃ CÓ HỒ SƠ — KHUNG LƯỚI 2 CỘT CHUẨN PROTOTYPE (4 COLS / 8 COLS)
   return React.createElement(
     'div',
     { className: 'haui-page-container haui-profile-page', style: { padding: '24px 0' } },
     headerSection,
     toastBar,
 
-    // Lưới 2 cột: Cột trái (Thông tin cá nhân & Chỉ số) + Cột phải (Tùy chọn mục tiêu & Kế hoạch)
+    // Main Content Layout (12 cols grid: 4 cols Left / 8 cols Right)
     React.createElement(
       'div',
       {
         style: {
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '20px'
+          gap: '24px',
+          alignItems: 'start'
         }
       },
-      // CỘT 1: THÔNG TIN HÀNH CHÍNH & HỌC VỤ
+      // ========================================================
+      // CỘT TRÁI (LEFT COLUMN): SUMMARY CARD & ACADEMIC ADVISOR
+      // ========================================================
       React.createElement(
-        'div',
+        'aside',
         { style: { display: 'flex', flexDirection: 'column', gap: '20px' } },
-        // Thẻ 1: Thông tin cá nhân & đào tạo
-        Card
-          ? React.createElement(
-              Card,
-              {
-                title: 'Thông tin cá nhân & Đào tạo',
-                subtitle: 'Dữ liệu định danh tài khoản sinh viên',
-                variant: 'default',
-                padding: 'md'
-              },
-              React.createElement(
-                'div',
-                { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', fontSize: '13px' } },
-                React.createElement('div', null, React.createElement('div', { style: { color: '#64748b', fontSize: '11px' } }, 'Họ và tên'), React.createElement('strong', { style: { color: '#0f172a' } }, profileData.fullName)),
-                React.createElement('div', null, React.createElement('div', { style: { color: '#64748b', fontSize: '11px' } }, 'Mã sinh viên (MSSV)'), React.createElement('strong', { style: { color: '#0f172a' } }, profileData.studentCode)),
-                React.createElement('div', null, React.createElement('div', { style: { color: '#64748b', fontSize: '11px' } }, 'Ngành đào tạo'), React.createElement('strong', { style: { color: '#0f172a' } }, profileData.majorName)),
-                React.createElement('div', null, React.createElement('div', { style: { color: '#64748b', fontSize: '11px' } }, 'Khóa tuyển sinh'), React.createElement('strong', { style: { color: '#0f172a' } }, profileData.cohort)),
-                React.createElement('div', null, React.createElement('div', { style: { color: '#64748b', fontSize: '11px' } }, 'Lớp cố vấn học tập'), React.createElement('strong', { style: { color: '#0f172a' } }, profileData.advisorClass)),
-                React.createElement('div', null, React.createElement('div', { style: { color: '#64748b', fontSize: '11px' } }, 'Khoa / Trường quản lý'), React.createElement('strong', { style: { color: '#0f172a' } }, profileData.faculty))
-              )
-            )
-          : null,
 
-        // Thẻ 2: Chỉ số học vụ cốt lõi
-        Card
-          ? React.createElement(
-              Card,
-              {
-                title: 'Chỉ số học vụ & Tiến độ tích lũy',
-                subtitle: 'Dữ liệu được cập nhật theo kết quả Kỳ 1 đến Kỳ 6',
-                variant: 'default',
-                padding: 'md'
-              },
+        // 1. Profile Summary Card
+        React.createElement(
+          'div',
+          {
+            style: {
+              backgroundColor: 'var(--color-paper, #ffffff)',
+              border: '1px solid var(--color-hairline, #e5e5e5)',
+              borderRadius: '24px',
+              padding: '24px',
+              boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px'
+            }
+          },
+          // Profile Identity Header
+          React.createElement(
+            'div',
+            { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' } },
+            React.createElement(
+              'div',
+              { style: { position: 'relative', marginBottom: '16px' } },
               React.createElement(
                 'div',
-                { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '14px' } },
-                React.createElement(
-                  'div',
-                  { style: { padding: '12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' } },
-                  React.createElement('div', { style: { fontSize: '11px', color: '#64748b' } }, 'CPA Tích lũy'),
-                  React.createElement('strong', { style: { fontSize: '20px', color: '#0284c7' } }, `${profileData.cpa} `),
-                  React.createElement('span', { style: { fontSize: '11px', color: '#64748b' } }, '/ 4.00')
-                ),
-                React.createElement(
-                  'div',
-                  { style: { padding: '12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' } },
-                  React.createElement('div', { style: { fontSize: '11px', color: '#64748b' } }, 'GPA Học kỳ gần nhất'),
-                  React.createElement('strong', { style: { fontSize: '20px', color: '#16a34a' } }, `${profileData.gpa} `),
-                  React.createElement('span', { style: { fontSize: '11px', color: '#64748b' } }, '/ 4.00')
-                ),
-                React.createElement(
-                  'div',
-                  { style: { padding: '12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' } },
-                  React.createElement('div', { style: { fontSize: '11px', color: '#64748b' } }, 'Tín chỉ đã tích lũy'),
-                  React.createElement('strong', { style: { fontSize: '20px', color: '#0f172a' } }, `${profileData.accumulatedCredits} `),
-                  React.createElement('span', { style: { fontSize: '11px', color: '#64748b' } }, `/ ${profileData.totalCreditsRequired} TC`)
-                )
+                {
+                  style: {
+                    width: '96px',
+                    height: '96px',
+                    borderRadius: '9999px',
+                    backgroundColor: '#0a0a0a',
+                    color: '#ffffff',
+                    fontSize: '28px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    letterSpacing: '-0.02em',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.12)'
+                  }
+                },
+                getAvatarInitials(profileData.fullName)
+              ),
+              React.createElement(
+                'button',
+                {
+                  type: 'button',
+                  title: 'Thay đổi ảnh đại diện',
+                  onClick: () => showToast('Tính năng đổi avatar đang được phát triển.'),
+                  style: {
+                    position: 'absolute',
+                    bottom: 0,
+                    right: 0,
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '9999px',
+                    backgroundColor: 'var(--color-paper, #ffffff)',
+                    border: '1px solid var(--color-hairline, #e5e5e5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--color-ink, #0a0a0a)',
+                    cursor: 'pointer',
+                    boxShadow: '0 1px 4px rgba(0, 0, 0, 0.08)'
+                  }
+                },
+                React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'photo_camera')
+              )
+            ),
+            React.createElement(
+              'h2',
+              { style: { fontSize: '18px', fontWeight: 600, color: 'var(--color-ink, #0a0a0a)', margin: 0 } },
+              profileData.fullName
+            ),
+            React.createElement(
+              'p',
+              { style: { fontSize: '14px', color: 'var(--color-mid-gray, #737373)', margin: '4px 0 0' } },
+              profileData.studentCode
+            ),
+            React.createElement(
+              'div',
+              {
+                style: {
+                  marginTop: '10px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 12px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  color: 'var(--color-ink, #0a0a0a)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)'
+                }
+              },
+              React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '14px' } }, 'school'),
+              profileData.advisorClass || 'ĐH CNTT 2 - K16'
+            )
+          ),
+
+          // Divider
+          React.createElement('div', { style: { height: '1px', backgroundColor: 'var(--color-hairline, #e5e5e5)', width: '100%' } }),
+
+          // Profile completion progress bar
+          React.createElement(
+            'div',
+            { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+            React.createElement(
+              'div',
+              { style: { display: 'flex', justifyContent: 'space-between', fontSize: '12px' } },
+              React.createElement('span', { style: { color: 'var(--color-mid-gray, #737373)', fontWeight: 500 } }, 'Tiến độ hoàn thành hồ sơ'),
+              React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 600 } }, '100%')
+            ),
+            React.createElement(
+              'div',
+              {
+                style: {
+                  width: '100%',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  borderRadius: '9999px',
+                  height: '6px',
+                  overflow: 'hidden'
+                }
+              },
+              React.createElement('div', {
+                style: {
+                  backgroundColor: '#0a0a0a',
+                  height: '100%',
+                  borderRadius: '9999px',
+                  width: '100%',
+                  transition: 'width 0.5s ease'
+                }
+              })
+            ),
+            React.createElement(
+              'p',
+              { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)', margin: '4px 0 0', lineHeight: 1.4 } },
+              'Hồ sơ chuẩn hóa đã sẵn sàng cho cổng thẩm định tốt nghiệp và What-if.'
+            )
+          ),
+
+          // Divider
+          React.createElement('div', { style: { height: '1px', backgroundColor: 'var(--color-hairline, #e5e5e5)', width: '100%' } }),
+
+          // Compact Bio Metadata
+          React.createElement(
+            'div',
+            { style: { display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '14px' } },
+            // Item 1: Khoa / Viện
+            React.createElement(
+              'div',
+              { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+              React.createElement(
+                'div',
+                {
+                  style: {
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '9999px',
+                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                    border: '1px solid var(--color-hairline, #e5e5e5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    color: 'var(--color-mid-gray, #737373)'
+                  }
+                },
+                React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'domain')
               ),
               React.createElement(
                 'div',
-                { style: { marginTop: '14px', fontSize: '12px', color: '#b45309', background: '#fef3c7', padding: '8px 12px', borderRadius: '8px' } },
-                '⚠️ Cảnh báo học vụ: Nợ học phần bắt buộc Toán rời rạc (MATH1002 - Điểm F). Đã được AI ưu tiên đưa vào kế hoạch Kỳ 7.'
+                { style: { display: 'flex', flexDirection: 'column', minWidth: 0 } },
+                React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Khoa / Viện'),
+                React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, profileData.faculty || 'Khoa Công nghệ thông tin')
+              )
+            ),
+            // Item 2: Email trường
+            React.createElement(
+              'div',
+              { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+              React.createElement(
+                'div',
+                {
+                  style: {
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '9999px',
+                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                    border: '1px solid var(--color-hairline, #e5e5e5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    color: 'var(--color-mid-gray, #737373)'
+                  }
+                },
+                React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'mail')
+              ),
+              React.createElement(
+                'div',
+                { style: { display: 'flex', flexDirection: 'column', minWidth: 0 } },
+                React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Email trường'),
+                React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, `${profileData.studentCode}@sv.haui.edu.vn`)
+              )
+            ),
+            // Item 3: Trạng thái định danh
+            React.createElement(
+              'div',
+              { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+              React.createElement(
+                'div',
+                {
+                  style: {
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '9999px',
+                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                    border: '1px solid var(--color-hairline, #e5e5e5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    color: 'var(--color-mid-gray, #737373)'
+                  }
+                },
+                React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'verified_user')
+              ),
+              React.createElement(
+                'div',
+                { style: { display: 'flex', flexDirection: 'column', minWidth: 0 } },
+                React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Trạng thái định danh'),
+                React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500 } }, 'Đã đồng bộ HaUI Portal')
               )
             )
-          : null
+          ),
+
+          // Action button
+          React.createElement(
+            'button',
+            {
+              type: 'button',
+              onClick: () => showToast('Đang tạo bản sơ yếu lý lịch (.pdf)...'),
+              style: {
+                width: '100%',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '10px 16px',
+                borderRadius: '9999px',
+                backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                border: '1px solid var(--color-hairline, #e5e5e5)',
+                color: 'var(--color-ink, #0a0a0a)',
+                fontSize: '13px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'background-color 0.15s ease'
+              }
+            },
+            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'file_download'),
+            'Tải bản sơ yếu lý lịch (.pdf)'
+          )
+        ),
+
+        // 2. Academic Advisor Mini Card
+        React.createElement(
+          'div',
+          {
+            style: {
+              backgroundColor: 'var(--color-paper, #ffffff)',
+              border: '1px solid var(--color-hairline, #e5e5e5)',
+              borderRadius: '24px',
+              padding: '20px',
+              boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }
+          },
+          React.createElement(
+            'div',
+            { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+            React.createElement('span', { style: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray, #737373)', fontWeight: 600 } }, 'Cố vấn học tập'),
+            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px', color: 'var(--color-mid-gray, #737373)' } }, 'supervised_user_circle')
+          ),
+          React.createElement(
+            'div',
+            { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+            React.createElement(
+              'div',
+              {
+                style: {
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--color-ink, #0a0a0a)',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  flexShrink: 0
+                }
+              },
+              'TM'
+            ),
+            React.createElement(
+              'div',
+              { style: { minWidth: 0 } },
+              React.createElement('p', { style: { margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--color-ink, #0a0a0a)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, 'TS. Trần Văn Minh'),
+              React.createElement('p', { style: { margin: '2px 0 0', fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } }, 'Khoa Công nghệ Thông tin')
+            )
+          ),
+          React.createElement(
+            'div',
+            {
+              style: {
+                paddingTop: '10px',
+                borderTop: '1px solid var(--color-hairline, #e5e5e5)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+                fontSize: '12px',
+                color: 'var(--color-mid-gray, #737373)'
+              }
+            },
+            React.createElement(
+              'a',
+              {
+                href: 'mailto:minhtv@haui.edu.vn',
+                style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'inherit', textDecoration: 'none' }
+              },
+              React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '14px' } }, 'alternate_email'),
+              'minhtv@haui.edu.vn'
+            ),
+            React.createElement(
+              'span',
+              { style: { display: 'flex', alignItems: 'center', gap: '6px' } },
+              React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '14px' } }, 'schedule'),
+              'Lịch hẹn tư vấn: Thứ 4 (09:00 - 11:30)'
+            )
+          )
+        ),
+
+        // 3. Kế hoạch học tập đang theo dõi (ACTIVE Plan Snapshot)
+        React.createElement(
+          'div',
+          {
+            style: {
+              backgroundColor: 'var(--color-paper, #ffffff)',
+              border: '1px solid var(--color-hairline, #e5e5e5)',
+              borderRadius: '24px',
+              padding: '20px',
+              boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }
+          },
+          React.createElement(
+            'div',
+            { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+            React.createElement('span', { style: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray, #737373)', fontWeight: 600 } }, 'Kế hoạch học tập'),
+            React.createElement(
+              'span',
+              {
+                style: {
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  padding: '2px 8px',
+                  borderRadius: '9999px',
+                  backgroundColor: currentPlan.status === 'ACTIVE' ? '#0a0a0a' : '#fef3c7',
+                  color: currentPlan.status === 'ACTIVE' ? '#ffffff' : '#b45309'
+                }
+              },
+              currentPlan.status
+            )
+          ),
+          React.createElement(
+            'div',
+            null,
+            React.createElement('strong', { style: { fontSize: '14px', color: 'var(--color-ink, #0a0a0a)' } }, currentPlan.planName),
+            React.createElement(
+              'p',
+              { style: { margin: '4px 0 0', fontSize: '12px', color: 'var(--color-mid-gray, #737373)', lineHeight: 1.4 } },
+              `Phiên bản: ${currentPlan.version} · Gồm ${currentPlan.semesters?.length || 3} học kỳ (${currentPlan.remainingCredits || 37} TC) · CPA dự phóng: ${currentPlan.projectedCpa || '3.32'}`
+            )
+          ),
+          React.createElement(
+            'button',
+            {
+              type: 'button',
+              onClick: handleOpenPlanner,
+              style: {
+                width: '100%',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                borderRadius: '9999px',
+                backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                border: '1px solid var(--color-hairline, #e5e5e5)',
+                color: 'var(--color-ink, #0a0a0a)',
+                fontSize: '13px',
+                fontWeight: 500,
+                cursor: 'pointer'
+              }
+            },
+            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'event_note'),
+            'Mở trong Study Planner →'
+          )
+        )
       ),
 
-      // CỘT 2: TÙY CHỌN MỤC TIÊU & KẾ HOẠCH THEO DÕI
+      // ========================================================
+      // CỘT PHẢI (RIGHT COLUMN): FORMS CHỈNH SỬA & TÙY CHỌN MỤC TIÊU
+      // ========================================================
       React.createElement(
-        'div',
-        { style: { display: 'flex', flexDirection: 'column', gap: '20px' } },
-        // Thẻ 3: Thiết lập mục tiêu cá nhân
-        Card
-          ? React.createElement(
-              Card,
-              {
-                title: 'Tùy chọn mục tiêu học tập cá nhân',
-                subtitle: 'AI và công cụ học vụ sẽ dựa vào đây để tối ưu hóa lộ trình',
-                variant: 'default',
-                padding: 'md',
-                footer: React.createElement(
-                  'div',
-                  { style: { display: 'flex', justifyContent: 'flex-end' } },
-                  Button
-                    ? React.createElement(
-                        Button,
-                        { variant: 'primary', size: 'sm', onClick: handleSavePreferences },
-                        'Lưu mục tiêu cá nhân'
-                      )
-                    : React.createElement('button', { type: 'button', onClick: handleSavePreferences }, 'Lưu')
-                )
-              },
-              React.createElement(
-                'div',
-                { style: { display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px' } },
-                // Mục tiêu CPA
-                React.createElement(
-                  'div',
-                  null,
-                  React.createElement('label', { style: { fontWeight: 600, display: 'block', marginBottom: '4px' } }, 'Mục tiêu CPA tốt nghiệp mong muốn:'),
-                  React.createElement(
-                    'select',
-                    {
-                      value: targetCpa,
-                      onChange: (e) => setTargetCpa(e.target.value),
-                      style: { width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }
-                    },
-                    React.createElement('option', { value: '2.50' }, 'CPA ≥ 2.50 (Xếp loại Khá)'),
-                    React.createElement('option', { value: '3.20' }, 'CPA ≥ 3.20 (Xếp loại Giỏi)'),
-                    React.createElement('option', { value: '3.60' }, 'CPA ≥ 3.60 (Xếp loại Xuất sắc)')
-                  )
-                ),
-                // Định hướng tiến độ
-                React.createElement(
-                  'div',
-                  null,
-                  React.createElement('label', { style: { fontWeight: 600, display: 'block', marginBottom: '4px' } }, 'Tiến độ mong muốn:'),
-                  React.createElement(
-                    'select',
-                    {
-                      value: graduationPace,
-                      onChange: (e) => setGraduationPace(e.target.value),
-                      style: { width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }
-                    },
-                    React.createElement('option', { value: 'STANDARD' }, 'Chuẩn 4 năm (2 kỳ chính + 1 kỳ hè nhẹ)'),
-                    React.createElement('option', { value: 'FAST' }, 'Rút ngắn 3.5 năm (Học vượt, tối đa 8 TC kỳ hè)')
-                  )
-                ),
-                // Chuyên ngành hẹp
-                React.createElement(
-                  'div',
-                  null,
-                  React.createElement('label', { style: { fontWeight: 600, display: 'block', marginBottom: '4px' } }, 'Định hướng chuyên ngành hẹp:'),
-                  React.createElement('input', {
-                    type: 'text',
-                    value: specialization,
-                    onChange: (e) => setSpecialization(e.target.value),
-                    style: { width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }
-                  })
-                )
-              )
-            )
-          : null,
+        'main',
+        { style: { display: 'flex', flexDirection: 'column', gap: '24px' } },
 
-        // Thẻ 4: Bản kế hoạch đang áp dụng (ACTIVE Plan snapshot)
-        Card
-          ? React.createElement(
-              Card,
-              {
-                title: 'Kế hoạch học tập đang theo dõi',
-                subtitle: 'Lộ trình chính thức đang lưu trong hệ thống',
-                variant: 'default',
-                padding: 'sm'
-              },
+        // ----------------------------------------------------
+        // SECTION 1: THÔNG TIN CÁ NHÂN & LIÊN HỆ (NHÓM 01)
+        // ----------------------------------------------------
+        React.createElement(
+          'div',
+          {
+            style: {
+              backgroundColor: 'var(--color-paper, #ffffff)',
+              border: '1px solid var(--color-hairline, #e5e5e5)',
+              borderRadius: '24px',
+              padding: '24px',
+              boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px'
+            }
+          },
+          // Section Header
+          React.createElement(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingBottom: '16px',
+                borderBottom: '1px solid var(--color-hairline, #e5e5e5)'
+              }
+            },
+            React.createElement(
+              'div',
+              { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+              React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '22px', color: 'var(--color-ink, #0a0a0a)' } }, 'id_card'),
               React.createElement(
                 'div',
-                { style: { fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '8px' } },
-                React.createElement(
-                  'div',
-                  { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-                  React.createElement('strong', { style: { color: '#0f172a' } }, currentPlan.planName),
+                null,
+                React.createElement('h3', { style: { margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--color-ink, #0a0a0a)' } }, 'Thông tin cá nhân & Liên hệ'),
+                React.createElement('span', { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } }, 'Thông tin phục vụ liên lạc trực tiếp và lưu trữ học bạ')
+              )
+            ),
+            React.createElement(
+              'span',
+              {
+                style: {
+                  padding: '2px 10px',
+                  borderRadius: '9999px',
+                  fontSize: '11px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  color: 'var(--color-mid-gray, #737373)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  fontWeight: 500
+                }
+              },
+              'Nhóm 01'
+            )
+          ),
+
+          // Fields Grid
+          React.createElement(
+            'div',
+            { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' } },
+
+            // Field: Mã sinh viên (Readonly)
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              React.createElement(
+                'div',
+                { style: { display: 'flex', justifyContent: 'space-between', fontSize: '13px' } },
+                React.createElement('label', { style: { fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Mã sinh viên'),
+                React.createElement('span', { style: { color: 'var(--color-mid-gray, #737373)', fontSize: '11px' } }, 'Cố định')
+              ),
+              React.createElement(
+                'div',
+                { style: { position: 'relative' } },
+                React.createElement('input', {
+                  readOnly: true,
+                  value: profileData.studentCode,
+                  style: {
+                    width: '100%',
+                    padding: '8px 16px',
+                    borderRadius: '9999px',
+                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                    border: '1px solid var(--color-hairline, #e5e5e5)',
+                    color: 'var(--color-mid-gray, #737373)',
+                    cursor: 'not-allowed',
+                    boxSizing: 'border-box'
+                  }
+                }),
+                React.createElement('span', { className: 'material-symbols-outlined', style: { position: 'absolute', right: '12px', top: '9px', fontSize: '18px', color: 'var(--color-mid-gray, #737373)' } }, 'lock')
+              ),
+              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Được cấp cố định bởi Phòng Đào tạo HaUI')
+            ),
+
+            // Field: Họ và tên
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Họ và tên'),
+              React.createElement('input', {
+                type: 'text',
+                value: fullNameInput,
+                onChange: (e) => setFullNameInput(e.target.value),
+                style: {
+                  width: '100%',
+                  padding: '8px 16px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  color: 'var(--color-ink, #0a0a0a)',
+                  boxSizing: 'border-box'
+                }
+              }),
+              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Khớp chính xác với thẻ CCCD gắn chip')
+            ),
+
+            // Field: Ngày sinh
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Ngày sinh'),
+              React.createElement('input', {
+                type: 'date',
+                value: dobInput,
+                onChange: (e) => setDobInput(e.target.value),
+                style: {
+                  width: '100%',
+                  padding: '8px 16px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  color: 'var(--color-ink, #0a0a0a)',
+                  boxSizing: 'border-box'
+                }
+              }),
+              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Định dạng Ngày/Tháng/Năm')
+            ),
+
+            // Field: Giới tính
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Giới tính'),
+              React.createElement(
+                'div',
+                { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' } },
+                ['Nam', 'Nữ', 'Khác'].map((g) =>
                   React.createElement(
-                    'span',
+                    'button',
                     {
+                      key: g,
+                      type: 'button',
+                      onClick: () => setGenderInput(g),
                       style: {
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        background: currentPlan.status === 'ACTIVE' ? '#0a0a0a' : '#fef3c7',
-                        color: currentPlan.status === 'ACTIVE' ? '#ffffff' : '#b45309'
+                        padding: '8px',
+                        borderRadius: '9999px',
+                        border: '1px solid var(--color-hairline, #e5e5e5)',
+                        backgroundColor: genderInput === g ? '#0a0a0a' : 'var(--color-canvas, #f5f5f5)',
+                        color: genderInput === g ? '#ffffff' : 'var(--color-ink, #0a0a0a)',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        cursor: 'pointer'
                       }
                     },
-                    currentPlan.status
+                    g
                   )
-                ),
-                React.createElement(
-                  'div',
-                  { style: { color: '#64748b', fontSize: '12px' } },
-                  `Phiên bản: ${currentPlan.version} · Gồm ${currentPlan.semesters?.length || 3} học kỳ (${currentPlan.remainingCredits || 37} TC) · CPA dự phóng: ${currentPlan.projectedCpa || '3.32'}`
-                ),
-                React.createElement(
-                  'div',
-                  { style: { marginTop: '6px' } },
-                  Button
-                    ? React.createElement(
-                        Button,
-                        {
-                          variant: 'secondary',
-                          size: 'sm',
-                          onClick: handleOpenPlanner
-                        },
-                        'Mở trong Study Planner →'
-                      )
-                    : React.createElement(
-                        'button',
-                        { type: 'button', onClick: handleOpenPlanner },
-                        'Mở trong Study Planner'
-                      )
                 )
-              )
+              ),
+              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Thông tin hồ sơ bảo hiểm y tế')
+            ),
+
+            // Field: Email trường cấp (Readonly)
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              React.createElement(
+                'div',
+                { style: { display: 'flex', justifyContent: 'space-between', fontSize: '13px' } },
+                React.createElement('label', { style: { fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Email trường cấp'),
+                React.createElement('span', { style: { color: 'var(--color-mid-gray, #737373)', fontSize: '11px' } }, 'Office 365')
+              ),
+              React.createElement(
+                'div',
+                { style: { position: 'relative' } },
+                React.createElement('input', {
+                  readOnly: true,
+                  value: `${profileData.studentCode}@sv.haui.edu.vn`,
+                  style: {
+                    width: '100%',
+                    padding: '8px 16px',
+                    borderRadius: '9999px',
+                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                    border: '1px solid var(--color-hairline, #e5e5e5)',
+                    color: 'var(--color-mid-gray, #737373)',
+                    cursor: 'not-allowed',
+                    boxSizing: 'border-box'
+                  }
+                }),
+                React.createElement('span', { className: 'material-symbols-outlined', style: { position: 'absolute', right: '12px', top: '9px', fontSize: '18px', color: 'var(--color-mid-gray, #737373)' } }, 'lock')
+              ),
+              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Dùng để nhận thông báo đào tạo và xác thực')
+            ),
+
+            // Field: Email cá nhân
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Email cá nhân'),
+              React.createElement('input', {
+                type: 'email',
+                value: personalEmailInput,
+                onChange: (e) => setPersonalEmailInput(e.target.value),
+                style: {
+                  width: '100%',
+                  padding: '8px 16px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  color: 'var(--color-ink, #0a0a0a)',
+                  boxSizing: 'border-box'
+                }
+              }),
+              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Nhận thông báo khẩn cấp và kết nối tuyển dụng')
+            ),
+
+            // Field: Số điện thoại
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Số điện thoại'),
+              React.createElement('input', {
+                type: 'tel',
+                value: phoneInput,
+                onChange: (e) => setPhoneInput(e.target.value),
+                style: {
+                  width: '100%',
+                  padding: '8px 16px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  color: 'var(--color-ink, #0a0a0a)',
+                  boxSizing: 'border-box'
+                }
+              }),
+              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Số di động đăng ký nhận mã OTP')
+            ),
+
+            // Field: Địa chỉ liên hệ / Quê quán
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Địa chỉ liên hệ / Quê quán'),
+              React.createElement('input', {
+                type: 'text',
+                value: addressInput,
+                onChange: (e) => setAddressInput(e.target.value),
+                style: {
+                  width: '100%',
+                  padding: '8px 16px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  color: 'var(--color-ink, #0a0a0a)',
+                  boxSizing: 'border-box'
+                }
+              }),
+              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Địa chỉ thường trú theo sổ hộ khẩu/CCCD')
             )
-          : null
+          )
+        ),
+
+        // ----------------------------------------------------
+        // SECTION 2: THÔNG TIN CHƯƠNG TRÌNH ĐÀO TẠO & NGÀNH HỌC (NHÓM 02)
+        // ----------------------------------------------------
+        React.createElement(
+          'div',
+          {
+            style: {
+              backgroundColor: 'var(--color-paper, #ffffff)',
+              border: '1px solid var(--color-hairline, #e5e5e5)',
+              borderRadius: '24px',
+              padding: '24px',
+              boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px'
+            }
+          },
+          // Section Header
+          React.createElement(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingBottom: '16px',
+                borderBottom: '1px solid var(--color-hairline, #e5e5e5)'
+              }
+            },
+            React.createElement(
+              'div',
+              { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+              React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '22px', color: 'var(--color-ink, #0a0a0a)' } }, 'account_tree'),
+              React.createElement(
+                'div',
+                null,
+                React.createElement('h3', { style: { margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--color-ink, #0a0a0a)' } }, 'Thông tin chương trình đào tạo & Ngành học'),
+                React.createElement('span', { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } }, 'Cấu trúc quy chuẩn của Khóa 16 - Trường Đại học Công nghiệp Hà Nội')
+              )
+            ),
+            React.createElement(
+              'span',
+              {
+                style: {
+                  padding: '2px 10px',
+                  borderRadius: '9999px',
+                  fontSize: '11px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  color: 'var(--color-mid-gray, #737373)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  fontWeight: 500
+                }
+              },
+              'Nhóm 02'
+            )
+          ),
+
+          // Fields Grid
+          React.createElement(
+            'div',
+            { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' } },
+
+            // Cơ sở đào tạo (span 2 cols)
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: '1 / -1' } },
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Cơ sở đào tạo'),
+              React.createElement(
+                'div',
+                { style: { position: 'relative' } },
+                React.createElement('input', {
+                  readOnly: true,
+                  value: 'Trường Đại học Công nghiệp Hà Nội - Cơ sở 1 (Nhổn, Bắc Từ Liêm, Hà Nội)',
+                  style: {
+                    width: '100%',
+                    padding: '8px 16px',
+                    borderRadius: '9999px',
+                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                    border: '1px solid var(--color-hairline, #e5e5e5)',
+                    color: 'var(--color-mid-gray, #737373)',
+                    cursor: 'not-allowed',
+                    boxSizing: 'border-box'
+                  }
+                }),
+                React.createElement('span', { className: 'material-symbols-outlined', style: { position: 'absolute', right: '12px', top: '9px', fontSize: '18px', color: 'var(--color-mid-gray, #737373)' } }, 'apartment')
+              )
+            ),
+
+            // Khoa / Viện đào tạo
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Khoa / Viện đào tạo'),
+              React.createElement('input', {
+                readOnly: true,
+                value: profileData.faculty || 'Khoa Công nghệ Thông tin',
+                style: {
+                  width: '100%',
+                  padding: '8px 16px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  color: 'var(--color-mid-gray, #737373)',
+                  cursor: 'not-allowed',
+                  boxSizing: 'border-box'
+                }
+              })
+            ),
+
+            // Ngành đào tạo & Mã ngành
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Ngành đào tạo & Mã ngành'),
+              React.createElement('input', {
+                readOnly: true,
+                value: `${profileData.majorName} (Mã ngành: ${profileData.majorCode})`,
+                style: {
+                  width: '100%',
+                  padding: '8px 16px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  color: 'var(--color-mid-gray, #737373)',
+                  cursor: 'not-allowed',
+                  boxSizing: 'border-box'
+                }
+              })
+            ),
+
+            // Khóa học
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Khóa học'),
+              React.createElement('input', {
+                readOnly: true,
+                value: profileData.cohort || 'Khóa 16 (Niên khóa 2020 - 2024 / 2025)',
+                style: {
+                  width: '100%',
+                  padding: '8px 16px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  color: 'var(--color-mid-gray, #737373)',
+                  cursor: 'not-allowed',
+                  boxSizing: 'border-box'
+                }
+              })
+            ),
+
+            // Lớp sinh hoạt hành chính
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Lớp sinh hoạt hành chính'),
+              React.createElement('input', {
+                type: 'text',
+                value: advisorClassInput,
+                onChange: (e) => setAdvisorClassInput(e.target.value),
+                style: {
+                  width: '100%',
+                  padding: '8px 16px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  color: 'var(--color-ink, #0a0a0a)',
+                  boxSizing: 'border-box'
+                }
+              })
+            ),
+
+            // Chuyên ngành định hướng (span 2 cols)
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: '1 / -1' } },
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Chuyên ngành định hướng'),
+              React.createElement(
+                'select',
+                {
+                  value: trackDirectionInput,
+                  onChange: (e) => setTrackDirectionInput(e.target.value),
+                  style: {
+                    width: '100%',
+                    padding: '8px 16px',
+                    borderRadius: '9999px',
+                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                    border: '1px solid var(--color-hairline, #e5e5e5)',
+                    color: 'var(--color-ink, #0a0a0a)',
+                    boxSizing: 'border-box',
+                    cursor: 'pointer'
+                  }
+                },
+                React.createElement('option', { value: 'ktpm-httt' }, 'Kỹ thuật phần mềm & Hệ thống thông tin (SE & IS Track)'),
+                React.createElement('option', { value: 'khmt-ai' }, 'Khoa học máy tính & Trí tuệ nhân tạo (CS & AI Track)'),
+                React.createElement('option', { value: 'mmt-attt' }, 'Mạng máy tính & An toàn không gian số (Network & Security)')
+              ),
+              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Định hướng này quyết định các nhóm học phần tự chọn khuyến nghị trên Cây môn học và AI Advisor')
+            ),
+
+            // Chương trình đào tạo (CTĐT)
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Chương trình đào tạo (CTĐT)'),
+              React.createElement('input', {
+                readOnly: true,
+                value: `${profileData.totalCreditsRequired} Tín chỉ (Hệ đào tạo Kỹ sư)`,
+                style: {
+                  width: '100%',
+                  padding: '8px 16px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  color: 'var(--color-mid-gray, #737373)',
+                  cursor: 'not-allowed',
+                  boxSizing: 'border-box'
+                }
+              }),
+              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Khung kỹ sư định hướng ứng dụng POHE')
+            ),
+
+            // Cố vấn học tập chủ nhiệm
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Cố vấn học tập chủ nhiệm'),
+              React.createElement('input', {
+                readOnly: true,
+                value: 'TS. Trần Văn Minh (minhtv@haui.edu.vn)',
+                style: {
+                  width: '100%',
+                  padding: '8px 16px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  color: 'var(--color-mid-gray, #737373)',
+                  cursor: 'not-allowed',
+                  boxSizing: 'border-box'
+                }
+              }),
+              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Liên hệ đổi cố vấn qua VP Khoa CNTT (Tầng 5 - A1)')
+            )
+          )
+        ),
+
+        // ----------------------------------------------------
+        // SECTION 3: CHỈ SỐ HỌC VỤ & TÙY CHỌN MỤC TIÊU (NHÓM 03)
+        // ----------------------------------------------------
+        React.createElement(
+          'div',
+          {
+            style: {
+              backgroundColor: 'var(--color-paper, #ffffff)',
+              border: '1px solid var(--color-hairline, #e5e5e5)',
+              borderRadius: '24px',
+              padding: '24px',
+              boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px'
+            }
+          },
+          // Section Header
+          React.createElement(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingBottom: '16px',
+                borderBottom: '1px solid var(--color-hairline, #e5e5e5)'
+              }
+            },
+            React.createElement(
+              'div',
+              { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+              React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '22px', color: 'var(--color-ink, #0a0a0a)' } }, 'insights'),
+              React.createElement(
+                'div',
+                null,
+                React.createElement('h3', { style: { margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--color-ink, #0a0a0a)' } }, 'Chỉ số học vụ & Tùy chọn mục tiêu cá nhân'),
+                React.createElement('span', { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } }, 'AI và các thuật toán What-if sẽ dựa vào mục tiêu này để đề xuất lộ trình tối ưu')
+              )
+            ),
+            React.createElement(
+              'span',
+              {
+                style: {
+                  padding: '2px 10px',
+                  borderRadius: '9999px',
+                  fontSize: '11px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  color: 'var(--color-mid-gray, #737373)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  fontWeight: 500
+                }
+              },
+              'Nhóm 03'
+            )
+          ),
+
+          // 3 KPI cards
+          React.createElement(
+            'div',
+            { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' } },
+            React.createElement(
+              'div',
+              { style: { padding: '16px', backgroundColor: 'var(--color-canvas, #f5f5f5)', borderRadius: '16px', border: '1px solid var(--color-hairline, #e5e5e5)' } },
+              React.createElement('div', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)', textTransform: 'uppercase', letterSpacing: '0.05em' } }, 'CPA Tích lũy'),
+              React.createElement('strong', { style: { fontSize: '24px', color: 'var(--color-ink, #0a0a0a)', display: 'block', marginTop: '4px' } }, `${profileData.cpa} `),
+              React.createElement('span', { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } }, '/ 4.00 (Hệ 4)')
+            ),
+            React.createElement(
+              'div',
+              { style: { padding: '16px', backgroundColor: 'var(--color-canvas, #f5f5f5)', borderRadius: '16px', border: '1px solid var(--color-hairline, #e5e5e5)' } },
+              React.createElement('div', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)', textTransform: 'uppercase', letterSpacing: '0.05em' } }, 'GPA Kỳ gần nhất'),
+              React.createElement('strong', { style: { fontSize: '24px', color: '#16a34a', display: 'block', marginTop: '4px' } }, `${profileData.gpa} `),
+              React.createElement('span', { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } }, '/ 4.00 (Học kỳ 6)')
+            ),
+            React.createElement(
+              'div',
+              { style: { padding: '16px', backgroundColor: 'var(--color-canvas, #f5f5f5)', borderRadius: '16px', border: '1px solid var(--color-hairline, #e5e5e5)' } },
+              React.createElement('div', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)', textTransform: 'uppercase', letterSpacing: '0.05em' } }, 'Tín chỉ đã tích lũy'),
+              React.createElement('strong', { style: { fontSize: '24px', color: 'var(--color-ink, #0a0a0a)', display: 'block', marginTop: '4px' } }, `${profileData.accumulatedCredits} `),
+              React.createElement('span', { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } }, `/ ${profileData.totalCreditsRequired} TC (${Math.round((profileData.accumulatedCredits / profileData.totalCreditsRequired) * 100)}%)`)
+            )
+          ),
+
+          // Warning banner
+          React.createElement(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px',
+                padding: '12px 16px',
+                borderRadius: '16px',
+                backgroundColor: '#fffbeb',
+                border: '1px solid #fef3c7',
+                color: '#b45309',
+                fontSize: '13px'
+              }
+            },
+            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px', color: '#f59e0b', flexShrink: 0, marginTop: '2px' } }, 'warning'),
+            React.createElement(
+              'span',
+              null,
+              '⚠️ Cảnh báo học vụ: Nợ học phần bắt buộc Toán rời rạc (MATH1002 - Điểm F). Đã được AI ưu tiên đưa vào kế hoạch Kỳ 7.'
+            )
+          ),
+
+          // Target Controls
+          React.createElement(
+            'div',
+            { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' } },
+            // Mục tiêu CPA
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Mục tiêu CPA tốt nghiệp mong muốn:'),
+              React.createElement(
+                'select',
+                {
+                  value: targetCpa,
+                  onChange: (e) => setTargetCpa(e.target.value),
+                  style: {
+                    width: '100%',
+                    padding: '8px 16px',
+                    borderRadius: '9999px',
+                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                    border: '1px solid var(--color-hairline, #e5e5e5)',
+                    color: 'var(--color-ink, #0a0a0a)',
+                    boxSizing: 'border-box',
+                    cursor: 'pointer'
+                  }
+                },
+                React.createElement('option', { value: '2.50' }, 'CPA ≥ 2.50 (Xếp loại Khá)'),
+                React.createElement('option', { value: '3.20' }, 'CPA ≥ 3.20 (Xếp loại Giỏi)'),
+                React.createElement('option', { value: '3.60' }, 'CPA ≥ 3.60 (Xếp loại Xuất sắc)')
+              )
+            ),
+            // Định hướng tiến độ
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Tiến độ tốt nghiệp mong muốn:'),
+              React.createElement(
+                'select',
+                {
+                  value: graduationPace,
+                  onChange: (e) => setGraduationPace(e.target.value),
+                  style: {
+                    width: '100%',
+                    padding: '8px 16px',
+                    borderRadius: '9999px',
+                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                    border: '1px solid var(--color-hairline, #e5e5e5)',
+                    color: 'var(--color-ink, #0a0a0a)',
+                    boxSizing: 'border-box',
+                    cursor: 'pointer'
+                  }
+                },
+                React.createElement('option', { value: 'STANDARD' }, 'Chuẩn 4 năm (2 kỳ chính + 1 kỳ hè nhẹ)'),
+                React.createElement('option', { value: 'FAST' }, 'Rút ngắn 3.5 năm (Học vượt, tối đa 8 TC kỳ hè)')
+              )
+            ),
+            // Chuyên ngành hẹp (span 2 cols)
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: '1 / -1' } },
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Định hướng chuyên ngành hẹp:'),
+              React.createElement('input', {
+                type: 'text',
+                value: specialization,
+                onChange: (e) => setSpecialization(e.target.value),
+                style: {
+                  width: '100%',
+                  padding: '8px 16px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  color: 'var(--color-ink, #0a0a0a)',
+                  boxSizing: 'border-box'
+                }
+              })
+            )
+          )
+        ),
+
+        // ----------------------------------------------------
+        // SECTION 4: NOTICE CALLOUT (QUY CHẾ CẬP NHẬT DỮ LIỆU)
+        // ----------------------------------------------------
+        React.createElement(
+          'div',
+          {
+            style: {
+              backgroundColor: 'var(--color-canvas, #f5f5f5)',
+              border: '1px solid var(--color-hairline, #e5e5e5)',
+              borderRadius: '24px',
+              padding: '20px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '14px',
+              boxShadow: '0 1px 8px rgba(0, 0, 0, 0.02)'
+            }
+          },
+          React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '24px', color: 'var(--color-ink, #0a0a0a)', flexShrink: 0, marginTop: '2px' } }, 'info'),
+          React.createElement(
+            'div',
+            { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
+            React.createElement('span', { style: { fontSize: '14px', fontWeight: 600, color: 'var(--color-ink, #0a0a0a)' } }, 'Lưu ý về quy chế cập nhật dữ liệu'),
+            React.createElement(
+              'p',
+              { style: { margin: 0, fontSize: '13px', color: 'var(--color-mid-gray, #737373)', lineHeight: 1.5 } },
+              'Dữ liệu này được lưu trữ cục bộ phục vụ việc tư vấn môn học, tự động xếp lịch và tính toán mô phỏng What-if trên HAUI ADVISOR. Để thay đổi các thông tin định danh pháp lý (Họ tên, Ngày sinh, CCCD, Điểm thi), sinh viên vui lòng liên hệ trực tiếp ',
+              React.createElement('strong', { style: { color: 'var(--color-ink, #0a0a0a)' } }, 'Phòng Đào tạo HaUI (Tầng 1, Nhà A1)'),
+              ' hoặc cổng quản trị ',
+              React.createElement('a', { href: 'https://sv.haui.edu.vn', target: '_blank', rel: 'noreferrer', style: { color: 'var(--color-ink, #0a0a0a)', textDecoration: 'underline' } }, 'sv.haui.edu.vn'),
+              '.'
+            )
+          )
+        ),
+
+        // ----------------------------------------------------
+        // SECTION 5: ACTION FOOTER & SYNC STATUS
+        // ----------------------------------------------------
+        React.createElement(
+          'div',
+          {
+            style: {
+              backgroundColor: 'var(--color-paper, #ffffff)',
+              border: '1px solid var(--color-hairline, #e5e5e5)',
+              borderRadius: '24px',
+              padding: '16px 24px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px',
+              boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)'
+            }
+          },
+          React.createElement(
+            'div',
+            { style: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } },
+            React.createElement(
+              'span',
+              {
+                style: {
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 12px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  color: 'var(--color-ink, #0a0a0a)',
+                  fontWeight: 500,
+                  border: '1px solid var(--color-hairline, #e5e5e5)'
+                }
+              },
+              React.createElement('span', { style: { width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ink, #0a0a0a)' } }),
+              'Dữ liệu lưu trữ cục bộ trên trình duyệt'
+            ),
+            React.createElement('span', null, '• Đồng bộ lần cuối: Hôm nay, 14:32')
+          ),
+          React.createElement(
+            'div',
+            { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+            React.createElement(
+              'button',
+              {
+                type: 'button',
+                onClick: handleCancelChanges,
+                style: {
+                  padding: '8px 20px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  color: 'var(--color-ink, #0a0a0a)',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }
+              },
+              'Hủy bỏ'
+            ),
+            React.createElement(
+              'button',
+              {
+                type: 'button',
+                onClick: handleSavePreferences,
+                style: {
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 24px',
+                  borderRadius: '9999px',
+                  backgroundColor: '#0a0a0a',
+                  color: '#ffffff',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 8px rgba(0, 0, 0, 0.08)'
+                }
+              },
+              React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'save'),
+              'Lưu thay đổi'
+            )
+          )
+        )
       )
     )
   );

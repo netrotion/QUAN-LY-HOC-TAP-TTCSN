@@ -557,68 +557,179 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
     {
       style: {
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        flexWrap: 'wrap',
-        gap: '16px',
+        flexDirection: 'column',
+        gap: '12px',
         marginBottom: '20px'
       }
     },
+    // Breadcrumb
     React.createElement(
       'div',
-      null,
+      {
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: '12px',
+          color: 'var(--color-mid-gray, #737373)'
+        }
+      },
+      React.createElement(
+        'span',
+        {
+          style: { cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }
+        },
+        React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '15px' } }, 'home'),
+        'Trang chủ'
+      ),
+      React.createElement('span', { style: { color: 'var(--color-hairline, #e5e5e5)' } }, '/'),
+      React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500 } }, 'What-if mô phỏng điểm')
+    ),
+    // Title bar
+    React.createElement(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }
+      },
       React.createElement(
         'div',
-        { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+        { style: { maxWidth: '780px' } },
         React.createElement(
-          'h2',
-          { style: { fontSize: '24px', fontWeight: 700, color: '#0f172a', margin: 0 } },
-          'Mô phỏng & Cải thiện điểm số (What-if Simulator)'
+          'div',
+          { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+          React.createElement(
+            'h1',
+            {
+              style: {
+                fontSize: '28px',
+                fontWeight: 700,
+                letterSpacing: '-0.02em',
+                color: 'var(--color-ink, #0a0a0a)',
+                margin: 0
+              }
+            },
+            'What-if – Mô phỏng kịch bản điểm & Học lực'
+          ),
+          isDebouncing
+            ? React.createElement(
+                'span',
+                {
+                  style: {
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: '#2563eb',
+                    background: '#dbeafe',
+                    padding: '2px 8px',
+                    borderRadius: '12px'
+                  }
+                },
+                'Đang cập nhật...'
+              )
+            : null
         ),
-        isDebouncing
-          ? React.createElement(
-              'span',
-              {
-                style: {
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: '#2563eb',
-                  background: '#dbeafe',
-                  padding: '2px 8px',
-                  borderRadius: '12px'
-                }
-              },
-              'Đang cập nhật...'
-            )
-          : null
+        React.createElement(
+          'p',
+          {
+            style: {
+              color: 'var(--color-mid-gray, #737373)',
+              marginTop: '6px',
+              fontSize: '13px',
+              lineHeight: 1.5,
+              margin: '6px 0 0'
+            }
+          },
+          'Thử nghiệm các kịch bản cải thiện điểm, dự báo điểm học kỳ tới và đánh giá tác động lên CPA tốt nghiệp mà không làm ảnh hưởng đến bảng điểm thật trên hệ thống.'
+        )
       ),
       React.createElement(
-        'p',
-        { style: { color: '#475569', marginTop: '4px', fontSize: '14px' } },
-        'Nhóm 3 công cụ: Giả lập điểm kỳ tới (Màn 6), Tối ưu ROI học cải thiện (Màn 7) và Tính điểm mục tiêu ngược (Màn 8).'
+        'div',
+        { style: { display: 'flex', gap: '8px' } },
+        Button
+          ? React.createElement(
+              Button,
+              { variant: 'ghost', size: 'sm', onClick: handleExitSimulation },
+              'Thoát thử nghiệm'
+            )
+          : null,
+        Button
+          ? React.createElement(
+              Button,
+              {
+                variant: 'secondary',
+                size: 'sm',
+                onClick: () => executeSimulation(activeTool)
+              },
+              '⚡ Tính toán ngay'
+            )
+          : null
       )
     ),
+    // Safety Sandbox Notice Card
     React.createElement(
       'div',
-      { style: { display: 'flex', gap: '8px' } },
-      Button
-        ? React.createElement(
-            Button,
-            { variant: 'ghost', size: 'sm', onClick: handleExitSimulation },
-            'Thoát thử nghiệm'
-          )
-        : null,
-      Button
-        ? React.createElement(
-            Button,
+      {
+        style: {
+          borderRadius: 'var(--radius-cards, 24px)',
+          backgroundColor: 'var(--color-paper, #ffffff)',
+          padding: '16px 20px',
+          border: '1px solid var(--color-hairline, #e5e5e5)',
+          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '14px'
+        }
+      },
+      React.createElement(
+        'div',
+        {
+          style: {
+            width: '38px',
+            height: '38px',
+            borderRadius: '9999px',
+            backgroundColor: 'var(--color-canvas, #f5f5f5)',
+            color: 'var(--color-ink, #0a0a0a)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }
+        },
+        React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '20px' } }, 'science')
+      ),
+      React.createElement(
+        'div',
+        { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
+        React.createElement(
+          'div',
+          { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+          React.createElement('span', { style: { fontSize: '13px', fontWeight: 600, color: 'var(--color-ink, #0a0a0a)' } }, 'Chế độ mô phỏng an toàn (Sandbox Mode)'),
+          React.createElement(
+            'span',
             {
-              variant: 'secondary',
-              size: 'sm',
-              onClick: () => executeSimulation(activeTool)
+              style: {
+                fontSize: '11px',
+                padding: '2px 8px',
+                borderRadius: '9999px',
+                backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                color: 'var(--color-mid-gray, #737373)',
+                fontWeight: 500
+              }
             },
-            '⚡ Tính toán ngay'
+            'Bảo vệ dữ liệu'
           )
-        : null
+        ),
+        React.createElement(
+          'p',
+          { style: { margin: 0, fontSize: '12px', color: 'var(--color-mid-gray, #737373)', lineHeight: 1.5 } },
+          'Mọi tính toán điểm số tại đây chỉ là kịch bản giả lập chạy độc lập trong phiên làm việc hiện tại, tuyệt đối không gửi yêu cầu thay đổi dữ liệu bảng điểm chính thức trên cổng đào tạo HaUI.'
+        )
+      )
     )
   );
 
@@ -653,6 +764,207 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
         )
       )
     : null;
+
+  // 4 Thẻ KPI Metrics Grid theo prototype gpa_simulator/code.html
+  const currentCpaVal = result?.currentCpa ?? 3.18;
+  const simulatedCpaVal = result?.projectedCpa ?? result?.projectedNewCpa ?? 3.31;
+  const deltaVal = typeof result?.cpaDelta === 'number'
+    ? result.cpaDelta
+    : (typeof simulatedCpaVal === 'number' && typeof currentCpaVal === 'number')
+      ? +(simulatedCpaVal - currentCpaVal).toFixed(2)
+      : 0.13;
+  const targetCpaVal = parseFloat(targetCpaInput) || 3.20;
+  const targetDiff = +(simulatedCpaVal - targetCpaVal).toFixed(2);
+
+  const metricsGrid = React.createElement(
+    'div',
+    {
+      style: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: '16px',
+        marginBottom: '20px'
+      }
+    },
+    // Metric 1: Current CPA
+    React.createElement(
+      'div',
+      {
+        style: {
+          borderRadius: '24px',
+          backgroundColor: 'var(--color-paper, #ffffff)',
+          padding: '20px',
+          border: '1px solid var(--color-hairline, #e5e5e5)',
+          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          gap: '12px'
+        }
+      },
+      React.createElement(
+        'div',
+        { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+        React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 } }, 'CPA Thực tế'),
+        React.createElement(
+          'span',
+          { style: { width: '28px', height: '28px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas, #f5f5f5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-mid-gray, #737373)' } },
+          React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'school')
+        )
+      ),
+      React.createElement(
+        'div',
+        null,
+        React.createElement(
+          'div',
+          { style: { display: 'flex', alignItems: 'baseline', gap: '6px' } },
+          React.createElement('span', { style: { fontSize: '28px', fontWeight: 700, color: 'var(--color-ink, #0a0a0a)' } }, `${currentCpaVal}`),
+          React.createElement('span', { style: { fontSize: '14px', color: 'var(--color-mid-gray, #737373)' } }, '/ 4.00')
+        ),
+        React.createElement(
+          'div',
+          { style: { display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' } },
+          React.createElement('span', { style: { padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas, #f5f5f5)', fontSize: '11px', fontWeight: 600, color: 'var(--color-ink, #0a0a0a)' } }, '108 Tín chỉ'),
+          React.createElement('span', { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } }, '• Xếp loại Khá')
+        )
+      )
+    ),
+    // Metric 2: Simulated CPA (Black Card)
+    React.createElement(
+      'div',
+      {
+        style: {
+          borderRadius: '24px',
+          backgroundColor: '#0a0a0a',
+          color: '#ffffff',
+          padding: '20px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.12)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          gap: '12px',
+          position: 'relative',
+          overflow: 'hidden'
+        }
+      },
+      React.createElement(
+        'div',
+        { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 2 } },
+        React.createElement('span', { style: { fontSize: '11px', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 } }, 'CPA Mô phỏng dự kiến'),
+        React.createElement(
+          'span',
+          { style: { width: '28px', height: '28px', borderRadius: '9999px', backgroundColor: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' } },
+          React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'trending_up')
+        )
+      ),
+      React.createElement(
+        'div',
+        { style: { position: 'relative', zIndex: 2 } },
+        React.createElement(
+          'div',
+          { style: { display: 'flex', alignItems: 'baseline', gap: '8px' } },
+          React.createElement('span', { style: { fontSize: '28px', fontWeight: 700, color: '#ffffff' } }, `${simulatedCpaVal}`),
+          React.createElement('span', { style: { fontSize: '14px', color: 'rgba(255,255,255,0.6)' } }, '/ 4.00'),
+          React.createElement('span', { style: { marginLeft: 'auto', padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'rgba(255,255,255,0.2)', fontSize: '12px', fontWeight: 700, color: '#ffffff' } }, `${deltaVal >= 0 ? '+' : ''}${deltaVal}`)
+        ),
+        React.createElement(
+          'div',
+          { style: { display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' } },
+          React.createElement('span', { style: { width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: '#ffffff' } }),
+          React.createElement('span', { style: { fontSize: '11px', color: '#ffffff', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.02em' } }, simulatedCpaVal >= 3.60 ? 'Đạt xếp loại XUẤT SẮC (≥ 3.60)' : simulatedCpaVal >= 3.20 ? 'Đạt xếp loại GIỎI (≥ 3.20)' : 'Xếp loại KHÁ')
+        )
+      )
+    ),
+    // Metric 3: Target CPA
+    React.createElement(
+      'div',
+      {
+        style: {
+          borderRadius: '24px',
+          backgroundColor: 'var(--color-paper, #ffffff)',
+          padding: '20px',
+          border: '1px solid var(--color-hairline, #e5e5e5)',
+          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          gap: '12px'
+        }
+      },
+      React.createElement(
+        'div',
+        { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+        React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 } }, 'Mục tiêu đặt ra'),
+        React.createElement(
+          'span',
+          { style: { width: '28px', height: '28px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas, #f5f5f5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-mid-gray, #737373)' } },
+          React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'flag')
+        )
+      ),
+      React.createElement(
+        'div',
+        null,
+        React.createElement(
+          'div',
+          { style: { display: 'flex', alignItems: 'baseline', gap: '6px' } },
+          React.createElement('span', { style: { fontSize: '28px', fontWeight: 700, color: 'var(--color-ink, #0a0a0a)' } }, `${targetCpaVal.toFixed(2)}`),
+          React.createElement('span', { style: { fontSize: '14px', color: 'var(--color-mid-gray, #737373)' } }, '/ 4.00')
+        ),
+        React.createElement(
+          'div',
+          { style: { display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' } },
+          React.createElement(
+            'span',
+            { style: { padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas, #f5f5f5)', fontSize: '11px', fontWeight: 600, color: targetDiff >= 0 ? '#16a34a' : '#b45309' } },
+            targetDiff >= 0 ? `Vượt mục tiêu +${targetDiff}` : `Cách mục tiêu ${targetDiff}`
+          ),
+          React.createElement('span', { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } }, targetDiff >= 0 ? 'Thỏa mãn điều kiện' : 'Cần phấn đấu thêm')
+        )
+      )
+    ),
+    // Metric 4: Total Credits
+    React.createElement(
+      'div',
+      {
+        style: {
+          borderRadius: '24px',
+          backgroundColor: 'var(--color-paper, #ffffff)',
+          padding: '20px',
+          border: '1px solid var(--color-hairline, #e5e5e5)',
+          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          gap: '12px'
+        }
+      },
+      React.createElement(
+        'div',
+        { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+        React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 } }, 'Tổng tín chỉ tính toán'),
+        React.createElement(
+          'span',
+          { style: { width: '28px', height: '28px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas, #f5f5f5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-mid-gray, #737373)' } },
+          React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'layers')
+        )
+      ),
+      React.createElement(
+        'div',
+        null,
+        React.createElement(
+          'div',
+          { style: { display: 'flex', alignItems: 'baseline', gap: '6px' } },
+          React.createElement('span', { style: { fontSize: '28px', fontWeight: 700, color: 'var(--color-ink, #0a0a0a)' } }, '126'),
+          React.createElement('span', { style: { fontSize: '14px', color: 'var(--color-mid-gray, #737373)' } }, '/ 145 TC chuẩn')
+        ),
+        React.createElement(
+          'div',
+          { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)', marginTop: '8px' } },
+          '108 TC hiện tại + 18 TC kỳ 7'
+        )
+      )
+    )
+  );
 
   // Thanh chọn trực tiếp 3 công cụ (Direct entry tabs)
   const toolSelector = React.createElement(
@@ -702,6 +1014,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
     { className: 'haui-page-container haui-whatif-page', style: { padding: '24px 0' } },
     headerSection,
     toastBar,
+    metricsGrid,
     toolSelector,
 
     // KHUNG THIẾT LẬP THAM SỐ CÔNG CỤ HIỆN TẠI

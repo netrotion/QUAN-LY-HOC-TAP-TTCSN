@@ -389,51 +389,112 @@ export function ChatAdvisorPage({
     {
       style: {
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        flexWrap: 'wrap',
-        gap: '16px',
+        flexDirection: 'column',
+        gap: '12px',
         marginBottom: '20px'
       }
     },
+    // Breadcrumb
     React.createElement(
       'div',
-      null,
+      {
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: '12px',
+          color: 'var(--color-mid-gray, #737373)'
+        }
+      },
+      React.createElement(
+        'span',
+        {
+          style: { cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }
+        },
+        React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '15px' } }, 'home'),
+        'Trang chủ'
+      ),
+      React.createElement('span', { style: { color: 'var(--color-hairline, #e5e5e5)' } }, '/'),
+      React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500 } }, 'Tư vấn AI & Lộ trình học tập')
+    ),
+    // Main header card
+    React.createElement(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '16px',
+          padding: '20px',
+          borderRadius: 'var(--radius-cards, 24px)',
+          backgroundColor: 'var(--color-paper, #ffffff)',
+          border: '1px solid var(--color-hairline, #e5e5e5)',
+          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)'
+        }
+      },
       React.createElement(
         'div',
-        { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+        { style: { maxWidth: '780px' } },
         React.createElement(
-          'h2',
-          { style: { fontSize: '24px', fontWeight: 700, color: '#0f172a', margin: 0 } },
-          'Trợ lý Cố vấn Học vụ AI (AI Advisor Chat)'
+          'div',
+          { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' } },
+          React.createElement(
+            'span',
+            {
+              style: {
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '2px 8px',
+                borderRadius: '9999px',
+                backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                color: 'var(--color-ink, #0a0a0a)',
+                fontSize: '11px',
+                fontWeight: 600
+              }
+            },
+            React.createElement('span', { style: { width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ink, #0a0a0a)' } }),
+            'Mô hình HaUI Academic v2.4'
+          ),
+          React.createElement(
+            'span',
+            {
+              style: {
+                fontSize: '11px',
+                color: 'var(--color-mid-gray, #737373)'
+              }
+            },
+            'Cập nhật theo Quy chế đào tạo 2021'
+          )
         ),
         React.createElement(
-          'span',
+          'h1',
           {
             style: {
-              fontSize: '11px',
-              padding: '2px 8px',
-              borderRadius: '12px',
-              background: '#f1f5f9',
-              color: '#475569',
-              fontWeight: 500
+              fontSize: '26px',
+              fontWeight: 700,
+              letterSpacing: '-0.02em',
+              color: 'var(--color-ink, #0a0a0a)',
+              margin: '4px 0 0'
             }
           },
-          `Phiên: ${conversationId.slice(0, 14)}`
+          'Tư vấn học tập thông minh (AI Advisor)'
+        ),
+        React.createElement(
+          'p',
+          { style: { color: 'var(--color-mid-gray, #737373)', margin: '6px 0 0', fontSize: '13px', lineHeight: 1.5 } },
+          'Hỏi đáp, phân tích tiến độ, tra cứu điều kiện tiên quyết và xây dựng lộ trình học tập tối ưu dựa trên dữ liệu học tập cá nhân.'
         )
       ),
       React.createElement(
-        'p',
-        { style: { color: '#475569', marginTop: '4px', fontSize: '14px' } },
-        'Màn hình 2 — Tiếp nhận câu hỏi học vụ bằng tiếng Việt, phân tích bảng điểm, trích dẫn quy chế HaUI và đề xuất phương án kế hoạch.'
+        'div',
+        { style: { display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' } },
+        Button ? React.createElement(Button, { variant: 'secondary', size: 'sm', onClick: handleNewConversation }, '🔄 Làm mới phiên chat') : null,
+        Button ? React.createElement(Button, { variant: 'ghost', size: 'sm', onClick: handleClearChat }, 'Xóa chat') : null,
+        Button ? React.createElement(Button, { variant: 'ghost', size: 'sm', onClick: handleSimulateError }, 'Mô phỏng Lỗi') : null
       )
-    ),
-    React.createElement(
-      'div',
-      { style: { display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' } },
-      Button ? React.createElement(Button, { variant: 'secondary', size: 'sm', onClick: handleNewConversation }, '🔄 Phiên mới') : null,
-      Button ? React.createElement(Button, { variant: 'ghost', size: 'sm', onClick: handleClearChat }, 'Xóa chat') : null,
-      Button ? React.createElement(Button, { variant: 'ghost', size: 'sm', onClick: handleSimulateError }, 'Mô phỏng Lỗi') : null
     )
   );
 
