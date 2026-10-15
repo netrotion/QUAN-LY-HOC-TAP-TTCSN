@@ -1,6 +1,8 @@
 package vn.haui.advisor.academic.service;
 
 import vn.haui.advisor.academic.engine.GradeCalculator;
+import vn.haui.advisor.academic.engine.GradeSimulator;
+import vn.haui.advisor.academic.engine.PlanReconciler;
 import vn.haui.advisor.academic.engine.RuleEvaluator;
 import vn.haui.advisor.academic.engine.StudyPlanScheduler;
 import vn.haui.advisor.academic.fixture.AcademicFixtures;
@@ -53,7 +55,11 @@ public class DefaultAcademicFacade implements AcademicFacade {
                 AcademicCapability.GET_ACADEMIC_STATUS,
                 AcademicCapability.CHECK_COURSE_ELIGIBILITY,
                 AcademicCapability.RUN_GRADUATION_AUDIT,
-                AcademicCapability.GENERATE_STUDY_PLAN
+                AcademicCapability.GENERATE_STUDY_PLAN,
+                AcademicCapability.SIMULATE_GRADES,
+                AcademicCapability.RANK_RETAKE_COURSES,
+                AcademicCapability.CALCULATE_TARGET_GRADES,
+                AcademicCapability.RECONCILE_STUDY_PLAN
         );
     }
 
@@ -220,121 +226,17 @@ public class DefaultAcademicFacade implements AcademicFacade {
 
     @Override
     public SimulateGradesResponse simulateGrades(SimulateGradesRequest request) {
-        String studentId = request != null ? request.getStudentId() : null;
-        String revision = request != null ? request.getDataRevision() : "rev-v0";
-
-        StudentProfileFixture profile = profiles.get(studentId);
-        BigDecimal currentCpa = profile != null && profile.getCpa() != null ? profile.getCpa() : new BigDecimal("2.45");
-        int currentCredits = profile != null && profile.getAccumulatedCredits() != null ? profile.getAccumulatedCredits() : 68;
-
-        List<SimulatedCourseGrade> courses = request != null && request.getCourses() != null ? request.getCourses() : Collections.emptyList();
-        BigDecimal newCpa = GradeCalculator.simulateNewCpa(currentCpa, currentCredits, courses);
-        BigDecimal delta = newCpa.subtract(currentCpa).setScale(2, RoundingMode.HALF_UP);
-
-        // Tính GPA dự kiến cho các môn giả lập
-        BigDecimal totalSimWeighted = BigDecimal.ZERO;
-        int totalSimCredits = 0;
-        for (SimulatedCourseGrade c : courses) {
-            BigDecimal pts = c.getExpectedGradePoints();
-            if (pts == null && c.getExpectedGrade() != null) {
-                Double p = GradeCalculator.toGradePoint4(c.getExpectedGrade());
-                if (p != null) pts = BigDecimal.valueOf(p);
-            }
-            if (pts != null && c.getCredits() != null) {
-                totalSimWeighted = totalSimWeighted.add(pts.multiply(BigDecimal.valueOf(c.getCredits())));
-                totalSimCredits += c.getCredits();
-            }
-        }
-
-        BigDecimal projectedGpa = totalSimCredits > 0
-                ? totalSimWeighted.divide(BigDecimal.valueOf(totalSimCredits), 2, RoundingMode.HALF_UP)
-                : currentCpa;
-
-        return new SimulateGradesResponse(studentId, currentCpa, projectedGpa, newCpa, delta, revision);
+        return new GradeSimulator(this.policy, this.profiles).simulateGrades(request);
     }
 
     @Override
     public RankRetakeCoursesResponse rankRetakeCourses(RankRetakeCoursesRequest request) {
-        String studentId = request != null ? request.getStudentId() : null;
-        String revision = request != null ? request.getDataRevision() : "rev-v0";
-
-        StudentProfileFixture profile = profiles.get(studentId);
-        List<RetakeCourseRecommendation> recs = new ArrayList<>();
-
-        if (profile != null && profile.getCourseAttempts() != null) {
-            int totalCredits = profile.getAccumulatedCredits() != null && profile.getAccumulatedCredits() > 0
-                    ? profile.getAccumulatedCredits()
-                    : 68;
-
-            int rank = 1;
-            for (StudentProfileFixture.CourseAttempt a : profile.getCourseAttempts()) {
-                String grade = a.getLetterGrade();
-                if (grade != null && ("D".equalsIgnoreCase(grade) || "D+".equalsIgnoreCase(grade) || "C".equalsIgnoreCase(grade))) {
-                    double currentPts = a.getGradePoint4() != null ? a.getGradePoint4() : GradeCalculator.toGradePoint4(grade);
-                    double targetPts = 4.0; // Kỳ vọng đạt A
-                    int credits = a.getCredits() != null ? a.getCredits() : 3;
-
-                    BigDecimal potentialGain = GradeCalculator.calculateRetakeRoi(credits, currentPts, targetPts, totalCredits);
-                    recs.add(new RetakeCourseRecommendation(
-                            a.getCourseCode(),
-                            a.getCourseName(),
-                            credits,
-                            grade,
-                            BigDecimal.valueOf(currentPts).setScale(1, RoundingMode.HALF_UP),
-                            "A",
-                            BigDecimal.valueOf(targetPts).setScale(1, RoundingMode.HALF_UP),
-                            potentialGain,
-                            rank++,
-                            "Cải thiện từ " + grade + " lên A mang lại ROI CPA cao nhất"
-                    ));
-                }
-            }
-        }
-
-        // Sắp xếp giảm dần theo potentialCpaGain
-        recs.sort((r1, r2) -> r2.getPotentialCpaGain().compareTo(r1.getPotentialCpaGain()));
-        for (int i = 0; i < recs.size(); i++) {
-            recs.get(i).setRank(i + 1);
-        }
-
-        return new RankRetakeCoursesResponse(studentId, recs, revision);
+        return new GradeSimulator(this.policy, this.profiles).rankRetakeCourses(request);
     }
 
     @Override
     public CalculateTargetGradesResponse calculateTargetGrades(CalculateTargetGradesRequest request) {
-        String studentId = request != null ? request.getStudentId() : null;
-        BigDecimal targetCpa = request != null ? request.getTargetCpa() : new BigDecimal("3.20");
-        String revision = request != null ? request.getDataRevision() : "rev-v0";
-
-        StudentProfileFixture profile = profiles.get(studentId);
-        BigDecimal currentCpa = profile != null && profile.getCpa() != null ? profile.getCpa() : new BigDecimal("2.45");
-        int currentCredits = profile != null && profile.getAccumulatedCredits() != null ? profile.getAccumulatedCredits() : 68;
-        int totalRequired = profile != null && profile.getTotalCreditsRequired() != null ? profile.getTotalCreditsRequired() : 135;
-        int remainingCredits = Math.max(0, totalRequired - currentCredits);
-
-        BigDecimal reqGpa = GradeCalculator.calculateRequiredAverageGpa(currentCpa, currentCredits, targetCpa, remainingCredits);
-
-        List<TargetCourseGradeRequirement> courseRequirements = new ArrayList<>();
-        courseRequirements.add(new TargetCourseGradeRequirement(
-                "IT4001",
-                "Cơ sở dữ liệu nâng cao",
-                3,
-                "A",
-                new BigDecimal("4.0"),
-                "Cần đạt mức A ở tối thiểu 60% số môn chuyên ngành"
-        ));
-
-        List<String> warnings = new ArrayList<>();
-        if (reqGpa != null) {
-            if (reqGpa.compareTo(new BigDecimal("4.00")) > 0) {
-                warnings.add("Mục tiêu CPA không khả thi về mặt toán học với số tín chỉ còn lại (yêu cầu GPA > 4.00)");
-            } else if (reqGpa.compareTo(new BigDecimal("3.40")) >= 0) {
-                warnings.add("Mục tiêu đòi hỏi GPA trung bình các kỳ còn lại >= " + reqGpa + " (mức tương đối thử thách)");
-            }
-        }
-
-        return new CalculateTargetGradesResponse(studentId, currentCpa, targetCpa, remainingCredits, reqGpa,
-                courseRequirements, warnings, revision);
+        return new GradeSimulator(this.policy, this.curriculum, this.profiles).calculateTargetGrades(request);
     }
 
     @Override
@@ -435,37 +337,6 @@ public class DefaultAcademicFacade implements AcademicFacade {
 
     @Override
     public ReconcileStudyPlanResponse reconcileStudyPlan(ReconcileStudyPlanRequest request) {
-        String planId = request != null ? request.getPlanId() : "plan-demo";
-        String studentId = request != null ? request.getStudentId() : null;
-        String revision = request != null ? request.getDataRevision() : "rev-v0";
-
-        StudentProfileFixture profile = profiles.get(studentId);
-        List<String> completed = new ArrayList<>();
-        List<String> failed = new ArrayList<>();
-        List<String> adjustments = new ArrayList<>();
-
-        if (profile != null && profile.getCourseAttempts() != null && !profile.getCourseAttempts().isEmpty()) {
-            String checkSemester = request != null ? request.getCompletedSemester() : null;
-            for (StudentProfileFixture.CourseAttempt a : profile.getCourseAttempts()) {
-                if (checkSemester != null && !checkSemester.equalsIgnoreCase(a.getSemesterCode())) {
-                    continue;
-                }
-                Boolean passed = a.getPassed() != null ? a.getPassed() : GradeCalculator.isPassed(a.getLetterGrade());
-                if (Boolean.TRUE.equals(passed)) {
-                    completed.add(a.getCourseCode() + " - Điểm " + (a.getLetterGrade() != null ? a.getLetterGrade() : "Đạt") + " (Đạt mục tiêu)");
-                } else if (Boolean.FALSE.equals(passed)) {
-                    failed.add(a.getCourseCode() + " - Điểm " + (a.getLetterGrade() != null ? a.getLetterGrade() : "F") + " (Không đạt)");
-                    adjustments.add("Bổ sung học lại môn nợ " + a.getCourseCode() + " vào học kỳ kế tiếp để khơi thông mạch tiên quyết");
-                }
-            }
-        }
-
-        if (completed.isEmpty() && failed.isEmpty()) {
-            completed.add("MATH1002 - Điểm B (Đạt mục tiêu)");
-            adjustments.add("Tiến độ phù hợp, tiếp tục kích hoạt đăng ký kỳ tiếp theo theo lộ trình");
-        }
-
-        boolean onTrack = failed.isEmpty();
-        return new ReconcileStudyPlanResponse(planId, studentId, onTrack, completed, failed, adjustments, 1, revision);
+        return new PlanReconciler(this.policy, this.curriculum, this.profiles).reconcileStudyPlan(request);
     }
 }

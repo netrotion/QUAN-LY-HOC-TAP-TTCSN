@@ -439,15 +439,15 @@ public class AcademicCoreReadyTest {
                     AcademicCapability.GET_ACADEMIC_STATUS,
                     AcademicCapability.CHECK_COURSE_ELIGIBILITY,
                     AcademicCapability.RUN_GRADUATION_AUDIT,
-                    AcademicCapability.GENERATE_STUDY_PLAN
+                    AcademicCapability.GENERATE_STUDY_PLAN,
+                    AcademicCapability.SIMULATE_GRADES,
+                    AcademicCapability.RANK_RETAKE_COURSES,
+                    AcademicCapability.CALCULATE_TARGET_GRADES,
+                    AcademicCapability.RECONCILE_STUDY_PLAN
             );
 
-            // Các capability thuộc Task 3.11 chưa được công bố sẵn sàng
+            // VALIDATE_STUDY_PLAN chưa được công bố sẵn sàng
             assertThat(ready).doesNotContain(AcademicCapability.VALIDATE_STUDY_PLAN);
-            assertThat(ready).doesNotContain(AcademicCapability.SIMULATE_GRADES);
-            assertThat(ready).doesNotContain(AcademicCapability.RANK_RETAKE_COURSES);
-            assertThat(ready).doesNotContain(AcademicCapability.CALCULATE_TARGET_GRADES);
-            assertThat(ready).doesNotContain(AcademicCapability.RECONCILE_STUDY_PLAN);
         }
     }
 
