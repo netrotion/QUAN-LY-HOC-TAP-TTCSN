@@ -1,6 +1,6 @@
 import { StudyPlannerPage } from './pages/StudyPlannerPage.js';
 import { ChatAdvisorPage, generateMockChatResponse } from './pages/ChatAdvisorPage.js';
-import { WhatIfSimulatorPage } from './pages/WhatIfSimulatorPage.js';
+import { WhatIfSimulatorPage, WHAT_IF_TOOLS } from './pages/WhatIfSimulatorPage.js';
 import { StudentProfilePage } from './pages/StudentProfilePage.js';
 import { PlanHistoryModal } from './components/PlanHistoryModal.js';
 import { CurriculumTreeModal } from './components/CurriculumTreeModal.js';
@@ -69,6 +69,7 @@ export {
   StudyPlannerPage,
   ChatAdvisorPage,
   WhatIfSimulatorPage,
+  WHAT_IF_TOOLS,
   StudentProfilePage,
   PlanHistoryModal,
   CurriculumTreeModal,
