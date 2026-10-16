@@ -158,7 +158,7 @@ export function DemoUiPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
       {/* Khu vực 1: Kiểm thử Singleton API Client & Mock Interceptor */}
       <Card
-        variant="status-info"
+        variant="default"
         title="1. Singleton API Client & Mock Interceptor Playground (ui-api-v0)"
         subtitle="Kiểm thử gọi API kèm cookie session (credentials: 'include'), CSRF header (X-XSRF-TOKEN) và bộ lọc bảo mật studentId"
         headerAction={

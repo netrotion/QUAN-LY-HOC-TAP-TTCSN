@@ -75,7 +75,7 @@ export function TranscriptImportPage() {
     }
   };
 
-  // Mô phỏng nhánh xử lý lỗi tải file không đúng định dạng (.docx / .exe / .zip)
+  // Mô phỏng nhánh xử lý lỗi tải file không đúng định dạng (Mô phỏng File Sai Định Dạng - .docx / .exe / .zip)
   const handleSimulateInvalidFile = async () => {
     setUploadError(null);
     setIsProcessingFile(true);
@@ -212,7 +212,7 @@ export function TranscriptImportPage() {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+    <div className="haui-page-container">
       {/* 1. Header & Page Title */}
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: '16px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -227,10 +227,10 @@ export function TranscriptImportPage() {
             <span style={{ color: 'var(--color-mid-gray)' }}>Nhập bảng điểm cá nhân</span>
           </div>
           <h1 style={{ fontSize: '30px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-            Nạp &amp; Bóc Tách Bảng Điểm Cá Nhân
+            Nhập &amp; Quản lý bảng điểm
           </h1>
           <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-mid-gray)', maxWidth: '680px' }}>
-            Hỗ trợ nhập tự động từ tệp PDF/Ảnh cổng đào tạo e-HaUI hoặc nhập thủ công từng môn học
+            Tải lên tệp bảng điểm cá nhân hoặc nhập điểm thủ công để hệ thống kiểm tra tính hợp lệ, tính toán GPA/CPA và tư vấn điều kiện học phần.
           </p>
         </div>
 
@@ -433,9 +433,6 @@ export function TranscriptImportPage() {
                 <p style={{ margin: 0, fontSize: '14px', fontWeight: 500, color: 'var(--color-ink)' }}>
                   Kéo thả tệp tin hoặc nhấn để chọn
                 </p>
-                <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)', maxWidth: '380px' }}>
-                  Tự động nhận diện bảng điểm từ Cổng thông tin đào tạo HaUI (portal.haui.edu.vn)
-                </p>
                 <input
                   type="file"
                   id="transcriptFileInput"
@@ -467,33 +464,6 @@ export function TranscriptImportPage() {
                   </div>
                 </div>
               ) : null}
-
-              {/* Fast Test Action Buttons for Reviewers */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', paddingTop: '8px' }}>
-                <button
-                  type="button"
-                  className="haui-pill-btn-paper"
-                  style={{ fontSize: '12px', padding: '6px 14px' }}
-                  onClick={handleUseDemoFile}
-                  disabled={isProcessingFile}
-                  title="Nạp ngay file mẫu Bang_Diem_eHaUI_Chuan_K17.pdf"
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>bolt</span>
-                  <span>Bang_Diem_eHaUI_Chuan_K17.pdf</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="haui-pill-btn-canvas"
-                  style={{ fontSize: '12px', padding: '6px 14px', color: 'var(--color-ember)' }}
-                  onClick={handleSimulateInvalidFile}
-                  disabled={isProcessingFile}
-                  title="Mô phỏng File Sai Định Dạng (.docx)"
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>warning</span>
-                  <span>Mô phỏng File Sai Định Dạng</span>
-                </button>
-              </div>
             </div>
 
             {/* Phương thức 2: Nhập thủ công & Điều chỉnh (5 cols) */}
@@ -559,11 +529,6 @@ export function TranscriptImportPage() {
                     ))}
                   </div>
                 </div>
-              </div>
-
-              <div style={{ backgroundColor: 'var(--color-surface-alt)', borderRadius: '18px', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--color-mid-gray)', marginTop: '16px' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--color-ink)' }}>info</span>
-                <span>Dữ liệu nhập thủ công sẽ tự động gộp vào thuật toán gợi ý môn học tự chọn KTPM/CNTT.</span>
               </div>
             </div>
           </div>

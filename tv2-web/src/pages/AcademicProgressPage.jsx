@@ -191,7 +191,7 @@ export function AcademicProgressPage() {
   const currentCpa = isProjected ? 3.25 : 3.18;
 
   return (
-    <div className="haui-audit-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="haui-audit-container haui-page-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* =========================================================================
           KHỐI TIÊU ĐỀ IN ẤN (@media print) — PHÂN BIỆT RẠCH RÒI THỰC TẾ VS DỰ KIẾN
           ========================================================================= */}
@@ -250,8 +250,8 @@ export function AcademicProgressPage() {
             marginBottom: '14px',
             fontSize: '11px',
             lineHeight: 1.5,
-            borderRadius: '4px',
-            borderLeft: isProjected ? '4px solid #dc2626' : '4px solid #0052cc',
+            borderRadius: '8px',
+            border: isProjected ? '1px solid #fecaca' : '1px solid #bfdbfe',
             backgroundColor: isProjected ? '#fff1f2' : '#eff6ff',
             color: isProjected ? '#991b1b' : '#1e3a8a',
             fontWeight: 600
@@ -327,9 +327,6 @@ export function AcademicProgressPage() {
             >
               Rà soát &amp; Kiểm tra điều kiện tốt nghiệp
             </h1>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-mid-gray)' }}>
-              Hệ thống tự động đối chiếu hồ sơ học tập với 100% chuẩn đầu ra CTĐT K16 CNTT (HaUI).
-            </p>
           </div>
 
           {/* Action Buttons */}
@@ -441,71 +438,6 @@ export function AcademicProgressPage() {
             <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>build</span>
             <span>Lập kế hoạch bù đắp</span>
           </button>
-        </div>
-      </div>
-
-      {/* =========================================================================
-          SECTION 3: NOTICE / LEGAL DISCLAIMER BANNER
-          ========================================================================= */}
-      <div
-        style={{
-          position: 'relative',
-          overflow: 'hidden',
-          borderRadius: 'var(--radius-cards)',
-          backgroundColor: 'var(--color-paper)',
-          padding: '16px 20px',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '14px',
-          border: '1px solid var(--color-hairline)',
-          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)'
-        }}
-      >
-        <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '6px', backgroundColor: 'var(--color-ink)' }} />
-        <div
-          style={{
-            padding: '8px',
-            borderRadius: '9999px',
-            backgroundColor: 'var(--color-canvas)',
-            color: 'var(--color-ink)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>info</span>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-ink)' }}>
-              Lưu ý dữ liệu minh họa &amp; Quy chế xét tốt nghiệp
-            </span>
-            <span
-              style={{
-                padding: '2px 8px',
-                borderRadius: '9999px',
-                backgroundColor: 'var(--color-canvas)',
-                color: 'var(--color-mid-gray)',
-                fontSize: '11px',
-                fontWeight: 500
-              }}
-            >
-              Tự động đối chiếu
-            </span>
-          </div>
-          <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-mid-gray)', lineHeight: 1.5 }}>
-            Kết quả rà soát dưới đây được tổng hợp từ dữ liệu bảng điểm tự nhập và quy chế đào tạo mẫu CNTT. Hệ thống không khẳng định các tiêu chí minh họa là quyết định công nhận tốt nghiệp chính thức của Hội đồng xét tốt nghiệp Nhà trường. Sinh viên cần theo dõi thông báo chính thức và đối chiếu hồ sơ gốc tại cổng thông tin{' '}
-            <a
-              href="https://sv.haui.edu.vn"
-              target="_blank"
-              rel="noreferrer"
-              style={{ color: 'var(--color-ink)', fontWeight: 500, textDecoration: 'underline' }}
-            >
-              sv.haui.edu.vn
-            </a>
-            .
-          </p>
         </div>
       </div>
 
@@ -1151,7 +1083,7 @@ export function AcademicProgressPage() {
 
             {/* CẢNH BÁO SỚM CHUẨN ĐẦU RA & TÍN CHỈ THIẾU (AC-05 / FR-18) */}
             <Card
-              variant="status-error"
+              variant="default"
               title="Cảnh báo Sớm Các Điều kiện & Chứng chỉ Tồn đọng (AC-05 / FR-18)"
               subtitle="Cần hoàn thành trước mốc xét tốt nghiệp để tránh chậm ra trường"
             >

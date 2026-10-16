@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { api } from '../../services/apiClient.js';
 import { logoutStudent } from '../../services/academicStore.js';
+import hauiLogo from '@haui/logo';
 
 const NAV_ITEMS = Object.freeze([
   {
@@ -31,7 +32,7 @@ const NAV_ITEMS = Object.freeze([
     icon: 'event_note'
   },
   {
-    to: '/planner?view=history',
+    to: '/plan-history',
     label: 'Lịch sử kế hoạch',
     icon: 'history'
   },
@@ -51,8 +52,8 @@ const NAV_ITEMS = Object.freeze([
     icon: 'verified'
   },
   {
-    to: '/demo-ui',
-    label: 'Cài đặt & Mock',
+    to: '/settings',
+    label: 'Cài đặt',
     icon: 'settings'
   }
 ]);
@@ -87,23 +88,20 @@ export function Sidebar({ collapsed = false }) {
       className={`haui-sidebar ${collapsed ? 'haui-sidebar--collapsed' : ''}`}
       aria-label="Điều hướng chính HaUI Advisor"
     >
-      {/* 1. Logo Brand Header */}
+      {/* 1. Logo Brand Header — matches prototype sidebar header */}
       <div className="haui-sidebar__brand">
         <NavLink to="/" className="haui-sidebar__brand-link" title="HaUI Advisor Dashboard">
-          {collapsed ? (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 40" width="32" height="40" fill="none">
-              <rect x="2" y="6" width="28" height="28" rx="8" fill="#0a0a0a" />
-              <path d="M9 13v14M23 13v14M9 20h14" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="23" cy="13" r="2.5" fill="#e7000b" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40" width="120" height="40" fill="none">
-              <rect x="2" y="6" width="28" height="28" rx="8" fill="#0a0a0a" />
-              <path d="M9 13v14M23 13v14M9 20h14" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="23" cy="13" r="2.5" fill="#e7000b" />
-              <text x="38" y="22" fontFamily="Geist, -apple-system, sans-serif" fontSize="14" fontWeight="700" fill="#0a0a0a" letterSpacing="-0.5px">HAUI</text>
-              <text x="38" y="31" fontFamily="Geist, -apple-system, sans-serif" fontSize="9" fontWeight="500" fill="#737373" letterSpacing="0.5px">ADVISOR</text>
-            </svg>
+          <img
+            src={hauiLogo}
+            alt=""
+            className="haui-sidebar__brand-logo"
+            style={{ height: '32px', width: 'auto', objectFit: 'contain', flexShrink: 0, borderRadius: '4px' }}
+          />
+          {!collapsed && (
+            <div className="haui-sidebar__brand-text">
+              <span className="haui-sidebar__brand-title">HAUI ADVISOR</span>
+              <span className="haui-sidebar__brand-subtitle">Cổng Tư Vấn & Lộ Trình</span>
+            </div>
           )}
         </NavLink>
       </div>

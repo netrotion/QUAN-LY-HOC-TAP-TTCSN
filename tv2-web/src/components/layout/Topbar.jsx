@@ -1,42 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../../services/apiClient.js';
 import {
   STUDENT_PRESETS,
-  logoutStudent,
   selectStudentPreset
 } from '../../services/academicStore.js';
 
-const ROUTE_TITLES = Object.freeze({
-  '/': 'Tổng quan học tập',
-  '/dashboard': 'Tổng quan học tập',
-  '/login': 'Xác thực & Đăng nhập Sinh viên',
-  '/transcript': 'Nhập & Bóc tách Bảng điểm Cá nhân',
-  '/chat': 'Trợ lý ảo AI Chatbot (AI Advisor)',
-  '/recommendations': 'Kết quả Phân tích & Đề xuất Lộ trình',
-  '/curriculum': 'Cây môn học & Chuỗi quan hệ tiên quyết',
-  '/curriculum/tree': 'Cây môn học & Chuỗi quan hệ tiên quyết',
-  '/planner': 'Kế hoạch học tập (Study Planner)',
-  '/what-if': 'What-if mô phỏng điểm & Tối ưu học cải thiện',
-  '/progress': 'Hồ sơ sinh viên & Bảng điểm học vụ',
-  '/audit': 'Kiểm toán tốt nghiệp 100% tiêu chí',
-  '/demo-ui': 'Cài đặt hệ thống & Mock API Showcase'
-});
-
 /**
- * Topbar / Header Component của Web Host (TV2 — design-base-v1)
- * Phong cách "Clinical Blueprint on Frosted Paper" chuẩn xác theo prototype:
- * - Search bar pill bo góc tròn với placeholder tìm kiếm môn học
- * - Nút AI Advisor pill "Tư vấn lộ trình nhanh với AI"
- * - Nút thông báo với ember dot cảnh báo
- * - Badge Cảnh báo học vụ (BR-07)
- * - Persona Switcher chuyển đổi nhanh 3 tài khoản mẫu
- * - Nút thu gọn / mở rộng sidebar
+ * Topbar Component (TV2 — design-base-v1)
+ * Chuẩn xác theo Stitch Prototype:
+ * - Nút thu gọn / mở rộng menu (onToggleCollapse)
+ * - Thanh tìm kiếm pill (left)
+ * - Nút Tư vấn lộ trình nhanh với AI (dark pill)
+ * - Chuông thông báo kèm chấm đỏ ember
+ * - Huy hiệu trạng thái học vụ (BR-07: Cảnh báo học vụ / Học vụ bình thường)
+ * - Avatar sinh viên
+ * - Menu chuyển nhanh Persona mẫu cho reviewer
  *
  * @param {{ collapsed?: boolean, onToggleCollapse?: () => void }} props
  */
 export function Topbar({ collapsed = false, onToggleCollapse }) {
-  const location = useLocation();
   const navigate = useNavigate();
   const [apiConfig, setApiConfig] = useState(() => api.getConfig());
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,7 +41,7 @@ export function Topbar({ collapsed = false, onToggleCollapse }) {
 
   return (
     <header className="haui-topbar">
-      {/* 1. Left: Collapse Button + Search Bar Pill */}
+      {/* 1. Left: Menu Toggle + Search Pill */}
       <div className="haui-topbar__left">
         {typeof onToggleCollapse === 'function' && (
           <button
@@ -88,7 +71,7 @@ export function Topbar({ collapsed = false, onToggleCollapse }) {
         </form>
       </div>
 
-      {/* 2. Right: AI Action + Notification + Academic Status + Persona Switcher + Profile */}
+      {/* 2. Right: AI CTA + Notifications + Academic Status + Avatar + Persona Switcher */}
       <div className="haui-topbar__right">
         {/* Quick AI Action Pill */}
         <Link
@@ -101,19 +84,6 @@ export function Topbar({ collapsed = false, onToggleCollapse }) {
           </span>
           <span className="haui-topbar__ai-text">Tư vấn lộ trình nhanh với AI</span>
         </Link>
-
-        {/* Notification Button with Ember Dot */}
-        <button
-          type="button"
-          className="haui-topbar__icon-btn"
-          title="Thông báo học vụ"
-          onClick={() => navigate('/audit')}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
-            notifications
-          </span>
-          <span className="haui-topbar__ember-dot" />
-        </button>
 
         {/* Academic Status Badge (BR-07 / US-12) */}
         <span
@@ -133,23 +103,6 @@ export function Topbar({ collapsed = false, onToggleCollapse }) {
             : '✓ Học vụ: Bình thường'}
         </span>
 
-        {/* Quick Persona Switcher for Reviewers */}
-        <select
-          className="haui-input haui-topbar__persona-select"
-          value={student?.id || 'at-risk'}
-          onChange={(e) => {
-            const presetKey = e.target.value;
-            selectStudentPreset(presetKey);
-            const p = STUDENT_PRESETS[presetKey];
-            if (p) api.setSessionStudent(p);
-          }}
-          title="Chuyển nhanh tài khoản mẫu (Task 2.2a)"
-        >
-          <option value="normal">👤 Chuẩn (KTPM K17 - CPA 3.2)</option>
-          <option value="at-risk">🚨 Nguy cơ (KTPM K17 - CPA 1.85)</option>
-          <option value="empty">⚪ Trắng (CNTT K19 - 0 TC)</option>
-        </select>
-
         {/* Student Avatar */}
         <Link
           to="/progress"
@@ -160,6 +113,32 @@ export function Topbar({ collapsed = false, onToggleCollapse }) {
             person
           </span>
         </Link>
+
+        {/* Persona Switcher */}
+        <select
+          className="haui-topbar__persona-select"
+          value={student?.id || 'normal'}
+          onChange={(e) => {
+            const presetKey = e.target.value;
+            selectStudentPreset(presetKey);
+            const p = STUDENT_PRESETS[presetKey];
+            if (p) api.setSessionStudent(p);
+          }}
+          title="Chuyển nhanh tài khoản mẫu"
+          style={{
+            fontSize: '11px',
+            padding: '4px 8px',
+            borderRadius: '9999px',
+            border: '1px solid var(--color-hairline)',
+            background: 'var(--color-canvas)',
+            color: 'var(--color-mid-gray)',
+            maxWidth: '120px'
+          }}
+        >
+          <option value="normal">👤 Chuẩn</option>
+          <option value="at-risk">🚨 Nguy cơ</option>
+          <option value="empty">⚪ Trắng</option>
+        </select>
       </div>
     </header>
   );

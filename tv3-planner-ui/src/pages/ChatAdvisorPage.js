@@ -1,14 +1,125 @@
-import React, { useState, useCallback } from 'react';
-import { plannerStore } from '../services/plannerStore.js';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { plannerStore, PLAN_STATUSES } from '../services/plannerStore.js';
 
 /**
- * 4 Gợi ý câu hỏi thông minh (Quick Prompt Pills) chuẩn Màn hình 2 UI Flow & prototype `tu_van_ai`
+ * 4 Gợi ý câu hỏi thông minh (Quick Prompt Pills) chuẩn Màn hình 2 UI Flow & prototype `ai_advisor`
  */
 export const QUICK_PROMPTS_MAN_2 = Object.freeze([
-  'Tư vấn lộ trình kéo CPA lên >= 3.20 để tốt nghiệp bằng Giỏi.',
-  'Tôi vừa trượt môn Toán rời rạc (MATH1002), kỳ sau bị ảnh hưởng thế nào?',
-  'Lên lộ trình học vượt 3.5 năm ngành CNTT/KTPM.',
-  'Kỳ này nên học cải thiện môn nào tốt nhất theo chỉ số ROI?'
+  'Dự báo điểm GPA Kỳ 7 để tốt nghiệp loại Giỏi (CPA ≥ 3.20)?',
+  'Môn IT6080 - Đồ án chuyên ngành cần những môn tiên quyết nào?',
+  'Kế hoạch Kỳ 8 nếu đăng ký 15 TC có bị quá tải không?',
+  'Tôi còn thiếu chứng chỉ chuẩn đầu ra nào theo quy chế?'
+]);
+
+/**
+ * Mẫu hội thoại ban đầu chuẩn xác theo Stitch Prototype `ai_advisor/code.html`
+ */
+const DEFAULT_PROTOTYPE_MESSAGES = Object.freeze([
+  {
+    id: 'proto-msg-1',
+    sender: 'user',
+    senderName: 'Nguyễn Văn An',
+    text: 'Em đang có CPA 3.18, tích lũy 108 tín chỉ sau kỳ 6. Kỳ 7 em dự định đăng ký 18 tín chỉ thì cần đạt GPA kỳ 7 bao nhiêu để kéo CPA lên mức 3.20 (bằng Giỏi) ạ?',
+    timestamp: '14:22'
+  },
+  {
+    id: 'proto-msg-2',
+    sender: 'assistant',
+    text: 'Chào bạn Nguyễn Văn An, dựa vào kết quả 108 tín chỉ đã tích lũy trong hồ sơ sinh viên, dưới đây là thuật toán tính toán cụ thể để bạn đạt ngưỡng bằng Giỏi ở Kỳ 7:',
+    timestamp: '14:23',
+    calculationData: {
+      title: 'Phân tích công thức tính điểm tích lũy:',
+      items: [
+        'Điểm trọng số hiện tại (Kỳ 1 → Kỳ 6): 108 tín chỉ × 3.18 = 343.44 điểm.',
+        'Sau khi tích lũy 18 tín chỉ ở Kỳ 7, tổng số tín chỉ sẽ đạt: 108 + 18 = 126 tín chỉ.',
+        'Mục tiêu CPA ≥ 3.20 yêu cầu tổng điểm trọng số đạt tối thiểu: 126 × 3.20 = 403.20 điểm.',
+        'Tổng điểm trọng số cần đạt riêng ở Kỳ 7: 403.20 - 343.44 = 59.76 điểm.'
+      ]
+    },
+    targetData: {
+      label: 'Mục tiêu cần hoàn thành ở Kỳ 7',
+      target: 'Bạn cần đạt GPA Kỳ 7 tối thiểu 3.32 / 4.00',
+      description: 'Tương đương điểm trung bình B+ (3.5) cho phần lớn các môn và không có môn nào dưới B (3.0) trong 6 học phần dự kiến (18 tín chỉ).'
+    },
+    subcards: [
+      {
+        icon: 'folder_shared',
+        title: 'Dữ liệu học tập sử dụng',
+        items: [
+          'Bảng điểm Kỳ 1 - Kỳ 6 (28 môn hợp lệ, CPA 3.18)',
+          'Dự thảo kế hoạch học tập v2.4 (Kỳ 7: 6 môn - 18 TC)',
+          'Hệ số quy đổi thang điểm 4 theo Quy chế HaUI'
+        ],
+        footer: 'Đồng bộ: 12 phút trước'
+      },
+      {
+        icon: 'menu_book',
+        title: 'Nguồn tham khảo & Quy chế minh họa',
+        items: [
+          'CTĐT K16 ngành Kỹ thuật Phần mềm (Khoa CNTT - HaUI)',
+          'QĐ Hướng dẫn tính điểm trung bình chung tích lũy 2021'
+        ],
+        note: 'Lưu ý: Các ngưỡng tính toán trên mang tính chất tham khảo học thuật từ dữ liệu giả lập, vui lòng đối chiếu bảng điểm chính thức tại sv.haui.edu.vn.'
+      }
+    ],
+    sources: [
+      {
+        title: 'Chương trình đào tạo K16 ngành Kỹ thuật phần mềm (Khoa CNTT - HaUI)',
+        section: 'Quy định đào tạo & Quản lý học vụ'
+      },
+      {
+        title: 'Quy chế đào tạo trình độ đại học theo hệ thống tín chỉ - HaUI',
+        section: 'Quy định tính điểm trung bình chung tích lũy 2021'
+      }
+    ],
+    executionTime: '1.1s'
+  },
+  {
+    id: 'proto-msg-3',
+    sender: 'user',
+    senderName: 'Nguyễn Văn An',
+    text: 'Thế còn điều kiện học phần Thực tập doanh nghiệp thì sao ạ?',
+    timestamp: '14:25'
+  },
+  {
+    id: 'proto-msg-4',
+    sender: 'assistant',
+    text: 'Thông tin điều kiện học phần Thực tập doanh nghiệp theo CTĐT Khoa CNTT HaUI:',
+    timestamp: '14:26',
+    warningData: {
+      title: 'Cần bổ sung thêm thông tin dữ liệu!',
+      description: "Hệ thống nhận thấy trong hồ sơ của bạn chưa có thông tin đăng ký cơ sở thực tập hoặc xác nhận chuyên ngành hẹp (Kỹ thuật phần mềm hay Hệ thống thông tin). Vui lòng cập nhật mục 'Hồ sơ sinh viên' hoặc tải lên giấy xác nhận thực tập để AI có thể tư vấn lộ trình phân bổ tín chỉ chính xác nhất."
+    },
+    checklistData: {
+      title: 'Điều kiện cơ bản theo CTĐT Khoa CNTT HaUI:',
+      items: [
+        { done: true, text: 'Đã hoàn thành tối thiểu 90 tín chỉ (Hiện có: 108 TC)' },
+        { done: false, text: 'Chưa có xác nhận cơ sở thực tập CNTT' }
+      ]
+    },
+    actions: [
+      {
+        id: 'act-profile',
+        label: 'Cập nhật hồ sơ thực tập',
+        icon: 'edit_document',
+        route: '/profile',
+        primary: true
+      },
+      {
+        id: 'act-transcript',
+        label: 'Tải lên văn bản xác nhận',
+        icon: 'upload_file',
+        route: '/transcript',
+        primary: false
+      }
+    ],
+    sources: [
+      {
+        title: 'Chương trình đào tạo K16 ngành Kỹ thuật phần mềm (Khoa CNTT - HaUI)',
+        section: 'Điều kiện học phần Thực tập doanh nghiệp'
+      }
+    ]
+  }
 ]);
 
 /**
@@ -45,14 +156,140 @@ export function generateMockChatResponse(queryText, plan = null) {
     lower.includes('chuẩn đầu ra') ||
     lower.includes('điều kiện tốt nghiệp') ||
     lower.includes('thang điểm') ||
-    lower.includes('gpa') ||
-    lower.includes('cpa') ||
     lower.includes('cách tính') ||
     lower.includes('rút học phần') ||
     lower.includes('tối đa bao nhiêu tín chỉ') ||
     lower.includes('hạn mức tín chỉ') ||
     lower.includes('điều kiện') ||
     lower.includes('tiêu chuẩn');
+
+  // Xử lý câu hỏi tính toán GPA/CPA mục tiêu (như trong Prototype)
+  if (lower.includes('dự báo điểm gpa') || (lower.includes('gpa') && lower.includes('kỳ 7')) || lower.includes('3.20')) {
+    if (!isPlanRequest) {
+      return {
+        answer: `[AI Advisor]: Chào bạn Nguyễn Văn An, dựa vào kết quả 108 tín chỉ đã tích lũy trong hồ sơ sinh viên, dưới đây là thuật toán tính toán cụ thể để bạn đạt ngưỡng bằng Giỏi ở Kỳ 7:`,
+        calculationData: {
+          title: 'Phân tích công thức tính điểm tích lũy:',
+          items: [
+            'Điểm trọng số hiện tại (Kỳ 1 → Kỳ 6): 108 tín chỉ × 3.18 = 343.44 điểm.',
+            'Sau khi tích lũy 18 tín chỉ ở Kỳ 7, tổng số tín chỉ sẽ đạt: 108 + 18 = 126 tín chỉ.',
+            'Mục tiêu CPA ≥ 3.20 yêu cầu tổng điểm trọng số đạt tối thiểu: 126 × 3.20 = 403.20 điểm.',
+            'Tổng điểm trọng số cần đạt riêng ở Kỳ 7: 403.20 - 343.44 = 59.76 điểm.'
+          ]
+        },
+        targetData: {
+          label: 'Mục tiêu cần hoàn thành ở Kỳ 7',
+          target: 'Bạn cần đạt GPA Kỳ 7 tối thiểu 3.32 / 4.00',
+          description: 'Tương đương điểm trung bình B+ (3.5) cho phần lớn các môn và không có môn nào dưới B (3.0) trong 6 học phần dự kiến (18 tín chỉ).'
+        },
+        subcards: [
+          {
+            icon: 'folder_shared',
+            title: 'Dữ liệu học tập sử dụng',
+            items: [
+              'Bảng điểm Kỳ 1 - Kỳ 6 (28 môn hợp lệ, CPA 3.18)',
+              'Dự thảo kế hoạch học tập v2.4 (Kỳ 7: 6 môn - 18 TC)',
+              'Hệ số quy đổi thang điểm 4 theo Quy chế HaUI'
+            ],
+            footer: 'Đồng bộ: Vừa xong'
+          },
+          {
+            icon: 'menu_book',
+            title: 'Nguồn tham khảo & Quy chế minh họa',
+            items: [
+              'Chương trình đào tạo K16 ngành Kỹ thuật phần mềm (HaUI SICT)',
+              'Quy chế đào tạo tín chỉ Đại học Công nghiệp Hà Nội (HaUI)'
+            ],
+            note: 'Lưu ý: Các ngưỡng tính toán trên mang tính chất tham khảo học thuật từ dữ liệu giả lập, vui lòng đối chiếu bảng điểm chính thức tại sv.haui.edu.vn.'
+          }
+        ],
+        sources: [
+          {
+            title: 'Chương trình đào tạo K16 ngành Kỹ thuật phần mềm (HaUI SICT)',
+            section: 'Quy định đào tạo & Quản lý học vụ'
+          },
+          {
+            title: 'Quy chế đào tạo tín chỉ Đại học Công nghiệp Hà Nội (HaUI)',
+            section: 'Điều 14 - Giới hạn tín chỉ & Thang điểm'
+          }
+        ],
+        actions: [],
+        warnings: [],
+        planProposal: null
+      };
+    }
+  }
+
+  // Xử lý câu hỏi môn tiên quyết IT6080
+  if (lower.includes('it6080') || lower.includes('đồ án chuyên ngành')) {
+    return {
+      answer: `[AI Advisor]: Học phần IT6080 (Đồ án chuyên ngành KTPM - 3 TC) yêu cầu hoàn thành các học phần tiên quyết sau theo khung CTĐT K16:\n` +
+        `• IT6001 - Cấu trúc dữ liệu và giải thuật (Đã đạt)\n` +
+        `• SE3001 - Công nghệ phần mềm (Yêu cầu điểm ≥ C)\n` +
+        `• MATH1002 - Toán rời rạc: Hiện bạn đang nợ điểm F môn này. Do MATH1002 là tiên quyết trực tiếp, bạn bắt buộc phải học lại và đạt trước khi hệ thống sv.haui.edu.vn cho phép đăng ký IT6080.`,
+      sources: [
+        {
+          title: 'Chương trình đào tạo K16 ngành Kỹ thuật phần mềm (HaUI SICT)',
+          section: 'Cây tiên quyết chuyên ngành & Học phần đồ án'
+        }
+      ],
+      actions: [
+        {
+          id: 'act-curriculum',
+          label: 'Xem sơ đồ cây tiên quyết',
+          icon: 'account_tree',
+          route: '/curriculum',
+          primary: true
+        }
+      ],
+      warnings: ['Bạn đang nợ môn Toán rời rạc (MATH1002) - Cần gỡ nợ gấp ở Kỳ 7.'],
+      planProposal: null
+    };
+  }
+
+  // Xử lý câu hỏi về Thực tập doanh nghiệp
+  if (lower.includes('thực tập') || lower.includes('doanh nghiệp')) {
+    return {
+      answer: `[AI Advisor]: Căn cứ quy chế học phần Thực tập doanh nghiệp (IT6090 - 4 TC) ngành CNTT/KTPM:\n` +
+        `• Điều kiện: Sinh viên phải tích lũy tối thiểu 90 tín chỉ và không bị cảnh báo học vụ.\n` +
+        `• Hồ sơ: Cần nộp giấy tiếp nhận thực tập của doanh nghiệp trước tuần 2 của học kỳ.`,
+      warningData: {
+        title: 'Cần bổ sung thêm thông tin dữ liệu!',
+        description: "Hệ thống nhận thấy trong hồ sơ của bạn chưa có thông tin đăng ký cơ sở thực tập hoặc xác nhận chuyên ngành hẹp. Vui lòng cập nhật mục 'Hồ sơ sinh viên' hoặc tải lên giấy xác nhận thực tập để AI có thể tư vấn lộ trình phân bổ tín chỉ chính xác nhất."
+      },
+      checklistData: {
+        title: 'Điều kiện cơ bản theo CTĐT Khoa CNTT HaUI:',
+        items: [
+          { done: true, text: 'Đã hoàn thành tối thiểu 90 tín chỉ (Hiện có: 108 TC)' },
+          { done: false, text: 'Chưa có xác nhận cơ sở thực tập CNTT' }
+        ]
+      },
+      actions: [
+        {
+          id: 'act-profile',
+          label: 'Cập nhật hồ sơ thực tập',
+          icon: 'edit_document',
+          route: '/profile',
+          primary: true
+        },
+        {
+          id: 'act-transcript',
+          label: 'Tải lên văn bản xác nhận',
+          icon: 'upload_file',
+          route: '/transcript',
+          primary: false
+        }
+      ],
+      sources: [
+        {
+          title: 'Chương trình đào tạo K16 ngành Kỹ thuật phần mềm (HaUI SICT)',
+          section: 'Điều kiện học phần Thực tập doanh nghiệp'
+        }
+      ],
+      warnings: ['Chưa có thông tin cơ sở thực tập được phê duyệt.'],
+      planProposal: null
+    };
+  }
 
   // Quy tắc F23-008: Nếu là câu hỏi quy chế hoặc KHÔNG có yêu cầu lập lộ trình -> KHÔNG ép mở Planner
   if (!isPlanRequest || (isRegulationQuery && !lower.includes('lộ trình') && !lower.includes('kế hoạch') && !lower.includes('lập lịch') && !lower.includes('lên lịch') && !lower.includes('phương án'))) {
@@ -96,10 +333,10 @@ export function generateMockChatResponse(queryText, plan = null) {
           section: 'Điều 15 - Học lại và học cải thiện điểm (REG-HAUI-03)'
         }
       ];
-    } else if (lower.includes('chuẩn đầu ra') || lower.includes('tốt nghiệp') || lower.includes('thực tập')) {
+    } else if (lower.includes('chuẩn đầu ra') || lower.includes('tốt nghiệp')) {
       answerText = `[AI Advisor]: Căn cứ Điều kiện tốt nghiệp và Chuẩn đầu ra CTĐT K16 HaUI:\n` +
         `• Tích lũy tối thiểu 145 tín chỉ (bao gồm 100% môn bắt buộc và đủ số tín chỉ tự chọn chuyên ngành).\n` +
-        `• Đạt chứng chỉ Chuẩn đầu ra Ngoại ngữ (TOEIC >= 450/550) và Chuẩn Tin học (MOS/IC3).\n` +
+        `• Đạt chứng chỉ Chuẩn đầu ra Ngoại ngữ (TOEIC >= 450/550 hoặc VSTEP B1) và Chuẩn Tin học (MOS/IC3).\n` +
         `• Hoàn thành GDQP-AN, GDTC và đạt Điểm rèn luyện tích lũy >= 50 (loại Trung bình trở lên).\n` +
         `• Hoàn thành học phần Thực tập doanh nghiệp và Đồ án tốt nghiệp.`;
       sources = [
@@ -115,12 +352,16 @@ export function generateMockChatResponse(queryText, plan = null) {
         {
           id: 'act-profile',
           label: 'Xem và cập nhật Hồ sơ sinh viên',
-          route: '/profile'
+          icon: 'badge',
+          route: '/profile',
+          primary: true
         },
         {
           id: 'act-transcript',
           label: 'Đính kèm/Cập nhật bảng điểm mới (TV2)',
-          route: '/transcript'
+          icon: 'upload_file',
+          route: '/transcript',
+          primary: false
         }
       ];
     } else {
@@ -157,57 +398,66 @@ export function generateMockChatResponse(queryText, plan = null) {
 
 /**
  * Màn hình 2: Trợ lý ảo AI Chatbot Tư vấn Học vụ (AI Advisor Chat) — TV3
- *
- * Thực hiện yêu cầu nghiệp vụ Task 3.12:
- * 1. Tiếp nhận câu hỏi học vụ, quản lý lịch sử hội thoại (Chat History), phiên hội thoại.
- * 2. Cung cấp câu trả lời có trích dẫn nguồn RAG (Sources / Citations).
- * 3. Đầy đủ thẻ hành động (Action Card):
- *    - Thẻ đề xuất kế hoạch (Plan Proposal Card) với 3 nhánh: [Chấp nhận] -> Planner, [Phương án khác], [Hủy].
- *    - Thẻ cảnh báo dữ liệu (Data Warning Card) kèm action điều hướng.
- * 4. Cơ chế Thử lại (Retry) khi gửi tin nhắn thất bại.
- * 5. Nút đính kèm (Attachment) mở luồng nhập bảng điểm chung của TV2 (/transcript), không viết form upload thứ hai.
- * 6. Chat hỏi quy chế ở nguyên hội thoại (planProposal: null); proposal mở Planner.
- * 7. Gửi nhận JSON trước (REST JSON), không thêm WebSocket ngoài phạm vi.
- *
- * @param {Object} props
- * @param {Object} props.api - Singleton API Client từ TV2
- * @param {Object} props.ui - Shared UI Library V0 từ TV2
- * @param {Function} [props.onOpenTranscript] - Callback mở luồng nhập bảng điểm TV2
- * @param {Function} [props.onOpenPlanner] - Callback chuyển sang Study Planner
- * @param {Array} [props.initialMessages] - Danh sách tin nhắn khởi tạo
- * @param {Object} [props.initialError] - Lỗi khởi tạo phục vụ kiểm thử
+ * Tái thiết kế toàn diện theo Stitch Prototype `ai_advisor/code.html`:
+ * - Layout 2 cột: 8 cols (Khu vực hội thoại & Quick Prompts) / 4 cols (Hồ sơ nạp vào AI & Khối tra cứu)
+ * - Thẻ đề xuất kế hoạch (Plan Proposal Card) với 3 nhánh: [Chấp nhận] -> Planner, [Phương án khác], [Hủy]
+ * - Thẻ cảnh báo dữ liệu (Data Warning Card) kèm action điều hướng
+ * - Hộp tính toán công thức GPA/CPA mục tiêu chi tiết
+ * - Nút đính kèm mở luồng nhập bảng điểm chung TV2 (/transcript)
+ * - Khối Gợi ý chủ đề hỏi đáp nhanh tương tác 1-click
  */
 export function ChatAdvisorPage({
   api,
   ui,
   onOpenTranscript,
   onOpenPlanner,
-  initialMessages = [],
+  initialMessages = undefined,
   initialError = null
 } = {}) {
-  const {
-    Button,
-    Card,
-    Loading,
-    Error: ErrorBox,
-    EmptyState
-  } = ui || {};
+  const { Button, Card, Loading, Error: ErrorBox, EmptyState } = ui || {};
 
-  // State hội thoại
-  const [messages, setMessages] = useState(initialMessages);
+  // State hội thoại — mặc định hiển thị cuộc trò chuyện sinh động chuẩn prototype nếu không truyền prop
+  const [messages, setMessages] = useState(() => {
+    if (initialMessages !== undefined && initialMessages !== null) {
+      return initialMessages;
+    }
+    return [...DEFAULT_PROTOTYPE_MESSAGES];
+  });
+
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(initialError);
   const [toastMessage, setToastMessage] = useState('');
   const [lastFailedQuery, setLastFailedQuery] = useState(null);
 
+  // Sinh viên hiện tại từ apiConfig
+  const [student, setStudent] = useState(() => api?.getConfig?.()?.sessionStudent || null);
+
+  useEffect(() => {
+    if (api && typeof api.subscribe === 'function') {
+      return api.subscribe((config) => {
+        setStudent(config.sessionStudent);
+      });
+    }
+  }, [api]);
+
   // ID phiên hội thoại (Conversation ID)
   const [conversationId, setConversationId] = useState(() => `conv-${Date.now()}`);
+  const messagesEndRef = useRef(null);
 
   const showToast = useCallback((msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3500);
   }, []);
+
+  // Cuộn xuống tin nhắn mới nhất
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, loading, scrollToBottom]);
 
   // Điều hướng an toàn hỗ trợ cả HashRouter và BrowserRouter
   const navigateTo = useCallback((path) => {
@@ -242,6 +492,7 @@ export function ChatAdvisorPage({
     const userMsg = {
       id: userMsgId,
       sender: 'user',
+      senderName: student?.fullName || 'Nguyễn Văn An',
       text: trimmed,
       timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
       failed: false
@@ -273,13 +524,19 @@ export function ChatAdvisorPage({
         id: `msg-ai-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
         sender: 'assistant',
         text: response?.answer || 'Hệ thống đã nhận yêu cầu nhưng nội dung trả lời trống.',
+        calculationData: response?.calculationData || null,
+        targetData: response?.targetData || null,
+        subcards: response?.subcards || null,
+        warningData: response?.warningData || null,
+        checklistData: response?.checklistData || null,
         sources: response?.sources || [],
         actions: response?.actions || [],
         planProposal: response?.planProposal || null,
         proposalAccepted: false,
         proposalDismissed: false,
         warnings: response?.warnings || [],
-        timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+        executionTime: '0.8s'
       };
 
       setMessages((prev) => [...prev, aiMsg]);
@@ -301,12 +558,11 @@ export function ChatAdvisorPage({
     } finally {
       setLoading(false);
     }
-  }, [api, conversationId, inputValue]);
+  }, [api, conversationId, inputValue, student]);
 
   // Xử lý Thử lại (Retry) khi gửi tin nhắn thất bại
   const handleRetry = useCallback((textToRetry, failedMsgId) => {
     if (failedMsgId) {
-      // Xóa tin nhắn bị đánh dấu failed cũ
       setMessages((prev) => prev.filter((m) => m.id !== failedMsgId));
     }
     setError(null);
@@ -317,14 +573,13 @@ export function ChatAdvisorPage({
   const handleAcceptProposal = useCallback((msgId, proposal) => {
     if (!proposal) return;
     plannerStore.setIncomingProposal(proposal, 'AI Advisor Chat');
+    plannerStore.acceptProposal();
     showToast('Đã chấp nhận phương án! Đang mở Study Planner để xem xét chi tiết...');
 
-    // Đánh dấu đã chấp nhận trên thẻ đề xuất
     setMessages((prev) =>
       prev.map((m) => (m.id === msgId ? { ...m, proposalAccepted: true } : m))
     );
 
-    // Mở Study Planner
     if (typeof onOpenPlanner === 'function') {
       onOpenPlanner();
     } else {
@@ -333,12 +588,13 @@ export function ChatAdvisorPage({
   }, [showToast, onOpenPlanner, navigateTo]);
 
   // Nhánh hành động 2: Phương án khác -> Re-prompt AI
-  const handleRequestAlternative = useCallback((msgId) => {
+  const handleRequestAlternative = useCallback(() => {
     handleSendMessage('Hãy đề xuất cho tôi một phương án khác nhẹ tải hơn (dưới 16 tín chỉ) hoặc đẩy bớt môn sang kỳ hè.');
   }, [handleSendMessage]);
 
-  // Nhánh hành động 3: Hủy đề xuất -> Đóng card proposal, giữ nguyên kế hoạch hiện tại
+  // Nhánh hành động 3: Hủy đề xuất -> Đóng card proposal
   const handleDismissProposal = useCallback((msgId) => {
+    plannerStore.rejectProposal();
     setMessages((prev) =>
       prev.map((m) => (m.id === msgId ? { ...m, proposalDismissed: true } : m))
     );
@@ -353,27 +609,8 @@ export function ChatAdvisorPage({
     setLastFailedQuery(null);
     const newId = `conv-${Date.now()}`;
     setConversationId(newId);
-    showToast('Đã bắt đầu phiên hội thoại mới.');
+    showToast('Đã làm mới phiên chat. Bạn có thể bắt đầu với câu hỏi mới!');
   }, [showToast]);
-
-  // Xóa toàn bộ tin nhắn hiện tại
-  const handleClearChat = useCallback(() => {
-    setMessages([]);
-    setError(null);
-    setInputValue('');
-    setLastFailedQuery(null);
-  }, []);
-
-  // Mô phỏng trạng thái Error để kiểm thử UI & cơ chế Thử lại
-  const handleSimulateError = useCallback(() => {
-    const simQuery = 'Tư vấn lộ trình học kỳ 7';
-    setLastFailedQuery(simQuery);
-    setError({
-      code: 'SIMULATED_CHAT_ERROR',
-      message: 'Mô phỏng lỗi kết nối máy chủ AI Cố vấn học vụ (Kiểm thử Error State & Retry).',
-      details: ['Endpoint POST /api/v1/advisor/chat gặp sự cố mạng hoặc timeout.']
-    });
-  }, []);
 
   // Bắt phím Enter để gửi nhanh
   const handleKeyDown = useCallback((e) => {
@@ -383,726 +620,1291 @@ export function ChatAdvisorPage({
     }
   }, [handleSendMessage]);
 
-  // Header trang
-  const headerSection = React.createElement(
-    'div',
-    {
-      style: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        marginBottom: '20px'
-      }
-    },
-    // Breadcrumb
-    React.createElement(
-      'div',
-      {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          fontSize: '12px',
-          color: 'var(--color-mid-gray, #737373)'
-        }
-      },
-      React.createElement(
-        'span',
-        {
-          style: { cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }
-        },
-        React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '15px' } }, 'home'),
-        'Trang chủ'
-      ),
-      React.createElement('span', { style: { color: 'var(--color-hairline, #e5e5e5)' } }, '/'),
-      React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500 } }, 'Tư vấn AI & Lộ trình học tập')
-    ),
-    // Main header card
-    React.createElement(
-      'div',
-      {
-        style: {
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          flexWrap: 'wrap',
-          gap: '16px',
-          padding: '20px',
-          borderRadius: 'var(--radius-cards, 24px)',
-          backgroundColor: 'var(--color-paper, #ffffff)',
-          border: '1px solid var(--color-hairline, #e5e5e5)',
-          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)'
-        }
-      },
-      React.createElement(
-        'div',
-        { style: { maxWidth: '780px' } },
-        React.createElement(
-          'div',
-          { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' } },
-          React.createElement(
-            'span',
-            {
-              style: {
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '2px 8px',
-                borderRadius: '9999px',
-                backgroundColor: 'var(--color-canvas, #f5f5f5)',
-                color: 'var(--color-ink, #0a0a0a)',
-                fontSize: '11px',
-                fontWeight: 600
-              }
-            },
-            React.createElement('span', { style: { width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ink, #0a0a0a)' } }),
-            'Mô hình HaUI Academic v2.4'
-          ),
-          React.createElement(
-            'span',
-            {
-              style: {
-                fontSize: '11px',
-                color: 'var(--color-mid-gray, #737373)'
-              }
-            },
-            'Cập nhật theo Quy chế đào tạo 2021'
-          )
-        ),
-        React.createElement(
-          'h1',
-          {
-            style: {
-              fontSize: '26px',
-              fontWeight: 700,
-              letterSpacing: '-0.02em',
-              color: 'var(--color-ink, #0a0a0a)',
-              margin: '4px 0 0'
-            }
-          },
-          'Tư vấn học tập thông minh (AI Advisor)'
-        ),
-        React.createElement(
-          'p',
-          { style: { color: 'var(--color-mid-gray, #737373)', margin: '6px 0 0', fontSize: '13px', lineHeight: 1.5 } },
-          'Hỏi đáp, phân tích tiến độ, tra cứu điều kiện tiên quyết và xây dựng lộ trình học tập tối ưu dựa trên dữ liệu học tập cá nhân.'
-        )
-      ),
-      React.createElement(
-        'div',
-        { style: { display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' } },
-        Button ? React.createElement(Button, { variant: 'secondary', size: 'sm', onClick: handleNewConversation }, '🔄 Làm mới phiên chat') : null,
-        Button ? React.createElement(Button, { variant: 'ghost', size: 'sm', onClick: handleClearChat }, 'Xóa chat') : null,
-        Button ? React.createElement(Button, { variant: 'ghost', size: 'sm', onClick: handleSimulateError }, 'Mô phỏng Lỗi') : null
-      )
-    )
-  );
+  // Sao chép tin nhắn
+  const handleCopyText = (text) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      showToast('Đã sao chép câu trả lời vào bộ nhớ tạm!');
+    }
+  };
 
-  // Toast thông báo
-  const toastBar = toastMessage
-    ? React.createElement(
+  return React.createElement(
+    'div',
+    { className: 'haui-page-container haui-chat-container' },
+
+    // 1. Top Breadcrumb & Page Header Card
+    React.createElement(
+      'div',
+      { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+      React.createElement(
+        'nav',
+        {
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '12px',
+            color: 'var(--color-mid-gray, #737373)'
+          }
+        },
+        React.createElement(
+          'span',
+          {
+            onClick: () => navigateTo('/'),
+            style: { cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'inherit' }
+          },
+          'Trang chủ'
+        ),
+        React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '14px' } }, 'chevron_right'),
+        React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500 } }, 'Tư vấn AI & Lộ trình học tập')
+      ),
+      React.createElement(
         'div',
         {
           style: {
-            padding: '10px 16px',
-            marginBottom: '16px',
-            borderRadius: '12px',
-            background: '#0a0a0a',
-            color: '#ffffff',
-            fontSize: '13px',
-            fontWeight: 500,
+            backgroundColor: 'var(--color-paper, #ffffff)',
+            borderRadius: '24px',
+            border: '1px solid var(--color-hairline, #e5e5e5)',
+            padding: '24px',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
             display: 'flex',
+            flexWrap: 'wrap',
             justifyContent: 'space-between',
-            alignItems: 'center'
+            alignItems: 'center',
+            gap: '16px'
           }
         },
-        React.createElement('span', null, `✓ ${toastMessage}`),
         React.createElement(
-          'button',
-          {
-            type: 'button',
-            onClick: () => setToastMessage(''),
-            style: { background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '16px' }
-          },
-          '×'
-        )
-      )
-    : null;
-
-  // Trạng thái Error toàn màn hình (nếu có lỗi blocking)
-  const errorBoxElement = error
-    ? ErrorBox
-      ? React.createElement(ErrorBox, {
-          title: 'Sự cố kết nối với Trợ lý AI',
-          error,
-          message: error?.message,
-          onRetry: () => handleRetry(lastFailedQuery),
-          retryLabel: 'Thử lại câu hỏi'
-        })
-      : React.createElement(
           'div',
-          {
-            style: {
-              padding: '12px 16px',
-              borderRadius: '8px',
-              background: '#fef2f2',
-              color: '#991b1b',
-              marginBottom: '16px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }
-          },
-          React.createElement('span', null, `⚠️ ${error?.message}`),
+          { style: { display: 'flex', flexDirection: 'column', maxWidth: '780px' } },
+          React.createElement(
+            'div',
+            { style: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' } },
+            React.createElement(
+              'span',
+              {
+                style: {
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '2px 10px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: 'var(--color-ink, #0a0a0a)'
+                }
+              },
+              React.createElement('span', {
+                style: {
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--color-ink, #0a0a0a)'
+                }
+              }),
+              'Mô hình HaUI Academic v2.4'
+            )
+          ),
+          React.createElement(
+            'h1',
+            {
+              style: {
+                fontSize: '28px',
+                fontWeight: 600,
+                color: 'var(--color-ink, #0a0a0a)',
+                margin: 0,
+                letterSpacing: '-0.5px'
+              }
+            },
+            'Tư vấn học tập thông minh (AI Advisor)'
+          ),
+          React.createElement(
+            'p',
+            { style: { margin: '6px 0 0', fontSize: '14px', color: 'var(--color-mid-gray, #737373)', lineHeight: 1.5 } },
+            'Hỏi đáp, phân tích tiến độ, tra cứu điều kiện tiên quyết và xây dựng lộ trình học tập tối ưu dựa trên dữ liệu học tập cá nhân.'
+          )
+        ),
+        React.createElement(
+          'div',
+          { style: { display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' } },
           React.createElement(
             'button',
             {
               type: 'button',
-              onClick: () => handleRetry(lastFailedQuery),
-              style: {
-                padding: '4px 10px',
-                borderRadius: '6px',
-                background: '#dc2626',
-                color: '#fff',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }
+              className: 'haui-pill-btn-canvas',
+              onClick: handleNewConversation,
+              title: 'Làm mới phiên hội thoại'
             },
-            'Thử lại'
+            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'refresh'),
+            React.createElement('span', null, 'Làm mới phiên chat')
+          ),
+          React.createElement(
+            'button',
+            {
+              type: 'button',
+              className: 'haui-pill-btn-canvas',
+              onClick: () => window.print(),
+              title: 'Lưu hoặc in hội thoại dưới dạng PDF'
+            },
+            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'download'),
+            React.createElement('span', null, 'Lưu hội thoại (.pdf)')
           )
         )
-    : null;
+      )
+    ),
 
-  return React.createElement(
-    'div',
-    { className: 'haui-page-container haui-chat-page', style: { padding: '24px 0' } },
-    headerSection,
-    toastBar,
-    errorBoxElement,
+    // Toast thông báo
+    toastMessage
+      ? React.createElement(
+          'div',
+          {
+            style: {
+              position: 'fixed',
+              bottom: '24px',
+              right: '24px',
+              zIndex: 100,
+              backgroundColor: 'var(--color-ink, #0a0a0a)',
+              color: 'var(--color-paper, #ffffff)',
+              padding: '12px 20px',
+              borderRadius: '9999px',
+              fontSize: '13px',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.16)'
+            }
+          },
+          React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'check_circle'),
+          React.createElement('span', null, toastMessage)
+        )
+      : null,
 
-    // Layout chính: Khung Chat bên trái (span 2) + Thẻ hồ sơ bên phải (span 1)
+    // Lỗi chung nếu có
+    error
+      ? ErrorBox
+        ? React.createElement(ErrorBox, {
+            title: 'Sự cố kết nối với Trợ lý AI',
+            error,
+            message: error?.message,
+            onRetry: () => handleRetry(lastFailedQuery),
+            retryLabel: 'Thử lại câu hỏi'
+          })
+        : React.createElement(
+            'div',
+            {
+              style: {
+                padding: '12px 16px',
+                borderRadius: '16px',
+                backgroundColor: '#fff1f2',
+                border: '1px solid #fecaca',
+                color: '#991b1b',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '13px'
+              }
+            },
+            React.createElement('span', null, `⚠️ ${error?.message}`),
+            React.createElement(
+              'button',
+              {
+                type: 'button',
+                onClick: () => handleRetry(lastFailedQuery),
+                className: 'haui-pill-btn-dark',
+                style: { fontSize: '12px', padding: '4px 12px' }
+              },
+              'Thử lại'
+            )
+          )
+      : null,
+
+    // 2. Main Workspace Split: 8 cols (Khu vực Chat) & 4 cols (Sidebar ngữ cảnh)
     React.createElement(
       'div',
-      {
-        style: {
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '20px',
-          alignItems: 'flex-start'
-        }
-      },
-      // CỘT 1: KHU VỰC HỘI THOẠI CHAT
+      { className: 'haui-chat-grid' },
+
+      // CỘT TRÁI (8 COLS): KHU VỰC HỘI THOẠI & QUICK PROMPTS
       React.createElement(
-        'div',
-        { style: { gridColumn: 'span 2', minWidth: '320px' } },
-        Card
-          ? React.createElement(
-              Card,
+        'section',
+        { className: 'haui-chat-col-main', style: { display: 'flex', flexDirection: 'column', gap: '20px' } },
+
+        // Quick Starter Prompt Chips Card
+        React.createElement(
+          'div',
+          {
+            style: {
+              backgroundColor: 'var(--color-paper, #ffffff)',
+              borderRadius: '24px',
+              padding: '16px 20px',
+              border: '1px solid var(--color-hairline, #e5e5e5)',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }
+          },
+          React.createElement(
+            'div',
+            { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+            React.createElement(
+              'span',
               {
-                title: 'Hội thoại Cố vấn Lộ trình',
-                subtitle: 'Hệ thống đối chiếu trực tiếp dữ liệu học tập cá nhân và quy chế đào tạo tín chỉ HaUI.',
-                variant: 'default',
-                padding: 'md'
+                style: {
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  color: 'var(--color-mid-gray, #737373)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }
               },
-              // 1. Vùng hiển thị tin nhắn (Message Stream)
+              React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'bolt'),
+              'Gợi ý câu hỏi phân tích nhanh'
+            ),
+            React.createElement(
+              'span',
+              { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } },
+              'Nhấp để điền nhanh'
+            )
+          ),
+          React.createElement(
+            'div',
+            { style: { display: 'flex', flexWrap: 'wrap', gap: '8px' } },
+            QUICK_PROMPTS_MAN_2.map((pill, idx) =>
               React.createElement(
+                'button',
+                {
+                  key: idx,
+                  type: 'button',
+                  className: 'haui-chat-prompt-chip',
+                  onClick: () => handleSendMessage(pill),
+                  disabled: loading
+                },
+                pill
+              )
+            )
+          )
+        ),
+
+        // Dòng hội thoại tin nhắn (Conversation Stream)
+        React.createElement(
+          'div',
+          { style: { display: 'flex', flexDirection: 'column', gap: '24px' } },
+          messages.length === 0
+            ? React.createElement(
                 'div',
                 {
                   style: {
-                    minHeight: '380px',
-                    maxHeight: '540px',
-                    overflowY: 'auto',
-                    padding: '12px 0',
+                    backgroundColor: 'var(--color-paper, #ffffff)',
+                    borderRadius: '24px',
+                    padding: '48px 24px',
+                    textAlign: 'center',
+                    border: '1px solid var(--color-hairline, #e5e5e5)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '16px'
+                    alignItems: 'center',
+                    gap: '12px'
                   }
                 },
-                messages.length === 0
-                  ? EmptyState
-                    ? React.createElement(EmptyState, {
-                        title: 'Chào bạn! Tôi là Trợ lý Cố vấn Học vụ HaUI',
-                        description: 'Hãy chọn một câu hỏi gợi ý bên dưới hoặc nhập thắc mắc về quy chế, nợ môn, học cải thiện, hoặc lộ trình tốt nghiệp để tôi hỗ trợ.',
-                        actionLabel: 'Tư vấn kéo CPA lên Giỏi',
-                        onAction: () => handleSendMessage(QUICK_PROMPTS_MAN_2[0])
-                      })
-                    : React.createElement('div', { style: { textAlign: 'center', color: '#64748b' } }, 'Chưa có tin nhắn nào.')
-                  : messages.map((msg) => {
-                      const isUser = msg.sender === 'user';
-                      return React.createElement(
-                        'div',
-                        {
-                          key: msg.id,
-                          style: {
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: isUser ? 'flex-end' : 'flex-start',
-                            gap: '4px'
-                          }
-                        },
-                        // Bubble tin nhắn
-                        React.createElement(
-                          'div',
-                          {
-                            style: {
-                              maxWidth: '85%',
-                              padding: '12px 16px',
-                              borderRadius: isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                              background: msg.failed
-                                ? '#fee2e2'
-                                : isUser
-                                ? '#0a0a0a'
-                                : 'var(--color-surface-alt, #fafafa)',
-                              color: msg.failed
-                                ? '#991b1b'
-                                : isUser
-                                ? '#ffffff'
-                                : '#0f172a',
-                              border: msg.failed
-                                ? '1px solid #f87171'
-                                : isUser
-                                ? 'none'
-                                : '1px solid var(--color-hairline, #e5e5e5)',
-                              fontSize: '14px',
-                              lineHeight: 1.5,
-                              whiteSpace: 'pre-line'
-                            }
-                          },
-                          React.createElement('div', null, msg.text),
-
-                          // Nút Thử lại (Retry) trực tiếp nếu tin nhắn gửi bị lỗi
-                          msg.failed
-                            ? React.createElement(
-                                'div',
-                                { style: { marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' } },
-                                React.createElement('span', { style: { fontSize: '12px' } }, '⚠️ Không thể gửi.'),
-                                React.createElement(
-                                  'button',
-                                  {
-                                    type: 'button',
-                                    onClick: () => handleRetry(msg.text, msg.id),
-                                    style: {
-                                      padding: '2px 8px',
-                                      borderRadius: '4px',
-                                      background: '#dc2626',
-                                      color: '#ffffff',
-                                      border: 'none',
-                                      cursor: 'pointer',
-                                      fontSize: '11px',
-                                      fontWeight: 600
-                                    }
-                                  },
-                                  'Thử lại'
-                                )
-                              )
-                            : null,
-
-                          // Khối RAG Citations (Nguồn tham khảo & Quy chế)
-                          msg.sources && msg.sources.length > 0
-                            ? React.createElement(
-                                'div',
-                                {
-                                  style: {
-                                    marginTop: '8px',
-                                    paddingTop: '8px',
-                                    borderTop: '1px solid #e2e8f0',
-                                    fontSize: '11px',
-                                    color: '#64748b'
-                                  }
-                                },
-                                React.createElement('strong', null, '📖 Nguồn tham khảo & Quy chế: '),
-                                msg.sources.map((s, sIdx) =>
-                                  React.createElement(
-                                    'div',
-                                    { key: sIdx, style: { marginTop: '2px' } },
-                                    `• ${s.title || s} ${s.section ? `(${s.section})` : ''}`
-                                  )
-                                )
-                              )
-                            : null
-                        ),
-
-                        // THẺ CẢNH BÁO DỮ LIỆU & HÀNH ĐỘNG HỖ TRỢ (DATA ACTION CARD)
-                        !isUser && msg.warnings && msg.warnings.length > 0
-                          ? React.createElement(
-                              'div',
-                              {
-                                style: {
-                                  maxWidth: '85%',
-                                  marginTop: '6px',
-                                  padding: '10px 14px',
-                                  borderRadius: '12px',
-                                  background: '#fffbeb',
-                                  border: '1px solid #fef3c7',
-                                  fontSize: '12px',
-                                  color: '#92400e'
-                                }
-                              },
-                              React.createElement('div', { style: { fontWeight: 600 } }, '⚠️ Lưu ý bổ sung thông tin:'),
-                              msg.warnings.map((w, wIdx) => React.createElement('div', { key: wIdx }, w)),
-                              msg.actions && msg.actions.length > 0
-                                ? React.createElement(
-                                    'div',
-                                    { style: { display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' } },
-                                    msg.actions.map((act) =>
-                                      React.createElement(
-                                        'button',
-                                        {
-                                          key: act.id,
-                                          type: 'button',
-                                          onClick: () => navigateTo(act.route),
-                                          style: {
-                                            padding: '4px 10px',
-                                            borderRadius: '6px',
-                                            background: '#fef3c7',
-                                            border: '1px solid #f59e0b',
-                                            color: '#b45309',
-                                            cursor: 'pointer',
-                                            fontSize: '11px',
-                                            fontWeight: 600
-                                          }
-                                        },
-                                        act.label
-                                      )
-                                    )
-                                  )
-                                : null
-                            )
-                          : null,
-
-                        // THẺ ĐỀ XUẤT PHƯƠNG ÁN (PLAN PROPOSAL CARD) — 3 NHÁNH HÀNH ĐỘNG
-                        !isUser && msg.planProposal && !msg.proposalDismissed
-                          ? React.createElement(
-                              'div',
-                              {
-                                style: {
-                                  maxWidth: '88%',
-                                  marginTop: '8px',
-                                  padding: '14px 16px',
-                                  borderRadius: '16px',
-                                  background: '#ffffff',
-                                  border: '1.5px solid #0284c7',
-                                  boxShadow: '0 2px 8px rgba(2,132,199,0.08)'
-                                }
-                              },
-                              React.createElement(
-                                'div',
-                                { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-                                React.createElement(
-                                  'strong',
-                                  { style: { color: '#0369a1', fontSize: '13px' } },
-                                  '📋 Đề xuất Phương án Lộ trình Học tập mới'
-                                ),
-                                React.createElement(
-                                  'span',
-                                  {
-                                    style: {
-                                      fontSize: '11px',
-                                      fontWeight: 600,
-                                      background: msg.proposalAccepted ? '#dcfce7' : '#e0f2fe',
-                                      color: msg.proposalAccepted ? '#15803d' : '#0369a1',
-                                      padding: '2px 6px',
-                                      borderRadius: '4px'
-                                    }
-                                  },
-                                  msg.proposalAccepted ? '✓ Đã chấp nhận & Nạp vào Planner' : 'Chờ bạn xem xét'
-                                )
-                              ),
-                              React.createElement(
-                                'div',
-                                { style: { fontSize: '12px', color: '#475569', marginTop: '6px' } },
-                                `Học kỳ 1 (2026-2027): 18 tín chỉ · CPA dự kiến: ${msg.planProposal.projectedCpa || '3.25'} (Bằng Giỏi) · 6 học phần cân bằng tải.`
-                              ),
-                              // 3 NHÁNH HÀNH ĐỘNG TRÊN PROPOSAL CARD
-                              !msg.proposalAccepted
-                                ? React.createElement(
-                                    'div',
-                                    { style: { display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' } },
-                                    Button
-                                      ? React.createElement(
-                                          Button,
-                                          {
-                                            variant: 'primary',
-                                            size: 'sm',
-                                            onClick: () => handleAcceptProposal(msg.id, msg.planProposal)
-                                          },
-                                          '✓ Chấp nhận phương án'
-                                        )
-                                      : React.createElement(
-                                          'button',
-                                          {
-                                            type: 'button',
-                                            onClick: () => handleAcceptProposal(msg.id, msg.planProposal),
-                                            style: {
-                                              padding: '6px 12px',
-                                              borderRadius: '6px',
-                                              background: '#0284c7',
-                                              color: '#fff',
-                                              border: 'none',
-                                              cursor: 'pointer'
-                                            }
-                                          },
-                                          'Chấp nhận phương án'
-                                        ),
-                                    Button
-                                      ? React.createElement(
-                                          Button,
-                                          {
-                                            variant: 'secondary',
-                                            size: 'sm',
-                                            onClick: () => handleRequestAlternative(msg.id)
-                                          },
-                                          '🔄 Phương án khác'
-                                        )
-                                      : React.createElement(
-                                          'button',
-                                          {
-                                            type: 'button',
-                                            onClick: () => handleRequestAlternative(msg.id),
-                                            style: {
-                                              padding: '6px 12px',
-                                              borderRadius: '6px',
-                                              background: '#f1f5f9',
-                                              color: '#0f172a',
-                                              border: '1px solid #cbd5e1',
-                                              cursor: 'pointer'
-                                            }
-                                          },
-                                          'Phương án khác'
-                                        ),
-                                    Button
-                                      ? React.createElement(
-                                          Button,
-                                          {
-                                            variant: 'ghost',
-                                            size: 'sm',
-                                            onClick: () => handleDismissProposal(msg.id)
-                                          },
-                                          '✕ Hủy đề xuất'
-                                        )
-                                      : React.createElement(
-                                          'button',
-                                          {
-                                            type: 'button',
-                                            onClick: () => handleDismissProposal(msg.id),
-                                            style: {
-                                              padding: '6px 12px',
-                                              borderRadius: '6px',
-                                              background: 'transparent',
-                                              color: '#64748b',
-                                              border: 'none',
-                                              cursor: 'pointer'
-                                            }
-                                          },
-                                          'Hủy'
-                                        )
-                                  )
-                                : React.createElement(
-                                    'div',
-                                    { style: { marginTop: '8px', fontSize: '12px', color: '#16a34a', fontWeight: 600 } },
-                                    '✓ Đã nạp thành công vào Study Planner. Bạn có thể mở tab "Kế hoạch học tập" để tinh chỉnh.'
-                                  )
-                            )
-                          : null,
-
-                        React.createElement(
-                          'span',
-                          { style: { fontSize: '10px', color: '#94a3b8', margin: '2px 4px' } },
-                          msg.timestamp
-                        )
-                      );
-                    }),
-                loading
-                  ? Loading
-                    ? React.createElement(Loading, { variant: 'spinner', size: 'sm', label: 'AI đang phân tích bảng điểm và quy chế...' })
-                    : React.createElement('div', { style: { color: '#64748b', fontSize: '13px' } }, 'AI đang đối chiếu bảng điểm và quy chế HaUI...')
-                  : null
-              ),
-
-              // 2. 4 Quick Prompts Pills
-              React.createElement(
-                'div',
-                {
-                  style: {
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '6px',
-                    padding: '8px 0',
-                    borderTop: '1px solid #f1f5f9'
-                  }
-                },
-                QUICK_PROMPTS_MAN_2.map((pill, pIdx) =>
-                  React.createElement(
-                    'button',
-                    {
-                      key: pIdx,
-                      type: 'button',
-                      onClick: () => handleSendMessage(pill),
-                      disabled: loading,
-                      style: {
-                        padding: '6px 12px',
-                        borderRadius: '18px',
-                        background: '#f8fafc',
-                        border: '1px solid var(--color-hairline, #e5e5e5)',
-                        fontSize: '12px',
-                        color: '#0f172a',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.15s ease'
-                      }
-                    },
-                    `💬 ${pill}`
-                  )
-                )
-              ),
-
-              // 3. Khung nhập tin nhắn kèm nút đính kèm mở luồng nhập bảng điểm của TV2
-              React.createElement(
-                'div',
-                { style: { display: 'flex', gap: '8px', marginTop: '12px', alignItems: 'center' } },
-                // Nút ĐÍNH KÈM (Attachment Button) -> Mở luồng /transcript của TV2
                 React.createElement(
-                  'button',
+                  'div',
                   {
-                    type: 'button',
-                    onClick: handleAttachmentClick,
-                    title: 'Đính kèm bảng điểm (Mở luồng nhập bảng điểm TV2)',
                     style: {
-                      width: '40px',
-                      height: '40px',
+                      width: '48px',
+                      height: '48px',
                       borderRadius: '50%',
-                      background: '#f1f5f9',
-                      border: '1px solid #e2e8f0',
+                      backgroundColor: 'var(--color-canvas)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      cursor: 'pointer',
-                      fontSize: '16px',
-                      flexShrink: 0
+                      color: 'var(--color-ink)'
                     }
                   },
-                  '📎'
-                ),
-                // Ô nhập nội dung
-                React.createElement('input', {
-                  type: 'text',
-                  placeholder: 'Hỏi về quy chế, nợ môn, học cải thiện, hoặc lộ trình tốt nghiệp...',
-                  value: inputValue,
-                  onChange: (e) => setInputValue(e.target.value),
-                  onKeyDown: handleKeyDown,
-                  disabled: loading,
-                  style: {
-                    flex: 1,
-                    padding: '10px 16px',
-                    borderRadius: '18px',
-                    border: '1px solid var(--color-hairline, #e5e5e5)',
-                    fontSize: '14px',
-                    outline: 'none'
-                  }
-                }),
-                // Nút gửi
-                Button
-                  ? React.createElement(
-                      Button,
-                      {
-                        variant: 'primary',
-                        size: 'md',
-                        loading,
-                        onClick: () => handleSendMessage()
-                      },
-                      'Gửi tin nhắn'
-                    )
-                  : React.createElement(
-                      'button',
-                      {
-                        type: 'button',
-                        onClick: () => handleSendMessage(),
-                        style: {
-                          padding: '10px 18px',
-                          borderRadius: '18px',
-                          background: '#0a0a0a',
-                          color: '#fff',
-                          border: 'none',
-                          cursor: 'pointer'
-                        }
-                      },
-                      'Gửi'
-                    )
-              )
-            )
-          : null
-      ),
-
-      // CỘT 2: THẺ HỒ SƠ & TRẠNG THÁI HỌC VỤ BÊN CẠNH
-      React.createElement(
-        'div',
-        { style: { minWidth: '260px' } },
-        Card
-          ? React.createElement(
-              Card,
-              {
-                title: 'Hồ sơ sinh viên nạp vào AI',
-                subtitle: 'Dữ liệu tin cậy trích xuất từ CSDL',
-                variant: 'default',
-                padding: 'sm'
-              },
-              React.createElement(
-                'div',
-                { style: { display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' } },
-                React.createElement(
-                  'div',
-                  null,
-                  React.createElement('div', { style: { color: '#64748b', fontSize: '11px' } }, 'Sinh viên'),
-                  React.createElement('strong', { style: { color: '#0f172a' } }, 'Nguyễn Văn An (2020601234)'),
-                  React.createElement('div', { style: { fontSize: '11px', color: '#64748b' } }, 'K16 Kỹ thuật phần mềm (CNTT)')
+                  React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '24px' } }, 'smart_toy')
                 ),
                 React.createElement(
-                  'div',
-                  null,
-                  React.createElement('div', { style: { color: '#64748b', fontSize: '11px' } }, 'CPA hiện tại'),
-                  React.createElement('strong', { style: { color: '#0284c7', fontSize: '16px' } }, '3.18 / 4.00 '),
-                  React.createElement('span', { style: { color: '#16a34a', fontSize: '11px' } }, '(Tiệm cận bằng Giỏi)')
+                  'h3',
+                  { style: { margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)' } },
+                  'Bắt đầu phiên tư vấn học tập với AI Advisor'
                 ),
                 React.createElement(
-                  'div',
-                  null,
-                  React.createElement('div', { style: { color: '#64748b', fontSize: '11px' } }, 'Tín chỉ tích lũy'),
-                  React.createElement('strong', { style: { color: '#0f172a' } }, '108 / 145 TC (74.5%)'),
-                  React.createElement('div', { style: { fontSize: '11px', color: '#dc2626' } }, '⚠️ Nợ 1 môn F (MATH1002 - Toán rời rạc)')
-                ),
-                React.createElement(
-                  'div',
-                  null,
-                  React.createElement('div', { style: { color: '#64748b', fontSize: '11px' } }, 'Phiên bản kế hoạch'),
-                  React.createElement('strong', { style: { color: '#0f172a' } }, 'Bản nháp v2.4 (Đa kỳ)')
-                ),
-                // Nút liên kết sang Hồ sơ sinh viên chi tiết
-                React.createElement(
-                  'div',
-                  { style: { marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f1f5f9' } },
-                  React.createElement(
-                    'button',
-                    {
-                      type: 'button',
-                      onClick: () => navigateTo('/profile'),
-                      style: {
-                        width: '100%',
-                        padding: '6px 12px',
-                        borderRadius: '8px',
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        color: '#0f172a',
-                        fontSize: '12px',
-                        cursor: 'pointer'
-                      }
-                    },
-                    'Xem hồ sơ học tập chi tiết →'
-                  )
+                  'p',
+                  { style: { margin: 0, fontSize: '13px', color: 'var(--color-mid-gray)', maxWidth: '420px' } },
+                  'Hãy chọn một câu hỏi gợi ý phía trên hoặc nhập câu hỏi cụ thể về điểm GPA, môn tiên quyết, quy chế đào tạo tín chỉ HaUI.'
                 )
               )
+            : messages.map((msg) => {
+                const isUser = msg.sender === 'user';
+
+                // TIN NHẮN CỦA SINH VIÊN (USER MESSAGE)
+                if (isUser) {
+                  return React.createElement(
+                    'div',
+                    {
+                      key: msg.id,
+                      style: {
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        alignItems: 'flex-start',
+                        gap: '10px',
+                        paddingLeft: '32px'
+                      }
+                    },
+                    React.createElement(
+                      'div',
+                      { style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', maxWidth: '82%' } },
+                      React.createElement(
+                        'div',
+                        { className: 'haui-chat-bubble-user' },
+                        React.createElement('p', { style: { margin: 0, whiteSpace: 'pre-line' } }, msg.text)
+                      ),
+                      React.createElement(
+                        'span',
+                        { style: { fontSize: '11px', color: 'var(--color-mid-gray)', marginTop: '4px', marginRight: '6px' } },
+                        `${msg.timestamp || '14:22'} • ${msg.senderName || student?.fullName || 'Nguyễn Văn An'}`
+                      ),
+                      msg.failed
+                        ? React.createElement(
+                            'div',
+                            { style: { display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' } },
+                            React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-ember)' } }, '⚠️ Không thể gửi tin nhắn'),
+                            React.createElement(
+                              'button',
+                              {
+                                type: 'button',
+                                onClick: () => handleRetry(msg.text, msg.id),
+                                style: {
+                                  fontSize: '11px',
+                                  padding: '2px 8px',
+                                  borderRadius: '9999px',
+                                  backgroundColor: 'var(--color-ember)',
+                                  color: '#fff',
+                                  border: 'none',
+                                  cursor: 'pointer'
+                                }
+                              },
+                              'Thử lại'
+                            )
+                          )
+                        : null
+                    ),
+                    React.createElement(
+                      'div',
+                      {
+                        style: {
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--color-ink, #0a0a0a)',
+                          color: '#ffffff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                          marginTop: '4px'
+                        }
+                      },
+                      React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'person')
+                    )
+                  );
+                }
+
+                // TIN NHẮN CỦA TRỢ LÝ AI (AI ADVISOR RESPONSE)
+                return React.createElement(
+                  'div',
+                  {
+                    key: msg.id,
+                    style: {
+                      display: 'flex',
+                      justifyContent: 'flex-start',
+                      alignItems: 'flex-start',
+                      gap: '10px',
+                      paddingRight: '16px'
+                    }
+                  },
+                  React.createElement(
+                    'div',
+                    {
+                      style: {
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                        border: '1px solid var(--color-hairline, #e5e5e5)',
+                        color: 'var(--color-ink, #0a0a0a)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        marginTop: '4px'
+                      }
+                    },
+                    React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'auto_awesome')
+                  ),
+                  React.createElement(
+                    'div',
+                    { style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', maxWidth: '92%' } },
+                    React.createElement(
+                      'div',
+                      { className: 'haui-chat-ai-card' },
+
+                      // Status Tag Header
+                      React.createElement(
+                        'div',
+                        {
+                          style: {
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            paddingBottom: '10px',
+                            borderBottom: '1px solid var(--color-hairline, #e5e5e5)'
+                          }
+                        },
+                        React.createElement(
+                          'div',
+                          { style: { display: 'flex', alignItems: 'center', gap: '6px' } },
+                          React.createElement('span', { style: { fontSize: '14px', fontWeight: 600, color: 'var(--color-ink)' } }, 'Cố vấn học tập AI (HaUI Advisor)'),
+                          React.createElement('span', { style: { fontSize: '12px', color: 'var(--color-mid-gray)' } }, '• Phân tích mô phỏng GPA')
+                        ),
+                        React.createElement(
+                          'span',
+                          {
+                            style: {
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '2px 8px',
+                              borderRadius: '9999px',
+                              backgroundColor: 'var(--color-canvas)',
+                              fontSize: '11px',
+                              color: 'var(--color-mid-gray)'
+                            }
+                          },
+                          React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '14px' } }, 'verified'),
+                          'Công thức thang 4'
+                        )
+                      ),
+
+                      // Text body
+                      React.createElement(
+                        'div',
+                        { style: { fontSize: '14px', lineHeight: 1.6, color: 'var(--color-ink)' } },
+                        React.createElement('p', { style: { margin: 0, whiteSpace: 'pre-line' } }, msg.text)
+                      ),
+
+                      // KHỐI 1: Công thức tính toán chi tiết (Calculation Data Breakdown)
+                      msg.calculationData
+                        ? React.createElement(
+                            'div',
+                            {
+                              style: {
+                                backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                                borderRadius: '18px',
+                                padding: '16px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '8px'
+                              }
+                            },
+                            React.createElement(
+                              'div',
+                              { style: { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: 'var(--color-ink)' } },
+                              React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'calculate'),
+                              msg.calculationData.title || 'Phân tích công thức tính điểm tích lũy:'
+                            ),
+                            React.createElement(
+                              'ul',
+                              { style: { margin: 0, paddingLeft: '4px', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: 'var(--color-ink)' } },
+                              msg.calculationData.items?.map((it, itIdx) =>
+                                React.createElement(
+                                  'li',
+                                  { key: itIdx, style: { display: 'flex', alignItems: 'flex-start', gap: '6px' } },
+                                  React.createElement('span', { style: { fontWeight: 700 } }, '•'),
+                                  React.createElement('span', null, it)
+                                )
+                              )
+                            )
+                          )
+                        : null,
+
+                      // KHỐI 2: Thẻ Mục tiêu Cần Đạt (Target Recommendation Badge)
+                      msg.targetData
+                        ? React.createElement(
+                            'div',
+                            {
+                              style: {
+                                backgroundColor: 'var(--color-surface-alt, #fafafa)',
+                                border: '1px solid var(--color-hairline, #e5e5e5)',
+                                borderRadius: '18px',
+                                padding: '16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '16px'
+                              }
+                            },
+                            React.createElement(
+                              'div',
+                              {
+                                style: {
+                                  width: '42px',
+                                  height: '42px',
+                                  borderRadius: '50%',
+                                  backgroundColor: 'var(--color-ink, #0a0a0a)',
+                                  color: '#ffffff',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexShrink: 0
+                                }
+                              },
+                              React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '20px' } }, 'flag')
+                            ),
+                            React.createElement(
+                              'div',
+                              { style: { display: 'flex', flexDirection: 'column', gap: '2px' } },
+                              React.createElement(
+                                'span',
+                                { style: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)', fontWeight: 600 } },
+                                msg.targetData.label || 'Mục tiêu cần hoàn thành ở Kỳ 7'
+                              ),
+                              React.createElement(
+                                'strong',
+                                { style: { fontSize: '16px', color: 'var(--color-ink)', textDecoration: 'underline', textUnderlineOffset: '4px' } },
+                                msg.targetData.target
+                              ),
+                              React.createElement(
+                                'p',
+                                { style: { margin: '2px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)', lineHeight: 1.4 } },
+                                msg.targetData.description
+                              )
+                            )
+                          )
+                        : null,
+
+                      // KHỐI 3: 2 Subcards Trích xuất Dữ liệu & Nguồn quy chế
+                      msg.subcards && msg.subcards.length > 0
+                        ? React.createElement(
+                            'div',
+                            {
+                              style: {
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                                gap: '12px'
+                              }
+                            },
+                            msg.subcards.map((sc, scIdx) =>
+                              React.createElement(
+                                'div',
+                                {
+                                  key: scIdx,
+                                  style: {
+                                    backgroundColor: 'var(--color-surface-alt, #fafafa)',
+                                    border: '1px solid var(--color-hairline, #e5e5e5)',
+                                    borderRadius: '18px',
+                                    padding: '14px 16px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'space-between'
+                                  }
+                                },
+                                React.createElement(
+                                  'div',
+                                  null,
+                                  React.createElement(
+                                    'div',
+                                    { style: { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: 'var(--color-ink)', marginBottom: '8px' } },
+                                    React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px', color: 'var(--color-mid-gray)' } }, sc.icon || 'info'),
+                                    sc.title
+                                  ),
+                                  React.createElement(
+                                    'ul',
+                                    { style: { margin: 0, paddingLeft: '4px', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: 'var(--color-mid-gray)' } },
+                                    sc.items?.map((it, iIdx) =>
+                                      React.createElement(
+                                        'li',
+                                        { key: iIdx, style: { display: 'flex', alignItems: 'center', gap: '6px' } },
+                                        React.createElement('span', { style: { width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--color-ink)' } }),
+                                        it
+                                      )
+                                    )
+                                  )
+                                ),
+                                sc.footer
+                                  ? React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray)', marginTop: '8px', display: 'block' } }, sc.footer)
+                                  : null,
+                                sc.note
+                                  ? React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray)', fontStyle: 'italic', marginTop: '8px', lineHeight: 1.3, display: 'block' } }, sc.note)
+                                  : null
+                              )
+                            )
+                          )
+                        : null,
+
+                      // KHỐI 4: Thẻ Cảnh báo Thiếu dữ liệu (Data Warning Banner)
+                      msg.warningData
+                        ? React.createElement(
+                            'div',
+                            {
+                              style: {
+                                backgroundColor: '#fff5f5',
+                                border: '1px solid #fee2e2',
+                                borderRadius: '18px',
+                                padding: '16px',
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: '12px'
+                              }
+                            },
+                            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '22px', color: 'var(--color-ember, #e7000b)', flexShrink: 0, marginTop: '2px' } }, 'warning'),
+                            React.createElement(
+                              'div',
+                              { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
+                              React.createElement('strong', { style: { fontSize: '14px', color: '#991b1b' } }, msg.warningData.title),
+                              React.createElement('p', { style: { margin: 0, fontSize: '13px', color: 'var(--color-ink)', lineHeight: 1.5 } }, msg.warningData.description)
+                            )
+                          )
+                        : null,
+
+                      // KHỐI 5: Checklist Điều kiện cơ bản
+                      msg.checklistData
+                        ? React.createElement(
+                            'div',
+                            { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+                            React.createElement(
+                              'span',
+                              { style: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)', fontWeight: 600 } },
+                              msg.checklistData.title
+                            ),
+                            React.createElement(
+                              'div',
+                              { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px' } },
+                              msg.checklistData.items?.map((ck, cIdx) =>
+                                React.createElement(
+                                  'div',
+                                  {
+                                    key: cIdx,
+                                    style: {
+                                      padding: '10px 14px',
+                                      borderRadius: '12px',
+                                      backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '8px',
+                                      fontSize: '12px',
+                                      color: ck.done ? 'var(--color-ink)' : 'var(--color-mid-gray)'
+                                    }
+                                  },
+                                  React.createElement(
+                                    'span',
+                                    {
+                                      className: 'material-symbols-outlined',
+                                      style: {
+                                        fontSize: '16px',
+                                        color: ck.done ? '#16a34a' : 'var(--color-ember, #e7000b)'
+                                      }
+                                    },
+                                    ck.done ? 'check_circle' : 'cancel'
+                                  ),
+                                  React.createElement('span', null, ck.text)
+                                )
+                              )
+                            )
+                          )
+                        : null,
+
+                      // Nút hành động đính kèm của Warning
+                      msg.actions && msg.actions.length > 0 && !msg.planProposal
+                        ? React.createElement(
+                            'div',
+                            { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', paddingTop: '4px' } },
+                            msg.actions.map((act) =>
+                              React.createElement(
+                                'button',
+                                {
+                                  key: act.id,
+                                  type: 'button',
+                                  className: act.primary ? 'haui-pill-btn-dark' : 'haui-pill-btn-canvas',
+                                  onClick: () => {
+                                    if (act.route === '/transcript') {
+                                      handleAttachmentClick();
+                                    } else {
+                                      navigateTo(act.route);
+                                    }
+                                  }
+                                },
+                                act.icon ? React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, act.icon) : null,
+                                React.createElement('span', null, act.label)
+                              )
+                            )
+                          )
+                        : null,
+
+                      // KHỐI 6: Thẻ Đề Xuất Phương Án Lộ Trình (Plan Proposal Card)
+                      msg.planProposal && !msg.proposalDismissed
+                        ? React.createElement(
+                            'div',
+                            {
+                              style: {
+                                backgroundColor: 'var(--color-surface-alt, #fafafa)',
+                                border: '1.5px solid var(--color-ink, #0a0a0a)',
+                                borderRadius: '18px',
+                                padding: '16px 20px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '10px'
+                              }
+                            },
+                            React.createElement(
+                              'div',
+                              { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                              React.createElement('strong', { style: { fontSize: '14px', color: 'var(--color-ink)' } }, '📋 Đề xuất Phương án Lộ trình Học tập mới'),
+                              React.createElement(
+                                'span',
+                                {
+                                  style: {
+                                    fontSize: '11px',
+                                    fontWeight: 600,
+                                    padding: '2px 8px',
+                                    borderRadius: '9999px',
+                                    backgroundColor: msg.proposalAccepted ? '#dcfce7' : 'var(--color-ink)',
+                                    color: msg.proposalAccepted ? '#15803d' : '#ffffff'
+                                  }
+                                },
+                                msg.proposalAccepted ? '✓ Đã chấp nhận & Nạp vào Planner' : 'Chờ bạn xem xét'
+                              )
+                            ),
+                            React.createElement(
+                              'p',
+                              { style: { margin: 0, fontSize: '13px', color: 'var(--color-mid-gray)', lineHeight: 1.5 } },
+                              `Học kỳ 1 (2026-2027): 18 tín chỉ · CPA dự kiến: ${msg.planProposal.projectedCpa || '3.25'} (Bằng Giỏi) · 6 học phần cân bằng tải theo chuẩn quy chế HaUI.`
+                            ),
+                            !msg.proposalAccepted
+                              ? React.createElement(
+                                  'div',
+                                  { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', paddingTop: '4px' } },
+                                  React.createElement(
+                                    'button',
+                                    {
+                                      type: 'button',
+                                      className: 'haui-pill-btn-dark',
+                                      onClick: () => handleAcceptProposal(msg.id, msg.planProposal)
+                                    },
+                                    React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'check'),
+                                    React.createElement('span', null, 'Chấp nhận phương án')
+                                  ),
+                                  React.createElement(
+                                    'button',
+                                    {
+                                      type: 'button',
+                                      className: 'haui-pill-btn-paper',
+                                      onClick: () => handleRequestAlternative()
+                                    },
+                                    React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'replay'),
+                                    React.createElement('span', null, 'Phương án khác')
+                                  ),
+                                  React.createElement(
+                                    'button',
+                                    {
+                                      type: 'button',
+                                      className: 'haui-pill-btn-canvas',
+                                      onClick: () => handleDismissProposal(msg.id)
+                                    },
+                                    React.createElement('span', null, 'Hủy đề xuất')
+                                  )
+                                )
+                              : React.createElement(
+                                  'div',
+                                  { style: { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#16a34a', fontWeight: 600 } },
+                                  React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'check_circle'),
+                                  'Đã nạp vào Study Planner. Bạn có thể mở tab "Kế hoạch học tập" để tinh chỉnh.'
+                                )
+                          )
+                        : null,
+
+                      // Nguồn trích dẫn quy chế RAG
+                      msg.sources && msg.sources.length > 0 && !msg.subcards
+                        ? React.createElement(
+                            'div',
+                            { style: { paddingTop: '8px', borderTop: '1px solid var(--color-hairline)', fontSize: '12px', color: 'var(--color-mid-gray)' } },
+                            React.createElement('strong', { style: { color: 'var(--color-ink)' } }, '📖 Nguồn tham khảo & Quy chế: '),
+                            msg.sources.map((s, sIdx) =>
+                              React.createElement('span', { key: sIdx }, `${s.title} ${s.section ? `(${s.section})` : ''}${sIdx < msg.sources.length - 1 ? '; ' : ''}`)
+                            )
+                          )
+                        : null,
+
+                      // Footer Actions (Like, Dislike, Copy)
+                      React.createElement(
+                        'div',
+                        {
+                          style: {
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            paddingTop: '8px',
+                            borderTop: '1px solid var(--color-hairline)',
+                            fontSize: '11px',
+                            color: 'var(--color-mid-gray)'
+                          }
+                        },
+                        React.createElement(
+                          'span',
+                          null,
+                          `Mô hình hoàn thành phản hồi trong ${msg.executionTime || '1.1s'}`
+                        ),
+                        React.createElement(
+                          'div',
+                          { style: { display: 'flex', alignItems: 'center', gap: '6px' } },
+                          React.createElement(
+                            'button',
+                            {
+                              type: 'button',
+                              title: 'Hữu ích',
+                              onClick: () => showToast('Cảm ơn bạn đã đóng góp đánh giá hữu ích!'),
+                              style: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-mid-gray)', padding: '2px', display: 'flex', alignItems: 'center' }
+                            },
+                            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'thumb_up')
+                          ),
+                          React.createElement(
+                            'button',
+                            {
+                              type: 'button',
+                              title: 'Chưa chính xác',
+                              onClick: () => showToast('Hệ thống đã ghi nhận phản hồi để hoàn thiện mô hình!'),
+                              style: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-mid-gray)', padding: '2px', display: 'flex', alignItems: 'center' }
+                            },
+                            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'thumb_down')
+                          ),
+                          React.createElement(
+                            'button',
+                            {
+                              type: 'button',
+                              title: 'Sao chép câu trả lời',
+                              onClick: () => handleCopyText(msg.text),
+                              style: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-mid-gray)', padding: '2px', display: 'flex', alignItems: 'center' }
+                            },
+                            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'content_copy')
+                          )
+                        )
+                      )
+                    ),
+                    React.createElement(
+                      'span',
+                      { style: { fontSize: '11px', color: 'var(--color-mid-gray)', marginTop: '4px', marginLeft: '6px' } },
+                      `${msg.timestamp || '14:23'} • Trợ lý AI HaUI`
+                    )
+                  )
+                );
+              }),
+
+          loading
+            ? React.createElement(
+                'div',
+                { style: { display: 'flex', alignItems: 'center', gap: '10px', padding: '16px', color: 'var(--color-mid-gray)', fontSize: '13px' } },
+                React.createElement('span', { className: 'material-symbols-outlined haui-spin', style: { fontSize: '20px' } }, 'progress_activity'),
+                React.createElement('span', null, 'AI đang đối chiếu bảng điểm và phân tích quy chế đào tạo HaUI...')
+              )
+            : null,
+          React.createElement('div', { ref: messagesEndRef })
+        ),
+
+        // Sticky Bottom Chat Input Bar (Chuẩn xác theo prototype)
+        React.createElement(
+          'div',
+          { style: { position: 'sticky', bottom: '16px', zIndex: 30, width: '100%' } },
+          React.createElement(
+            'div',
+            {
+              style: {
+                backgroundColor: 'var(--color-paper, #ffffff)',
+                borderRadius: '24px',
+                padding: '8px 12px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                border: '1px solid var(--color-hairline, #e5e5e5)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px'
+              }
+            },
+            React.createElement(
+              'div',
+              { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+              // Nút Đính kèm
+              React.createElement(
+                'button',
+                {
+                  type: 'button',
+                  title: 'Đính kèm bảng điểm hoặc minh chứng (Mở luồng nhập bảng điểm TV2)',
+                  onClick: handleAttachmentClick,
+                  style: {
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--color-mid-gray, #737373)',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    transition: 'all 150ms'
+                  }
+                },
+                React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'attach_file')
+              ),
+              // Input text
+              React.createElement('input', {
+                type: 'text',
+                value: inputValue,
+                onChange: (e) => setInputValue(e.target.value),
+                onKeyDown: handleKeyDown,
+                disabled: loading,
+                placeholder: 'Hỏi AI về môn tiên quyết, mẹo kéo GPA, điều kiện tốt nghiệp...',
+                style: {
+                  flex: 1,
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  border: 'none',
+                  borderRadius: '9999px',
+                  padding: '10px 18px',
+                  fontSize: '14px',
+                  color: 'var(--color-ink, #0a0a0a)',
+                  outline: 'none',
+                  fontFamily: 'inherit'
+                }
+              }),
+              // Nút Mic giọng nói
+              React.createElement(
+                'button',
+                {
+                  type: 'button',
+                  title: 'Nhập giọng nói',
+                  onClick: () => showToast('Tính năng nhận diện giọng nói đang hoàn thiện.'),
+                  style: {
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--color-mid-gray, #737373)',
+                    cursor: 'pointer',
+                    flexShrink: 0
+                  }
+                },
+                React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'mic')
+              ),
+              // Nút Gửi
+              React.createElement(
+                'button',
+                {
+                  type: 'button',
+                  title: 'Gửi yêu cầu',
+                  onClick: () => handleSendMessage(),
+                  disabled: loading || !inputValue.trim(),
+                  style: {
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--color-ink, #0a0a0a)',
+                    color: '#ffffff',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: loading || !inputValue.trim() ? 'not-allowed' : 'pointer',
+                    opacity: loading || !inputValue.trim() ? 0.45 : 1,
+                    flexShrink: 0,
+                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)',
+                    transition: 'all 150ms'
+                  }
+                },
+                React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'send')
+              )
+            ),
+            React.createElement(
+              'p',
+              {
+                style: {
+                  fontSize: '11px',
+                  color: 'var(--color-mid-gray, #737373)',
+                  textAlign: 'center',
+                  margin: '2px 0 0',
+                  userSelect: 'none'
+                }
+              },
+              'AI Advisor sử dụng dữ liệu học tập cá nhân mẫu để phân tích. Dữ liệu chỉ mang tính chất tham khảo hỗ trợ sinh viên.'
             )
-          : null
+          )
+        )
+      ),
+
+      // CỘT PHẢI (4 COLS): SIDEBAR NGỮ CẢNH & HỒ SƠ NẠP VÀO AI
+      React.createElement(
+        'aside',
+        { className: 'haui-chat-col-sidebar', style: { display: 'flex', flexDirection: 'column', gap: '20px' } },
+
+        // Card 1: Hồ sơ học tập nạp vào AI
+        React.createElement(
+          'div',
+          {
+            style: {
+              backgroundColor: 'var(--color-paper, #ffffff)',
+              borderRadius: '24px',
+              border: '1px solid var(--color-hairline, #e5e5e5)',
+              padding: '24px',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }
+          },
+          React.createElement(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingBottom: '10px',
+                borderBottom: '1px solid var(--color-hairline, #e5e5e5)'
+              }
+            },
+            React.createElement(
+              'div',
+              { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+              React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '20px', color: 'var(--color-ink)' } }, 'badge'),
+              React.createElement('h2', { style: { margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--color-ink)' } }, 'Hồ sơ nạp vào AI')
+            ),
+            React.createElement(
+              'span',
+              {
+                style: {
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '2px 8px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas)',
+                  fontSize: '11px',
+                  color: 'var(--color-mid-gray)',
+                  fontWeight: 500
+                }
+              },
+              React.createElement('span', { style: { width: '5px', height: '5px', borderRadius: '50%', backgroundColor: 'var(--color-ink)' } }),
+              'Đồng bộ'
+            )
+          ),
+          React.createElement(
+            'div',
+            { style: { display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' } },
+            React.createElement(
+              'div',
+              { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+              React.createElement('span', { style: { color: 'var(--color-mid-gray)' } }, 'Sinh viên'),
+              React.createElement('strong', { style: { color: 'var(--color-ink)' } }, `${student?.fullName || 'Nguyễn Văn An'} (${student?.studentId || '2020601234'})`)
+            ),
+            React.createElement(
+              'div',
+              { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+              React.createElement('span', { style: { color: 'var(--color-mid-gray)' } }, 'CPA hiện tại'),
+              React.createElement(
+                'div',
+                { style: { display: 'flex', alignItems: 'center', gap: '6px' } },
+                React.createElement('strong', { style: { color: 'var(--color-ink)' } }, student?.cpa ? Number(student.cpa).toFixed(2) : '3.18 / 4.00'),
+                React.createElement('span', { style: { padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', fontSize: '11px', fontWeight: 500 } }, 'Tiệm cận Giỏi')
+              )
+            ),
+            React.createElement(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
+              React.createElement(
+                'div',
+                { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                React.createElement('span', { style: { color: 'var(--color-mid-gray)' } }, 'Tín chỉ tích lũy'),
+                React.createElement('strong', { style: { color: 'var(--color-ink)' } }, '108 / 145 TC (74.4%)')
+              ),
+              React.createElement(
+                'div',
+                { className: 'haui-progress-bar-minimal' },
+                React.createElement('div', { className: 'haui-progress-bar-fill', style: { width: '74.4%' } })
+              )
+            ),
+            React.createElement(
+              'div',
+              { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+              React.createElement('span', { style: { color: 'var(--color-mid-gray)' } }, 'Phiên bản kế hoạch'),
+              React.createElement('strong', { style: { color: 'var(--color-ink)' } }, 'Bản nháp v2.4')
+            ),
+            React.createElement(
+              'div',
+              { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+              React.createElement('span', { style: { color: 'var(--color-mid-gray)' } }, 'Đồng bộ dữ liệu'),
+              React.createElement(
+                'span',
+                { style: { display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--color-ink)', fontWeight: 500 } },
+                React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'cloud_done'),
+                'Đã tải (28/28 môn)'
+              )
+            )
+          ),
+          React.createElement(
+            'button',
+            {
+              type: 'button',
+              className: 'haui-pill-btn-canvas',
+              onClick: () => navigateTo('/profile'),
+              style: { justifyContent: 'center', fontSize: '13px' }
+            },
+            'Xem hồ sơ học tập chi tiết'
+          )
+        ),
+
+        // Card 2: Gợi ý chủ đề hỏi đáp nhanh (4 cards 1-click)
+        React.createElement(
+          'div',
+          {
+            style: {
+              backgroundColor: 'var(--color-paper, #ffffff)',
+              borderRadius: '24px',
+              border: '1px solid var(--color-hairline, #e5e5e5)',
+              padding: '24px',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }
+          },
+          React.createElement(
+            'div',
+            { style: { display: 'flex', alignItems: 'center', gap: '8px', paddingBottom: '10px', borderBottom: '1px solid var(--color-hairline)' } },
+            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '20px', color: 'var(--color-ink)' } }, 'explore'),
+            React.createElement('h2', { style: { margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--color-ink)' } }, 'Gợi ý chủ đề hỏi đáp nhanh')
+          ),
+          React.createElement(
+            'div',
+            { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+            [
+              {
+                icon: 'account_tree',
+                title: 'Tiên quyết môn Đồ án',
+                desc: 'Chuỗi môn IT6080 & IT6090',
+                prompt: 'Môn IT6080 - Đồ án chuyên ngành cần những môn tiên quyết nào?'
+              },
+              {
+                icon: 'translate',
+                title: 'Đổi điểm tiếng Anh VSTEP',
+                desc: 'Quy chế miễn học phần B1/B2',
+                prompt: 'Quy chế đổi điểm tiếng Anh VSTEP sang chuẩn đầu ra như thế nào?'
+              },
+              {
+                icon: 'speed',
+                title: 'Rút ngắn 3.5 năm tốt nghiệp',
+                desc: 'Phân bổ tín chỉ tăng tốc',
+                prompt: 'Lên lộ trình học vượt 3.5 năm ngành CNTT/KTPM.'
+              },
+              {
+                icon: 'calendar_month',
+                title: 'Đăng ký học vượt kỳ hè',
+                desc: 'Tối đa 8 tín chỉ / kỳ phụ',
+                prompt: 'Quy định đăng ký học vượt kỳ hè tối đa bao nhiêu tín chỉ?'
+              }
+            ].map((topic, tIdx) =>
+              React.createElement(
+                'div',
+                {
+                  key: tIdx,
+                  className: 'haui-chat-topic-card',
+                  onClick: () => handleSendMessage(topic.prompt)
+                },
+                React.createElement(
+                  'div',
+                  { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+                  React.createElement(
+                    'div',
+                    {
+                      style: {
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--color-paper)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--color-ink)',
+                        flexShrink: 0,
+                        border: '1px solid var(--color-hairline)'
+                      }
+                    },
+                    React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, topic.icon)
+                  ),
+                  React.createElement(
+                    'div',
+                    { style: { display: 'flex', flexDirection: 'column' } },
+                    React.createElement('span', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)' } }, topic.title),
+                    React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray)' } }, topic.desc)
+                  )
+                ),
+                React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px', color: 'var(--color-mid-gray)' } }, 'chevron_right')
+              )
+            )
+          )
+        ),
+
+        // Card 3: Lưu ý thuật toán AI
+        React.createElement(
+          'div',
+          {
+            style: {
+              backgroundColor: 'var(--color-paper, #ffffff)',
+              borderRadius: '24px',
+              border: '1px solid var(--color-hairline, #e5e5e5)',
+              padding: '24px',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }
+          },
+          React.createElement(
+            'div',
+            { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '20px', color: 'var(--color-ink)' } }, 'shield'),
+            React.createElement('h2', { style: { margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--color-ink)' } }, 'Lưu ý thuật toán AI')
+          ),
+          React.createElement(
+            'div',
+            {
+              style: {
+                padding: '12px 14px',
+                borderRadius: '18px',
+                backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '8px'
+              }
+            },
+            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px', color: 'var(--color-mid-gray)', marginTop: '2px', flexShrink: 0 } }, 'lock'),
+            React.createElement(
+              'p',
+              { style: { margin: 0, fontSize: '12px', color: 'var(--color-mid-gray)', lineHeight: 1.5 } },
+              React.createElement('strong', { style: { color: 'var(--color-ink)' } }, 'Ghi chú an toàn: '),
+              'AI hoạt động độc lập trên thiết bị, không thay đổi dữ liệu gốc trên hệ thống quản lý đào tạo của HaUI. Dữ liệu phân tích dựa trên cây tiên quyết của Khoa Công nghệ Thông tin.'
+            )
+          ),
+          React.createElement(
+            'div',
+            { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: 'var(--color-mid-gray)', paddingTop: '4px' } },
+            React.createElement('span', null, 'Phiên bản thuật toán: 2024.3'),
+            React.createElement('a', { href: '#', style: { color: 'var(--color-ink)', textDecoration: 'underline' } }, 'Chính sách bảo mật')
+          )
+        )
       )
     )
   );

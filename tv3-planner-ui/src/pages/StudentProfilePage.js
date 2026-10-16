@@ -324,26 +324,6 @@ export function StudentProfilePage({
             },
             React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '14px', color: 'var(--color-ink, #0a0a0a)' } }, 'verified'),
             'Dữ liệu hồ sơ gốc (Chính thức)'
-          ),
-          React.createElement(
-            'span',
-            {
-              style: {
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '4px 12px',
-                borderRadius: '9999px',
-                backgroundColor: 'var(--color-paper, #ffffff)',
-                color: 'var(--color-mid-gray, #737373)',
-                fontSize: '12px',
-                border: '1px solid var(--color-hairline, #e5e5e5)'
-              }
-            },
-            React.createElement('span', {
-              style: { width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: '#e7000b' }
-            }),
-            'Dữ liệu hiệu chỉnh cục bộ (Chưa đồng bộ sv.haui)'
           )
         ),
         React.createElement(
@@ -358,76 +338,6 @@ export function StudentProfilePage({
             }
           },
           'Quản lý và cập nhật thông tin cá nhân, định hướng ngành và chương trình đào tạo tại Trường Đại học Công nghiệp Hà Nội.'
-        )
-      ),
-      // Desktop Action buttons
-      React.createElement(
-        'div',
-        { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' } },
-        Button ? React.createElement(Button, { variant: 'secondary', size: 'sm', onClick: handleLoadSampleProfile }, 'Hồ sơ chuẩn (K16)') : null,
-        Button ? React.createElement(Button, { variant: 'ghost', size: 'sm', onClick: handleSetEmptyProfile }, 'Chưa có hồ sơ') : null,
-        Button
-          ? React.createElement(
-              Button,
-              {
-                variant: 'ghost',
-                size: 'sm',
-                onClick: () => setError({ code: 'ERR_PROFILE', message: 'Mô phỏng lỗi máy chủ khi tải hồ sơ.' })
-              },
-              'Mô phỏng Lỗi'
-            )
-          : null,
-        Button
-          ? React.createElement(
-              Button,
-              {
-                variant: 'secondary',
-                size: 'sm',
-                onClick: handleOpenTranscript
-              },
-              '📎 Nhập bảng điểm (TV2)'
-            )
-          : null,
-        React.createElement(
-          'button',
-          {
-            type: 'button',
-            onClick: handleCancelChanges,
-            style: {
-              padding: '8px 16px',
-              borderRadius: '9999px',
-              backgroundColor: 'var(--color-canvas, #f5f5f5)',
-              border: '1px solid var(--color-hairline, #e5e5e5)',
-              color: 'var(--color-ink, #0a0a0a)',
-              fontSize: '13px',
-              fontWeight: 500,
-              cursor: 'pointer'
-            }
-          },
-          'Hủy thay đổi'
-        ),
-        React.createElement(
-          'button',
-          {
-            type: 'button',
-            onClick: handleSavePreferences,
-            style: {
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 20px',
-              borderRadius: '9999px',
-              backgroundColor: '#0a0a0a',
-              color: '#ffffff',
-              fontSize: '13px',
-              fontWeight: 600,
-              border: 'none',
-              cursor: 'pointer',
-              boxShadow: '0 1px 8px rgba(0, 0, 0, 0.08)'
-            }
-          },
-          React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'check'),
-          'Lưu thay đổi'
         )
       )
     )
@@ -472,7 +382,7 @@ export function StudentProfilePage({
   if (loading) {
     return React.createElement(
       'div',
-      { className: 'haui-page-container', style: { padding: '24px 0' } },
+      { className: 'haui-page-container' },
       headerSection,
       Loading
         ? React.createElement(Loading, { variant: 'spinner', size: 'lg', label: 'Đang tải thông tin hồ sơ sinh viên...' })
@@ -483,7 +393,7 @@ export function StudentProfilePage({
   if (error) {
     return React.createElement(
       'div',
-      { className: 'haui-page-container', style: { padding: '24px 0' } },
+      { className: 'haui-page-container' },
       headerSection,
       ErrorBox
         ? React.createElement(ErrorBox, {
@@ -500,7 +410,7 @@ export function StudentProfilePage({
   if (!profileData) {
     return React.createElement(
       'div',
-      { className: 'haui-page-container haui-profile-empty', style: { padding: '24px 0' } },
+      { className: 'haui-page-container haui-profile-empty' },
       headerSection,
       toastBar,
       EmptyState
@@ -566,7 +476,7 @@ export function StudentProfilePage({
   // TRẠNG THÁI ĐÃ CÓ HỒ SƠ — KHUNG LƯỚI 2 CỘT CHUẨN PROTOTYPE (4 COLS / 8 COLS)
   return React.createElement(
     'div',
-    { className: 'haui-page-container haui-profile-page', style: { padding: '24px 0' } },
+    { className: 'haui-page-container haui-profile-page' },
     headerSection,
     toastBar,
 
@@ -853,89 +763,7 @@ export function StudentProfilePage({
           )
         ),
 
-        // 2. Academic Advisor Mini Card
-        React.createElement(
-          'div',
-          {
-            style: {
-              backgroundColor: 'var(--color-paper, #ffffff)',
-              border: '1px solid var(--color-hairline, #e5e5e5)',
-              borderRadius: '24px',
-              padding: '20px',
-              boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px'
-            }
-          },
-          React.createElement(
-            'div',
-            { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
-            React.createElement('span', { style: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray, #737373)', fontWeight: 600 } }, 'Cố vấn học tập'),
-            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px', color: 'var(--color-mid-gray, #737373)' } }, 'supervised_user_circle')
-          ),
-          React.createElement(
-            'div',
-            { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
-            React.createElement(
-              'div',
-              {
-                style: {
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '9999px',
-                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
-                  border: '1px solid var(--color-hairline, #e5e5e5)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--color-ink, #0a0a0a)',
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  flexShrink: 0
-                }
-              },
-              'TM'
-            ),
-            React.createElement(
-              'div',
-              { style: { minWidth: 0 } },
-              React.createElement('p', { style: { margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--color-ink, #0a0a0a)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, 'TS. Trần Văn Minh'),
-              React.createElement('p', { style: { margin: '2px 0 0', fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } }, 'Khoa Công nghệ Thông tin')
-            )
-          ),
-          React.createElement(
-            'div',
-            {
-              style: {
-                paddingTop: '10px',
-                borderTop: '1px solid var(--color-hairline, #e5e5e5)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '6px',
-                fontSize: '12px',
-                color: 'var(--color-mid-gray, #737373)'
-              }
-            },
-            React.createElement(
-              'a',
-              {
-                href: 'mailto:minhtv@haui.edu.vn',
-                style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'inherit', textDecoration: 'none' }
-              },
-              React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '14px' } }, 'alternate_email'),
-              'minhtv@haui.edu.vn'
-            ),
-            React.createElement(
-              'span',
-              { style: { display: 'flex', alignItems: 'center', gap: '6px' } },
-              React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '14px' } }, 'schedule'),
-              'Lịch hẹn tư vấn: Thứ 4 (09:00 - 11:30)'
-            )
-          )
-        ),
-
-        // 3. Kế hoạch học tập đang theo dõi (ACTIVE Plan Snapshot)
+        // 2. Kế hoạch học tập đang theo dõi (ACTIVE Plan Snapshot)
         React.createElement(
           'div',
           {
@@ -1712,40 +1540,6 @@ export function StudentProfilePage({
                   boxSizing: 'border-box'
                 }
               })
-            )
-          )
-        ),
-
-        // ----------------------------------------------------
-        // SECTION 4: NOTICE CALLOUT (QUY CHẾ CẬP NHẬT DỮ LIỆU)
-        // ----------------------------------------------------
-        React.createElement(
-          'div',
-          {
-            style: {
-              backgroundColor: 'var(--color-canvas, #f5f5f5)',
-              border: '1px solid var(--color-hairline, #e5e5e5)',
-              borderRadius: '24px',
-              padding: '20px',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '14px',
-              boxShadow: '0 1px 8px rgba(0, 0, 0, 0.02)'
-            }
-          },
-          React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '24px', color: 'var(--color-ink, #0a0a0a)', flexShrink: 0, marginTop: '2px' } }, 'info'),
-          React.createElement(
-            'div',
-            { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
-            React.createElement('span', { style: { fontSize: '14px', fontWeight: 600, color: 'var(--color-ink, #0a0a0a)' } }, 'Lưu ý về quy chế cập nhật dữ liệu'),
-            React.createElement(
-              'p',
-              { style: { margin: 0, fontSize: '13px', color: 'var(--color-mid-gray, #737373)', lineHeight: 1.5 } },
-              'Dữ liệu này được lưu trữ cục bộ phục vụ việc tư vấn môn học, tự động xếp lịch và tính toán mô phỏng What-if trên HAUI ADVISOR. Để thay đổi các thông tin định danh pháp lý (Họ tên, Ngày sinh, CCCD, Điểm thi), sinh viên vui lòng liên hệ trực tiếp ',
-              React.createElement('strong', { style: { color: 'var(--color-ink, #0a0a0a)' } }, 'Phòng Đào tạo HaUI (Tầng 1, Nhà A1)'),
-              ' hoặc cổng quản trị ',
-              React.createElement('a', { href: 'https://sv.haui.edu.vn', target: '_blank', rel: 'noreferrer', style: { color: 'var(--color-ink, #0a0a0a)', textDecoration: 'underline' } }, 'sv.haui.edu.vn'),
-              '.'
             )
           )
         ),

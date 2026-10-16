@@ -544,7 +544,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
   if (loading) {
     return React.createElement(
       'div',
-      { className: 'haui-page-container', style: { padding: '24px 0' } },
+      { className: 'haui-page-container' },
       headerSection,
       Loading
         ? React.createElement(Loading, { variant: 'spinner', size: 'lg', label: 'Đang tải kế hoạch học tập đa kỳ...' })
@@ -555,7 +555,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
   if (error) {
     return React.createElement(
       'div',
-      { className: 'haui-page-container', style: { padding: '24px 0' } },
+      { className: 'haui-page-container' },
       headerSection,
       ErrorBox
         ? React.createElement(ErrorBox, {
@@ -571,7 +571,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
   if (!plan || !plan.semesters || plan.semesters.length === 0) {
     return React.createElement(
       'div',
-      { className: 'haui-page-container', style: { padding: '24px 0' } },
+      { className: 'haui-page-container' },
       headerSection,
       testToolbar,
       EmptyState
@@ -966,7 +966,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
         {
           title: 'Phân tích rủi ro & Lời khuyên từ AI Advisor',
           subtitle: 'Dựa trên đối chiếu khung chương trình đào tạo và bảng điểm cá nhân',
-          variant: 'status-warning',
+          variant: 'default',
           style: { marginTop: '12px' }
         },
         React.createElement('p', { style: { margin: '0 0 8px 0', fontSize: '13px', color: '#92400e' } }, `📌 ${plan.aiRiskAdvice}`),
@@ -1184,7 +1184,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
   // ==========================================
   return React.createElement(
     'div',
-    { className: 'haui-page-container haui-planner-page', style: { padding: '24px 0' } },
+    { className: 'haui-page-container haui-planner-page' },
     headerSection,
     toastBar,
     proposalBanner,

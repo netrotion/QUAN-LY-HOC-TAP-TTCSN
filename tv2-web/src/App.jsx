@@ -1,5 +1,11 @@
 import React, { useMemo } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import {
+  StudyPlannerPage,
+  ChatAdvisorPage,
+  WhatIfSimulatorPage,
+  StudentProfilePage
+} from '@haui/planner-ui';
 import { api } from './services/apiClient.js';
 import { ui } from './components/ui/index.js';
 import { MainLayout } from './components/layout/MainLayout.jsx';
@@ -9,57 +15,59 @@ import { GraduationAuditPage } from './pages/GraduationAuditPage.jsx';
 import { CurriculumTreePage } from './pages/CurriculumTreePage.jsx';
 import { TranscriptImportPage } from './pages/TranscriptImportPage.jsx';
 import { LoginPage } from './pages/LoginPage.jsx';
+import { PlanHistoryPage } from './pages/PlanHistoryPage.jsx';
 import { DemoUiPage } from './pages/DemoUiPage.jsx';
 import { mountStudentRoutes } from './routes/mountStudentRoutes.jsx';
 
+// ponytail: SettingsPage lazy-loaded, add when built
+const SettingsPage = React.lazy(() =>
+  import('./pages/SettingsPage.jsx').catch(() => ({ default: () => <DemoUiPage /> }))
+);
+
 export { api, ui, mountStudentRoutes };
 
-/**
- * Cấu trúc Routes nội bộ của Web Host (TV2) kết hợp với các Route được mount từ TV3
- */
 export function AppRoutes() {
-  // Mount các route của TV3 thông qua Dependency Injection: createStudentRoutes({ api, ui })
   const mountedRouteSummary = useMemo(() => mountStudentRoutes({ api, ui }), []);
 
   return (
     <Routes>
-      {/* Route Đăng nhập sinh viên & Presets (Task 2.2a) */}
+      {/* Auth routes (no layout) */}
       <Route path="/login" element={<LoginPage />} />
 
       <Route element={<MainLayout />}>
-        {/* Các màn hình nền tảng & học vụ do TV2 phụ trách */}
-        <Route
-          index
-          element={<DashboardPage mountedRouteSummary={mountedRouteSummary} />}
-        />
-        <Route
-          path="/dashboard"
-          element={<DashboardPage mountedRouteSummary={mountedRouteSummary} />}
-        />
+        {/* TV2 core pages */}
+        <Route index element={<DashboardPage mountedRouteSummary={mountedRouteSummary} />} />
+        <Route path="/dashboard" element={<DashboardPage mountedRouteSummary={mountedRouteSummary} />} />
         <Route path="/transcript" element={<TranscriptImportPage />} />
         <Route path="/academic/import" element={<Navigate to="/transcript" replace />} />
-        <Route path="/progress" element={<AcademicProgressPage />} />
+        <Route path="/progress" element={<StudentProfilePage api={api} ui={ui} />} />
+        <Route path="/profile" element={<StudentProfilePage api={api} ui={ui} />} />
         <Route path="/academic" element={<Navigate to="/progress" replace />} />
         <Route path="/audit" element={<GraduationAuditPage />} />
         <Route path="/curriculum" element={<CurriculumTreePage />} />
         <Route path="/curriculum/tree" element={<CurriculumTreePage />} />
-        <Route path="/demo-ui" element={<DemoUiPage />} />
+        <Route path="/planner" element={<StudyPlannerPage api={api} ui={ui} />} />
+        <Route path="/chat" element={<ChatAdvisorPage api={api} ui={ui} />} />
+        <Route path="/what-if" element={<WhatIfSimulatorPage api={api} ui={ui} />} />
+        <Route path="/plan-history" element={<PlanHistoryPage />} />
+        <Route path="/settings" element={
+          <React.Suspense fallback={<div style={{ padding: 32 }}>Đang tải...</div>}>
+            <SettingsPage />
+          </React.Suspense>
+        } />
+        <Route path="/demo-ui" element={<Navigate to="/settings" replace />} />
 
-        {/* Các route của TV3 được mount qua createStudentRoutes({ api, ui }) kèm Fallback Placeholder */}
+        {/* TV3 mounted routes */}
         {mountedRouteSummary.routes.map((route) => (
           <Route key={route.path} path={route.path} element={route.element} />
         ))}
 
-        {/* Fallback 404 điều hướng về trang chủ */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
   );
 }
 
-/**
- * Root Application Component của Web Host (TV2 — Task 1.3a `ui-api-v0`)
- */
 export function App() {
   return (
     <BrowserRouter>

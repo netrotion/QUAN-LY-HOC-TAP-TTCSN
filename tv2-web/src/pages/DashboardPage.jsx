@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/apiClient.js';
 import { STUDENT_PERSONAS } from '../services/mockFixtures.js';
@@ -170,12 +170,36 @@ export function DashboardPage({ mountedRouteSummary }) {
   const accumulatedCredits = academicStatus?.accumulatedCredits || 108;
   const totalRequiredCredits = academicStatus?.totalCreditsRequired || 145;
 
+  const targetCpa = (() => {
+    try {
+      const s = localStorage.getItem('haui_settings');
+      if (s) {
+        const parsed = JSON.parse(s);
+        if (parsed.targetCpa) return Number(parsed.targetCpa);
+      }
+    } catch {}
+    return 3.20;
+  })();
+
+  const cpaNum = Number(cpaValue);
+  const diffToTarget = Number((cpaNum - targetCpa).toFixed(2));
+  const isCpaPositive = diffToTarget >= 0;
+
+  const getCpaRank = (val) => {
+    const num = Number(val);
+    if (num >= 3.6) return 'Xuất sắc';
+    if (num >= 3.2) return 'Giỏi';
+    if (num >= 2.5) return 'Khá';
+    if (num >= 2.0) return 'Trung bình';
+    return 'Yếu (Cảnh báo)';
+  };
+
   // Render Skeleton Layout khi xem trạng thái 'loading'
   if (componentState === 'loading' || (loading && componentState === 'loaded' && !academicStatus)) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+      <div className="haui-page-container">
         {/* State Switcher Bar */}
-        <div className="haui-state-switcher">
+        <div className="haui-state-switcher" style={{ display: 'none' }}>
           <div className="haui-state-switcher__label">
             <span>🎛️ Showcase Component States (design-base-v1):</span>
           </div>
@@ -233,9 +257,9 @@ export function DashboardPage({ mountedRouteSummary }) {
   // Render Empty State khi xem trạng thái 'empty'
   if (componentState === 'empty') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+      <div className="haui-page-container">
         {/* State Switcher Bar */}
-        <div className="haui-state-switcher">
+        <div className="haui-state-switcher" style={{ display: 'none' }}>
           <div className="haui-state-switcher__label">
             <span>🎛️ Showcase Component States (design-base-v1):</span>
           </div>
@@ -291,9 +315,9 @@ export function DashboardPage({ mountedRouteSummary }) {
   // Render Error State khi xem trạng thái 'error'
   if (componentState === 'error' || error) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+      <div className="haui-page-container">
         {/* State Switcher Bar */}
-        <div className="haui-state-switcher">
+        <div className="haui-state-switcher" style={{ display: 'none' }}>
           <div className="haui-state-switcher__label">
             <span>🎛️ Showcase Component States (design-base-v1):</span>
           </div>
@@ -354,9 +378,9 @@ export function DashboardPage({ mountedRouteSummary }) {
 
   // Trạng thái Loaded mặc định
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+    <div className="haui-page-container">
       {/* 0. State Switcher Bar (Task 2.1 Showcase) */}
-      <div className="haui-state-switcher" role="region" aria-label="Bộ chọn trạng thái giao diện mẫu">
+      <div className="haui-state-switcher" style={{ display: 'none' }} role="region" aria-label="Bộ chọn trạng thái giao diện mẫu">
         <div className="haui-state-switcher__label">
           <span>🎛️ Showcase Component States (design-base-v1):</span>
           <span className="haui-badge haui-badge--primary">Interactive Switcher</span>
@@ -400,12 +424,6 @@ export function DashboardPage({ mountedRouteSummary }) {
       {/* SECTION 1: WELCOME & QUICK ACTIONS */}
       <section style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: '16px', paddingBottom: '8px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
-            <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-mid-gray)' }}>
-              Cổng Thông Tin Học Vụ Đại Học Công Nghiệp Hà Nội
-            </span>
-          </div>
           <h1 style={{ fontSize: '30px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
             Tổng quan học tập
           </h1>
@@ -470,22 +488,46 @@ export function DashboardPage({ mountedRouteSummary }) {
                 <span style={{ fontSize: '14px', color: 'var(--color-mid-gray)' }}>/ 4.00</span>
               </div>
             </div>
-            <span className="haui-stat-trend">
-              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>trending_up</span>
-              +0.12
+            <span
+              className="haui-stat-trend"
+              style={{
+                color: isCpaPositive ? '#16a34a' : 'var(--color-ember, #e7000b)',
+                backgroundColor: isCpaPositive ? '#f0fdf4' : '#fef2f2'
+              }}
+              title={`So với mục tiêu CPA ${targetCpa.toFixed(2)}`}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
+                {isCpaPositive ? 'trending_up' : 'trending_down'}
+              </span>
+              {isCpaPositive ? `+${diffToTarget.toFixed(2)}` : `${diffToTarget.toFixed(2)}`}
             </span>
           </div>
-          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-              <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>
-                Xếp loại: {Number(cpaValue) >= 3.2 ? 'Giỏi' : Number(cpaValue) >= 2.5 ? 'Khá' : 'Trung bình'}
+
+          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {/* Dòng trên: Xếp hạng */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+              <span style={{ color: 'var(--color-mid-gray)' }}>Xếp loại học lực:</span>
+              <span style={{ color: Number(cpaValue) < 2.0 ? 'var(--color-ember, #e7000b)' : 'var(--color-ink)', fontWeight: 600 }}>
+                {getCpaRank(cpaValue)}
               </span>
-              <span style={{ color: 'var(--color-mid-gray)' }}>Mục tiêu: 3.20 - 3.59</span>
             </div>
-            <div className="haui-progress-bar-minimal">
+
+            {/* Dòng dưới: Mục tiêu */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+              <span style={{ color: 'var(--color-mid-gray)' }}>Mục tiêu tốt nghiệp:</span>
+              <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>
+                {targetCpa.toFixed(2)} / 4.00 (Giỏi)
+              </span>
+            </div>
+
+            {/* Thanh tiến độ */}
+            <div className="haui-progress-bar-minimal" style={{ marginTop: '4px' }}>
               <div
                 className="haui-progress-bar-fill"
-                style={{ width: `${Math.min(100, (Number(cpaValue) / 4.0) * 100)}%` }}
+                style={{
+                  width: `${Math.min(100, (Number(cpaValue) / 4.0) * 100)}%`,
+                  backgroundColor: Number(cpaValue) < 2.0 ? 'var(--color-ember, #e7000b)' : 'var(--color-ink)'
+                }}
               />
             </div>
           </div>
@@ -1019,42 +1061,85 @@ export function DashboardPage({ mountedRouteSummary }) {
       </section>
 
       {/* SECTION 6: LỘ TRÌNH ĐỀ XUẤT 18 TÍN CHỈ & MÔN NỢ TIÊN QUYẾT */}
-      <div className="haui-grid haui-grid--2">
+      <div className="haui-grid haui-grid--2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
         {/* Khối Môn Nợ Tiên Quyết */}
         <Card
           title="Môn Nợ & Môn Tiên Quyết Cần Gỡ Gấp (Urgent Retakes)"
           subtitle="Các học phần không đạt làm tắc nghẽn cây môn học theo BR-01 & BR-07"
-          variant="status-error"
-          headerAction={<span className="haui-badge haui-badge--error">1 Môn nợ</span>}
+          variant="default"
+          style={{
+            borderRadius: '24px',
+            border: '1px solid var(--color-hairline)',
+            backgroundColor: 'var(--color-paper)',
+            boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+            overflow: 'hidden'
+          }}
+          headerAction={
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '4px 12px',
+                borderRadius: '9999px',
+                backgroundColor: '#fee2e2',
+                color: '#b91c1c',
+                fontSize: '12px',
+                fontWeight: 600
+              }}
+            >
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#dc2626' }} />
+              1 Môn nợ
+            </span>
+          }
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '8px',
-                padding: 'var(--space-3)',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--color-error-bg)',
-                border: '1px solid var(--color-error-border)'
+                gap: '10px',
+                padding: '16px',
+                borderRadius: '16px',
+                backgroundColor: '#fff8f8',
+                border: '1px solid #fee2e2'
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span className="haui-course-badge haui-course-badge--danger">MATH1002</span>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-error-text)', fontWeight: 600 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '3px 10px',
+                    borderRadius: '9999px',
+                    backgroundColor: '#dc2626',
+                    color: '#ffffff',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-mono)'
+                  }}
+                >
+                  MATH1002
+                </span>
+                <span style={{ fontSize: '12px', color: '#b91c1c', fontWeight: 600 }}>
                   3 Tín chỉ &bull; Điểm F (0.0)
                 </span>
               </div>
-              <strong style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-primary)' }}>
+              <strong style={{ fontSize: '15px', color: 'var(--color-ink)' }}>
                 Toán rời rạc (Discrete Mathematics)
               </strong>
-              <p style={{ margin: 0, fontSize: 'var(--text-xs)', color: 'var(--color-error-text)', lineHeight: 1.4 }}>
+              <p style={{ margin: 0, fontSize: '13px', color: '#7f1d1d', lineHeight: 1.5 }}>
                 ⚠️ <strong>Môn tiên quyết trực tiếp của:</strong> IT6001 (Cấu trúc dữ liệu &amp; Giải thuật), IT6003 (Lý thuyết đồ thị). Nếu không gỡ ngay kỳ tới, lộ trình tốt nghiệp sẽ bị chậm ít nhất 1 năm.
               </p>
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
-                <Button variant="danger" size="sm" onClick={() => navigate('/planner')}>
+                <button
+                  type="button"
+                  className="haui-pill-btn-dark"
+                  style={{ backgroundColor: '#dc2626', fontSize: '13px', padding: '8px 16px' }}
+                  onClick={() => navigate('/planner')}
+                >
                   Đưa vào Kế hoạch học kỳ tới &rarr;
-                </Button>
+                </button>
               </div>
             </div>
           </div>
@@ -1064,55 +1149,88 @@ export function DashboardPage({ mountedRouteSummary }) {
         <Card
           title="Lộ trình Học kỳ Kế tiếp Đề xuất (Next Semester Plan)"
           subtitle="Gợi ý tối ưu 18 Tín chỉ (Tuân thủ BR-03: Khung 10 – 24 TC)"
-          variant="status-info"
+          variant="default"
+          style={{
+            borderRadius: '24px',
+            border: '1px solid var(--color-hairline)',
+            backgroundColor: 'var(--color-paper)',
+            boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+            overflow: 'hidden'
+          }}
           headerAction={
-            <Button variant="secondary" size="sm" onClick={() => navigate('/planner')}>
+            <button
+              type="button"
+              className="haui-pill-btn-paper"
+              style={{ fontSize: '12px', padding: '6px 14px' }}
+              onClick={() => navigate('/planner')}
+            >
               Tùy chỉnh lộ trình &rarr;
-            </Button>
+            </button>
           }
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-            {RECOMMENDED_NEXT_SEMESTER_COURSES.map((course) => (
-              <div
-                key={course.code}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '8px 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  backgroundColor: 'var(--color-bg-subtle)',
-                  border: '1px solid var(--color-border)',
-                  fontSize: 'var(--text-xs)'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                  <span className={`haui-course-badge ${course.badgeCls}`}>{course.code}</span>
-                  <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{course.name}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {RECOMMENDED_NEXT_SEMESTER_COURSES.map((course) => {
+              const isMath1002 = course.code === 'MATH1002';
+              return (
+                <div
+                  key={course.code}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 12px',
+                    borderRadius: '12px',
+                    backgroundColor: isMath1002 ? '#fff5f5' : 'var(--color-surface-alt)',
+                    border: isMath1002 ? '1px solid #fecaca' : '1px solid var(--color-hairline)',
+                    fontSize: '13px',
+                    transition: 'all 150ms'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        padding: '2px 8px',
+                        borderRadius: '9999px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        fontFamily: 'var(--font-mono)',
+                        backgroundColor: isMath1002 ? '#dc2626' : 'var(--color-canvas)',
+                        color: isMath1002 ? '#ffffff' : 'var(--color-ink)'
+                      }}
+                    >
+                      {course.code}
+                    </span>
+                    <span style={{ fontWeight: 500, color: 'var(--color-ink)' }}>{course.name}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+                    <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>{course.type}</span>
+                    <strong style={{ fontSize: '12px', color: 'var(--color-ink)' }}>{course.credits} TC</strong>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                  <span className="haui-semester-tag">{course.type}</span>
-                  <strong>{course.credits} TC</strong>
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             <div
               style={{
-                marginTop: '8px',
-                padding: '8px 12px',
-                borderRadius: 'var(--radius-sm)',
-                backgroundColor: 'var(--color-primary-light)',
+                marginTop: '4px',
+                padding: '10px 14px',
+                borderRadius: '12px',
+                backgroundColor: 'var(--color-canvas)',
+                border: '1px solid var(--color-hairline)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                fontSize: 'var(--text-xs)',
+                fontSize: '13px',
                 fontWeight: 600,
-                color: 'var(--color-primary)'
+                color: 'var(--color-ink)'
               }}
             >
               <span>Tổng số tín chỉ đề xuất kỳ 4:</span>
-              <span>18 Tín chỉ (Hợp lệ BR-03: 10 - 24 TC)</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#16a34a' }}>check_circle</span>
+                <span>18 Tín chỉ (Hợp lệ BR-03: 10 - 24 TC)</span>
+              </span>
             </div>
           </div>
         </Card>
@@ -1122,131 +1240,123 @@ export function DashboardPage({ mountedRouteSummary }) {
       <Card
         title="Tiến độ Học vụ & Kế hoạch Học tập Đã lưu (Task 3.9)"
         subtitle="Theo dõi tiến độ tích lũy thực tế và kế hoạch học tập đã đăng ký/lưu trữ gần nhất"
-        variant="status-info"
+        variant="default"
+        style={{
+          borderRadius: '24px',
+          border: '1px solid var(--color-hairline)',
+          backgroundColor: 'var(--color-paper)',
+          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+          overflow: 'hidden'
+        }}
         headerAction={
-          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <Button
-              variant="outline"
-              size="sm"
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="haui-pill-btn-paper"
+              style={{ fontSize: '12px', padding: '6px 14px' }}
               onClick={() => navigate('/audit')}
               title="Mở bảng kiểm toán tốt nghiệp và in báo cáo"
             >
-              🎓 {'Kiểm toán Tốt nghiệp & Báo cáo in'}
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>school</span>
+              <span>{'Kiểm toán Tốt nghiệp & Báo cáo in'}</span>
+            </button>
+            <button
+              type="button"
+              className="haui-pill-btn-dark"
+              style={{ fontSize: '12px', padding: '6px 16px' }}
               onClick={() => navigate('/planner?plan_id=plan-2026-9001')}
               title="Mở kế hoạch học tập cũ đã lưu trên hệ thống"
             >
-              📂 Mở Kế hoạch Học tập Đã lưu (Kế hoạch cũ) &rarr;
-            </Button>
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>folder_open</span>
+              <span>Mở Kế hoạch Học tập Đã lưu (Kế hoạch cũ) &rarr;</span>
+            </button>
           </div>
         }
       >
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-4)' }}>
-          <div style={{ padding: 'var(--space-3)', backgroundColor: 'var(--color-bg-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontWeight: 600 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+          <div
+            style={{
+              padding: '18px',
+              backgroundColor: 'var(--color-surface-alt)',
+              borderRadius: '16px',
+              border: '1px solid var(--color-hairline)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '8px'
+            }}
+          >
+            <div style={{ fontSize: '11px', color: 'var(--color-mid-gray)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               KẾ HOẠCH HỌC TẬP GẦN NHẤT
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
-              <strong style={{ fontSize: 'var(--text-base)', color: 'var(--color-primary)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+              <strong style={{ fontSize: '18px', fontFamily: 'var(--font-mono)', color: 'var(--color-ink)' }}>
                 plan-2026-9001
               </strong>
-              <span className="haui-badge haui-badge--success">ACTIVE</span>
+              <span style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700, backgroundColor: 'var(--color-ink)', color: 'var(--color-paper)' }}>
+                ACTIVE
+              </span>
             </div>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>
               Kế hoạch K17 – 18 tín chỉ kỳ tới &bull; Lưu: 2026-10-13
             </div>
           </div>
 
-          <div style={{ padding: 'var(--space-3)', backgroundColor: 'var(--color-bg-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontWeight: 600 }}>
+          <div
+            style={{
+              padding: '18px',
+              backgroundColor: 'var(--color-surface-alt)',
+              borderRadius: '16px',
+              border: '1px solid var(--color-hairline)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '8px'
+            }}
+          >
+            <div style={{ fontSize: '11px', color: 'var(--color-mid-gray)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               TIẾN ĐỘ KIỂM TOÁN TỐT NGHIỆP
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
-              <strong style={{ fontSize: 'var(--text-base)' }}>82% Hoàn thành</strong>
-              <span className="haui-badge haui-badge--warning">5/7 Đạt</span>
-            </div>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-warning-text)', marginTop: '4px' }}>
-              Còn 2 điều kiện cần bù đắp (Tin học MOS &amp; 6 TC tự chọn)
-            </div>
-          </div>
-
-          <div style={{ padding: 'var(--space-3)', backgroundColor: 'var(--color-bg-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontWeight: 600 }}>
-              BÁO CÁO HỌC VỤ &amp; IN ẤN
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
-              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
-                Hỗ trợ xuất PDF chuẩn A4 (Thực tế &bull; Dự kiến)
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+              <strong style={{ fontSize: '18px', color: 'var(--color-ink)' }}>82% Hoàn thành</strong>
+              <span style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', fontWeight: 600, backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
+                5/7 Đạt
               </span>
             </div>
-            <div style={{ marginTop: '8px' }}>
-              <Button variant="outline" size="sm" onClick={() => navigate('/audit')}>
-                🖨️ Xuất Báo Cáo Học Vụ &rarr;
-              </Button>
+            <div style={{ fontSize: '12px', color: 'var(--color-mid-gray)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-ember)' }} />
+              <span>Còn 2 điều kiện cần bù đắp (Tin học MOS &amp; 6 TC tự chọn)</span>
             </div>
           </div>
-        </div>
-      </Card>
 
-      {/* SECTION 8: 4 Phân khúc Sinh viên Mục tiêu từ 1-Page Brief & PRD Mục 2 */}
-      <Card
-        title="Đối tượng Mục tiêu (4 Phân khúc Sinh viên HaUI — 1-Page Brief & PRD Mục 2)"
-        subtitle="Chọn từng nhóm sinh viên để đối chiếu đặc điểm, nỗi đau học vụ và kịch bản tư vấn của HaUI Advisor"
-        headerAction={<span className="haui-badge haui-badge--primary">Student-Centric</span>}
-      >
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
-          {STUDENT_PERSONAS.map((p) => (
-            <Button
-              key={p.id}
-              variant={activePersonaId === p.id ? 'primary' : 'secondary'}
-              size="sm"
-              onClick={() => {
-                setActivePersonaId(p.id);
-                const mappedPresetKey = p.id === 'freshman' ? 'empty' : p.id === 'high-achiever' ? 'normal' : p.id;
-                if (STUDENT_PRESETS[mappedPresetKey]) {
-                  selectStudentPreset(mappedPresetKey);
-                  const snap = getAcademicSnapshot();
-                  api.setSessionStudent(snap.student);
-                }
-              }}
-            >
-              {p.segment}
-            </Button>
-          ))}
-        </div>
-
-        <div
-          style={{
-            backgroundColor: 'var(--color-bg-muted)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-cards)',
-            padding: 'var(--space-4)'
-          }}
-        >
-          <div className="haui-grid haui-grid--3">
-            <div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>HỒ SƠ MẪU (FIXTURE_ONLY)</div>
-              <div style={{ fontWeight: 700, marginTop: '4px' }}>
-                {activePersona.fullName} ({activePersona.studentId})
-              </div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
-                {activePersona.majorName} &bull; {activePersona.cohort} &bull; CPA: <strong>{activePersona.cpa}</strong> ({activePersona.accumulatedCredits}/{activePersona.totalCreditsRequired} TC)
-              </div>
+          <div
+            style={{
+              padding: '18px',
+              backgroundColor: 'var(--color-surface-alt)',
+              borderRadius: '16px',
+              border: '1px solid var(--color-hairline)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '8px'
+            }}
+          >
+            <div style={{ fontSize: '11px', color: 'var(--color-mid-gray)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              BÁO CÁO HỌC VỤ &amp; IN ẤN
             </div>
-            <div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>ĐẶC ĐIỂM &amp; NỖI ĐAU HỌC VỤ</div>
-              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-error-text)', marginTop: '4px' }}>
-                {activePersona.painPoint}
-              </div>
+            <div style={{ fontSize: '13px', color: 'var(--color-mid-gray)' }}>
+              Hỗ trợ xuất PDF chuẩn A4 (Thực tế &bull; Dự kiến)
             </div>
-            <div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>MỤC TIÊU SỬ DỤNG HAUI ADVISOR</div>
-              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-success-text)', marginTop: '4px' }}>
-                {activePersona.goal}
-              </div>
+            <div style={{ marginTop: '4px' }}>
+              <button
+                type="button"
+                className="haui-pill-btn-paper"
+                style={{ fontSize: '12px', padding: '6px 14px', width: 'fit-content' }}
+                onClick={() => navigate('/audit')}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>print</span>
+                <span>Xuất Báo Cáo Học Vụ &rarr;</span>
+              </button>
             </div>
           </div>
         </div>

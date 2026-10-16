@@ -9,7 +9,8 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@haui/planner-ui': path.resolve(__dirname, '../tv3-planner-ui/src/index.js')
+      '@haui/planner-ui': path.resolve(__dirname, '../tv3-planner-ui/src/index.js'),
+      '@haui/logo': path.resolve(__dirname, '../tv3-planner-ui/design/prototype/logo/logo.png')
     }
   },
   server: {

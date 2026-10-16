@@ -85,7 +85,7 @@
   --color-accent-hover: #09090b;
   --color-accent-light: #f4f4f5;
 
-  --color-ember: #000000;
+  --color-ember: #e7000b;           /* Restored: prototype red accent */
 
   /* ==========================================================================
      4. Status Colors (Monochrome Contrast Scheme)
@@ -102,11 +102,11 @@
   --color-warning-border: #a1a1aa;
   --color-warning-text: #18181b;
 
-  --color-error: #000000;
-  --color-error-hover: #18181b;
-  --color-error-bg: #f4f4f5;
-  --color-error-border: #000000;
-  --color-error-text: #000000;
+  --color-error: #ba1a1a;
+  --color-error-hover: #93000a;
+  --color-error-bg: #ffdad6;
+  --color-error-border: #ba1a1a;
+  --color-error-text: #93000a;
 
   --color-info: #3f3f46;
   --color-info-hover: #52525b;
@@ -248,11 +248,11 @@
   /* ==========================================================================
      10. Layout Dimensions & Transitions
      ========================================================================== */
-  --sidebar-width: 268px;
+  --sidebar-width: 288px;
   --sidebar-width-collapsed: 72px;
   --topbar-height: 64px;
-  --page-max-width: 1280px;
-  --content-max-width: 1280px;
+  --page-max-width: 1360px;
+  --content-max-width: 1360px;
   --card-padding: 20px;
   --element-gap: 8px;
 

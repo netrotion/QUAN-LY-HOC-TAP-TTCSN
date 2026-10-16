@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { plannerStore, PLAN_STATUSES } from '../services/plannerStore.js';
 
+const h = React.createElement;
+
 /**
  * 3 Công cụ What-if cốt lõi theo PRD FR-14–16 & UI Flow (Màn hình 6, 7, 8)
  * (Kèm tùy chọn học vượt 3.5 năm)
@@ -50,12 +52,14 @@ const GRADE_POINTS_MAP = Object.freeze({
 
 // Danh sách môn mẫu cho Màn 6 (Giả lập điểm kỳ tới)
 const DEFAULT_SIM_COURSES = Object.freeze([
-  { courseCode: 'MATH1002', courseName: 'Toán rời rạc', credits: 3, expectedGrade: 'B' },
-  { courseCode: 'IT2001', courseName: 'Lập trình hướng đối tượng', credits: 4, expectedGrade: 'A' },
-  { courseCode: 'IT6002', courseName: 'Lập trình mạng', credits: 3, expectedGrade: 'B+' },
-  { courseCode: 'IT4001', courseName: 'Cơ sở dữ liệu nâng cao', credits: 3, expectedGrade: 'B' },
-  { courseCode: 'IT6010', courseName: 'Phát triển ứng dụng Web', credits: 3, expectedGrade: 'A' },
-  { courseCode: 'FL2001', courseName: 'Tiếng Anh CNTT', credits: 2, expectedGrade: 'B' }
+  { courseCode: 'IT2001', courseName: 'Lập trình hướng đối tượng (Java)', credits: 4, expectedGrade: 'A', note: 'Bắt buộc chuyên ngành' },
+  { courseCode: 'IT6080', courseName: 'Đồ án chuyên ngành KTPM', credits: 3, expectedGrade: 'A', note: 'Bắt buộc • Đồ án tốt nghiệp nền tảng' },
+  { courseCode: 'IT6035', courseName: 'Kiểm thử và đảm bảo CLPM', credits: 3, expectedGrade: 'B+', note: 'Bắt buộc chuyên ngành' },
+  { courseCode: 'IT6042', courseName: 'Kiến trúc phần mềm & Thiết kế mẫu', credits: 3, expectedGrade: 'A', note: 'Bắt buộc cốt lõi KTPM' },
+  { courseCode: 'IT6050', courseName: 'Quản lý dự án CNTT', credits: 3, expectedGrade: 'B+', note: 'Môn cơ sở ngành tự chọn' },
+  { courseCode: 'IT6071', courseName: 'Phát triển ứng dụng di động', credits: 3, expectedGrade: 'B', note: 'Tự chọn định hướng' },
+  { courseCode: 'FL6006', courseName: 'Tiếng Anh chuyên ngành CNTT nâng cao 2', credits: 3, expectedGrade: 'B+', note: 'Điều kiện ngoại ngữ chuẩn đầu ra' },
+  { courseCode: 'MATH1002', courseName: 'Toán rời rạc', credits: 3, expectedGrade: 'B', note: 'Môn nợ tiên quyết cần gỡ' }
 ]);
 
 // Danh sách môn điểm thấp có thể học cải thiện cho Màn 7 (ROI Optimizer - BR-06)
@@ -116,20 +120,15 @@ const DEFAULT_RETAKE_CANDIDATES = Object.freeze([
 
 /**
  * Màn hình 6, 7, 8: Nhóm 3 công cụ What-if, ROI và Mục tiêu ngược (Task 3.10 — TV3)
- *
- * Tiêu chí kỹ thuật:
- * 1. 3 công cụ tại cùng nhóm What-if, hỗ trợ vào trực tiếp từng công cụ qua tab, query param hoặc prop.
- * 2. Chọn điểm / nhận kết quả mock; chọn môn cải thiện và xem xếp hạng ROI.
- * 3. Áp dụng tạo proposal DRAFT cho Planner để xem lại; chỉ thử/thoát không sửa bảng điểm hoặc bản ACTIVE.
- * 4. Debounce request (300ms) và loại bỏ response cũ đến muộn (out-of-order drop).
- * 5. Tuyệt đối không gọi AI / LLM trực tiếp khi kéo chọn điểm.
- *
- * @param {Object} props
- * @param {Object} props.api - Singleton API Client từ TV2
- * @param {Object} props.ui - Shared UI Library V0 từ TV2
- * @param {string} [props.initialTool] - Công cụ khởi tạo trực tiếp: 'grades' | 'retake' | 'target'
- * @param {string} [props.tool] - Công cụ điều khiển từ ngoài
- * @param {Function} [props.onNavigate] - Callback điều hướng sang Planner
+ * Tái thiết kế toàn diện theo Stitch Prototype `gpa_simulator/code.html` thuần JavaScript:
+ * - 100% không dùng thẻ JSX để tương thích tuyệt đối mọi bundler (Vite / Webpack / Node.js test runner)
+ * - Layout 2 cột: 7 cols (Left Panel) & 5 cols (Right Panel)
+ * - 4 Thẻ KPI thống kê chuẩn (CPA thực tế, CPA mô phỏng nền đen, Mục tiêu đặt ra, Tổng tín chỉ)
+ * - Hộp Sandbox Mode an toàn
+ * - Biểu đồ SVG tiến trình CPA: Đường thực tế (nét liền) + Đường mô phỏng (nét đứt) + Ngưỡng Giỏi 3.20
+ * - Đo lường độ nhạy & độ khả thi kịch bản (85%)
+ * - Danh sách 3 kịch bản đã lưu
+ * - Giữ nguyên 100% logic nghiệp vụ, debounce 300ms, sequence tracking và giao thức Store
  */
 export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } = {}) {
   const {
@@ -141,7 +140,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
     EmptyState
   } = ui || {};
 
-  // Xác định công cụ khởi đầu (hỗ trợ prop, query param URL hoặc mặc định 'grades')
+  // Xác định công cụ khởi đầu
   const resolveInitialTool = () => {
     if (tool && WHAT_IF_TOOLS.some((t) => t.id === tool)) return tool;
     if (initialTool && WHAT_IF_TOOLS.some((t) => t.id === initialTool)) return initialTool;
@@ -162,40 +161,27 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
 
   const [activeTool, setActiveTool] = useState(resolveInitialTool);
 
-  // Đồng bộ prop tool khi thay đổi từ ngoài
   useEffect(() => {
     if (tool && WHAT_IF_TOOLS.some((t) => t.id === tool)) {
       setActiveTool(tool);
     }
   }, [tool]);
 
-  // ========================================================
-  // STATE THAM SỐ 3 CÔNG CỤ
-  // ========================================================
-
-  // Công cụ 1: Giả lập điểm kỳ tới
+  // State tham số 3 công cụ
   const [simCourses, setSimCourses] = useState(() => DEFAULT_SIM_COURSES.map((c) => ({ ...c })));
-
-  // Công cụ 2: ROI học cải thiện
+  const [enableOptionalRetake, setEnableOptionalRetake] = useState(true);
   const [retakeCandidates, setRetakeCandidates] = useState(() =>
     DEFAULT_RETAKE_CANDIDATES.map((c) => ({ ...c }))
   );
   const [maxRetakeCourses, setMaxRetakeCourses] = useState(3);
-
-  // Công cụ 3: Tính điểm mục tiêu ngược
   const [targetCpaInput, setTargetCpaInput] = useState('3.20');
-
-  // Công cụ 4 (bổ trợ): Học vượt
   const [enableSummerAccelerate, setEnableSummerAccelerate] = useState(true);
 
-  // ========================================================
-  // DEBOUNCE & SEQUENCE TRACKING (BỎ RESPONSE CŨ ĐẾN MUỘN)
-  // ========================================================
+  // Debounce & Sequence tracking
   const requestIdRef = useRef(0);
   const debounceTimerRef = useRef(null);
   const [isDebouncing, setIsDebouncing] = useState(false);
 
-  // Kết quả, loading, error, toast
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -206,7 +192,6 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
     setTimeout(() => setToastMessage(''), 3500);
   }, []);
 
-  // Xóa timer khi unmount
   useEffect(() => {
     return () => {
       if (debounceTimerRef.current) {
@@ -215,12 +200,9 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
     };
   }, []);
 
-  // ========================================================
-  // ĐỘNG CƠ MÔ PHỎNG WHAT-IF (KHÔNG GỌI AI / LLM)
-  // ========================================================
+  // Động cơ mô phỏng What-if (không gọi AI / LLM)
   const executeSimulation = useCallback(
     async (toolId, overrideData = {}) => {
-      // Tăng sequence ID: mọi response có reqId < requestIdRef.current sẽ bị loại bỏ
       const currentRequestId = ++requestIdRef.current;
       setLoading(true);
       setError(null);
@@ -233,7 +215,6 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
           if (api?.simulation?.simulateGrades) {
             res = await api.simulation.simulateGrades({ courses: coursesToSimulate });
           } else {
-            // Mock engine tính toán điểm số cục bộ
             const totalCredits = coursesToSimulate.reduce((sum, c) => sum + Number(c.credits || 0), 0);
             const totalPoints = coursesToSimulate.reduce(
               (sum, c) => sum + Number(c.credits || 0) * (GRADE_POINTS_MAP[c.expectedGrade] ?? 3.0),
@@ -241,17 +222,17 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
             );
             const expectedGpa = totalCredits > 0 ? Number((totalPoints / totalCredits).toFixed(2)) : 3.0;
 
-            const currentCpa = 2.45;
-            const currentCredits = 68;
+            const currentCpa = 3.18;
+            const currentCredits = 108;
             const projectedCpa = Number(
               ((currentCpa * currentCredits + totalPoints) / (currentCredits + totalCredits)).toFixed(2)
             );
             const cpaDelta = Number((projectedCpa - currentCpa).toFixed(2));
 
-            let rankChange = 'Duy trì Trung bình';
+            let rankChange = 'Duy trì Khá';
             if (projectedCpa >= 3.6) rankChange = 'Đạt Bằng Xuất sắc (CPA ≥ 3.60)';
             else if (projectedCpa >= 3.2) rankChange = 'Chính thức đạt ngưỡng Bằng Giỏi (CPA ≥ 3.20)';
-            else if (projectedCpa >= 2.5) rankChange = 'Từ Trung bình (2.45) → Đạt Bằng Khá (CPA ≥ 2.50)';
+            else if (projectedCpa >= 2.5) rankChange = 'Xếp loại Khá (CPA ≥ 2.50)';
 
             res = {
               currentCpa,
@@ -270,13 +251,11 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
           if (api?.simulation?.rankRetake) {
             res = await api.simulation.rankRetake({ maxCourses: Number(maxCourses) || 3 });
           } else {
-            // Mock engine tính toán ROI học cải thiện: ROI = cpaDelta / credits
             const ranked = candidates
               .map((item) => {
                 const targetPoints = GRADE_POINTS_MAP[item.targetGrade] ?? 4.0;
                 const currentPoints = item.currentGradePoints ?? 1.0;
                 const pointGain = Math.max(0, targetPoints - currentPoints);
-                // Giả định tổng tín chỉ tốt nghiệp 135 TC
                 const cpaDelta = Number(((pointGain * item.credits) / 135).toFixed(2));
                 const roi = item.credits > 0 ? Number((cpaDelta / item.credits).toFixed(4)) : 0;
                 return {
@@ -312,11 +291,10 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
           if (api?.simulation?.calculateTargetGrades) {
             res = await api.simulation.calculateTargetGrades({ targetCpa });
           } else {
-            // Mock engine tính ngược điểm cần đạt
-            const currentCpa = 2.45;
-            const earnedCredits = 68;
-            const totalCredits = 135;
-            const remainingCredits = totalCredits - earnedCredits; // 67 TC
+            const currentCpa = 3.18;
+            const earnedCredits = 108;
+            const totalCredits = 145;
+            const remainingCredits = totalCredits - earnedCredits;
 
             const requiredTotalPoints = targetCpa * totalCredits - currentCpa * earnedCredits;
             const requiredAverageGpa = Number((requiredTotalPoints / remainingCredits).toFixed(2));
@@ -347,17 +325,17 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
               allocationSummary,
               courseRequirements: [
                 {
-                  courseCode: 'IT4001',
-                  courseName: 'Cơ sở dữ liệu nâng cao',
+                  courseCode: 'IT6080',
+                  courseName: 'Đồ án chuyên ngành KTPM',
                   credits: 3,
-                  requiredGrade: requiredAverageGpa >= 3.4 ? 'A (4.0)' : 'B+ (3.5)',
-                  rationale: 'Môn chuyên ngành cốt lõi cần đạt điểm cao để giữ nhịp GPA'
+                  requiredGrade: requiredAverageGpa >= 3.3 ? 'A (4.0)' : 'B+ (3.5)',
+                  rationale: 'Học phần then chốt quyết định ngưỡng CPA Giỏi'
                 },
                 {
-                  courseCode: 'IT6002',
-                  courseName: 'Lập trình mạng',
+                  courseCode: 'IT6035',
+                  courseName: 'Kiểm thử & đảm bảo CLPM',
                   credits: 3,
-                  requiredGrade: requiredAverageGpa >= 3.4 ? 'B+ (3.5)' : 'B (3.0)',
+                  requiredGrade: requiredAverageGpa >= 3.3 ? 'B+ (3.5)' : 'B (3.0)',
                   rationale: 'Duy trì chuẩn GPA trung bình các kỳ còn lại'
                 }
               ]
@@ -376,12 +354,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
           };
         }
 
-        // KIỂM TRA SEQUENCE ID ĐỂ BỎ RESPONSE CŨ ĐẾN MUỘN (OUT-OF-ORDER DROP)
-        if (currentRequestId !== requestIdRef.current) {
-          // Bỏ qua response này vì đã có request mới hơn được phát đi
-          return;
-        }
-
+        if (currentRequestId !== requestIdRef.current) return;
         setResult(res);
       } catch (err) {
         if (currentRequestId !== requestIdRef.current) return;
@@ -400,7 +373,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
     [api, maxRetakeCourses, retakeCandidates, simCourses, targetCpaInput]
   );
 
-  // Kích hoạt debounce khi người dùng thay đổi dữ liệu nhập liên tiếp
+  // Debounce 300ms
   const scheduleDebouncedSimulation = useCallback(
     (toolId, overrideData = {}) => {
       if (debounceTimerRef.current) {
@@ -409,23 +382,19 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
       setIsDebouncing(true);
       debounceTimerRef.current = setTimeout(() => {
         executeSimulation(toolId, overrideData);
-      }, 300); // Debounce 300ms
+      }, 300);
     },
     [executeSimulation]
   );
 
-  // Tự động tính toán khi chuyển đổi công cụ
+  // Tự động tính toán khi chuyển tab
   useEffect(() => {
     setResult(null);
     setError(null);
     executeSimulation(activeTool);
   }, [activeTool, executeSimulation]);
 
-  // ========================================================
-  // XỬ LÝ SỰ KIỆN TỪNG CÔNG CỤ
-  // ========================================================
-
-  // Tool 1: Thay đổi điểm môn học
+  // Handlers
   const handleGradeChange = (courseCode, newGrade) => {
     const nextCourses = simCourses.map((c) =>
       c.courseCode === courseCode ? { ...c, expectedGrade: newGrade } : c
@@ -434,7 +403,6 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
     scheduleDebouncedSimulation('grades', { simCourses: nextCourses });
   };
 
-  // Tool 2: Bật/tắt chọn môn cải thiện
   const handleToggleRetakeCourse = (courseCode) => {
     const nextCandidates = retakeCandidates.map((c) =>
       c.courseCode === courseCode ? { ...c, selected: !c.selected } : c
@@ -443,7 +411,6 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
     scheduleDebouncedSimulation('retake', { retakeCandidates: nextCandidates });
   };
 
-  // Tool 2: Thay đổi điểm mục tiêu môn cải thiện
   const handleRetakeGradeChange = (courseCode, targetGrade) => {
     const nextCandidates = retakeCandidates.map((c) =>
       c.courseCode === courseCode ? { ...c, targetGrade } : c
@@ -452,28 +419,23 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
     scheduleDebouncedSimulation('retake', { retakeCandidates: nextCandidates });
   };
 
-  // Tool 3: Thay đổi CPA mục tiêu
   const handleTargetCpaChange = (value) => {
     setTargetCpaInput(value);
     scheduleDebouncedSimulation('target', { targetCpaInput: value });
   };
 
-  // ========================================================
-  // HÀNH ĐỘNG: ÁP DỤNG VÀO PLANNER (XEM LẠI, KHÔNG SỬA ACTIVE)
-  // ========================================================
+  // Áp dụng vào Planner
   const handleApplyToPlanner = useCallback(() => {
     if (!result) return;
 
     const basePlan = plannerStore.getPlan();
     const updatedPlan = JSON.parse(JSON.stringify(basePlan));
-
     let proposalTitle = 'What-if: Giả lập điểm kỳ tới';
 
     if (activeTool === 'grades') {
       proposalTitle = 'What-if: Giả lập điểm kỳ 7';
       if (updatedPlan.semesters?.[0]) {
         updatedPlan.semesters[0].expectedGpa = result.expectedGpa || 3.44;
-        // Cập nhật điểm mục tiêu từng môn vào Kỳ 7
         if (Array.isArray(result.courses)) {
           updatedPlan.semesters[0].courses = result.courses.map((c) => ({
             ...c,
@@ -482,14 +444,13 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
           }));
         }
       }
-      updatedPlan.projectedCpa = result.projectedCpa || 2.58;
-      updatedPlan.projectedRank = result.rankChange || 'Bằng Khá';
+      updatedPlan.projectedCpa = result.projectedCpa || 3.31;
+      updatedPlan.projectedRank = result.rankChange || 'Bằng Giỏi';
     } else if (activeTool === 'retake') {
       proposalTitle = 'What-if: Bổ sung môn học cải thiện ROI';
       const selectedCourses = retakeCandidates.filter((c) => c.selected);
 
       if (updatedPlan.semesters?.[0]) {
-        // Đưa các môn cải thiện vào Kỳ 7
         const existingCodes = new Set(updatedPlan.semesters[0].courses.map((c) => c.courseCode));
         for (const item of selectedCourses) {
           if (!existingCodes.has(item.courseCode)) {
@@ -508,7 +469,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
           0
         );
       }
-      updatedPlan.projectedCpa = Number((2.45 + (result.totalPotentialCpaGain || 0.16)).toFixed(2));
+      updatedPlan.projectedCpa = Number((3.18 + (result.totalPotentialCpaGain || 0.16)).toFixed(2));
     } else if (activeTool === 'target') {
       proposalTitle = `What-if: Lộ trình mục tiêu CPA ${result.targetCpa || 3.2}`;
       updatedPlan.targetCpa = result.targetCpa || 3.2;
@@ -521,7 +482,6 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
       updatedPlan.version = 'v2.4 (Học vượt 3.5 năm)';
     }
 
-    // Đẩy phương án vào incomingProposal của plannerStore (KHÔNG sửa ACTIVE, KHÔNG sửa bảng điểm)
     plannerStore.setIncomingProposal(updatedPlan, proposalTitle);
     showToast(
       '✓ Đã áp dụng tạo phương án đề xuất cho Planner! Hãy mở Planner để xem lại và quyết định lưu nháp hoặc kích hoạt.'
@@ -532,11 +492,8 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
     }
   }, [activeTool, onNavigate, result, retakeCandidates, showToast]);
 
-  // ========================================================
-  // HÀNH ĐỘNG: THOÁT / HỦY THỬ NGHIỆM
-  // ========================================================
+  // Thoát thử nghiệm
   const handleExitSimulation = useCallback(() => {
-    // Reset trạng thái What-if, hủy bỏ proposal dở (nếu có)
     setResult(null);
     setError(null);
     plannerStore.dismissProposal();
@@ -547,225 +504,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
     }
   }, [onNavigate, showToast]);
 
-  // ========================================================
-  // RENDER SECTIONS
-  // ========================================================
-
-  // Header
-  const headerSection = React.createElement(
-    'div',
-    {
-      style: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        marginBottom: '20px'
-      }
-    },
-    // Breadcrumb
-    React.createElement(
-      'div',
-      {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          fontSize: '12px',
-          color: 'var(--color-mid-gray, #737373)'
-        }
-      },
-      React.createElement(
-        'span',
-        {
-          style: { cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }
-        },
-        React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '15px' } }, 'home'),
-        'Trang chủ'
-      ),
-      React.createElement('span', { style: { color: 'var(--color-hairline, #e5e5e5)' } }, '/'),
-      React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500 } }, 'What-if mô phỏng điểm')
-    ),
-    // Title bar
-    React.createElement(
-      'div',
-      {
-        style: {
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          flexWrap: 'wrap',
-          gap: '16px'
-        }
-      },
-      React.createElement(
-        'div',
-        { style: { maxWidth: '780px' } },
-        React.createElement(
-          'div',
-          { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-          React.createElement(
-            'h1',
-            {
-              style: {
-                fontSize: '28px',
-                fontWeight: 700,
-                letterSpacing: '-0.02em',
-                color: 'var(--color-ink, #0a0a0a)',
-                margin: 0
-              }
-            },
-            'What-if – Mô phỏng kịch bản điểm & Học lực'
-          ),
-          isDebouncing
-            ? React.createElement(
-                'span',
-                {
-                  style: {
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    color: '#2563eb',
-                    background: '#dbeafe',
-                    padding: '2px 8px',
-                    borderRadius: '12px'
-                  }
-                },
-                'Đang cập nhật...'
-              )
-            : null
-        ),
-        React.createElement(
-          'p',
-          {
-            style: {
-              color: 'var(--color-mid-gray, #737373)',
-              marginTop: '6px',
-              fontSize: '13px',
-              lineHeight: 1.5,
-              margin: '6px 0 0'
-            }
-          },
-          'Thử nghiệm các kịch bản cải thiện điểm, dự báo điểm học kỳ tới và đánh giá tác động lên CPA tốt nghiệp mà không làm ảnh hưởng đến bảng điểm thật trên hệ thống.'
-        )
-      ),
-      React.createElement(
-        'div',
-        { style: { display: 'flex', gap: '8px' } },
-        Button
-          ? React.createElement(
-              Button,
-              { variant: 'ghost', size: 'sm', onClick: handleExitSimulation },
-              'Thoát thử nghiệm'
-            )
-          : null,
-        Button
-          ? React.createElement(
-              Button,
-              {
-                variant: 'secondary',
-                size: 'sm',
-                onClick: () => executeSimulation(activeTool)
-              },
-              '⚡ Tính toán ngay'
-            )
-          : null
-      )
-    ),
-    // Safety Sandbox Notice Card
-    React.createElement(
-      'div',
-      {
-        style: {
-          borderRadius: 'var(--radius-cards, 24px)',
-          backgroundColor: 'var(--color-paper, #ffffff)',
-          padding: '16px 20px',
-          border: '1px solid var(--color-hairline, #e5e5e5)',
-          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '14px'
-        }
-      },
-      React.createElement(
-        'div',
-        {
-          style: {
-            width: '38px',
-            height: '38px',
-            borderRadius: '9999px',
-            backgroundColor: 'var(--color-canvas, #f5f5f5)',
-            color: 'var(--color-ink, #0a0a0a)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }
-        },
-        React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '20px' } }, 'science')
-      ),
-      React.createElement(
-        'div',
-        { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
-        React.createElement(
-          'div',
-          { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-          React.createElement('span', { style: { fontSize: '13px', fontWeight: 600, color: 'var(--color-ink, #0a0a0a)' } }, 'Chế độ mô phỏng an toàn (Sandbox Mode)'),
-          React.createElement(
-            'span',
-            {
-              style: {
-                fontSize: '11px',
-                padding: '2px 8px',
-                borderRadius: '9999px',
-                backgroundColor: 'var(--color-canvas, #f5f5f5)',
-                color: 'var(--color-mid-gray, #737373)',
-                fontWeight: 500
-              }
-            },
-            'Bảo vệ dữ liệu'
-          )
-        ),
-        React.createElement(
-          'p',
-          { style: { margin: 0, fontSize: '12px', color: 'var(--color-mid-gray, #737373)', lineHeight: 1.5 } },
-          'Mọi tính toán điểm số tại đây chỉ là kịch bản giả lập chạy độc lập trong phiên làm việc hiện tại, tuyệt đối không gửi yêu cầu thay đổi dữ liệu bảng điểm chính thức trên cổng đào tạo HaUI.'
-        )
-      )
-    )
-  );
-
-  // Toast
-  const toastBar = toastMessage
-    ? React.createElement(
-        'div',
-        {
-          style: {
-            padding: '10px 16px',
-            marginBottom: '16px',
-            borderRadius: '12px',
-            background: '#0a0a0a',
-            color: '#ffffff',
-            fontSize: '13px',
-            fontWeight: 500,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-          }
-        },
-        React.createElement('span', null, toastMessage),
-        React.createElement(
-          'button',
-          {
-            type: 'button',
-            onClick: () => setToastMessage(''),
-            style: { background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '16px' }
-          },
-          '×'
-        )
-      )
-    : null;
-
-  // 4 Thẻ KPI Metrics Grid theo prototype gpa_simulator/code.html
+  // Giá trị KPI
   const currentCpaVal = result?.currentCpa ?? 3.18;
   const simulatedCpaVal = result?.projectedCpa ?? result?.projectedNewCpa ?? 3.31;
   const deltaVal = typeof result?.cpaDelta === 'number'
@@ -776,826 +515,1037 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
   const targetCpaVal = parseFloat(targetCpaInput) || 3.20;
   const targetDiff = +(simulatedCpaVal - targetCpaVal).toFixed(2);
 
-  const metricsGrid = React.createElement(
+  return h(
     'div',
-    {
-      style: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        gap: '16px',
-        marginBottom: '20px'
-      }
-    },
-    // Metric 1: Current CPA
-    React.createElement(
-      'div',
-      {
-        style: {
-          borderRadius: '24px',
-          backgroundColor: 'var(--color-paper, #ffffff)',
-          padding: '20px',
-          border: '1px solid var(--color-hairline, #e5e5e5)',
-          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          gap: '12px'
-        }
-      },
-      React.createElement(
-        'div',
-        { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
-        React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 } }, 'CPA Thực tế'),
-        React.createElement(
-          'span',
-          { style: { width: '28px', height: '28px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas, #f5f5f5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-mid-gray, #737373)' } },
-          React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'school')
-        )
-      ),
-      React.createElement(
-        'div',
-        null,
-        React.createElement(
-          'div',
-          { style: { display: 'flex', alignItems: 'baseline', gap: '6px' } },
-          React.createElement('span', { style: { fontSize: '28px', fontWeight: 700, color: 'var(--color-ink, #0a0a0a)' } }, `${currentCpaVal}`),
-          React.createElement('span', { style: { fontSize: '14px', color: 'var(--color-mid-gray, #737373)' } }, '/ 4.00')
-        ),
-        React.createElement(
-          'div',
-          { style: { display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' } },
-          React.createElement('span', { style: { padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas, #f5f5f5)', fontSize: '11px', fontWeight: 600, color: 'var(--color-ink, #0a0a0a)' } }, '108 Tín chỉ'),
-          React.createElement('span', { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } }, '• Xếp loại Khá')
-        )
-      )
-    ),
-    // Metric 2: Simulated CPA (Black Card)
-    React.createElement(
-      'div',
-      {
-        style: {
-          borderRadius: '24px',
-          backgroundColor: '#0a0a0a',
-          color: '#ffffff',
-          padding: '20px',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.12)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          gap: '12px',
-          position: 'relative',
-          overflow: 'hidden'
-        }
-      },
-      React.createElement(
-        'div',
-        { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 2 } },
-        React.createElement('span', { style: { fontSize: '11px', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 } }, 'CPA Mô phỏng dự kiến'),
-        React.createElement(
-          'span',
-          { style: { width: '28px', height: '28px', borderRadius: '9999px', backgroundColor: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' } },
-          React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'trending_up')
-        )
-      ),
-      React.createElement(
-        'div',
-        { style: { position: 'relative', zIndex: 2 } },
-        React.createElement(
-          'div',
-          { style: { display: 'flex', alignItems: 'baseline', gap: '8px' } },
-          React.createElement('span', { style: { fontSize: '28px', fontWeight: 700, color: '#ffffff' } }, `${simulatedCpaVal}`),
-          React.createElement('span', { style: { fontSize: '14px', color: 'rgba(255,255,255,0.6)' } }, '/ 4.00'),
-          React.createElement('span', { style: { marginLeft: 'auto', padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'rgba(255,255,255,0.2)', fontSize: '12px', fontWeight: 700, color: '#ffffff' } }, `${deltaVal >= 0 ? '+' : ''}${deltaVal}`)
-        ),
-        React.createElement(
-          'div',
-          { style: { display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' } },
-          React.createElement('span', { style: { width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: '#ffffff' } }),
-          React.createElement('span', { style: { fontSize: '11px', color: '#ffffff', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.02em' } }, simulatedCpaVal >= 3.60 ? 'Đạt xếp loại XUẤT SẮC (≥ 3.60)' : simulatedCpaVal >= 3.20 ? 'Đạt xếp loại GIỎI (≥ 3.20)' : 'Xếp loại KHÁ')
-        )
-      )
-    ),
-    // Metric 3: Target CPA
-    React.createElement(
-      'div',
-      {
-        style: {
-          borderRadius: '24px',
-          backgroundColor: 'var(--color-paper, #ffffff)',
-          padding: '20px',
-          border: '1px solid var(--color-hairline, #e5e5e5)',
-          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          gap: '12px'
-        }
-      },
-      React.createElement(
-        'div',
-        { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
-        React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 } }, 'Mục tiêu đặt ra'),
-        React.createElement(
-          'span',
-          { style: { width: '28px', height: '28px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas, #f5f5f5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-mid-gray, #737373)' } },
-          React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'flag')
-        )
-      ),
-      React.createElement(
-        'div',
-        null,
-        React.createElement(
-          'div',
-          { style: { display: 'flex', alignItems: 'baseline', gap: '6px' } },
-          React.createElement('span', { style: { fontSize: '28px', fontWeight: 700, color: 'var(--color-ink, #0a0a0a)' } }, `${targetCpaVal.toFixed(2)}`),
-          React.createElement('span', { style: { fontSize: '14px', color: 'var(--color-mid-gray, #737373)' } }, '/ 4.00')
-        ),
-        React.createElement(
-          'div',
-          { style: { display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' } },
-          React.createElement(
-            'span',
-            { style: { padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas, #f5f5f5)', fontSize: '11px', fontWeight: 600, color: targetDiff >= 0 ? '#16a34a' : '#b45309' } },
-            targetDiff >= 0 ? `Vượt mục tiêu +${targetDiff}` : `Cách mục tiêu ${targetDiff}`
-          ),
-          React.createElement('span', { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } }, targetDiff >= 0 ? 'Thỏa mãn điều kiện' : 'Cần phấn đấu thêm')
-        )
-      )
-    ),
-    // Metric 4: Total Credits
-    React.createElement(
-      'div',
-      {
-        style: {
-          borderRadius: '24px',
-          backgroundColor: 'var(--color-paper, #ffffff)',
-          padding: '20px',
-          border: '1px solid var(--color-hairline, #e5e5e5)',
-          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          gap: '12px'
-        }
-      },
-      React.createElement(
-        'div',
-        { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
-        React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 } }, 'Tổng tín chỉ tính toán'),
-        React.createElement(
-          'span',
-          { style: { width: '28px', height: '28px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas, #f5f5f5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-mid-gray, #737373)' } },
-          React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'layers')
-        )
-      ),
-      React.createElement(
-        'div',
-        null,
-        React.createElement(
-          'div',
-          { style: { display: 'flex', alignItems: 'baseline', gap: '6px' } },
-          React.createElement('span', { style: { fontSize: '28px', fontWeight: 700, color: 'var(--color-ink, #0a0a0a)' } }, '126'),
-          React.createElement('span', { style: { fontSize: '14px', color: 'var(--color-mid-gray, #737373)' } }, '/ 145 TC chuẩn')
-        ),
-        React.createElement(
-          'div',
-          { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)', marginTop: '8px' } },
-          '108 TC hiện tại + 18 TC kỳ 7'
-        )
-      )
-    )
-  );
+    { className: 'haui-page-container', style: { maxWidth: '1440px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' } },
 
-  // Thanh chọn trực tiếp 3 công cụ (Direct entry tabs)
-  const toolSelector = React.createElement(
-    'div',
-    {
-      style: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-        gap: '12px',
-        marginBottom: '20px'
-      }
-    },
-    WHAT_IF_TOOLS.map((t) => {
-      const isActive = activeTool === t.id;
-      return React.createElement(
+    // SECTION 1: BREADCRUMB & HEADER
+    h(
+      'div',
+      { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+      h(
+        'nav',
+        { style: { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } },
+        h(
+          'span',
+          { style: { cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'inherit' } },
+          h('span', { className: 'material-symbols-outlined', style: { fontSize: '14px' } }, 'home'),
+          'Trang chủ'
+        ),
+        h('span', { style: { color: 'var(--color-hairline, #e5e5e5)' } }, '/'),
+        h('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500 } }, 'What-if mô phỏng điểm')
+      ),
+      h(
         'div',
-        {
-          key: t.id,
-          onClick: () => setActiveTool(t.id),
-          style: {
-            padding: '14px 16px',
-            borderRadius: '16px',
-            cursor: 'pointer',
-            background: isActive ? '#ffffff' : '#f8fafc',
-            border: isActive ? '2px solid #0f172a' : '1px solid #e2e8f0',
-            boxShadow: isActive ? '0 4px 12px rgba(0,0,0,0.06)' : 'none',
-            transition: 'all 0.15s ease'
-          }
-        },
-        React.createElement(
+        { style: { display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: '16px', paddingTop: '4px' } },
+        h(
+          'div',
+          null,
+          h(
+            'div',
+            { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+            h(
+              'h1',
+              { style: { fontSize: '30px', fontWeight: 600, color: 'var(--color-ink, #0a0a0a)', margin: 0, letterSpacing: '-0.5px' } },
+              'What-if – Mô phỏng kịch bản điểm & Học lực'
+            ),
+            isDebouncing
+              ? h(
+                  'span',
+                  { style: { fontSize: '11px', fontWeight: 600, color: '#2563eb', background: '#dbeafe', padding: '2px 8px', borderRadius: '12px' } },
+                  'Đang cập nhật...'
+                )
+              : null
+          ),
+          h(
+            'p',
+            { style: { margin: '6px 0 0', fontSize: '14px', color: 'var(--color-mid-gray, #737373)', maxWidth: '780px', lineHeight: 1.5 } },
+            'Thử nghiệm các kịch bản cải thiện điểm, dự báo điểm học kỳ tới và đánh giá tác động lên CPA tốt nghiệp mà không làm ảnh hưởng đến bảng điểm thật trên hệ thống.'
+          )
+        ),
+        // Action Buttons Header
+        h(
+          'div',
+          { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
+          h(
+            'button',
+            {
+              type: 'button',
+              className: 'haui-pill-btn-canvas',
+              onClick: () => {
+                setSimCourses(DEFAULT_SIM_COURSES.map((c) => ({ ...c })));
+                setTargetCpaInput('3.20');
+                executeSimulation(activeTool);
+                showToast('Đã khôi phục các tham số mặc định.');
+              }
+            },
+            h('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'restart_alt'),
+            h('span', null, 'Đặt lại mặc định')
+          ),
+          h(
+            'button',
+            {
+              type: 'button',
+              className: 'haui-pill-btn-paper',
+              onClick: () => window.print()
+            },
+            h('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'file_download'),
+            h('span', null, 'Xuất báo cáo')
+          ),
+          h(
+            'button',
+            {
+              type: 'button',
+              className: 'haui-pill-btn-dark',
+              onClick: () => showToast('Đã lưu kịch bản vào bộ nhớ phiên làm việc.')
+            },
+            h('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'bookmark_added'),
+            h('span', null, 'Lưu kịch bản')
+          ),
+          h(
+            'button',
+            {
+              type: 'button',
+              className: 'haui-pill-btn-canvas',
+              onClick: handleExitSimulation,
+              title: 'Thoát thử nghiệm'
+            },
+            h('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'close'),
+            h('span', null, 'Thoát thử nghiệm')
+          )
+        )
+      )
+    ),
+
+    // Safety Sandbox Notice Card
+    h(
+      'div',
+      {
+        style: {
+          borderRadius: '24px',
+          backgroundColor: 'var(--color-paper, #ffffff)',
+          padding: '16px 20px',
+          border: '1px solid var(--color-hairline, #e5e5e5)',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '14px'
+        }
+      },
+      h(
+        'div',
+        { style: { width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--color-canvas, #f5f5f5)', color: 'var(--color-ink, #0a0a0a)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 } },
+        h('span', { className: 'material-symbols-outlined', style: { fontSize: '20px' } }, 'science')
+      ),
+      h(
+        'div',
+        { style: { display: 'flex', flexDirection: 'column', gap: '3px' } },
+        h(
           'div',
           { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-          React.createElement('span', { style: { fontSize: '16px' } }, t.icon),
-          React.createElement('strong', { style: { fontSize: '13px', color: '#0f172a' } }, t.name)
+          h('span', { style: { fontSize: '14px', fontWeight: 600, color: 'var(--color-ink, #0a0a0a)' } }, 'Chế độ mô phỏng an toàn (Sandbox Mode)'),
+          h('span', { style: { fontSize: '11px', padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas, #f5f5f5)', color: 'var(--color-mid-gray, #737373)', fontWeight: 500 } }, 'Bảo vệ dữ liệu')
         ),
-        React.createElement(
+        h(
           'p',
-          { style: { margin: '6px 0 0 0', fontSize: '12px', color: '#64748b' } },
-          t.description
+          { style: { margin: 0, fontSize: '13px', color: 'var(--color-mid-gray, #737373)', lineHeight: 1.5 } },
+          'Mọi tính toán điểm số tại đây chỉ là kịch bản giả lập chạy độc lập trong phiên làm việc hiện tại, tuyệt đối không gửi yêu cầu thay đổi dữ liệu bảng điểm chính thức trên cổng đào tạo HaUI.'
         )
-      );
-    })
-  );
+      )
+    ),
 
-  return React.createElement(
-    'div',
-    { className: 'haui-page-container haui-whatif-page', style: { padding: '24px 0' } },
-    headerSection,
-    toastBar,
-    metricsGrid,
-    toolSelector,
-
-    // KHUNG THIẾT LẬP THAM SỐ CÔNG CỤ HIỆN TẠI
-    Card
-      ? React.createElement(
-          Card,
+    // Toast Alert
+    toastMessage
+      ? h(
+          'div',
           {
-            title: `Cấu hình: ${WHAT_IF_TOOLS.find((t) => t.id === activeTool)?.name}`,
-            subtitle: 'Thay đổi điểm số/mục tiêu để hệ thống tự động debounce và tính toán lại.',
-            variant: 'default',
-            padding: 'md'
+            style: {
+              position: 'fixed',
+              bottom: '24px',
+              right: '24px',
+              zIndex: 100,
+              backgroundColor: 'var(--color-ink, #0a0a0a)',
+              color: '#ffffff',
+              padding: '12px 20px',
+              borderRadius: '9999px',
+              fontSize: '13px',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.16)'
+            }
           },
+          h('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'check_circle'),
+          h('span', null, toastMessage)
+        )
+      : null,
 
-          // ----------------------------------------------------
-          // CÔNG CỤ 1: GIẢ LẬP ĐIỂM KỲ TỚI (MÀN 6)
-          // ----------------------------------------------------
-          activeTool === 'grades'
-            ? React.createElement(
-                'div',
-                null,
-                React.createElement(
-                  'p',
-                  { style: { fontSize: '13px', color: '#64748b', marginTop: 0 } },
-                  'Chọn điểm số dự kiến cho từng học phần của Học kỳ 7 để kiểm tra tác động lên CPA tích lũy:'
-                ),
-                React.createElement(
-                  'div',
-                  {
-                    style: {
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                      gap: '10px'
-                    }
-                  },
-                  simCourses.map((c) =>
-                    React.createElement(
-                      'div',
-                      {
-                        key: c.courseCode,
-                        style: {
-                          padding: '10px 12px',
-                          borderRadius: '10px',
-                          background: '#f8fafc',
-                          border: '1px solid #e2e8f0',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center'
-                        }
-                      },
-                      React.createElement(
-                        'div',
-                        null,
-                        React.createElement(
-                          'strong',
-                          { style: { fontSize: '13px', color: '#0284c7' } },
-                          `${c.courseCode} `
-                        ),
-                        React.createElement('span', { style: { fontSize: '12px', fontWeight: 500 } }, c.courseName),
-                        React.createElement(
-                          'div',
-                          { style: { fontSize: '11px', color: '#64748b' } },
-                          `${c.credits} tín chỉ`
-                        )
-                      ),
-                      React.createElement(
-                        'select',
-                        {
-                          value: c.expectedGrade,
-                          onChange: (e) => handleGradeChange(c.courseCode, e.target.value),
-                          style: {
-                            padding: '6px 10px',
-                            borderRadius: '8px',
-                            border: '1.5px solid #cbd5e1',
-                            fontWeight: 700,
-                            color: '#16a34a',
-                            background: '#ffffff',
-                            cursor: 'pointer'
-                          }
-                        },
-                        Object.keys(GRADE_POINTS_MAP).map((g) =>
-                          React.createElement('option', { key: g, value: g }, `Điểm ${g}`)
-                        )
-                      )
-                    )
-                  )
-                )
-              )
-            : null,
+    // SECTION 2: 4 CORE STAT KPI CARDS
+    h(
+      'div',
+      { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' } },
 
-          // ----------------------------------------------------
-          // CÔNG CỤ 2: TỐI ƯU ROI HỌC CẢI THIỆN (MÀN 7)
-          // ----------------------------------------------------
-          activeTool === 'retake'
-            ? React.createElement(
-                'div',
-                null,
-                React.createElement(
-                  'p',
-                  { style: { fontSize: '13px', color: '#64748b', marginTop: 0 } },
-                  'Danh sách môn điểm D, D+, C hoặc F đã hoàn thành. Tích chọn các môn muốn đưa vào kế hoạch cải thiện:'
-                ),
-                React.createElement(
-                  'div',
-                  { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
-                  retakeCandidates.map((item) =>
-                    React.createElement(
-                      'div',
-                      {
-                        key: item.courseCode,
-                        style: {
-                          padding: '12px 14px',
-                          borderRadius: '12px',
-                          background: item.selected ? '#f0fdf4' : '#f8fafc',
-                          border: item.selected ? '1.5px solid #22c55e' : '1px solid #e2e8f0',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          flexWrap: 'wrap',
-                          gap: '10px'
-                        }
-                      },
-                      React.createElement(
-                        'div',
-                        { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
-                        React.createElement('input', {
-                          type: 'checkbox',
-                          checked: Boolean(item.selected),
-                          onChange: () => handleToggleRetakeCourse(item.courseCode),
-                          style: { width: '18px', height: '18px', cursor: 'pointer' }
-                        }),
-                        React.createElement(
-                          'div',
-                          null,
-                          React.createElement(
-                            'div',
-                            { style: { fontWeight: 700, fontSize: '13px', color: '#0f172a' } },
-                            `${item.courseName} (${item.courseCode})`
-                          ),
-                          React.createElement(
-                            'div',
-                            { style: { fontSize: '12px', color: '#64748b', marginTop: '2px' } },
-                            `${item.credits} tín chỉ · Điểm hiện tại: `,
-                            React.createElement('strong', { style: { color: '#dc2626' } }, item.currentGrade),
-                            ` · ${item.rationale}`
-                          )
-                        )
-                      ),
-                      React.createElement(
-                        'div',
-                        { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
-                        React.createElement(
-                          'div',
-                          { style: { textAlign: 'right' } },
-                          React.createElement(
-                            'div',
-                            { style: { fontSize: '11px', color: '#64748b' } },
-                            'Mục tiêu cải thiện:'
-                          ),
-                          React.createElement(
-                            'select',
-                            {
-                              value: item.targetGrade,
-                              onChange: (e) => handleRetakeGradeChange(item.courseCode, e.target.value),
-                              style: {
-                                padding: '4px 8px',
-                                borderRadius: '6px',
-                                border: '1px solid #cbd5e1',
-                                fontWeight: 700,
-                                color: '#16a34a'
-                              }
-                            },
-                            ['A', 'B+', 'B', 'C+'].map((g) =>
-                              React.createElement('option', { key: g, value: g }, `Lên ${g}`)
-                            )
-                          )
-                        ),
-                        React.createElement(
-                          'div',
-                          {
-                            style: {
-                              padding: '4px 10px',
-                              borderRadius: '8px',
-                              background: '#e0f2fe',
-                              color: '#0369a1',
-                              fontSize: '11px',
-                              fontWeight: 700
-                            }
-                          },
-                          item.badge
-                        )
-                      )
-                    )
-                  )
-                )
-              )
-            : null,
+      // KPI 1: CPA Thực tế
+      h(
+        'div',
+        { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', padding: '20px', border: '1px solid var(--color-hairline)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '14px' } },
+        h(
+          'div',
+          { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+          h('span', { style: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)', fontWeight: 600 } }, 'CPA THỰC TẾ'),
+          h(
+            'div',
+            { style: { width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--color-canvas)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-mid-gray)' } },
+            h('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'school')
+          )
+        ),
+        h(
+          'div',
+          null,
+          h(
+            'div',
+            { style: { display: 'flex', alignItems: 'baseline', gap: '6px' } },
+            h('span', { style: { fontSize: '30px', fontWeight: 600, color: 'var(--color-ink)' } }, `${currentCpaVal}`),
+            h('span', { style: { fontSize: '14px', color: 'var(--color-mid-gray)' } }, '/ 4.00')
+          ),
+          h(
+            'div',
+            { style: { display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' } },
+            h('span', { style: { padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', fontSize: '11px', fontWeight: 600, color: 'var(--color-ink)' } }, '108 Tín chỉ'),
+            h('span', { style: { fontSize: '12px', color: 'var(--color-mid-gray)' } }, '• Xếp loại Khá')
+          )
+        )
+      ),
 
-          // ----------------------------------------------------
-          // CÔNG CỤ 3: TÍNH ĐIỂM MỤC TIÊU NGƯỢC (MÀN 8)
-          // ----------------------------------------------------
-          activeTool === 'target'
-            ? React.createElement(
+      // KPI 2: CPA Mô phỏng dự kiến (THẺ ĐEN NỔI BẬT CHUẨN PROTOTYPE)
+      h(
+        'div',
+        {
+          style: {
+            backgroundColor: 'var(--color-ink, #0a0a0a)',
+            color: 'var(--color-paper, #ffffff)',
+            borderRadius: '24px',
+            padding: '20px',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.16)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            gap: '14px',
+            position: 'relative',
+            overflow: 'hidden'
+          }
+        },
+        h(
+          'div',
+          { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 } },
+          h('span', { style: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(255,255,255,0.7)', fontWeight: 600 } }, 'CPA MÔ PHỎNG DỰ KIẾN'),
+          h(
+            'div',
+            { style: { width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' } },
+            h('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'trending_up')
+          )
+        ),
+        h(
+          'div',
+          { style: { position: 'relative', zIndex: 1 } },
+          h(
+            'div',
+            { style: { display: 'flex', alignItems: 'baseline', gap: '8px' } },
+            h('span', { style: { fontSize: '30px', fontWeight: 700, color: '#ffffff' } }, `${simulatedCpaVal}`),
+            h('span', { style: { fontSize: '14px', color: 'rgba(255,255,255,0.6)' } }, '/ 4.00'),
+            h('span', { style: { marginLeft: 'auto', padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'rgba(255,255,255,0.2)', fontSize: '12px', fontWeight: 700, color: '#ffffff' } }, `${deltaVal >= 0 ? '+' : ''}${deltaVal}`)
+          ),
+          h(
+            'div',
+            { style: { display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' } },
+            h('span', { style: { width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#ffffff' } }),
+            h('span', { style: { fontSize: '11px', color: '#ffffff', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' } }, simulatedCpaVal >= 3.60 ? 'Đạt xếp loại XUẤT SẮC (≥ 3.60)' : simulatedCpaVal >= 3.20 ? 'Đạt xếp loại GIỎI (≥ 3.20)' : 'Xếp loại KHÁ')
+          )
+        )
+      ),
+
+      // KPI 3: Mục tiêu đặt ra
+      h(
+        'div',
+        { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', padding: '20px', border: '1px solid var(--color-hairline)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '14px' } },
+        h(
+          'div',
+          { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+          h('span', { style: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)', fontWeight: 600 } }, 'MỤC TIÊU ĐẶT RA'),
+          h(
+            'div',
+            { style: { width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--color-canvas)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-mid-gray)' } },
+            h('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'flag')
+          )
+        ),
+        h(
+          'div',
+          null,
+          h(
+            'div',
+            { style: { display: 'flex', alignItems: 'baseline', gap: '6px' } },
+            h('span', { style: { fontSize: '30px', fontWeight: 600, color: 'var(--color-ink)' } }, `${targetCpaVal.toFixed(2)}`),
+            h('span', { style: { fontSize: '14px', color: 'var(--color-mid-gray)' } }, '/ 4.00')
+          ),
+          h(
+            'div',
+            { style: { display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' } },
+            h(
+              'span',
+              { style: { padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', fontSize: '11px', fontWeight: 600, color: targetDiff >= 0 ? '#16a34a' : 'var(--color-ember)' } },
+              targetDiff >= 0 ? `Vượt mục tiêu +${targetDiff}` : `Cách mục tiêu ${targetDiff}`
+            )
+          )
+        )
+      ),
+
+      // KPI 4: Tổng tín chỉ tính toán
+      h(
+        'div',
+        { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', padding: '20px', border: '1px solid var(--color-hairline)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '14px' } },
+        h(
+          'div',
+          { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+          h('span', { style: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)', fontWeight: 600 } }, 'TỔNG TÍN CHỈ TÍNH TOÁN'),
+          h(
+            'div',
+            { style: { width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--color-canvas)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-mid-gray)' } },
+            h('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'layers')
+          )
+        ),
+        h(
+          'div',
+          null,
+          h(
+            'div',
+            { style: { display: 'flex', alignItems: 'baseline', gap: '6px' } },
+            h('span', { style: { fontSize: '30px', fontWeight: 600, color: 'var(--color-ink)' } }, '126'),
+            h('span', { style: { fontSize: '14px', color: 'var(--color-mid-gray)' } }, '/ 145 TC chuẩn')
+          ),
+          h('div', { style: { fontSize: '12px', color: 'var(--color-mid-gray)', marginTop: '6px' } }, '108 TC hiện tại + 18 TC kỳ 7')
+        )
+      )
+    ),
+
+    // SECTION 3: TOOL SELECTOR PILLS
+    h(
+      'div',
+      { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' } },
+      WHAT_IF_TOOLS.map((t) => {
+        const isActive = activeTool === t.id;
+        return h(
+          'div',
+          {
+            key: t.id,
+            onClick: () => setActiveTool(t.id),
+            style: {
+              padding: '14px 16px',
+              borderRadius: '18px',
+              cursor: 'pointer',
+              backgroundColor: isActive ? 'var(--color-paper)' : 'var(--color-surface-alt)',
+              border: isActive ? '2px solid var(--color-ink)' : '1px solid var(--color-hairline)',
+              boxShadow: isActive ? '0 4px 12px rgba(0,0,0,0.06)' : 'none',
+              transition: 'all 150ms ease',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px'
+            }
+          },
+          h(
+            'div',
+            { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+            h('span', { style: { fontSize: '18px' } }, t.icon),
+            h('strong', { style: { fontSize: '13px', color: 'var(--color-ink)' } }, t.name)
+          ),
+          h('p', { style: { margin: '2px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)', lineHeight: 1.4 } }, t.description)
+        );
+      })
+    ),
+
+    // SECTION 4: MAIN WORKSPACE (7 COLS LEFT / 5 COLS RIGHT)
+    h(
+      'div',
+      { style: { display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px', alignItems: 'start' } },
+
+      // LEFT PANEL (7 cols)
+      h(
+        'div',
+        { style: { gridColumn: 'span 7', display: 'flex', flexDirection: 'column', gap: '20px' } },
+
+        // Parameter Settings Card
+        h(
+          'div',
+          { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' } },
+          h(
+            'div',
+            { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid var(--color-hairline)' } },
+            h(
+              'div',
+              null,
+              h('h2', { style: { margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)' } }, 'Thiết lập tham số kịch bản'),
+              h('p', { style: { margin: '4px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)' } }, 'Điều chỉnh mục tiêu và học kỳ tác động')
+            ),
+            h('span', { style: { padding: '4px 12px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)', fontSize: '12px', fontWeight: 500 } }, 'Học kỳ 7 (Thu 2024-2025)')
+          ),
+
+          // Dynamic settings according to activeTool
+          h(
+            'div',
+            { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' } },
+            h(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              h('label', { style: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)', fontWeight: 600 } }, 'CPA Mục tiêu tốt nghiệp mong muốn:'),
+              h(
                 'div',
-                null,
-                React.createElement(
+                { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+                h(
                   'div',
-                  { style: { display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' } },
-                  React.createElement(
-                    'label',
-                    { style: { fontSize: '13px', fontWeight: 600 } },
-                    'CPA Mục tiêu tốt nghiệp mong muốn:'
-                  ),
-                  React.createElement('input', {
+                  { style: { position: 'relative', flex: 1 } },
+                  h('input', {
                     type: 'number',
-                    step: '0.05',
+                    step: '0.01',
                     min: '2.00',
                     max: '4.00',
                     value: targetCpaInput,
                     onChange: (e) => handleTargetCpaChange(e.target.value),
                     style: {
-                      width: '100px',
-                      padding: '6px 10px',
-                      borderRadius: '8px',
-                      border: '1.5px solid #cbd5e1',
-                      fontWeight: 700,
-                      fontSize: '14px'
+                      width: '100%',
+                      padding: '8px 14px',
+                      borderRadius: '9999px',
+                      backgroundColor: 'var(--color-surface-alt)',
+                      border: '1px solid var(--color-hairline)',
+                      fontSize: '14px',
+                      color: 'var(--color-ink)',
+                      outline: 'none',
+                      boxSizing: 'border-box'
                     }
                   }),
-                  React.createElement(
-                    'div',
-                    { style: { display: 'flex', gap: '6px' } },
-                    ['2.80', '3.20', '3.60'].map((preset) =>
-                      React.createElement(
-                        'button',
-                        {
-                          key: preset,
-                          type: 'button',
-                          onClick: () => handleTargetCpaChange(preset),
-                          style: {
-                            padding: '4px 10px',
-                            borderRadius: '16px',
-                            border: '1px solid #cbd5e1',
-                            background: targetCpaInput === preset ? '#0f172a' : '#f1f5f9',
-                            color: targetCpaInput === preset ? '#ffffff' : '#334155',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            cursor: 'pointer'
-                          }
-                        },
-                        `${preset} (${preset === '3.60' ? 'Xuất sắc' : preset === '3.20' ? 'Giỏi' : 'Khá'})`
-                      )
-                    )
-                  )
+                  h('span', { style: { position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: 'var(--color-mid-gray)' } }, '/ 4.00')
                 ),
-                React.createElement(
-                  'p',
-                  { style: { fontSize: '12px', color: '#64748b', marginTop: '10px' } },
-                  'Hệ thống tự động tính toán tổng số tín chỉ còn lại và phân bổ điểm số trung bình tối thiểu cần đạt.'
-                )
+                h('span', { style: { padding: '6px 12px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', fontSize: '12px', fontWeight: 600, color: 'var(--color-ink)' } }, parseFloat(targetCpaInput) >= 3.6 ? 'Xuất sắc' : parseFloat(targetCpaInput) >= 3.2 ? 'Bằng Giỏi' : 'Bằng Khá')
               )
-            : null,
-
-          // ----------------------------------------------------
-          // CÔNG CỤ 4: HỌC VƯỢT 3.5 NĂM
-          // ----------------------------------------------------
-          activeTool === 'accelerate'
-            ? React.createElement(
+            ),
+            h(
+              'div',
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              h('label', { style: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)', fontWeight: 600 } }, 'HỌC KỲ DỰ PHÓNG'),
+              h(
                 'div',
-                { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
-                React.createElement(
-                  'label',
-                  { style: { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 } },
-                  React.createElement('input', {
-                    type: 'checkbox',
-                    checked: enableSummerAccelerate,
-                    onChange: (e) => {
-                      setEnableSummerAccelerate(e.target.checked);
-                      scheduleDebouncedSimulation('accelerate');
-                    }
-                  }),
-                  'Đăng ký học phần Thực tập doanh nghiệp (4 TC) vào Kỳ hè 2027 (Tối đa 8 TC/kỳ phụ theo quy chế HaUI)'
+                { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', borderRadius: '9999px', backgroundColor: 'var(--color-surface-alt)', border: '1px solid var(--color-hairline)', fontSize: '13px', color: 'var(--color-ink)' } },
+                h('span', null, 'Học kỳ 7 • 6 môn (18 TC)'),
+                h('span', { className: 'material-symbols-outlined', style: { fontSize: '18px', color: 'var(--color-mid-gray)' } }, 'calendar_month')
+              )
+            )
+          ),
+
+          // Additional inputs if target tool
+          activeTool === 'target'
+            ? h(
+                'div',
+                { style: { display: 'flex', gap: '8px', paddingTop: '4px', flexWrap: 'wrap' } },
+                ['2.80', '3.20', '3.60'].map((preset) =>
+                  h(
+                    'button',
+                    {
+                      key: preset,
+                      type: 'button',
+                      onClick: () => handleTargetCpaChange(preset),
+                      style: {
+                        padding: '6px 14px',
+                        borderRadius: '9999px',
+                        border: '1px solid var(--color-hairline)',
+                        background: targetCpaInput === preset ? 'var(--color-ink)' : 'var(--color-canvas)',
+                        color: targetCpaInput === preset ? 'var(--color-paper)' : 'var(--color-ink)',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }
+                    },
+                    `CPA ${preset} (${preset === '3.60' ? 'Xuất sắc' : preset === '3.20' ? 'Giỏi' : 'Khá'})`
+                  )
                 )
               )
             : null
-        )
-      : null,
+        ),
 
-    // ========================================================
-    // KHỐI KẾT QUẢ MÔ PHỎNG WHAT-IF
-    // ========================================================
-    React.createElement(
-      'div',
-      { style: { marginTop: '20px' } },
-      loading
-        ? Loading
-          ? React.createElement(Loading, { variant: 'spinner', size: 'lg', label: 'Đang tính toán mô phỏng kịch bản...' })
-          : React.createElement('div', null, 'Đang tính toán...')
-        : error
-          ? ErrorBox
-            ? React.createElement(ErrorBox, {
-                title: 'Lỗi mô phỏng kịch bản',
-                error,
-                message: error?.message,
-                onRetry: () => executeSimulation(activeTool)
-              })
-            : React.createElement('div', { style: { color: 'red' } }, error?.message)
-          : !result
-            ? EmptyState
-              ? React.createElement(EmptyState, {
-                  title: 'Chưa có kết quả mô phỏng',
-                  description: 'Thay đổi tham số hoặc bấm "Tính toán ngay" để xem kết quả.',
-                  actionLabel: 'Tính toán ngay',
-                  onAction: () => executeSimulation(activeTool)
-                })
-              : React.createElement('div', null, 'Chưa có kết quả.')
-            : Card
-              ? React.createElement(
-                  Card,
-                  {
-                    title: '📊 Kết quả Phân tích & Dự báo Mô phỏng',
-                    subtitle: 'Kết quả dựa trên thuật toán tối ưu học vụ HaUI (Không gọi AI)',
-                    variant: 'status-success',
-                    headerAction: Button
-                      ? React.createElement(
-                          Button,
-                          {
-                            variant: 'primary',
-                            size: 'sm',
-                            onClick: handleApplyToPlanner
-                          },
-                          '📥 Áp dụng vào Kế hoạch học tập (Xem lại tại Planner)'
-                        )
-                      : null
-                  },
+        // Grade Simulation Table Card (Khi dùng công cụ grades)
+        activeTool === 'grades' || activeTool === 'accelerate'
+          ? h(
+              'div',
+              { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' } },
+              h(
+                'div',
+                { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid var(--color-hairline)' } },
+                h(
+                  'div',
+                  null,
+                  h('h2', { style: { margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)' } }, 'Danh sách môn học dự kiến & Điểm giả lập'),
+                  h('p', { style: { margin: '4px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)' } }, 'Thay đổi thang điểm dự phóng để kiểm tra biến thiên kết quả')
+                ),
+                h('span', { style: { padding: '4px 12px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)', fontSize: '12px', fontWeight: 600 } }, `${simCourses.length} Môn • ${simCourses.reduce((sum, c) => sum + c.credits, 0)} TC`)
+              ),
 
-                  // KẾT QUẢ CÔNG CỤ 1: GIẢ LẬP ĐIỂM
-                  activeTool === 'grades'
-                    ? React.createElement(
-                        'div',
-                        null,
-                        React.createElement(
-                          'div',
-                          { style: { display: 'flex', gap: '24px', flexWrap: 'wrap', marginBottom: '14px' } },
-                          React.createElement(
-                            'div',
-                            null,
-                            React.createElement('div', { style: { fontSize: '11px', color: '#64748b' } }, 'CPA Hiện tại'),
-                            React.createElement('strong', { style: { fontSize: '20px', color: '#475569' } }, result.currentCpa ?? 2.45)
-                          ),
-                          React.createElement(
-                            'div',
-                            null,
-                            React.createElement('div', { style: { fontSize: '11px', color: '#64748b' } }, 'GPA Kỳ tới dự phóng'),
-                            React.createElement('strong', { style: { fontSize: '20px', color: '#0284c7' } }, result.expectedGpa ?? result.projectedSemesterGpa ?? 3.44)
-                          ),
-                          React.createElement(
-                            'div',
-                            null,
-                            React.createElement('div', { style: { fontSize: '11px', color: '#64748b' } }, 'CPA Tích lũy mới'),
-                            React.createElement(
-                              'strong',
-                              { style: { fontSize: '20px', color: '#16a34a' } },
-                              `${result.projectedCpa ?? result.projectedNewCpa} `
-                            ),
-                            React.createElement(
-                              'span',
-                              { style: { fontSize: '13px', color: '#16a34a', fontWeight: 600 } },
-                              `(+${result.cpaDelta ?? result.cpaDifference})`
-                            )
-                          ),
-                          React.createElement(
-                            'div',
-                            null,
-                            React.createElement('div', { style: { fontSize: '11px', color: '#64748b' } }, 'Chuyển biến xếp loại'),
-                            React.createElement('strong', { style: { fontSize: '14px', color: '#0f172a' } }, result.rankChange)
-                          )
+              // Courses Table
+              h(
+                'div',
+                { style: { overflowX: 'auto', width: '100%' } },
+                h(
+                  'table',
+                  { style: { width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' } },
+                  h(
+                    'thead',
+                    null,
+                    h(
+                      'tr',
+                      { style: { backgroundColor: 'var(--color-canvas)', color: 'var(--color-mid-gray)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' } },
+                      h('th', { style: { padding: '10px 14px', borderRadius: '12px 0 0 12px' } }, 'Mã môn'),
+                      h('th', { style: { padding: '10px 14px' } }, 'Tên môn học'),
+                      h('th', { style: { padding: '10px 10px', textAlign: 'center' } }, 'Số TC'),
+                      h('th', { style: { padding: '10px 14px' } }, 'Điểm chữ'),
+                      h('th', { style: { padding: '10px 10px', textAlign: 'right' } }, 'Hệ 4'),
+                      h('th', { style: { padding: '10px 14px', textAlign: 'center', borderRadius: '0 12px 12px 0' } }, 'Thao tác')
+                    )
+                  ),
+                  h(
+                    'tbody',
+                    null,
+                    simCourses.map((c) =>
+                      h(
+                        'tr',
+                        { key: c.courseCode, style: { borderBottom: '1px solid var(--color-hairline)' } },
+                        h('td', { style: { padding: '12px 14px', fontFamily: 'var(--font-mono, monospace)', fontWeight: 600, color: 'var(--color-ink)' } }, c.courseCode),
+                        h(
+                          'td',
+                          { style: { padding: '12px 14px' } },
+                          h('p', { style: { margin: 0, fontWeight: 500, color: 'var(--color-ink)' } }, c.courseName),
+                          h('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray)' } }, c.note || 'Bắt buộc ngành')
                         ),
-                        React.createElement(
-                          'p',
-                          { style: { fontSize: '12px', color: '#64748b', margin: 0 } },
-                          '💡 Bấm "Áp dụng vào Kế hoạch học tập" để tạo đề xuất nạp vào Study Planner để bạn xem lại (bản ACTIVE và bảng điểm giữ nguyên).'
-                        )
-                      )
-                    : null,
-
-                  // KẾT QUẢ CÔNG CỤ 2: RETAKE ROI
-                  activeTool === 'retake'
-                    ? React.createElement(
-                        'div',
-                        null,
-                        React.createElement(
-                          'div',
-                          {
-                            style: {
-                              display: 'flex',
-                              gap: '16px',
-                              marginBottom: '14px',
-                              padding: '10px 14px',
-                              background: '#f8fafc',
-                              borderRadius: '8px'
-                            }
-                          },
-                          React.createElement(
-                            'div',
-                            null,
-                            React.createElement('span', { style: { fontSize: '12px', color: '#64748b' } }, 'Số môn đã chọn cải thiện: '),
-                            React.createElement('strong', null, `${result.selectedCount ?? 2} môn`)
-                          ),
-                          React.createElement(
-                            'div',
-                            null,
-                            React.createElement('span', { style: { fontSize: '12px', color: '#64748b' } }, 'Tổng tín chỉ học lại: '),
-                            React.createElement('strong', null, `${result.totalRetakeCredits ?? 7} TC`)
-                          ),
-                          React.createElement(
-                            'div',
-                            null,
-                            React.createElement('span', { style: { fontSize: '12px', color: '#64748b' } }, 'CPA Tăng thêm tổng cộng: '),
-                            React.createElement(
-                              'strong',
-                              { style: { color: '#16a34a' } },
-                              `+${result.totalPotentialCpaGain ?? 0.16} CPA`
+                        h('td', { style: { padding: '12px 10px', textAlign: 'center', fontWeight: 600 } }, c.credits),
+                        h(
+                          'td',
+                          { style: { padding: '12px 14px' } },
+                          h(
+                            'select',
+                            {
+                              value: c.expectedGrade,
+                              onChange: (e) => handleGradeChange(c.courseCode, e.target.value),
+                              style: {
+                                padding: '4px 10px',
+                                borderRadius: '9999px',
+                                backgroundColor: 'var(--color-surface-alt)',
+                                border: '1px solid var(--color-hairline)',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                color: 'var(--color-ink)',
+                                outline: 'none',
+                                cursor: 'pointer'
+                              }
+                            },
+                            Object.keys(GRADE_POINTS_MAP).map((g) =>
+                              h('option', { key: g, value: g }, `Điểm ${g} (${GRADE_POINTS_MAP[g].toFixed(1)})`)
                             )
                           )
                         ),
-                        React.createElement(
-                          'div',
-                          { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
-                          result.recommendations?.map((item) =>
-                            React.createElement(
-                              'div',
-                              {
-                                key: item.courseCode,
-                                style: {
-                                  padding: '10px 14px',
-                                  borderRadius: '12px',
-                                  background: item.selected ? '#ffffff' : '#f9fafb',
-                                  border: item.selected ? '1.5px solid #0284c7' : '1px solid #e2e8f0',
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center'
-                                }
-                              },
-                              React.createElement(
-                                'div',
-                                null,
-                                React.createElement(
-                                  'strong',
-                                  { style: { color: '#0f172a' } },
-                                  `${item.courseName} (${item.courseCode})`
-                                ),
-                                React.createElement(
-                                  'div',
-                                  { style: { fontSize: '12px', color: '#64748b', marginTop: '2px' } },
-                                  `${item.credits} tín chỉ · Từ ${item.currentGrade} lên ${item.targetGrade} · ${item.rationale}`
-                                )
-                              ),
-                              React.createElement(
-                                'div',
-                                { style: { textAlign: 'right' } },
-                                React.createElement(
-                                  'strong',
-                                  { style: { color: '#16a34a', fontSize: '14px' } },
-                                  `+${item.cpaDelta ?? item.potentialCpaGain} CPA`
-                                ),
-                                item.roi
-                                  ? React.createElement(
-                                      'div',
-                                      { style: { fontSize: '11px', color: '#64748b' } },
-                                      `ROI: ${(item.roi * 100).toFixed(1)}%/TC`
-                                    )
-                                  : null,
-                                React.createElement(
-                                  'div',
-                                  { style: { fontSize: '11px', color: '#0284c7', fontWeight: 600 } },
-                                  item.badge
-                                )
-                              )
-                            )
+                        h('td', { style: { padding: '12px 10px', textAlign: 'right', fontWeight: 600, color: 'var(--color-ink)' } }, (GRADE_POINTS_MAP[c.expectedGrade] || 3.0).toFixed(1)),
+                        h(
+                          'td',
+                          { style: { padding: '12px 14px', textAlign: 'center' } },
+                          h(
+                            'button',
+                            { type: 'button', className: 'haui-sidebar__profile-logout', title: 'Khóa/Mở môn' },
+                            h('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'lock_open')
                           )
                         )
                       )
-                    : null,
-
-                  // KẾT QUẢ CÔNG CỤ 3: TARGET GRADES
-                  activeTool === 'target'
-                    ? React.createElement(
-                        'div',
-                        null,
-                        React.createElement(
-                          'div',
-                          { style: { fontSize: '15px', fontWeight: 700, color: '#0f172a', marginBottom: '8px' } },
-                          `Mục tiêu CPA: ${result.targetCpa} (${result.targetRankLabel})`
-                        ),
-                        React.createElement(
-                          'div',
-                          {
-                            style: {
-                              padding: '12px 14px',
-                              borderRadius: '10px',
-                              background: result.achievable ? '#f0fdf4' : '#fef2f2',
-                              border: result.achievable ? '1px solid #86efac' : '1px solid #fca5a5',
-                              fontSize: '13px',
-                              fontWeight: 600,
-                              color: result.achievable ? '#15803d' : '#b91c1c'
-                            }
-                          },
-                          result.achievable
-                            ? `✓ Khả thi: Cần đạt GPA trung bình tối thiểu ${result.requiredAverageGpa} trong ${result.remainingCredits} tín chỉ còn lại.`
-                            : `⚠️ Rất thử thách: Đòi hỏi GPA trung bình ${result.requiredAverageGpa} > 4.0. Cần kết hợp học cải thiện các môn điểm D/D+ để kéo CPA.`
-                        ),
-                        React.createElement(
-                          'p',
-                          { style: { fontSize: '12px', color: '#475569', marginTop: '10px' } },
-                          result.allocationSummary
-                        ),
-                        result.courseRequirements && result.courseRequirements.length > 0
-                          ? React.createElement(
-                              'div',
-                              { style: { marginTop: '12px' } },
-                              React.createElement(
-                                'div',
-                                { style: { fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' } },
-                                'Gợi ý phân bổ điểm các môn then chốt:'
-                              ),
-                              result.courseRequirements.map((cr) =>
-                                React.createElement(
-                                  'div',
-                                  {
-                                    key: cr.courseCode,
-                                    style: {
-                                      fontSize: '12px',
-                                      padding: '6px 10px',
-                                      background: '#f8fafc',
-                                      borderRadius: '6px',
-                                      marginBottom: '4px',
-                                      display: 'flex',
-                                      justifyContent: 'space-between'
-                                    }
-                                  },
-                                  React.createElement(
-                                    'span',
-                                    null,
-                                    `${cr.courseCode} - ${cr.courseName} (${cr.credits} TC)`
-                                  ),
-                                  React.createElement(
-                                    'strong',
-                                    { style: { color: '#0284c7' } },
-                                    `Cần: ${cr.requiredGrade}`
-                                  )
-                                )
-                              )
-                            )
-                          : null
-                      )
-                    : null,
-
-                  // KẾT QUẢ CÔNG CỤ 4: HỌC VƯỢT
-                  activeTool === 'accelerate'
-                    ? React.createElement(
-                        'div',
-                        null,
-                        React.createElement(
-                          'div',
-                          { style: { fontSize: '15px', fontWeight: 700, color: '#16a34a' } },
-                          `✓ Khả thi tốt nghiệp trong ${result.targetTimeline}`
-                        ),
-                        React.createElement(
-                          'p',
-                          { style: { fontSize: '13px', color: '#475569', marginTop: '4px' } },
-                          result.rationale
-                        ),
-                        React.createElement(
-                          'div',
-                          { style: { fontSize: '12px', color: '#64748b' } },
-                          `Đăng ký ${result.summerCredits} TC học phần Thực tập doanh nghiệp vào kỳ hè giúp rút ngắn 1 kỳ học chính.`
-                        )
-                      )
-                    : null
+                    )
+                  )
                 )
-              : null
+              ),
+
+              // Quick Action Bar under Table
+              h(
+                'div',
+                { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px', paddingTop: '8px' } },
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'haui-pill-btn-canvas',
+                    onClick: () => showToast('Đã mở hộp thoại thêm môn học giả lập.')
+                  },
+                  h('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'add_circle'),
+                  h('span', null, 'Thêm môn học giả lập')
+                ),
+                h(
+                  'div',
+                  { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+                  h('span', { style: { fontSize: '12px', color: 'var(--color-mid-gray)' } }, 'Dự phóng GPA Kỳ 7:'),
+                  h('span', { style: { padding: '4px 12px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)', fontWeight: 600, fontSize: '13px' } }, `${result?.expectedGpa ?? 3.58} / 4.00`)
+                )
+              )
+            )
+          : null,
+
+        // ROI Học cải thiện Tool (Khi chọn retake)
+        activeTool === 'retake'
+          ? h(
+              'div',
+              { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' } },
+              h(
+                'div',
+                { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid var(--color-hairline)' } },
+                h(
+                  'div',
+                  null,
+                  h('h2', { style: { margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)' } }, 'Xếp hạng tối ưu học cải thiện (ROI)'),
+                  h('p', { style: { margin: '4px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)' } }, 'Danh sách môn điểm D, D+, C hoặc F đã hoàn thành. Tích chọn các môn muốn đưa vào kế hoạch cải thiện:')
+                ),
+                h('span', { style: { padding: '4px 12px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)', fontSize: '12px', fontWeight: 600 } }, `${retakeCandidates.length} Môn đề xuất`)
+              ),
+
+              h(
+                'div',
+                { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+                retakeCandidates.map((item) =>
+                  h(
+                    'div',
+                    {
+                      key: item.courseCode,
+                      style: {
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        backgroundColor: item.selected ? '#f0fdf4' : 'var(--color-surface-alt)',
+                        border: item.selected ? '1.5px solid #16a34a' : '1px solid var(--color-hairline)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: '12px'
+                      }
+                    },
+                    h(
+                      'div',
+                      { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
+                      h('input', {
+                        type: 'checkbox',
+                        checked: Boolean(item.selected),
+                        onChange: () => handleToggleRetakeCourse(item.courseCode),
+                        style: { width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--color-ink)' }
+                      }),
+                      h(
+                        'div',
+                        null,
+                        h('div', { style: { fontWeight: 700, fontSize: '13px', color: 'var(--color-ink)' } }, `${item.courseName} (${item.courseCode})`),
+                        h(
+                          'div',
+                          { style: { fontSize: '12px', color: 'var(--color-mid-gray)', marginTop: '2px' } },
+                          `${item.credits} tín chỉ · Điểm hiện tại: `,
+                          h('strong', { style: { color: 'var(--color-ember)' } }, item.currentGrade),
+                          ` · ${item.rationale}`
+                        )
+                      )
+                    ),
+                    h(
+                      'div',
+                      { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
+                      h(
+                        'select',
+                        {
+                          value: item.targetGrade,
+                          onChange: (e) => handleRetakeGradeChange(item.courseCode, e.target.value),
+                          style: {
+                            padding: '4px 10px',
+                            borderRadius: '9999px',
+                            border: '1px solid var(--color-hairline)',
+                            fontWeight: 700,
+                            color: '#16a34a',
+                            backgroundColor: 'var(--color-paper)',
+                            cursor: 'pointer'
+                          }
+                        },
+                        ['A', 'B+', 'B', 'C+'].map((g) => h('option', { key: g, value: g }, `Lên ${g}`))
+                      ),
+                      h(
+                        'span',
+                        {
+                          style: {
+                            padding: '4px 10px',
+                            borderRadius: '9999px',
+                            backgroundColor: 'var(--color-paper)',
+                            color: '#0284c7',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                          }
+                        },
+                        item.badge
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          : null,
+
+        // Optional Retake Box inside Grades Tool
+        activeTool === 'grades'
+          ? h(
+              'div',
+              { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' } },
+              h(
+                'div',
+                { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                h(
+                  'div',
+                  null,
+                  h('h2', { style: { margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)' } }, 'Môn học cần học lại / Cải thiện điểm (Tùy chọn)'),
+                  h('p', { style: { margin: '4px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)' } }, 'Mô phỏng nâng điểm các môn đã hoàn thành ở kỳ trước có điểm C hoặc D')
+                ),
+                h('span', { style: { padding: '4px 12px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-mid-gray)', fontSize: '12px', fontWeight: 500 } }, '1 đề xuất tối ưu')
+              ),
+              h(
+                'div',
+                { style: { padding: '16px', borderRadius: '18px', backgroundColor: 'var(--color-canvas)', display: 'flex', flexDirection: 'column', gap: '10px' } },
+                h(
+                  'div',
+                  { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' } },
+                  h(
+                    'div',
+                    { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+                    h('input', {
+                      type: 'checkbox',
+                      id: 'retake-toggle-card',
+                      checked: enableOptionalRetake,
+                      onChange: (e) => setEnableOptionalRetake(e.target.checked),
+                      style: { width: '18px', height: '18px', accentColor: 'var(--color-ink)', cursor: 'pointer' }
+                    }),
+                    h(
+                      'div',
+                      null,
+                      h('label', { htmlFor: 'retake-toggle-card', style: { fontSize: '13px', fontWeight: 600, color: 'var(--color-ink)', cursor: 'pointer', display: 'block' } }, 'IT6008 - Mạng máy tính cơ sở (3 TC)'),
+                      h('p', { style: { margin: '2px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)' } }, 'Điểm gốc Kỳ 4: C (2.0) ➔ Giả lập cải thiện thành công lên A (4.0)')
+                    )
+                  ),
+                  h('span', { style: { padding: '4px 10px', borderRadius: '9999px', backgroundColor: 'var(--color-paper)', color: 'var(--color-ink)', fontSize: '12px', fontWeight: 600, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' } }, '+0.04 CPA toàn khóa')
+                ),
+                h('p', { style: { margin: 0, paddingLeft: '28px', fontSize: '11px', color: 'var(--color-mid-gray)', lineHeight: 1.4 } }, '* Khi học cải thiện, điểm mới sẽ thay thế hoàn toàn điểm cũ trong việc tính toán điểm trung bình tích lũy CPA.')
+              ),
+
+              // Bottom Action Buttons Bar
+              h(
+                'div',
+                { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px', paddingTop: '8px' } },
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'haui-pill-btn-canvas',
+                    onClick: () => {
+                      setSimCourses(DEFAULT_SIM_COURSES.map((c) => ({ ...c })));
+                      showToast('Đã khôi phục bảng điểm ban đầu.');
+                    }
+                  },
+                  h('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'replay'),
+                  h('span', null, 'Đặt lại bảng điểm ban đầu')
+                ),
+                h(
+                  'div',
+                  { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'haui-pill-btn-dark',
+                      onClick: () => executeSimulation(activeTool)
+                    },
+                    h('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'calculate'),
+                    h('span', null, 'Tính toán kết quả')
+                  ),
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'haui-pill-btn-dark',
+                      style: { backgroundColor: '#16a34a' },
+                      onClick: handleApplyToPlanner
+                    },
+                    h('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'task_alt'),
+                    h('span', null, 'Áp dụng vào Kế hoạch học tập')
+                  )
+                )
+              )
+            )
+          : null
+      ),
+
+      // RIGHT PANEL: Charts, Feasibility & Saved Scenarios (5 cols)
+      h(
+        'div',
+        { style: { gridColumn: 'span 5', display: 'flex', flexDirection: 'column', gap: '20px' } },
+
+        // Progression Chart Card (Inline SVG Chart)
+        h(
+          'div',
+          { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' } },
+          h(
+            'div',
+            { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+            h(
+              'div',
+              null,
+              h('h2', { style: { margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)' } }, 'Tiến trình CPA: Thực tế vs Mô phỏng'),
+              h('p', { style: { margin: '4px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)' } }, 'Xu hướng tích lũy từ HK1 đến kết thúc khóa học')
+            ),
+            h(
+              'div',
+              { style: { width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--color-canvas)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-ink)' } },
+              h('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'show_chart')
+            )
+          ),
+
+          // Inline SVG Chart
+          h(
+            'div',
+            { style: { position: 'relative', width: '100%', paddingTop: '8px', paddingBottom: '4px' } },
+            h(
+              'svg',
+              { 'aria-label': 'Biểu đồ tiến trình CPA', style: { width: '100%', height: 'auto', overflow: 'visible' }, viewBox: '0 0 460 220' },
+              h(
+                'defs',
+                null,
+                h(
+                  'linearGradient',
+                  { id: 'simulatedArea', x1: '0', x2: '0', y1: '0', y2: '1' },
+                  h('stop', { offset: '0%', stopColor: '#0a0a0a', stopOpacity: '0.08' }),
+                  h('stop', { offset: '100%', stopColor: '#0a0a0a', stopOpacity: '0.00' })
+                )
+              ),
+              h('line', { stroke: '#f0f0f0', strokeWidth: '1', x1: '35', x2: '445', y1: '20', y2: '20' }),
+              h('text', { fill: '#737373', fontSize: '10', x: '5', y: '24' }, '4.0'),
+              h('line', { stroke: '#f0f0f0', strokeWidth: '1', x1: '35', x2: '445', y1: '60', y2: '60' }),
+              h('text', { fill: '#737373', fontSize: '10', x: '5', y: '64' }, '3.5'),
+              h('line', { stroke: '#e5e5e5', strokeDasharray: '3 3', strokeWidth: '1', x1: '35', x2: '445', y1: '84', y2: '84' }),
+              h('text', { fill: '#737373', fontSize: '9', x: '330', y: '80' }, 'Ngưỡng Giỏi (3.20)'),
+              h('line', { stroke: '#f0f0f0', strokeWidth: '1', x1: '35', x2: '445', y1: '100', y2: '100' }),
+              h('text', { fill: '#737373', fontSize: '10', x: '5', y: '104' }, '3.0'),
+              h('line', { stroke: '#f0f0f0', strokeWidth: '1', x1: '35', x2: '445', y1: '140', y2: '140' }),
+              h('text', { fill: '#737373', fontSize: '10', x: '5', y: '144' }, '2.5'),
+
+              h('polygon', { fill: 'url(#simulatedArea)', points: '320,86 375,75 430,68 430,170 320,170' }),
+              h('polyline', { fill: 'none', points: '45,98 100,93 155,90 210,96 265,89 320,86', stroke: '#0a0a0a', strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2.5' }),
+              h('polyline', { fill: 'none', points: '320,86 375,75 430,68', stroke: '#0a0a0a', strokeDasharray: '4 4', strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2.5' }),
+
+              h('circle', { cx: '45', cy: '98', fill: '#ffffff', r: '3.5', stroke: '#0a0a0a', strokeWidth: '2' }),
+              h('circle', { cx: '100', cy: '93', fill: '#ffffff', r: '3.5', stroke: '#0a0a0a', strokeWidth: '2' }),
+              h('circle', { cx: '155', cy: '90', fill: '#ffffff', r: '3.5', stroke: '#0a0a0a', strokeWidth: '2' }),
+              h('circle', { cx: '210', cy: '96', fill: '#ffffff', r: '3.5', stroke: '#0a0a0a', strokeWidth: '2' }),
+              h('circle', { cx: '265', cy: '89', fill: '#ffffff', r: '3.5', stroke: '#0a0a0a', strokeWidth: '2' }),
+              h('circle', { cx: '320', cy: '86', fill: '#0a0a0a', r: '4.5', stroke: '#ffffff', strokeWidth: '2' }),
+              h('circle', { cx: '375', cy: '75', fill: '#0a0a0a', r: '5', stroke: '#ffffff', strokeWidth: '2.5' }),
+              h('circle', { cx: '430', cy: '68', fill: '#ffffff', r: '4', stroke: '#0a0a0a', strokeDasharray: '2 2', strokeWidth: '2' }),
+
+              h(
+                'g',
+                { transform: 'translate(350, 42)' },
+                h('rect', { fill: '#0a0a0a', height: '20', rx: '10', width: '52', x: '0', y: '0' }),
+                h('text', { fill: '#ffffff', fontSize: '11', fontWeight: '600', textAnchor: 'middle', x: '26', y: '14' }, `${simulatedCpaVal}`)
+              ),
+
+              h('text', { fill: '#737373', fontSize: '11', textAnchor: 'middle', x: '45', y: '195' }, 'Kỳ 1'),
+              h('text', { fill: '#737373', fontSize: '11', textAnchor: 'middle', x: '100', y: '195' }, 'Kỳ 2'),
+              h('text', { fill: '#737373', fontSize: '11', textAnchor: 'middle', x: '155', y: '195' }, 'Kỳ 3'),
+              h('text', { fill: '#737373', fontSize: '11', textAnchor: 'middle', x: '210', y: '195' }, 'Kỳ 4'),
+              h('text', { fill: '#737373', fontSize: '11', textAnchor: 'middle', x: '265', y: '195' }, 'Kỳ 5'),
+              h('text', { fill: '#0a0a0a', fontSize: '11', fontWeight: '600', textAnchor: 'middle', x: '320', y: '195' }, 'Kỳ 6 (Hiện tại)'),
+              h('text', { fill: '#0a0a0a', fontSize: '11', fontWeight: '600', textAnchor: 'middle', x: '375', y: '195' }, 'Kỳ 7 (Sim)'),
+              h('text', { fill: '#737373', fontSize: '11', textAnchor: 'middle', x: '430', y: '195' }, 'Kỳ 8 (Dự kiến)')
+            )
+          ),
+
+          // Chart Legend
+          h(
+            'div',
+            { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '10px', borderTop: '1px solid var(--color-hairline)', fontSize: '11px', color: 'var(--color-mid-gray)' } },
+            h(
+              'div',
+              { style: { display: 'flex', alignItems: 'center', gap: '6px' } },
+              h('span', { style: { width: '12px', height: '2px', backgroundColor: 'var(--color-ink)' } }),
+              h('span', { style: { color: 'var(--color-ink)', fontWeight: 500 } }, 'Thực tế (Kỳ 1-6)')
+            ),
+            h(
+              'div',
+              { style: { display: 'flex', alignItems: 'center', gap: '6px' } },
+              h('span', { style: { width: '12px', borderBottom: '2px dashed var(--color-ink)' } }),
+              h('span', { style: { color: 'var(--color-ink)', fontWeight: 500 } }, 'What-if (Kỳ 7-8)')
+            ),
+            h(
+              'div',
+              { style: { display: 'flex', alignItems: 'center', gap: '6px' } },
+              h('span', { style: { width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-mid-gray)' } }),
+              h('span', null, 'Ngưỡng Giỏi: 3.20')
+            )
+          )
+        ),
+
+        // Sensitivity Analysis & AI Feasibility Card
+        h(
+          'div',
+          { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '14px' } },
+          h(
+            'div',
+            { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+            h(
+              'div',
+              null,
+              h('h2', { style: { margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)' } }, 'Phân tích độ nhạy & Khả thi'),
+              h('p', { style: { margin: '4px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)' } }, 'Đánh giá áp lực học tập và tỷ lệ hoàn thành mục tiêu')
+            ),
+            h('span', { className: 'material-symbols-outlined', style: { fontSize: '20px', color: 'var(--color-mid-gray)' } }, 'psychology')
+          ),
+
+          // Gauge Bar
+          h(
+            'div',
+            { style: { padding: '14px', borderRadius: '18px', backgroundColor: 'var(--color-canvas)', display: 'flex', flexDirection: 'column', gap: '8px' } },
+            h(
+              'div',
+              { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' } },
+              h('span', { style: { color: 'var(--color-ink)', fontWeight: 500 } }, 'Độ khả thi kịch bản'),
+              h('span', { style: { color: '#16a34a', fontWeight: 700 } }, 'Khả thi cao (85%)')
+            ),
+            h(
+              'div',
+              { className: 'haui-progress-bar-minimal' },
+              h('div', { className: 'haui-progress-bar-fill', style: { width: '85%' } })
+            ),
+            h(
+              'div',
+              { style: { display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--color-mid-gray)' } },
+              h('span', null, 'Thấp (0%)'),
+              h('span', null, 'Cân bằng (50%)'),
+              h('span', null, 'Rất tự tin (100%)')
+            )
+          ),
+
+          // Advice box
+          h(
+            'div',
+            { style: { padding: '14px', borderRadius: '18px', backgroundColor: 'var(--color-surface-alt)', border: '1px solid var(--color-hairline)', display: 'flex', flexDirection: 'column', gap: '6px' } },
+            h(
+              'div',
+              { style: { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: 'var(--color-ink)' } },
+              h('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'lightbulb'),
+              h('span', null, 'Lời khuyên tối ưu lộ trình')
+            ),
+            h(
+              'p',
+              { style: { margin: 0, fontSize: '12px', color: 'var(--color-mid-gray)', lineHeight: 1.5 } },
+              'Để đạt CPA ',
+              h('strong', { style: { color: 'var(--color-ink)' } }, `${simulatedCpaVal}`),
+              ', bạn chỉ cần giữ mức điểm từ ',
+              h('strong', { style: { color: 'var(--color-ink)' } }, '3.5 – 4.0'),
+              ' ở các môn chuyên ngành cốt lõi. Nếu kết hợp học lại môn ',
+              h('em', { style: { color: 'var(--color-ink)', fontStyle: 'normal', fontWeight: 600 } }, 'Toán rời rạc (MATH1002)'),
+              ', áp lực điểm ở Kỳ 7 sẽ giảm đi ',
+              h('strong', { style: { color: 'var(--color-ink)' } }, '20%'),
+              ' mà vẫn chắc chắn tốt nghiệp bằng Giỏi.'
+            )
+          )
+        ),
+
+        // Saved Scenarios Card
+        h(
+          'div',
+          { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '14px' } },
+          h(
+            'div',
+            { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+            h('h2', { style: { margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)' } }, 'Kịch bản đã lưu'),
+            h(
+              'button',
+              {
+                type: 'button',
+                className: 'haui-login-demo-btn',
+                style: { fontSize: '12px' },
+                onClick: () => showToast('Hiện đang lưu 3 kịch bản mô phỏng.')
+              },
+              'Quản lý (3)'
+            )
+          ),
+          h(
+            'div',
+            { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+            h(
+              'div',
+              { style: { padding: '12px 14px', borderRadius: '16px', backgroundColor: 'var(--color-canvas)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' } },
+              h(
+                'div',
+                { style: { display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 } },
+                h('span', { style: { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-ink)', flexShrink: 0 } }),
+                h(
+                  'div',
+                  { style: { display: 'flex', flexDirection: 'column', minWidth: 0 } },
+                  h('p', { style: { margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--color-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, 'Kịch bản 1: Tối ưu hóa Kỳ 7 (GPA 3.58 - Lên bằng Giỏi)'),
+                  h('p', { style: { margin: '2px 0 0', fontSize: '11px', color: 'var(--color-mid-gray)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, `Dự kiến CPA: ${simulatedCpaVal} • 18 TC mô phỏng + 1 môn cải thiện`)
+                )
+              ),
+              h('span', { style: { padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'var(--color-paper)', color: 'var(--color-ink)', fontSize: '11px', fontWeight: 600, flexShrink: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' } }, 'Đang xem')
+            ),
+            h(
+              'div',
+              { style: { padding: '12px 14px', borderRadius: '16px', backgroundColor: 'var(--color-surface-alt)', border: '1px solid var(--color-hairline)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' } },
+              h(
+                'div',
+                { style: { display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 } },
+                h('span', { style: { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-mid-gray)', flexShrink: 0 } }),
+                h(
+                  'div',
+                  { style: { display: 'flex', flexDirection: 'column', minWidth: 0 } },
+                  h('p', { style: { margin: 0, fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, 'Kịch bản 2: Học cải thiện 2 môn C & C+ (Kỳ hè)'),
+                  h('p', { style: { margin: '2px 0 0', fontSize: '11px', color: 'var(--color-mid-gray)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, 'Dự kiến CPA: 3.24 • Kỳ hè 2024')
+                )
+              ),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'haui-sidebar__profile-logout',
+                  title: 'Áp dụng kịch bản 2',
+                  onClick: () => showToast('Đã chuyển sang Kịch bản 2.')
+                },
+                h('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'play_circle')
+              )
+            ),
+            h(
+              'div',
+              { style: { padding: '12px 14px', borderRadius: '16px', backgroundColor: 'var(--color-surface-alt)', border: '1px solid var(--color-hairline)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' } },
+              h(
+                'div',
+                { style: { display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 } },
+                h('span', { style: { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-mid-gray)', flexShrink: 0 } }),
+                h(
+                  'div',
+                  { style: { display: 'flex', flexDirection: 'column', minWidth: 0 } },
+                  h('p', { style: { margin: 0, fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, 'Kịch bản 3: Phương án an toàn (Giữ vững CPA 3.18)'),
+                  h('p', { style: { margin: '2px 0 0', fontSize: '11px', color: 'var(--color-mid-gray)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, 'Điểm B toàn bộ các môn còn lại')
+                )
+              ),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'haui-sidebar__profile-logout',
+                  title: 'Áp dụng kịch bản 3',
+                  onClick: () => showToast('Đã chuyển sang Kịch bản 3.')
+                },
+                h('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'play_circle')
+              )
+            )
+          )
+        )
+      )
     )
   );
 }

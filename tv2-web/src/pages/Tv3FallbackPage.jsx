@@ -101,32 +101,11 @@ export function Tv3FallbackPage({ routeSpec, api, ui, contractStatus }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       <Card
-        variant="status-info"
+        variant="default"
         title={routeSpec.title}
-        subtitle={`Route: ${routeSpec.path} • Phụ trách: ${routeSpec.owner}`}
-        headerAction={
-          <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
-            <span className="haui-badge haui-badge--warning">TV3 FALLBACK ({routeSpec.status})</span>
-            <span className="haui-badge haui-badge--primary">{UI_API_CONTRACT_VERSION}</span>
-          </div>
-        }
-        footer={
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: '12px' }}>
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-              Mount tự động qua <code>createStudentRoutes(&#123; api, ui &#125;)</code> không vòng phụ thuộc.
-            </span>
-            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-              <Button variant="secondary" size="sm" onClick={() => setIsContractModalOpen(true)}>
-                Kiểm tra DI Contract &#123; api, ui &#125;
-              </Button>
-              <Link to="/demo-ui">
-                <Button variant="ghost" size="sm">
-                  Mở trang Demo UI V0 &rarr;
-                </Button>
-              </Link>
-            </div>
-          </div>
-        }
+        subtitle={null}
+        headerAction={null}
+        footer={null}
       >
         {/* Giao diện chuyên biệt theo từng Màn hình trong Tài liệu Thiết kế UI Flow */}
         {routeSpec.key === 'chat' && (
