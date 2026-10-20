@@ -80,7 +80,16 @@ public class AiAutoConfiguration {
     @ConditionalOnMissingBean(EmbeddingProvider.class)
     public EmbeddingProvider embeddingProvider(AiProperties properties) {
         if (properties.getRag().getEmbeddingProvider() == AiProperties.RagProperties.EmbeddingProviderType.LIVE) {
-            return new LiveEmbeddingProvider();
+            String apiKey = properties.getRag().getEmbeddingApiKey();
+            if (apiKey == null || apiKey.isBlank()) {
+                apiKey = properties.getModel().getApiKey();
+            }
+            return new LiveEmbeddingProvider(
+                    properties.getRag().getEmbeddingEndpoint(),
+                    apiKey,
+                    properties.getRag().getEmbeddingModelName(),
+                    properties.getRag().getEmbeddingDimension()
+            );
         }
         return new DeterministicFakeEmbeddingProvider(properties.getRag().getEmbeddingDimension());
     }
@@ -93,6 +102,10 @@ public class AiAutoConfiguration {
             if (jdbcTemplate != null) {
                 return new PgVectorStoreAdapter(jdbcTemplate);
             }
+            throw new IllegalStateException(
+                    "Configured vector store type is PGVECTOR (ai.rag.store-type=PGVECTOR), " +
+                    "but no JdbcTemplate bean is available in the application context. Silent fallback to InMemoryVectorStore is strictly prohibited."
+            );
         }
         return new InMemoryVectorStore();
     }
@@ -187,10 +200,18 @@ public class AiAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public ConversationHistoryManager conversationHistoryManager(ObjectProvider<vn.haui.advisor.contracts.ports.ConversationStore> conversationStoreProvider,
-                                                                 ObjectProvider<com.fasterxml.jackson.databind.ObjectMapper> objectMapperProvider) {
+                                                                 ObjectProvider<com.fasterxml.jackson.databind.ObjectMapper> objectMapperProvider,
+                                                                 AiProperties properties) {
         vn.haui.advisor.contracts.ports.ConversationStore store = conversationStoreProvider.getIfAvailable();
+        boolean requirePersistent = properties.getConversation().isRequirePersistentStore();
+        if (store == null && requirePersistent) {
+            throw new IllegalStateException(
+                    "Persistent conversation store is required (ai.conversation.require-persistent-store=true), " +
+                    "but no ConversationStore bean was found in the application context. Silent in-memory fallback is strictly prohibited."
+            );
+        }
         com.fasterxml.jackson.databind.ObjectMapper mapper = objectMapperProvider.getIfAvailable(com.fasterxml.jackson.databind.ObjectMapper::new);
-        return new ConversationHistoryManager(store, mapper);
+        return new ConversationHistoryManager(store, mapper, requirePersistent);
     }
 
     @Bean
@@ -207,8 +228,9 @@ public class AiAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(ToolAdapter.class)
-    public ToolAdapter toolAdapter(AcademicFacade academicFacade) {
-        return new DefaultToolAdapter(academicFacade);
+    public ToolAdapter toolAdapter(AcademicFacade academicFacade, AiProperties properties) {
+        boolean strict = properties.getAdvisor().isStrictReadiness();
+        return new DefaultToolAdapter(academicFacade, strict);
     }
 
     @Bean
@@ -218,14 +240,16 @@ public class AiAutoConfiguration {
                                        RagAdvisorService ragAdvisorService,
                                        ConversationHistoryManager conversationHistoryManager,
                                        IntentClassifier intentClassifier,
-                                       ResponseGroundingValidator responseGroundingValidator) {
+                                       ResponseGroundingValidator responseGroundingValidator,
+                                       AiProperties properties) {
         return new DefaultAdvisorFacade(
                 advisorModel,
                 toolAdapter,
                 ragAdvisorService,
                 conversationHistoryManager,
                 intentClassifier,
-                responseGroundingValidator
+                responseGroundingValidator,
+                properties.getAdvisor().getToolTimeoutMs()
         );
     }
 }

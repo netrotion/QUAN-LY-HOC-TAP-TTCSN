@@ -11,6 +11,7 @@ import vn.haui.advisor.ai.model.AdvisorModelOutput;
 import vn.haui.advisor.ai.rag.service.GroundedContext;
 import vn.haui.advisor.ai.rag.service.RagAdvisorService;
 import vn.haui.advisor.ai.tools.ToolAdapter;
+import vn.haui.advisor.ai.tools.ToolNotReadyException;
 import vn.haui.advisor.contracts.dto.*;
 import vn.haui.advisor.contracts.ports.AdvisorFacade;
 
@@ -192,8 +193,19 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                         response.getWarnings()
                 );
                 conversationHistoryManager.saveTurn(conversationId, studentId, userHistoryItem, assistantHistoryItem, 900_000);
-            } catch (Exception ignored) {
-                // Lỗi lưu trữ không làm gãy luồng phản hồi trực tiếp cho người dùng
+            } catch (SecurityException | IllegalArgumentException se) {
+                if (se.getMessage() != null && (se.getMessage().contains("sinh viên khác") || se.getMessage().contains("Cross-account") || se.getMessage().contains("belongs to another student"))) {
+                    return new ChatResponse(
+                            "Từ chối quyền truy cập hội thoại không thuộc sở hữu của bạn.",
+                            List.of(),
+                            List.of(),
+                            null,
+                            List.of("SECURITY_ERROR: Access denied to conversation " + conversationId)
+                    );
+                }
+                combinedWarnings.add("PERSISTENCE_ERROR: " + se.getMessage());
+            } catch (Exception e) {
+                combinedWarnings.add("PERSISTENCE_ERROR: Failed to save turn: " + e.getMessage());
             }
         }
 
@@ -556,6 +568,13 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
             return null;
         } catch (ExecutionException ee) {
             Throwable cause = ee.getCause();
+            if (cause instanceof ToolNotReadyException tnre) {
+                String notReadyWarning = "TOOL_UNAVAILABLE: " + tnre.getMessage();
+                if (!warnings.contains(notReadyWarning)) {
+                    warnings.add(notReadyWarning);
+                }
+                return null;
+            }
             String errorWarning = "TOOL_ERROR: " + (cause != null ? cause.getMessage() : "Unknown error");
             if (!warnings.contains(errorWarning)) {
                 warnings.add(errorWarning);

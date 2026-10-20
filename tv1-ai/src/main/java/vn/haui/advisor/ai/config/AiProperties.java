@@ -30,6 +30,19 @@ public class AiProperties {
      */
     private ConversationProperties conversation = new ConversationProperties();
 
+    /**
+     * Cấu hình điều phối Cố vấn học vụ & công cụ (ai.advisor.*).
+     */
+    private AdvisorProperties advisor = new AdvisorProperties();
+
+    public AdvisorProperties getAdvisor() {
+        return advisor;
+    }
+
+    public void setAdvisor(AdvisorProperties advisor) {
+        this.advisor = advisor;
+    }
+
     public AiMode getMode() {
         return mode;
     }
@@ -138,6 +151,7 @@ public class AiProperties {
     public static class ConversationProperties {
         private int maxHistoryTurns = 10;
         private int maxHistoryChars = 900_000;
+        private boolean requirePersistentStore = false;
 
         public int getMaxHistoryTurns() {
             return maxHistoryTurns;
@@ -154,6 +168,62 @@ public class AiProperties {
         public void setMaxHistoryChars(int maxHistoryChars) {
             this.maxHistoryChars = maxHistoryChars;
         }
+
+        public boolean isRequirePersistentStore() {
+            return requirePersistentStore;
+        }
+
+        public void setRequirePersistentStore(boolean requirePersistentStore) {
+            this.requirePersistentStore = requirePersistentStore;
+        }
+    }
+
+    public static class AdvisorProperties {
+        private boolean strictReadiness = true;
+        private long toolTimeoutMs = 2500;
+        private int maxHistoryTurns = 10;
+        private int toolExecutionBudget = 3;
+        private int maxHistoryPayloadBytes = 900_000;
+
+        public boolean isStrictReadiness() {
+            return strictReadiness;
+        }
+
+        public void setStrictReadiness(boolean strictReadiness) {
+            this.strictReadiness = strictReadiness;
+        }
+
+        public long getToolTimeoutMs() {
+            return toolTimeoutMs;
+        }
+
+        public void setToolTimeoutMs(long toolTimeoutMs) {
+            this.toolTimeoutMs = toolTimeoutMs;
+        }
+
+        public int getMaxHistoryTurns() {
+            return maxHistoryTurns;
+        }
+
+        public void setMaxHistoryTurns(int maxHistoryTurns) {
+            this.maxHistoryTurns = maxHistoryTurns;
+        }
+
+        public int getToolExecutionBudget() {
+            return toolExecutionBudget;
+        }
+
+        public void setToolExecutionBudget(int toolExecutionBudget) {
+            this.toolExecutionBudget = toolExecutionBudget;
+        }
+
+        public int getMaxHistoryPayloadBytes() {
+            return maxHistoryPayloadBytes;
+        }
+
+        public void setMaxHistoryPayloadBytes(int maxHistoryPayloadBytes) {
+            this.maxHistoryPayloadBytes = maxHistoryPayloadBytes;
+        }
     }
 
     public static class RagProperties {
@@ -163,6 +233,9 @@ public class AiProperties {
         private StoreType storeType = StoreType.IN_MEMORY;
         private int embeddingDimension = 128;
         private EmbeddingProviderType embeddingProvider = EmbeddingProviderType.FAKE;
+        private String embeddingEndpoint;
+        private String embeddingApiKey;
+        private String embeddingModelName = "text-embedding-004";
 
         public enum StoreType {
             IN_MEMORY,
@@ -220,6 +293,30 @@ public class AiProperties {
 
         public void setEmbeddingProvider(EmbeddingProviderType embeddingProvider) {
             this.embeddingProvider = embeddingProvider;
+        }
+
+        public String getEmbeddingEndpoint() {
+            return embeddingEndpoint;
+        }
+
+        public void setEmbeddingEndpoint(String embeddingEndpoint) {
+            this.embeddingEndpoint = embeddingEndpoint;
+        }
+
+        public String getEmbeddingApiKey() {
+            return embeddingApiKey;
+        }
+
+        public void setEmbeddingApiKey(String embeddingApiKey) {
+            this.embeddingApiKey = embeddingApiKey;
+        }
+
+        public String getEmbeddingModelName() {
+            return embeddingModelName;
+        }
+
+        public void setEmbeddingModelName(String embeddingModelName) {
+            this.embeddingModelName = embeddingModelName;
         }
     }
 }

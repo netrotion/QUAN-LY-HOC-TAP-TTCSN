@@ -27,18 +27,40 @@ public class ConversationHistoryManager {
 
     private final ConversationStore conversationStore;
     private final ObjectMapper objectMapper;
+    private final boolean persistentStore;
 
     public ConversationHistoryManager() {
-        this(new InMemoryConversationStore(), new ObjectMapper());
+        this(new InMemoryConversationStore(), new ObjectMapper(), false);
     }
 
     public ConversationHistoryManager(ConversationStore conversationStore) {
-        this(conversationStore, new ObjectMapper());
+        this(conversationStore, new ObjectMapper(), false);
     }
 
     public ConversationHistoryManager(ConversationStore conversationStore, ObjectMapper objectMapper) {
-        this.conversationStore = conversationStore != null ? conversationStore : new InMemoryConversationStore();
+        this(conversationStore, objectMapper, false);
+    }
+
+    public ConversationHistoryManager(ConversationStore conversationStore, ObjectMapper objectMapper, boolean requirePersistent) {
+        if (requirePersistent) {
+            if (conversationStore == null || conversationStore instanceof InMemoryConversationStore) {
+                throw new IllegalStateException("Persistent ConversationStore is required, but none was provided.");
+            }
+            this.conversationStore = conversationStore;
+            this.persistentStore = true;
+        } else {
+            this.conversationStore = conversationStore != null ? conversationStore : new InMemoryConversationStore();
+            this.persistentStore = (conversationStore != null && !(conversationStore instanceof InMemoryConversationStore));
+        }
         this.objectMapper = objectMapper != null ? objectMapper : new ObjectMapper();
+    }
+
+    public boolean isPersistentStore() {
+        return persistentStore;
+    }
+
+    public ConversationStore getConversationStore() {
+        return conversationStore;
     }
 
     /**

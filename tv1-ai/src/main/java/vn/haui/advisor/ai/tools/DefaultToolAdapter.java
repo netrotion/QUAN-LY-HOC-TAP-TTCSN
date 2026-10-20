@@ -62,9 +62,17 @@ public class DefaultToolAdapter implements ToolAdapter {
         }
     }
 
+    public AcademicFacade getAcademicFacade() {
+        return academicFacade;
+    }
+
     private String extractTrustedStudentId(TrustedStudentContext context) {
         Objects.requireNonNull(context, "context must not be null");
-        return Objects.requireNonNull(context.getStudentId(), "trusted studentId must not be null");
+        String id = Objects.requireNonNull(context.getStudentId(), "trusted studentId must not be null");
+        if (id.trim().isEmpty()) {
+            throw new IllegalArgumentException("trusted studentId must not be blank");
+        }
+        return id;
     }
 
     @Override
