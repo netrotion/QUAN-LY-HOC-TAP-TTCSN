@@ -3,6 +3,33 @@
 Mọi thay đổi hợp đồng sau mốc `contracts-v1` phải có mục ở đây, trong cùng PR của TV5 với thay đổi.
 Quy trình: [docs/task-2.4-contracts-v1.md §6](../docs/task-2.4-contracts-v1.md).
 
+## [1.3.0] — 2026-10-20 — API học vụ nối công cụ thật (Task 4.1)
+
+Trạng thái học vụ, điều kiện học phần, cây CTĐT và rà soát tốt nghiệp chạy trên AcademicFacade thật với hồ sơ server nạp từ DB.
+Không đổi tên hay xóa trường nào của 1.2.0.
+
+### Thêm
+- Operation `GET /academic/curriculum/tree` (`getCurriculumTree`) → `CurriculumTreeResponse`: mọi học phần của CTĐT kèm `status`
+  (enum mới `CourseProgressStatus`: `PASSED` | `FAILED` | `IN_PROGRESS` | `ELIGIBLE` | `BLOCKED` | `UNKNOWN`), lần học gần nhất
+  (`letterGrade`, `semesterCode`) và kết quả nguyên văn của `AcademicFacade#checkCourseEligibility` (`eligible`, `missingPrerequisites`, `warnings`).
+  DTO `CurriculumTreeResponse`, `CurriculumTreeCourseItem`.
+- Trường `policyVersion` (quy chế đã áp dụng, `policyId@version`) trên `AcademicStatusResponse`, `CourseEligibilityResponse`,
+  `GraduationAuditResponse`, `CurriculumResponse`; `CurriculumResponse.dataRevision`. "profileRevision" trong mô tả task là `dataRevision`
+  (một dữ liệu — một tên), đã ghi vào `glossary-v1.json#retired`.
+- `ENUMS.CourseProgressStatus` trong module JS cho FE.
+- 1 file mẫu mới `curriculum-tree-response.sample.json` (tổng 71, 55 ví dụ trong manifest).
+
+### Thay đổi hành vi
+- `getAcademicStatus`, `checkCourseEligibility`, `runGraduationAudit`: `x-implementation-status: IMPLEMENTED`; response 501 thay bằng
+  **503 `TOOL_NOT_READY`** khi AcademicFacade chưa khai báo capability tương ứng. Không có kết quả thay thế (mock) cho các operation này.
+- `studentId` trong `CourseEligibilityRequest` tiếp tục bị bỏ qua; `dataRevision` client gửi (nếu có) khác bản hiện hành → 409.
+- Fixture `not-implemented` minh họa `generateStudyPlan` (operation còn 501) thay cho `getAcademicStatus`.
+
+### Việc cho owner khác
+- TV2 (4.2a): thay mock `GET /academic/status`, `/academic/curriculum`, `/audit/graduation` và trạng thái cây môn học bằng
+  `GET /academic/curriculum/tree`; không tự tính trạng thái/điều kiện trong JS; hiển thị `policyVersion` và xử lý 503 `TOOL_NOT_READY`.
+- TV4: các sai lệch phát hiện khi nối thật ghi ở `tv5-platform/docs/task-4.1-academic-api-live.md` §5.
+
 ## [1.2.0] — 2026-10-13 — lưu kế hoạch, hội thoại và trạng thái công cụ học vụ (Task 3.7)
 
 Kế hoạch và hội thoại chạy trên DB; nêu rõ khi nào công cụ học vụ là "thật". Không đổi tên hay xóa trường nào của 1.1.0.

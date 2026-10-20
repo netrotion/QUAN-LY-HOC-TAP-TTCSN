@@ -15,6 +15,7 @@ public class AcademicStatusResponse implements Serializable {
     private AcademicRiskLevel riskLevel;
     private List<String> warnings;
     private String dataRevision;
+    private String policyVersion;
 
     public AcademicStatusResponse() {
     }
@@ -105,5 +106,13 @@ public class AcademicStatusResponse implements Serializable {
 
     public void setDataRevision(String dataRevision) {
         this.dataRevision = dataRevision;
+    }
+
+    public String getPolicyVersion() {
+        return policyVersion;
+    }
+
+    public void setPolicyVersion(String policyVersion) {
+        this.policyVersion = policyVersion;
     }
 }

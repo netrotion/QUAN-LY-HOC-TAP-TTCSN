@@ -50,7 +50,8 @@ class ToolNotReadyTest {
     @Test
     @DisplayName("Lưu nháp được; validate/activate trả 503 TOOL_NOT_READY; không kế hoạch nào thành VALIDATED/ACTIVE")
     void planCannotBecomeActiveWithoutRealValidation() throws Exception {
-        assertThat(academicFacade.readyCapabilities()).as("TV4 chưa khai báo công cụ thật").isEmpty();
+        assertThat(academicFacade.readyCapabilities()).as("TV4 chưa khai báo công cụ thẩm định thật")
+                .doesNotContain(AcademicCapability.VALIDATE_STUDY_PLAN);
 
         StudentApi api = new StudentApi(mockMvc, objectMapper);
         String sv = "sv-tool-not-ready";
@@ -84,7 +85,16 @@ class ToolNotReadyTest {
                 .param("sv", sv).query(Integer.class).single()).isZero();
 
         JsonNode bootstrap = api.call(get("/api/v1/system/bootstrap"), sv, 200, "BootstrapInfoResponse");
-        assertThat(bootstrap.get("academicTools").findValuesAsText("status")).containsOnly("NOT_READY");
-        assertThat(bootstrap.at("/modules/academic").asText()).isEqualTo("NOT_IMPLEMENTED");
+        assertThat(toolStatus(bootstrap, AcademicCapability.VALIDATE_STUDY_PLAN)).isEqualTo("NOT_READY");
+        assertThat(bootstrap.at("/modules/academic").asText()).isEqualTo("PARTIAL");
+    }
+
+    private static String toolStatus(JsonNode bootstrap, AcademicCapability capability) {
+        for (JsonNode tool : bootstrap.get("academicTools")) {
+            if (tool.get("capability").asText().equals(capability.name())) {
+                return tool.get("status").asText();
+            }
+        }
+        throw new AssertionError("Bootstrap thiếu " + capability);
     }
 }

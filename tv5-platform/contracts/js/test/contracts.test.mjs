@@ -14,7 +14,7 @@ import {
 
 test('phát hành đúng mốc contracts-v1', () => {
   assert.equal(CONTRACT_MILESTONE, 'contracts-v1');
-  assert.equal(CONTRACT_VERSION, '1.2.0');
+  assert.equal(CONTRACT_VERSION, '1.3.0');
   assert.equal(DEMO_STUDENT.studentId, '2024604757');
 });
 
@@ -54,4 +54,16 @@ test('enum và operation dùng cho FE', () => {
   assert.deepEqual(ENUMS.StudyPlanStatus, ['DRAFT', 'VALIDATED', 'ACTIVE', 'COMPLETED', 'ARCHIVED']);
   assert.ok(ENUMS.ApiErrorCode.includes('PLAN_NOT_VALIDATED'));
   assert.deepEqual(operationFor('activateStudyPlan'), { method: 'POST', path: '/planner/plans/{planId}/activate' });
+});
+
+test('kết quả học vụ (1.3.0) mang dataRevision và policyVersion; cây CTĐT có trạng thái học phần', () => {
+  for (const id of ['academic-status', 'course-eligibility', 'graduation-audit', 'curriculum', 'curriculum-tree']) {
+    const { response } = getFixture(id);
+    assert.ok(response.dataRevision, `${id}: thiếu dataRevision`);
+    assert.ok(response.policyVersion, `${id}: thiếu policyVersion`);
+  }
+  const tree = findFixture('GET', '/academic/curriculum/tree');
+  assert.equal(tree.operationId, 'getCurriculumTree');
+  assert.ok(tree.response.courses.every((c) => ENUMS.CourseProgressStatus.includes(c.status)));
+  assert.deepEqual(ENUMS.CourseProgressStatus, ['PASSED', 'FAILED', 'IN_PROGRESS', 'ELIGIBLE', 'BLOCKED', 'UNKNOWN']);
 });

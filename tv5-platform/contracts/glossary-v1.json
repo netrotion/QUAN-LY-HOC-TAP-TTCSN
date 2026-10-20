@@ -1,6 +1,6 @@
 {
   "milestone": "contracts-v1",
-  "contractVersion": "1.2.0",
+  "contractVersion": "1.3.0",
   "owner": "TV5",
   "rule": "Một dữ liệu chỉ có một tên trường; cùng tên trường thì cùng kiểu JSON ở mọi schema. Thêm trường mới phải đăng ký ở đây trong cùng PR.",
   "fields": {
@@ -402,7 +402,7 @@
     },
     "policyVersion": {
       "type": "string",
-      "meaning": "Phiên bản quy chế học vụ dùng khi thẩm định"
+      "meaning": "Phiên bản quy chế học vụ (policyId@version) đã áp dụng khi tính kết quả học vụ hoặc thẩm định kế hoạch"
     },
     "prerequisiteCourseCodes": {
       "type": "array<string>",
@@ -562,7 +562,7 @@
     },
     "status": {
       "type": "string",
-      "meaning": "Trạng thái của đối tượng chứa (StudyPlanStatus, ImportSessionStatus, CertificateStatus; chuỗi trạng thái với môn/CTĐT)"
+      "meaning": "Trạng thái của đối tượng chứa (StudyPlanStatus, ImportSessionStatus, CertificateStatus, CourseProgressStatus trên cây CTĐT; chuỗi trạng thái với môn/CTĐT)"
     },
     "statusMessage": {
       "type": "string",
@@ -801,6 +801,10 @@
     "username": {
       "replacedBy": "studentId",
       "was": "tên đăng nhập = mã sinh viên"
+    },
+    "profileRevision": {
+      "replacedBy": "dataRevision",
+      "was": "mô tả Task 4.1 (phiên bản hồ sơ học vụ = dataRevision)"
     }
   },
   "javaBridges": [

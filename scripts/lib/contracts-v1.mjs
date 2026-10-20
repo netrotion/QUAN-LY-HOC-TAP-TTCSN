@@ -16,7 +16,7 @@ export const CHANGELOG_FILE = `${CONTRACTS_DIR}/CHANGELOG.md`;
 export const GENERATED_JS_FILE = `${CONTRACTS_DIR}/js/contracts-v1.generated.js`;
 export const CURRICULUM_FILE = 'tv4-academic/fixtures/curriculum-ktpm-v1.json';
 const JAVA_ROOT = `${CONTRACTS_DIR}/src/main/java/vn/haui/advisor/contracts`;
-const ENUMS = ['StudyPlanStatus', 'ApiErrorCode', 'AcademicRiskLevel'];
+const ENUMS = ['StudyPlanStatus', 'ApiErrorCode', 'AcademicRiskLevel', 'CourseProgressStatus'];
 
 export function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf-8').replace(/^﻿/, ''));

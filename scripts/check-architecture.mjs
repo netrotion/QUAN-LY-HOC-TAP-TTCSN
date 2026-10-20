@@ -43,6 +43,23 @@ checkPomDependencies('tv1-ai/pom.xml', ['haui-academic', 'haui-platform-app'], '
 // Academic không được phụ thuộc ai hoặc platform-app
 checkPomDependencies('tv4-academic/pom.xml', ['haui-ai', 'haui-platform-app'], 'haui-academic');
 
+// 3. Runtime platform chỉ nối công cụ/dữ liệu thật: fake contracts, mock AI và hồ sơ mẫu của TV4 chỉ dùng trong test
+const FORBIDDEN_IN_RUNTIME = ['vn.haui.advisor.contracts.fake', 'vn.haui.advisor.ai.mock', 'vn.haui.advisor.academic.fixture'];
+const platformMain = path.resolve('tv5-platform/app/src/main/java');
+if (fs.existsSync(platformMain)) {
+  for (const file of fs.readdirSync(platformMain, { recursive: true })) {
+    const fullPath = path.join(platformMain, file);
+    if (!file.endsWith('.java') || !fs.statSync(fullPath).isFile()) continue;
+    const content = fs.readFileSync(fullPath, 'utf-8');
+    for (const forbidden of FORBIDDEN_IN_RUNTIME) {
+      if (content.includes(forbidden)) {
+        console.error(`VIOLATION: ${file} (platform runtime) dùng ${forbidden}; fake/mock chỉ được nối trong test.`);
+        hasViolations = true;
+      }
+    }
+  }
+}
+
 if (hasViolations) {
   console.error('Architecture checks FAILED! Please fix boundary violations.');
   process.exit(1);

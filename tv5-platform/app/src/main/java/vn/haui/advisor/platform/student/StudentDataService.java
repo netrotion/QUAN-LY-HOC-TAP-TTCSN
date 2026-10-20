@@ -3,6 +3,7 @@ package vn.haui.advisor.platform.student;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.haui.advisor.contracts.dto.*;
+import vn.haui.advisor.platform.academic.PolicyVersionSource;
 import vn.haui.advisor.platform.certificate.CertificateRepository;
 import vn.haui.advisor.platform.curriculum.CurriculumRepository;
 import vn.haui.advisor.platform.error.ApiException;
@@ -27,13 +28,16 @@ public class StudentDataService {
     private final CurriculumRepository curriculumRepository;
     private final TranscriptRepository transcriptRepository;
     private final CertificateRepository certificateRepository;
+    private final PolicyVersionSource policy;
 
     public StudentDataService(StudentRepository studentRepository, CurriculumRepository curriculumRepository,
-                              TranscriptRepository transcriptRepository, CertificateRepository certificateRepository) {
+                              TranscriptRepository transcriptRepository, CertificateRepository certificateRepository,
+                              PolicyVersionSource policy) {
         this.studentRepository = studentRepository;
         this.curriculumRepository = curriculumRepository;
         this.transcriptRepository = transcriptRepository;
         this.certificateRepository = certificateRepository;
+        this.policy = policy;
     }
 
     @Transactional(readOnly = true)
@@ -80,6 +84,8 @@ public class StudentDataService {
         response.setStatus(row.dataStatus());
         response.setSource(row.source());
         response.setCourses(curriculumRepository.listCourses(row.curriculumId()));
+        response.setDataRevision(student.dataRevision());
+        response.setPolicyVersion(policy.currentPolicyVersion());
         return response;
     }
 

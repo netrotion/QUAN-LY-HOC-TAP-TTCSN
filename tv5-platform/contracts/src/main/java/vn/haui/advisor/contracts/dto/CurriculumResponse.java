@@ -16,6 +16,8 @@ public class CurriculumResponse implements Serializable {
     private String status;
     private String source;
     private List<CurriculumCourseItem> courses;
+    private String dataRevision;
+    private String policyVersion;
 
     public CurriculumResponse() {
     }
@@ -90,5 +92,21 @@ public class CurriculumResponse implements Serializable {
 
     public void setCourses(List<CurriculumCourseItem> courses) {
         this.courses = courses;
+    }
+
+    public String getDataRevision() {
+        return dataRevision;
+    }
+
+    public void setDataRevision(String dataRevision) {
+        this.dataRevision = dataRevision;
+    }
+
+    public String getPolicyVersion() {
+        return policyVersion;
+    }
+
+    public void setPolicyVersion(String policyVersion) {
+        this.policyVersion = policyVersion;
     }
 }

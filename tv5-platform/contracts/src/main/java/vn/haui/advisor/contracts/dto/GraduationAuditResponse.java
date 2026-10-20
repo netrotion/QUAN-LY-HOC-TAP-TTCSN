@@ -14,6 +14,7 @@ public class GraduationAuditResponse implements Serializable {
     private List<AuditChecklistItem> checklist;
     private List<AuditCertificateAction> pendingActions;
     private String dataRevision;
+    private String policyVersion;
 
     public GraduationAuditResponse() {
     }
@@ -94,6 +95,14 @@ public class GraduationAuditResponse implements Serializable {
 
     public void setDataRevision(String dataRevision) {
         this.dataRevision = dataRevision;
+    }
+
+    public String getPolicyVersion() {
+        return policyVersion;
+    }
+
+    public void setPolicyVersion(String policyVersion) {
+        this.policyVersion = policyVersion;
     }
 
     /**

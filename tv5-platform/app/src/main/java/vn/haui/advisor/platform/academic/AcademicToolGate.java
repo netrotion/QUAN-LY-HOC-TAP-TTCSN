@@ -17,14 +17,19 @@ import java.util.Set;
 
 /**
  * Cổng công cụ học vụ: chỉ capability AcademicFacade khai báo trong readyCapabilities() mới là công cụ thật.
- * Chưa có công cụ thật thì giữ stub NOT_READY (503 TOOL_NOT_READY); kết quả thử (MOCK) chỉ bật được ở profile dev/test
- * và không bao giờ dẫn tới thao tác có hậu quả như kích hoạt kế hoạch.
+ * Chưa có công cụ thật thì giữ stub NOT_READY (503 TOOL_NOT_READY); kết quả thử (MOCK) chỉ có cho thẩm định kế hoạch,
+ * chỉ bật được ở profile dev/test và không bao giờ dẫn tới thao tác có hậu quả như kích hoạt kế hoạch.
  */
 @Component
 public class AcademicToolGate {
 
     /** Capability platform đã nối vào endpoint; capability khác vẫn trả 501 NOT_IMPLEMENTED. */
-    static final Set<AcademicCapability> WIRED = EnumSet.of(AcademicCapability.VALIDATE_STUDY_PLAN);
+    static final Set<AcademicCapability> WIRED = EnumSet.of(AcademicCapability.GET_ACADEMIC_STATUS,
+            AcademicCapability.CHECK_COURSE_ELIGIBILITY, AcademicCapability.RUN_GRADUATION_AUDIT,
+            AcademicCapability.VALIDATE_STUDY_PLAN);
+
+    /** Capability có chế độ thử ở dev/test; capability khác chỉ chạy công cụ thật, không có kết quả thay thế. */
+    static final Set<AcademicCapability> MOCKABLE = EnumSet.of(AcademicCapability.VALIDATE_STUDY_PLAN);
 
     private static final Set<String> MOCK_PROFILES = Set.of("dev", "test");
 
@@ -53,7 +58,15 @@ public class AcademicToolGate {
         if (isReal(capability)) {
             return AcademicToolStatus.READY;
         }
-        return mockEnabled ? AcademicToolStatus.MOCK : AcademicToolStatus.NOT_READY;
+        return mockEnabled && MOCKABLE.contains(capability) ? AcademicToolStatus.MOCK : AcademicToolStatus.NOT_READY;
+    }
+
+    /** Endpoint chỉ trả kết quả của công cụ thật; chưa sẵn sàng → 503 TOOL_NOT_READY. */
+    public void requireReal(AcademicCapability capability) {
+        if (status(capability) != AcademicToolStatus.READY) {
+            throw ApiException.toolNotReady(capability.name(),
+                    "Công cụ học vụ cho chức năng này chưa sẵn sàng nên chưa có kết quả. Vui lòng thử lại sau.");
+        }
     }
 
     public List<AcademicToolReadinessItem> readiness() {

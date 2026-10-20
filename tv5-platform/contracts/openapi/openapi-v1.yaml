@@ -3,15 +3,16 @@
 openapi: "3.0.3"
 info:
   title: "HaUI Advisor API"
-  version: "1.2.0"
+  version: "1.3.0"
   description: |
-    contracts-v1 — hợp đồng chốt sau review prototype (Task 2.3) làm đầu vào Phase 3. Bản 1.1.0 bổ sung tài khoản, hồ sơ, CTĐT, bảng điểm, nhập bảng điểm và chứng chỉ (Task 3.2); 1.2.0 lưu kế hoạch/hội thoại trên DB và trạng thái sẵn sàng của công cụ học vụ (Task 3.7).
+    contracts-v1 — hợp đồng chốt sau review prototype (Task 2.3) làm đầu vào Phase 3. Bản 1.1.0 bổ sung tài khoản, hồ sơ, CTĐT, bảng điểm, nhập bảng điểm và chứng chỉ (Task 3.2); 1.2.0 lưu kế hoạch/hội thoại trên DB và trạng thái sẵn sàng của công cụ học vụ (Task 3.7); 1.3.0 nối trạng thái học vụ, điều kiện học phần, cây CTĐT và rà soát tốt nghiệp với AcademicFacade thật (Task 4.1).
 
     Quy tắc chung:
     - Xác thực: session cookie (JSESSIONID) + CSRF (cookie XSRF-TOKEN, header X-XSRF-TOKEN) cho mọi request ghi, kể cả login. Chỉ vai trò STUDENT. Chưa đăng nhập → 401 UNAUTHENTICATED; thiếu CSRF/sai vai trò → 403 ACCESS_DENIED.
     - Danh tính sinh viên chỉ lấy từ phiên đăng nhập server (StudentContextProvider). Trường studentId trong request là readOnly: client không gửi, server bỏ qua nếu có.
     - Nhập bảng điểm: tải lên/nhập tay → xem lại → xác nhận; trước khi xác nhận không ghi gì vào bảng điểm chính thức. Số liệu in trên tài liệu (CPA, tín chỉ tích lũy) chỉ để đối chiếu, không bao giờ là nguồn tính CPA.
     - dataRevision: token phiên bản dữ liệu học vụ; thao tác ghi gửi lại nguyên văn, cũ → 409 DATA_REVISION_STALE.
+    - Kết quả học vụ (trạng thái, điều kiện học phần, cây CTĐT, rà soát tốt nghiệp) do AcademicFacade tính trên hồ sơ server nạp từ DB và trả kèm dataRevision (phiên bản hồ sơ đã dùng) và policyVersion (quy chế đã áp dụng, policyId@version). Công cụ chưa khai báo trong readyCapabilities() → 503 TOOL_NOT_READY, không có kết quả thay thế.
     - planVersion: phiên bản nội dung kế hoạch (optimistic lock), chỉ tăng khi lưu nội dung; lệch → 409 PLAN_VERSION_CONFLICT.
     - Vòng đời kế hoạch: lưu nháp luôn DRAFT; validate hợp lệ → VALIDATED; activate chỉ nhận VALIDATED (thẩm định lại, lỗi → 422) và lưu trữ bản ACTIVE cũ trong cùng giao dịch; sửa ACTIVE tạo DRAFT kế thừa.
     - Công cụ chưa thật: AcademicFacade chưa khai báo VALIDATE_STUDY_PLAN trong readyCapabilities() thì validate trả 503 TOOL_NOT_READY (dev/test có thể bật thẩm định thử validationMode=MOCK) và không kế hoạch nào lên VALIDATED/ACTIVE. Kích hoạt kiểm tra lại revision hồ sơ (dataRevision), quy chế (policyVersion) và kế hoạch (planVersion) tại lúc thẩm định.
@@ -187,6 +188,26 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
+  /academic/curriculum/tree:
+    get:
+      tags: [Academic]
+      summary: "Cây CTĐT kèm trạng thái học phần và điều kiện đăng ký của sinh viên đang đăng nhập"
+      description: "Mỗi học phần của CTĐT kèm trạng thái học tập (theo bảng điểm đã xác nhận) và điều kiện đăng ký (AcademicFacade#checkCourseEligibility cho từng học phần), cùng dataRevision và policyVersion đã dùng."
+      operationId: getCurriculumTree
+      x-implementation-status: IMPLEMENTED
+      responses:
+        '200':
+          description: "Cây CTĐT"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurriculumTreeResponse"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '503':
+          $ref: "#/components/responses/ServiceUnavailable"
   /academic/transcript:
     get:
       tags: [Academic]
@@ -496,7 +517,7 @@ paths:
       summary: "Tình trạng học vụ của sinh viên đang đăng nhập"
       operationId: getAcademicStatus
       x-facade-method: AcademicFacade#getAcademicStatus
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       responses:
         '200':
           description: "Tình trạng học vụ"
@@ -508,15 +529,15 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
-        '501':
-          $ref: "#/components/responses/NotImplemented"
+        '503':
+          $ref: "#/components/responses/ServiceUnavailable"
   /academic/eligibility:
     post:
       tags: [Academic]
       summary: "Kiểm tra điều kiện đăng ký học phần"
       operationId: checkCourseEligibility
       x-facade-method: AcademicFacade#checkCourseEligibility
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       requestBody:
         required: true
         content:
@@ -538,8 +559,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         '409':
           $ref: "#/components/responses/Conflict"
-        '501':
-          $ref: "#/components/responses/NotImplemented"
+        '503':
+          $ref: "#/components/responses/ServiceUnavailable"
   /planner/generate:
     post:
       tags: [Planner]
@@ -905,7 +926,7 @@ paths:
       summary: "Rà soát điều kiện tốt nghiệp"
       operationId: runGraduationAudit
       x-facade-method: AcademicFacade#runGraduationAudit
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       responses:
         '200':
           description: "Kết quả rà soát"
@@ -917,8 +938,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
-        '501':
-          $ref: "#/components/responses/NotImplemented"
+        '503':
+          $ref: "#/components/responses/ServiceUnavailable"
   /advisor/conversations:
     get:
       tags: [Advisor]
@@ -1296,6 +1317,11 @@ components:
           type: string
           description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
           example: REV-2024604757-001
+        policyVersion:
+          type: string
+          description: "Phiên bản quy chế (policyId@version) AcademicFacade đã áp dụng."
+          example: policy-haui-demo-2026@0.0.1-v0
+          nullable: true
     CourseEligibilityRequest:
       type: object
       description: "Kiểm tra điều kiện đăng ký một học phần."
@@ -1347,6 +1373,11 @@ components:
           type: string
           description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
           example: REV-2024604757-001
+          nullable: true
+        policyVersion:
+          type: string
+          description: "Phiên bản quy chế (policyId@version) AcademicFacade đã áp dụng."
+          example: policy-haui-demo-2026@0.0.1-v0
           nullable: true
     PlannedCourseItem:
       type: object
@@ -2288,6 +2319,11 @@ components:
           description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
           example: REV-2024604757-001
           nullable: true
+        policyVersion:
+          type: string
+          description: "Phiên bản quy chế (policyId@version) AcademicFacade đã áp dụng."
+          example: policy-haui-demo-2026@0.0.1-v0
+          nullable: true
     ChatRequest:
       type: object
       description: "Tin nhắn gửi trợ lý. Client tự sinh conversationId (UUID) cho hội thoại mới."
@@ -2705,6 +2741,129 @@ components:
           description: "Học phần."
           items:
             $ref: "#/components/schemas/CurriculumCourseItem"
+        dataRevision:
+          type: string
+          description: "Phiên bản hồ sơ học vụ của sinh viên lúc đọc (CTĐT sinh viên theo là một phần của hồ sơ)."
+          example: REV-2024604757-001
+          nullable: true
+        policyVersion:
+          type: string
+          description: "Phiên bản quy chế (policyId@version) công cụ học vụ đang áp dụng cho CTĐT."
+          example: policy-haui-demo-2026@0.0.1-v0
+          nullable: true
+    CourseProgressStatus:
+      type: string
+      description: "Trạng thái học phần trên cây CTĐT. PASSED: đã đạt ít nhất một lần; FAILED: đã học, chưa đạt lần nào; IN_PROGRESS: lần gần nhất chưa có điểm (đang học); ELIGIBLE: chưa học, đủ điều kiện đăng ký; BLOCKED: chưa học, còn thiếu điều kiện; UNKNOWN: chưa có bảng điểm đã xác nhận hoặc điểm không xác định."
+      enum: [PASSED, FAILED, IN_PROGRESS, ELIGIBLE, BLOCKED, UNKNOWN]
+    CurriculumTreeCourseItem:
+      type: object
+      description: "Một học phần trên cây CTĐT kèm trạng thái của sinh viên. eligible/missingPrerequisites/warnings là kết quả nguyên văn của AcademicFacade#checkCourseEligibility."
+      required: [courseCode, courseName, credits, status, eligible, missingPrerequisites]
+      properties:
+        courseCode:
+          type: string
+          description: "Mã học phần."
+        courseName:
+          type: string
+          description: "Tên học phần."
+        credits:
+          type: number
+          description: "Số tín chỉ (số thực; CTĐT có học phần 1.5 TC)."
+          minimum: 0
+        knowledgeBlock:
+          type: string
+          description: "Khối kiến thức."
+          nullable: true
+        suggestedSemester:
+          type: integer
+          format: int32
+          description: "Học kỳ gợi ý trong CTĐT."
+          nullable: true
+        mandatory:
+          type: boolean
+          description: "Học phần bắt buộc."
+          nullable: true
+        prerequisiteCourseCodes:
+          type: array
+          description: "Học phần tiên quyết (phải đạt)."
+          items:
+            type: string
+          nullable: true
+        priorCourseCodes:
+          type: array
+          description: "Học phần học trước (phải đã học)."
+          items:
+            type: string
+          nullable: true
+        corequisiteCourseCodes:
+          type: array
+          description: "Học phần song hành."
+          items:
+            type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/CourseProgressStatus"
+        letterGrade:
+          type: string
+          description: "Điểm chữ của lần học gần nhất; null nếu chưa học hoặc chưa có điểm."
+          nullable: true
+        semesterCode:
+          type: string
+          description: "Học kỳ của lần học gần nhất; null nếu chưa học."
+          nullable: true
+        eligible:
+          type: boolean
+          description: "Đủ điều kiện đăng ký theo AcademicFacade."
+        missingPrerequisites:
+          type: array
+          description: "Điều kiện còn thiếu theo AcademicFacade, mỗi dòng bắt đầu bằng mã học phần."
+          items:
+            type: string
+        warnings:
+          type: array
+          description: "Cảnh báo không chặn thao tác của AcademicFacade."
+          items:
+            type: string
+          nullable: true
+    CurriculumTreeResponse:
+      type: object
+      description: "Cây CTĐT của sinh viên đang đăng nhập, tính trên hồ sơ server nạp (dataRevision) và quy chế (policyVersion)."
+      required: [studentId, curriculumId, curriculumName, transcriptStatus, courses, dataRevision, policyVersion]
+      properties:
+        studentId:
+          type: string
+          description: "Mã sinh viên."
+        curriculumId:
+          type: string
+          description: "Mã CTĐT trong hệ thống."
+          example: curriculum-ktpm-haui-2024
+        curriculumName:
+          type: string
+          description: "Tên CTĐT."
+        majorCode:
+          type: string
+          description: "Mã ngành/CTĐT."
+          nullable: true
+        totalCreditsRequired:
+          type: integer
+          format: int32
+          description: "Tổng tín chỉ CTĐT yêu cầu."
+          nullable: true
+        transcriptStatus:
+          $ref: "#/components/schemas/TranscriptStatus"
+        courses:
+          type: array
+          description: "Học phần theo thứ tự CTĐT."
+          items:
+            $ref: "#/components/schemas/CurriculumTreeCourseItem"
+        dataRevision:
+          type: string
+          description: "Phiên bản hồ sơ học vụ đã dùng để tính (StudentDataVersion.dataRevision)."
+          example: REV-2024604757-001
+        policyVersion:
+          type: string
+          description: "Phiên bản quy chế (policyId@version) AcademicFacade đã áp dụng."
+          example: policy-haui-demo-2026@0.0.1-v0
     TranscriptStatus:
       type: string
       description: "NONE: chưa có bảng điểm xác nhận; CONFIRMED: đã xác nhận."

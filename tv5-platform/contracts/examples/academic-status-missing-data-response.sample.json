@@ -8,5 +8,6 @@
   "warnings": [
     "Chưa có bảng điểm đã xác nhận: GPA/CPA/tín chỉ tích lũy chưa xác định (UNKNOWN)"
   ],
-  "dataRevision": "REV-std-missing-unknown-v1-001"
+  "dataRevision": "REV-std-missing-unknown-v1-001",
+  "policyVersion": "policy-haui-demo-2026@0.0.1-v0"
 }

@@ -19,7 +19,9 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import vn.haui.advisor.contracts.ContractTestSupport;
 import vn.haui.advisor.contracts.OpenApiSchemaValidator;
+import vn.haui.advisor.contracts.dto.AcademicStatusRequest;
 import vn.haui.advisor.contracts.dto.ConfirmTranscriptImportRequest;
+import vn.haui.advisor.contracts.ports.AcademicFacade;
 import vn.haui.advisor.contracts.ports.StudentAcademicRecordProvider;
 import vn.haui.advisor.platform.support.TestAccounts;
 import vn.haui.advisor.platform.support.TranscriptFiles;
@@ -72,6 +74,9 @@ class TranscriptImportFlowTest {
 
     @Autowired
     private StudentAcademicRecordProvider recordProvider;
+
+    @Autowired
+    private AcademicFacade academicFacade;
 
     @Test
     @DisplayName("Xem lại trước khi xác nhận: tải lên/sửa không đổi bảng điểm và revision; chỉ xác nhận mới ghi")
@@ -157,8 +162,13 @@ class TranscriptImportFlowTest {
                 .param("sv", sv).query(Integer.class).single()).isZero();
         assertThat(jdbc.sql("SELECT count(*) FROM information_schema.columns WHERE table_name = 'student_records' AND column_name IN ('cpa', 'gpa')")
                 .query(Integer.class).single()).isZero();
-        // CPA chỉ được tính bởi AcademicFacade (nối ở Task 4.1); hiện endpoint trả 501, không trả số từ tài liệu
-        call(get("/api/v1/academic/status"), sv, 501, "ApiErrorResponse");
+        // CPA chỉ do AcademicFacade tính trên bảng điểm đã xác nhận (Task 4.1), không lấy số in trên tài liệu
+        JsonNode status = call(get("/api/v1/academic/status"), sv, 200, "AcademicStatusResponse");
+        assertThat(status.get("cpa").decimalValue()).isEqualByComparingTo(
+                academicFacade.getAcademicStatus(new AcademicStatusRequest(sv, accounts.revision(sv))).getCpa());
+        assertThat(status.get("cpa").decimalValue()).isNotEqualByComparingTo("3.99");
+        // IT6015 (3) + BS6001 (3) + LP6004 học lại đạt (2); IT6126 chưa có điểm, IT6035 bị bỏ khi xem lại
+        assertThat(status.get("accumulatedCredits").asInt()).isEqualTo(8);
     }
 
     @Test

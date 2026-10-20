@@ -23,14 +23,19 @@ public class SystemControllerTest {
     void testBootstrapEndpointReturnsCorrectInfoWithoutSecrets() throws Exception {
         mockMvc.perform(get("/api/v1/system/bootstrap"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.contractVersion", is("1.2.0")))
+                .andExpect(jsonPath("$.contractVersion", is("1.3.0")))
                 .andExpect(jsonPath("$.contractMilestone", is("contracts-v1")))
                 .andExpect(jsonPath("$.runtimeMode", is("database")))
                 .andExpect(jsonPath("$.modules.contracts", is("READY")))
-                .andExpect(jsonPath("$.modules.academic", is("NOT_IMPLEMENTED")))
+                .andExpect(jsonPath("$.modules.academic", is("PARTIAL")))
                 .andExpect(jsonPath("$.modules.advisor", is("NOT_IMPLEMENTED")))
                 .andExpect(jsonPath("$.modules.persistence", is("READY")))
+                // Task 4.1: công cụ TV4 khai báo thật và đã nối endpoint → READY; thẩm định chưa thật; chưa nối → NOT_READY
+                .andExpect(jsonPath("$.academicTools[?(@.capability == 'GET_ACADEMIC_STATUS')].status", contains("READY")))
+                .andExpect(jsonPath("$.academicTools[?(@.capability == 'CHECK_COURSE_ELIGIBILITY')].status", contains("READY")))
+                .andExpect(jsonPath("$.academicTools[?(@.capability == 'RUN_GRADUATION_AUDIT')].status", contains("READY")))
                 .andExpect(jsonPath("$.academicTools[?(@.capability == 'VALIDATE_STUDY_PLAN')].status", contains("NOT_READY")))
+                .andExpect(jsonPath("$.academicTools[?(@.capability == 'GENERATE_STUDY_PLAN')].status", contains("NOT_READY")))
                 // Tuyệt đối không để lộ secrets, passwords, env
                 .andExpect(jsonPath("$.password").doesNotExist())
                 .andExpect(jsonPath("$.secret").doesNotExist())

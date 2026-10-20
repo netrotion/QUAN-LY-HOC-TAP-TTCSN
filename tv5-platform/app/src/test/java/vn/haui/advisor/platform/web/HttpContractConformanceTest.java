@@ -124,14 +124,43 @@ class HttpContractConformanceTest {
     @Test
     @DisplayName("Operation chưa nối trả 501 NOT_IMPLEMENTED đúng schema thay vì 404")
     void notImplementedOperationsMatchSchema() throws Exception {
-        for (String path : List.of("/api/v1/academic/status", "/api/v1/audit/graduation")) {
-            expect(get(path), null, 501, "ApiErrorResponse");
-        }
-        for (String path : List.of("/api/v1/academic/eligibility", "/api/v1/planner/generate", "/api/v1/planner/reconcile",
+        for (String path : List.of("/api/v1/planner/generate", "/api/v1/planner/reconcile",
                 "/api/v1/simulation/grades", "/api/v1/simulation/retake-ranking", "/api/v1/simulation/target-grades",
                 "/api/v1/advisor/chat")) {
             JsonNode error = expect(post(path), objectMapper.createObjectNode(), 501, "ApiErrorResponse");
             assertThat(error.get("code").asText()).isEqualTo("NOT_IMPLEMENTED");
+        }
+    }
+
+    @Test
+    @DisplayName("Contracts 1.3: API học vụ dùng request fixture, trả đúng schema; công cụ chưa thật → 503")
+    void academicEndpointsMatchSchema() throws Exception {
+        JsonNode status = expect(get("/api/v1/academic/status"), null, 200, "AcademicStatusResponse");
+        assertThat(status.get("studentId").asText()).isEqualTo("2024604757");
+        assertThat(status.get("policyVersion").isTextual()).isTrue();
+
+        // Request fixture mang dataRevision của mốc 1.0.0 (REV-…-001); dùng revision hiện hành của hồ sơ
+        ObjectNode eligibility = (ObjectNode) ContractTestSupport.readExample("course-eligibility-request.sample.json");
+        eligibility.put("dataRevision", status.get("dataRevision").asText());
+        JsonNode checked = expect(post("/api/v1/academic/eligibility"), eligibility, 200, "CourseEligibilityResponse");
+        assertThat(checked.get("courseCode").asText()).isEqualTo(eligibility.get("courseCode").asText());
+        eligibility.put("dataRevision", "REV-2024604757-000");
+        assertThat(expect(post("/api/v1/academic/eligibility"), eligibility, 409, "ApiErrorResponse").get("code").asText())
+                .isEqualTo("DATA_REVISION_STALE");
+        expect(post("/api/v1/academic/eligibility"), objectMapper.createObjectNode(), 400, "ApiErrorResponse");
+
+        expect(get("/api/v1/academic/curriculum/tree"), null, 200, "CurriculumTreeResponse");
+        expect(get("/api/v1/audit/graduation"), null, 200, "GraduationAuditResponse");
+
+        academicFacade.setReady(false);
+        try {
+            for (String path : List.of("/api/v1/academic/status", "/api/v1/academic/curriculum/tree", "/api/v1/audit/graduation")) {
+                assertThat(expect(get(path), null, 503, "ApiErrorResponse").get("code").asText()).isEqualTo("TOOL_NOT_READY");
+            }
+            eligibility.remove("dataRevision");
+            expect(post("/api/v1/academic/eligibility"), eligibility, 503, "ApiErrorResponse");
+        } finally {
+            academicFacade.reset();
         }
     }
 

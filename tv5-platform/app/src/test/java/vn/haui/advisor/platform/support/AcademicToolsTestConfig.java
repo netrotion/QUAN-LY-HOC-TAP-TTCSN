@@ -8,17 +8,22 @@ import vn.haui.advisor.contracts.dto.AcademicCapability;
 import vn.haui.advisor.contracts.dto.StudyPlanStatus;
 import vn.haui.advisor.contracts.dto.ValidateStudyPlanRequest;
 import vn.haui.advisor.contracts.dto.ValidateStudyPlanResponse;
+import vn.haui.advisor.contracts.ports.StudentAcademicRecordProvider;
+import vn.haui.advisor.platform.academic.AcademicEngineSources;
 import vn.haui.advisor.platform.academic.PolicyVersionSource;
+import vn.haui.advisor.platform.transcript.DbStudentAcademicRecordProvider;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Mô phỏng TV4 đã có công cụ thẩm định thật (khai báo VALIDATE_STUDY_PLAN) để test luồng VALIDATED → ACTIVE.
- * Logic thẩm định vẫn là engine TV4; test có thể tắt "công cụ thật", ép vi phạm hoặc đổi phiên bản quy chế.
- * Bean dùng chung trong context: test sửa trạng thái phải gọi {@link #reset()}.
+ * Chỉ dùng trong test. Mô phỏng TV4 đã có công cụ thẩm định thật (khai báo thêm VALIDATE_STUDY_PLAN) để test luồng
+ * VALIDATED → ACTIVE. Facade được dựng giống runtime (hồ sơ từ DB, quy chế/CTĐT cùng nguồn seed, không hồ sơ mẫu);
+ * test có thể tắt mọi "công cụ thật", ép vi phạm hoặc đổi phiên bản quy chế.
+ * Bean dùng chung trong context: test sửa trạng thái phải gọi {@link #reset}.
  */
 @TestConfiguration
 public class AcademicToolsTestConfig {
@@ -27,8 +32,9 @@ public class AcademicToolsTestConfig {
 
     @Bean
     @Primary
-    public ControllableAcademicFacade controllableAcademicFacade() {
-        return new ControllableAcademicFacade();
+    public ControllableAcademicFacade controllableAcademicFacade(DbStudentAcademicRecordProvider records,
+                                                                 AcademicEngineSources sources) {
+        return new ControllableAcademicFacade(records, sources);
     }
 
     @Bean
@@ -47,9 +53,19 @@ public class AcademicToolsTestConfig {
         private volatile boolean ready = true;
         private volatile List<String> forcedViolations = List.of();
 
+        public ControllableAcademicFacade(StudentAcademicRecordProvider records, AcademicEngineSources sources) {
+            super(records, sources.policy(), sources.curriculum(), Map.of());
+        }
+
         @Override
         public Set<AcademicCapability> readyCapabilities() {
-            return ready ? EnumSet.of(AcademicCapability.VALIDATE_STUDY_PLAN) : Set.of();
+            if (!ready) {
+                return Set.of();
+            }
+            Set<AcademicCapability> capabilities = EnumSet.noneOf(AcademicCapability.class);
+            capabilities.addAll(super.readyCapabilities());
+            capabilities.add(AcademicCapability.VALIDATE_STUDY_PLAN);
+            return capabilities;
         }
 
         @Override
@@ -65,6 +81,7 @@ public class AcademicToolsTestConfig {
             return result;
         }
 
+        /** false: TV4 chưa khai báo công cụ thật nào (mọi capability NOT_READY). */
         public void setReady(boolean ready) {
             this.ready = ready;
         }

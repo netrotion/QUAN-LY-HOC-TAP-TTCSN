@@ -1,6 +1,5 @@
 package vn.haui.advisor.platform.web;
 
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,16 +12,6 @@ import vn.haui.advisor.platform.error.ApiException;
 @RestController
 @RequestMapping("/api/v1")
 public class NotImplementedController {
-
-    @GetMapping("/academic/status")
-    public void getAcademicStatus() {
-        throw ApiException.notImplemented("getAcademicStatus");
-    }
-
-    @PostMapping("/academic/eligibility")
-    public void checkCourseEligibility() {
-        throw ApiException.notImplemented("checkCourseEligibility");
-    }
 
     @PostMapping("/planner/generate")
     public void generateStudyPlan() {
@@ -47,11 +36,6 @@ public class NotImplementedController {
     @PostMapping("/simulation/target-grades")
     public void calculateTargetGrades() {
         throw ApiException.notImplemented("calculateTargetGrades");
-    }
-
-    @GetMapping("/audit/graduation")
-    public void runGraduationAudit() {
-        throw ApiException.notImplemented("runGraduationAudit");
     }
 
     @PostMapping("/advisor/chat")

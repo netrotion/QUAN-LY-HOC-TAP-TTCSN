@@ -50,13 +50,31 @@ class AcademicToolGateTest {
     @DisplayName("Công cụ khai báo sẵn sàng là REAL; capability chưa nối vào endpoint vẫn NOT_READY")
     void readyCapabilities() {
         AcademicToolGate gate = new AcademicToolGate(
-                facade(EnumSet.of(AcademicCapability.VALIDATE_STUDY_PLAN, AcademicCapability.GET_ACADEMIC_STATUS)),
+                facade(EnumSet.of(AcademicCapability.VALIDATE_STUDY_PLAN, AcademicCapability.GET_ACADEMIC_STATUS,
+                        AcademicCapability.GENERATE_STUDY_PLAN)),
                 environment("dev"), true);
         assertThat(gate.requireValidation()).isEqualTo(ValidationMode.REAL);
         gate.requireRealValidation();
+        gate.requireReal(AcademicCapability.GET_ACADEMIC_STATUS);
         assertThat(gate.status(AcademicCapability.VALIDATE_STUDY_PLAN)).isEqualTo(AcademicToolStatus.READY);
-        assertThat(gate.status(AcademicCapability.GET_ACADEMIC_STATUS)).isEqualTo(AcademicToolStatus.NOT_READY);
+        assertThat(gate.status(AcademicCapability.GET_ACADEMIC_STATUS)).isEqualTo(AcademicToolStatus.READY);
+        assertThat(gate.status(AcademicCapability.GENERATE_STUDY_PLAN)).as("chưa nối endpoint").isEqualTo(AcademicToolStatus.NOT_READY);
         assertThat(gate.readiness()).hasSize(AcademicCapability.values().length);
+    }
+
+    @Test
+    @DisplayName("Trạng thái/điều kiện/audit không có chế độ MOCK: chưa khai báo thật → 503 kể cả khi bật mock ở test")
+    void academicResultsHaveNoMockFallback() {
+        AcademicToolGate gate = new AcademicToolGate(facade(Set.of()), environment("test"), true);
+        assertThat(gate.status(AcademicCapability.VALIDATE_STUDY_PLAN)).isEqualTo(AcademicToolStatus.MOCK);
+        for (AcademicCapability capability : EnumSet.of(AcademicCapability.GET_ACADEMIC_STATUS,
+                AcademicCapability.CHECK_COURSE_ELIGIBILITY, AcademicCapability.RUN_GRADUATION_AUDIT)) {
+            assertThat(gate.status(capability)).isEqualTo(AcademicToolStatus.NOT_READY);
+            assertThatThrownBy(() -> gate.requireReal(capability)).isInstanceOfSatisfying(ApiException.class, ex -> {
+                assertThat(ex.getCode()).isEqualTo(ApiErrorCode.TOOL_NOT_READY);
+                assertThat(ex.getDetails()).containsExactly("capability: " + capability.name());
+            });
+        }
     }
 
     private static AcademicFacade facade(Set<AcademicCapability> ready) {

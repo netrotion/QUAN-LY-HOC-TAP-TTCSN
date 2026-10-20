@@ -1,5 +1,5 @@
 // GENERATED — KHÔNG SỬA TAY. Sinh bởi `npm run contracts:build` từ tv5-platform/contracts (openapi-v1.yaml, examples/*.json, enum Java).
-export const CONTRACT_VERSION = "1.2.0";
+export const CONTRACT_VERSION = "1.3.0";
 export const CONTRACT_MILESTONE = "contracts-v1";
 export const API_BASE_PATH = '/api/v1';
 export const DEMO_STUDENT = Object.freeze({
@@ -44,6 +44,14 @@ export const ENUMS = Object.freeze({
     "WARNING_LEVEL_1",
     "WARNING_LEVEL_2",
     "CRITICAL"
+  ],
+  "CourseProgressStatus": [
+    "PASSED",
+    "FAILED",
+    "IN_PROGRESS",
+    "ELIGIBLE",
+    "BLOCKED",
+    "UNKNOWN"
   ]
 });
 export const OPERATIONS = Object.freeze({
@@ -106,6 +114,10 @@ export const OPERATIONS = Object.freeze({
   "getCurriculum": {
     "method": "GET",
     "path": "/academic/curriculum"
+  },
+  "getCurriculumTree": {
+    "method": "GET",
+    "path": "/academic/curriculum/tree"
   },
   "getStudentProfile": {
     "method": "GET",
@@ -606,10 +618,234 @@ export const FIXTURES = Object.freeze({
           ],
           "corequisiteCourseCodes": []
         }
-      ]
+      ],
+      "dataRevision": "REV-2024604757-001",
+      "policyVersion": "policy-haui-demo-2026@0.0.1-v0"
     },
     "consumers": [
       "TV2"
+    ]
+  },
+  "curriculum-tree": {
+    "operationId": "getCurriculumTree",
+    "method": "GET",
+    "path": "/academic/curriculum/tree",
+    "httpStatus": 200,
+    "pathParams": null,
+    "requestSchema": null,
+    "request": null,
+    "responseSchema": "CurriculumTreeResponse",
+    "response": {
+      "studentId": "2024604757",
+      "curriculumId": "curriculum-ktpm-haui-2024",
+      "curriculumName": "Chương trình đào tạo Kỹ sư Kỹ thuật phần mềm - HaUI (Khóa 2024)",
+      "majorCode": "CT1085",
+      "totalCreditsRequired": 150,
+      "transcriptStatus": "CONFIRMED",
+      "courses": [
+        {
+          "courseCode": "IT6015",
+          "courseName": "Kỹ thuật lập trình",
+          "credits": 3,
+          "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+          "suggestedSemester": 2,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [
+            "ME6042"
+          ],
+          "corequisiteCourseCodes": [],
+          "status": "PASSED",
+          "letterGrade": "A",
+          "semesterCode": "2024_1",
+          "eligible": false,
+          "missingPrerequisites": [
+            "ME6042 (chưa đăng ký học phần học trước)"
+          ],
+          "warnings": []
+        },
+        {
+          "courseCode": "IT6002",
+          "courseName": "Cấu trúc dữ liệu và giải thuật",
+          "credits": 3,
+          "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+          "suggestedSemester": 3,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [
+            "IT6015",
+            "SC6208"
+          ],
+          "corequisiteCourseCodes": [],
+          "status": "PASSED",
+          "letterGrade": "C+",
+          "semesterCode": "2025_1",
+          "eligible": false,
+          "missingPrerequisites": [
+            "SC6208 (chưa đăng ký học phần học trước)"
+          ],
+          "warnings": []
+        },
+        {
+          "courseCode": "IT6044",
+          "courseName": "Ứng dụng thuật toán",
+          "credits": 3,
+          "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+          "suggestedSemester": 4,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [
+            "IT6002",
+            "IT6015"
+          ],
+          "corequisiteCourseCodes": [],
+          "status": "ELIGIBLE",
+          "letterGrade": null,
+          "semesterCode": null,
+          "eligible": true,
+          "missingPrerequisites": [],
+          "warnings": []
+        },
+        {
+          "courseCode": "IT6067",
+          "courseName": "Kiến trúc máy tính và hệ điều hành",
+          "credits": 3,
+          "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+          "suggestedSemester": 3,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [
+            "IT6015"
+          ],
+          "corequisiteCourseCodes": [],
+          "status": "PASSED",
+          "letterGrade": "B+",
+          "semesterCode": "2025_1",
+          "eligible": true,
+          "missingPrerequisites": [],
+          "warnings": []
+        },
+        {
+          "courseCode": "IT6083",
+          "courseName": "Mạng máy tính",
+          "credits": 3,
+          "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+          "suggestedSemester": 5,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [
+            "IT6067",
+            "IT6203"
+          ],
+          "corequisiteCourseCodes": [],
+          "status": "BLOCKED",
+          "letterGrade": null,
+          "semesterCode": null,
+          "eligible": false,
+          "missingPrerequisites": [
+            "IT6203 (chưa đăng ký học phần học trước)"
+          ],
+          "warnings": []
+        },
+        {
+          "courseCode": "LP6010",
+          "courseName": "Triết học Mác-Lênin",
+          "credits": 3,
+          "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+          "suggestedSemester": 1,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [],
+          "corequisiteCourseCodes": [],
+          "status": "PASSED",
+          "letterGrade": "D+",
+          "semesterCode": "2024_1",
+          "eligible": true,
+          "missingPrerequisites": [],
+          "warnings": []
+        },
+        {
+          "courseCode": "LP6011",
+          "courseName": "Kinh tế chính trị Mác-Lênin",
+          "credits": 2,
+          "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+          "suggestedSemester": 2,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [
+            "LP6010"
+          ],
+          "corequisiteCourseCodes": [],
+          "status": "PASSED",
+          "letterGrade": "C",
+          "semesterCode": "2024_2",
+          "eligible": true,
+          "missingPrerequisites": [],
+          "warnings": []
+        },
+        {
+          "courseCode": "LP6004",
+          "courseName": "Tư tưởng Hồ Chí Minh",
+          "credits": 2,
+          "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+          "suggestedSemester": 6,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [
+            "LP6010",
+            "LP6011"
+          ],
+          "corequisiteCourseCodes": [],
+          "status": "FAILED",
+          "letterGrade": "F",
+          "semesterCode": "2024_2",
+          "eligible": true,
+          "missingPrerequisites": [],
+          "warnings": []
+        },
+        {
+          "courseCode": "DC6006",
+          "courseName": "Quân sự chung",
+          "credits": 1.5,
+          "knowledgeBlock": "I. KIẾN THỨC GIÁO DỤC ĐẠI CƯƠNG",
+          "suggestedSemester": 1,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [],
+          "corequisiteCourseCodes": [],
+          "status": "PASSED",
+          "letterGrade": "A",
+          "semesterCode": "2024_1",
+          "eligible": true,
+          "missingPrerequisites": [],
+          "warnings": []
+        },
+        {
+          "courseCode": "IT6096",
+          "courseName": "Thiết kế phần mềm",
+          "credits": 3,
+          "knowledgeBlock": "II. KIẾN THỨC GIÁO DỤC CHUYÊN NGHIỆP",
+          "suggestedSemester": 5,
+          "mandatory": false,
+          "prerequisiteCourseCodes": [],
+          "priorCourseCodes": [
+            "IT6097"
+          ],
+          "corequisiteCourseCodes": [],
+          "status": "ELIGIBLE",
+          "letterGrade": null,
+          "semesterCode": null,
+          "eligible": true,
+          "missingPrerequisites": [],
+          "warnings": []
+        }
+      ],
+      "dataRevision": "REV-2024604757-001",
+      "policyVersion": "policy-haui-demo-2026@0.0.1-v0"
+    },
+    "consumers": [
+      "TV2",
+      "TV3"
     ]
   },
   "transcript": {
@@ -1783,7 +2019,8 @@ export const FIXTURES = Object.freeze({
       "warnings": [
         "Còn nợ học phần LP6004 - Tư tưởng Hồ Chí Minh (điểm F), cần đăng ký học lại"
       ],
-      "dataRevision": "REV-2024604757-001"
+      "dataRevision": "REV-2024604757-001",
+      "policyVersion": "policy-haui-demo-2026@0.0.1-v0"
     },
     "consumers": [
       "TV2",
@@ -1814,7 +2051,8 @@ export const FIXTURES = Object.freeze({
       "warnings": [
         "Chưa có bảng điểm đã xác nhận: GPA/CPA/tín chỉ tích lũy chưa xác định (UNKNOWN)"
       ],
-      "dataRevision": "REV-std-missing-unknown-v1-001"
+      "dataRevision": "REV-std-missing-unknown-v1-001",
+      "policyVersion": "policy-haui-demo-2026@0.0.1-v0"
     },
     "consumers": [
       "TV2",
@@ -1843,7 +2081,8 @@ export const FIXTURES = Object.freeze({
         "IT6203 (chưa đăng ký học phần học trước)"
       ],
       "warnings": [],
-      "dataRevision": "REV-2024604757-001"
+      "dataRevision": "REV-2024604757-001",
+      "policyVersion": "policy-haui-demo-2026@0.0.1-v0"
     },
     "consumers": [
       "TV2",
@@ -2834,7 +3073,8 @@ export const FIXTURES = Object.freeze({
           "status": "PENDING"
         }
       ],
-      "dataRevision": "REV-2024604757-001"
+      "dataRevision": "REV-2024604757-001",
+      "policyVersion": "policy-haui-demo-2026@0.0.1-v0"
     },
     "consumers": [
       "TV2",
@@ -3001,9 +3241,9 @@ export const FIXTURES = Object.freeze({
     ]
   },
   "not-implemented": {
-    "operationId": "getAcademicStatus",
-    "method": "GET",
-    "path": "/academic/status",
+    "operationId": "generateStudyPlan",
+    "method": "POST",
+    "path": "/planner/generate",
     "httpStatus": 501,
     "pathParams": null,
     "requestSchema": null,
@@ -3015,7 +3255,7 @@ export const FIXTURES = Object.freeze({
       "requestId": "req-2026-10-13-0005",
       "timestamp": "2026-10-13T08:15:00Z",
       "details": [
-        "Capability getAcademicStatus sẽ được nối với AcademicFacade ở Phase 4"
+        "operationId: generateStudyPlan"
       ]
     },
     "consumers": [
