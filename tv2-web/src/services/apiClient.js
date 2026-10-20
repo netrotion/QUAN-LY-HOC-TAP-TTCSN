@@ -280,9 +280,11 @@ function resolveMockFixture(method, normalizedPath, body, options = {}) {
       if (options.state?.sessionStudent?.id && options.state.sessionStudent.id !== 'std-2026-001') {
         return mockAcademicService.getAcademicStatus();
       }
-      return { ...MOCK_ACADEMIC_STATUS };
+      return { ...MOCK_ACADEMIC_STATUS, policyVersion: 'policy-haui-demo-2026@0.0.1-v0' };
     case 'GET /academic/curriculum':
       return mockAcademicService.getCurriculum();
+    case 'GET /academic/curriculum/tree':
+      return mockAcademicService.getCurriculumTree();
     case 'POST /academic/eligibility':
       return mockAcademicService.checkEligibility(body?.courseCode);
     case 'GET /academic/transcript':
@@ -647,6 +649,7 @@ export function createApiClient(customConfig = {}) {
   const academic = Object.freeze({
     getStatus: (opts) => get('/academic/status', opts),
     getCurriculum: (opts) => get('/academic/curriculum', opts),
+    getCurriculumTree: (opts) => get('/academic/curriculum/tree', opts),
     checkEligibility: (payload, opts) => post('/academic/eligibility', payload, opts),
     getTranscript: (opts) => get('/academic/transcript', opts),
     getProfile: (opts) => get('/students/me', opts),

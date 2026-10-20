@@ -159,15 +159,15 @@ export function AcademicProgressPage() {
       key: 'deadline',
       title: 'Hạn chót',
       width: '125px',
-      render: (val) => <strong style={{ color: 'var(--color-ember)' }}>{val}</strong>
+      render: (val) => <strong style={{ color: 'var(--color-ember)' }}>{val || 'Chưa ấn định'}</strong>
     },
     {
       key: 'status',
       title: 'Trạng thái',
       width: '130px',
       render: (val) => (
-        <span className={`haui-badge ${val === 'PENDING' ? 'haui-badge--error' : 'haui-badge--neutral'}`}>
-          {val}
+        <span className={`haui-badge ${val === 'PENDING' || val === 'Chưa nộp' ? 'haui-badge--error' : 'haui-badge--neutral'}`}>
+          {val || 'PENDING'}
         </span>
       )
     }
@@ -189,6 +189,34 @@ export function AcademicProgressPage() {
   const creditPct = totalCredits > 0 ? Math.min(100, Math.round((earnedCredits / totalCredits) * 100)) : 0;
   const passedCriteriaCount = auditData?.checklist?.filter((c) => c.completed === true).length ?? (isProjected ? 7 : 5);
   const currentCpa = isProjected ? 3.25 : 3.18;
+
+  if (error && !auditData) {
+    const is503 = error.status === 503 || error.code === 'TOOL_NOT_READY';
+    return (
+      <div className="haui-page-container" style={{ padding: '24px 0' }}>
+        <ErrorBox
+          title={is503 ? 'Công cụ học vụ chưa sẵn sàng (503 TOOL_NOT_READY)' : 'Lỗi tải dữ liệu kiểm toán tốt nghiệp'}
+          message={
+            is503
+              ? 'Hệ thống đang kết nối với Rule Engine học vụ thật. Dữ liệu kiểm toán tốt nghiệp tạm thời chưa khả dụng. Tuyệt đối không hiển thị số liệu giả lập.'
+              : error.message || 'Không thể tải báo cáo kiểm toán tốt nghiệp từ máy chủ.'
+          }
+          code={error.code || (is503 ? 'TOOL_NOT_READY' : 'AUDIT_LOAD_ERROR')}
+          requestId={error.requestId || `req-audit-${Date.now()}`}
+          details={
+            error.details?.length
+              ? error.details
+              : [
+                  'API Endpoint: /api/v1/audit/graduation',
+                  'Quy định AGENTS.md: Không tự tính trạng thái đạt tốt nghiệp ở client khi công cụ backend chưa sẵn sàng.'
+                ]
+          }
+          retryLabel="Thử lại kết nối (Retry)"
+          onRetry={() => fetchAudit(reportMode)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="haui-audit-container haui-page-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -327,6 +355,17 @@ export function AcademicProgressPage() {
             >
               Rà soát &amp; Kiểm tra điều kiện tốt nghiệp
             </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
+              <span className="haui-badge haui-badge--neutral" style={{ fontSize: '11px' }}>
+                Quy chế: {auditData?.policyVersion || 'policy-haui-demo-2026@0.0.1-v0'}
+              </span>
+              <span className="haui-badge haui-badge--neutral" style={{ fontSize: '11px' }}>
+                Hồ sơ: {auditData?.dataRevision || 'REV-SERVER'}
+              </span>
+              <span className="haui-badge haui-badge--neutral" style={{ fontSize: '11px' }}>
+                Chế độ: {isProjected ? 'Dự kiến (Bù đắp)' : 'Thực tế (Hiện tại)'}
+              </span>
+            </div>
           </div>
 
           {/* Action Buttons */}

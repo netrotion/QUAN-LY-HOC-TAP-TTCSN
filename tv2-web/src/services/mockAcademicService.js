@@ -495,6 +495,7 @@ class MockAcademicServiceState {
       email: student.email,
       faculty: student.faculty,
       dataRevision: `REV-${student.studentId}-${this.sessionVersion}`,
+      policyVersion: 'policy-haui-demo-2026@0.0.1-v0',
       fixtureLabel: FIXTURE_TAG,
       regulationTag: UNVERIFIED_RULE_TAG
     };
@@ -512,6 +513,7 @@ class MockAcademicServiceState {
       academicStatus: context.academic_status,
       warnings: context.warnings,
       dataRevision: context.dataRevision,
+      policyVersion: 'policy-haui-demo-2026@0.0.1-v0',
       knowledgeBlocks: [
         { blockId: 'GEN', name: 'Khối kiến thức Đại cương', accumulatedCredits: Math.min(context.accumulatedCredits, 30), totalCreditsRequired: 30, percentage: Math.min(100, Math.round((context.accumulatedCredits / 30) * 100)), color: 'var(--color-success)' },
         { blockId: 'CORE', name: 'Khối Cơ sở ngành', accumulatedCredits: Math.max(0, Math.min(context.accumulatedCredits - 30, 48)), totalCreditsRequired: 48, percentage: Math.min(100, Math.round((Math.max(0, context.accumulatedCredits - 30) / 48) * 100)), color: 'var(--color-primary)' },
@@ -615,8 +617,125 @@ class MockAcademicServiceState {
       totalCreditsRequired: student.totalCreditsRequired,
       status: 'VERIFIED_GROUND_TRUTH',
       source: 'Cổng thông tin đào tạo sv.haui.edu.vn',
+      dataRevision: `REV-${student.studentId}-${this.sessionVersion}`,
+      policyVersion: 'policy-haui-demo-2026@0.0.1-v0',
       courses: enrichedCourses,
       fixtureLabel: FIXTURE_TAG
+    };
+  }
+
+  /**
+   * Cây CTĐT kèm trạng thái học phần và điều kiện đăng ký (Contract V1.3.0 - GET /academic/curriculum/tree)
+   */
+  getCurriculumTree() {
+    const student = this.getActivePersona();
+    const hasTranscript = student.attempts && student.attempts.length > 0;
+    const transcriptStatus = hasTranscript ? 'CONFIRMED' : 'NONE';
+
+    const passedAttemptsMap = new Map();
+    const inProgressAttemptsMap = new Map();
+    const failedAttemptsMap = new Map();
+    const allAttemptsMap = new Map();
+
+    for (const a of (student.attempts || [])) {
+      const code = a.courseCode;
+      allAttemptsMap.set(code, a);
+      if (a.letterGrade && a.letterGrade !== 'F' && a.status !== 'FAILED') {
+        passedAttemptsMap.set(code, a);
+      } else if (a.status === 'IN_PROGRESS' || (a.letterGrade === null && (a.score10 === null || a.score10 === undefined))) {
+        inProgressAttemptsMap.set(code, a);
+      } else if (a.letterGrade === 'F' || a.status === 'FAILED') {
+        failedAttemptsMap.set(code, a);
+      }
+    }
+
+    const passedCodes = new Set(passedAttemptsMap.keys());
+
+    const courses = CURRICULUM_COURSES_BASE.map((course) => {
+      const code = course.courseCode;
+      let status = 'UNKNOWN';
+      let letterGrade = null;
+      let semesterCode = null;
+
+      if (!hasTranscript) {
+        status = 'UNKNOWN';
+      } else if (passedAttemptsMap.has(code)) {
+        status = 'PASSED';
+        const att = passedAttemptsMap.get(code);
+        letterGrade = att.letterGrade;
+        semesterCode = att.semesterCode;
+      } else if (inProgressAttemptsMap.has(code)) {
+        status = 'IN_PROGRESS';
+        const att = inProgressAttemptsMap.get(code);
+        letterGrade = att.letterGrade;
+        semesterCode = att.semesterCode;
+      } else if (failedAttemptsMap.has(code)) {
+        status = 'FAILED';
+        const att = failedAttemptsMap.get(code);
+        letterGrade = att.letterGrade || 'F';
+        semesterCode = att.semesterCode;
+      } else {
+        // Chưa học
+        const missing = (course.prerequisiteCourseCodes || []).filter((pre) => !passedCodes.has(pre));
+        if (missing.length === 0) {
+          status = 'ELIGIBLE';
+        } else {
+          status = 'BLOCKED';
+        }
+      }
+
+      // Thẩm định điều kiện theo rule engine
+      const missingPrerequisites = [];
+      for (const pre of (course.prerequisiteCourseCodes || [])) {
+        if (!passedCodes.has(pre)) {
+          const preCourse = CURRICULUM_COURSES_BASE.find((c) => c.courseCode === pre);
+          const name = preCourse ? preCourse.courseName : pre;
+          missingPrerequisites.push(`${pre} - ${name} (chưa đạt)`);
+        }
+      }
+      for (const prior of (course.priorCourseCodes || [])) {
+        const hasStudiedPrior = allAttemptsMap.has(prior);
+        if (!hasStudiedPrior) {
+          missingPrerequisites.push(`${prior} (chưa đăng ký học phần học trước)`);
+        }
+      }
+
+      const eligible = missingPrerequisites.length === 0;
+      const warnings = eligible
+        ? []
+        : [
+            `Rule Engine: Chưa đáp ứng điều kiện tiên quyết/học trước cho học phần ${code}`
+          ];
+
+      return {
+        courseCode: course.courseCode,
+        courseName: course.courseName,
+        credits: course.credits,
+        knowledgeBlock: course.knowledgeBlock,
+        suggestedSemester: course.suggestedSemester,
+        mandatory: course.mandatory,
+        prerequisiteCourseCodes: course.prerequisiteCourseCodes || [],
+        priorCourseCodes: course.priorCourseCodes || [],
+        corequisiteCourseCodes: course.corequisiteCourseCodes || [],
+        status,
+        letterGrade,
+        semesterCode,
+        eligible,
+        missingPrerequisites,
+        warnings
+      };
+    });
+
+    return {
+      studentId: student.studentId,
+      curriculumId: 'curriculum-ktpm-haui-2024',
+      curriculumName: 'Chương trình đào tạo Kỹ sư Kỹ thuật phần mềm - HaUI (Khóa 2024)',
+      majorCode: student.majorCode,
+      totalCreditsRequired: student.totalCreditsRequired || 150,
+      transcriptStatus,
+      courses,
+      dataRevision: `REV-${student.studentId}-${this.sessionVersion}`,
+      policyVersion: 'policy-haui-demo-2026@0.0.1-v0'
     };
   }
 
@@ -639,6 +758,7 @@ class MockAcademicServiceState {
         missingPrerequisites: [],
         warnings: [],
         dataRevision: `REV-${student.studentId}-${this.sessionVersion}`,
+        policyVersion: 'policy-haui-demo-2026@0.0.1-v0',
         fixtureLabel: FIXTURE_TAG
       };
     }
@@ -665,6 +785,7 @@ class MockAcademicServiceState {
       missingPrerequisites,
       warnings,
       dataRevision: `REV-${student.studentId}-${this.sessionVersion}`,
+      policyVersion: 'policy-haui-demo-2026@0.0.1-v0',
       fixtureLabel: FIXTURE_TAG
     };
   }
@@ -807,12 +928,12 @@ class MockAcademicServiceState {
   getGraduationAudit(options = {}) {
     const mode = typeof options === 'string' ? options : (options?.mode || 'actual');
     if (mode === 'projected') {
-      return { ...MOCK_PROJECTED_GRADUATION_AUDIT };
+      return { ...MOCK_PROJECTED_GRADUATION_AUDIT, policyVersion: 'policy-haui-demo-2026@0.0.1-v0' };
     }
 
     const student = this.getActivePersona();
     if (student.studentId === 'std-2026-001' || !student.studentId) {
-      return { ...MOCK_GRADUATION_AUDIT };
+      return { ...MOCK_GRADUATION_AUDIT, policyVersion: 'policy-haui-demo-2026@0.0.1-v0' };
     }
     const metrics = computeServerAcademicMetrics(student.attempts, student.totalCreditsRequired, student);
     const earned = metrics.accumulatedCredits;
@@ -927,6 +1048,7 @@ class MockAcademicServiceState {
         ] : [])
       ],
       dataRevision: `REV-${student.studentId}-${this.sessionVersion}`,
+      policyVersion: 'policy-haui-demo-2026@0.0.1-v0',
       fixtureLabel: FIXTURE_TAG,
       regulationTag: UNVERIFIED_RULE_TAG
     };

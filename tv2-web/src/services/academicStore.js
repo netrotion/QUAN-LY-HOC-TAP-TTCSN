@@ -609,6 +609,7 @@ export function connectApi(apiInstance) {
   apiInstance.setDynamicProvider({
     'GET /academic/status': () => getDynamicAcademicStatus(),
     'GET /academic/curriculum': () => getDynamicCurriculumTree(),
+    'GET /academic/curriculum/tree': () => mockAcademicService.getCurriculumTree(),
     'GET /audit/graduation': () => getDynamicGraduationAudit()
   });
 

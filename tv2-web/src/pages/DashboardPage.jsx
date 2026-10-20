@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/apiClient.js';
 import { STUDENT_PERSONAS } from '../services/mockFixtures.js';
@@ -165,10 +165,14 @@ export function DashboardPage({ mountedRouteSummary }) {
   const cpaValue =
     academicStatus?.cpa !== null && academicStatus?.cpa !== undefined
       ? Number(academicStatus.cpa).toFixed(2)
-      : '3.24';
+      : '—';
 
-  const accumulatedCredits = academicStatus?.accumulatedCredits || 108;
-  const totalRequiredCredits = academicStatus?.totalCreditsRequired || 145;
+  const accumulatedCredits =
+    academicStatus?.accumulatedCredits !== null && academicStatus?.accumulatedCredits !== undefined
+      ? academicStatus.accumulatedCredits
+      : (academicStatus ? 0 : '—');
+
+  const totalRequiredCredits = academicStatus?.totalCreditsRequired || 135;
 
   const targetCpa = (() => {
     try {
@@ -181,12 +185,14 @@ export function DashboardPage({ mountedRouteSummary }) {
     return 3.20;
   })();
 
-  const cpaNum = Number(cpaValue);
-  const diffToTarget = Number((cpaNum - targetCpa).toFixed(2));
-  const isCpaPositive = diffToTarget >= 0;
+  const cpaNum = cpaValue !== '—' ? Number(cpaValue) : null;
+  const diffToTarget = cpaNum !== null ? Number((cpaNum - targetCpa).toFixed(2)) : null;
+  const isCpaPositive = diffToTarget !== null ? diffToTarget >= 0 : true;
 
   const getCpaRank = (val) => {
+    if (val === '—' || val === null || val === undefined) return 'Chưa có dữ liệu';
     const num = Number(val);
+    if (isNaN(num)) return 'Chưa có dữ liệu';
     if (num >= 3.6) return 'Xuất sắc';
     if (num >= 3.2) return 'Giỏi';
     if (num >= 2.5) return 'Khá';
@@ -312,8 +318,9 @@ export function DashboardPage({ mountedRouteSummary }) {
     );
   }
 
-  // Render Error State khi xem trạng thái 'error'
+  // Render Error State khi xem trạng thái 'error' hoặc lỗi API thật
   if (componentState === 'error' || error) {
+    const is503 = error?.status === 503 || error?.code === 'TOOL_NOT_READY';
     return (
       <div className="haui-page-container">
         {/* State Switcher Bar */}
@@ -357,15 +364,23 @@ export function DashboardPage({ mountedRouteSummary }) {
         </div>
 
         <ErrorBox
-          title="Lỗi kết nối dịch vụ học vụ (Academic Service Unavailable — BR-503)"
-          message="Máy chủ học vụ phản hồi mã lỗi 503 hoặc kết nối cơ sở dữ liệu tạm thời gián đoạn. Các tính năng tính toán CPA và kiểm tra điều kiện tiên quyết đang tạm dừng."
-          code="ACADEMIC_SERVICE_UNAVAILABLE"
-          requestId="req-tv2-demo-err99"
-          details={[
-            'Backend Spring Boot: http://localhost:8080/api/v1/academic/status',
-            'Database Connection Pool: Active (Retry queue: 1)',
-            'Gợi ý: Nhấn nút "Thử lại kết nối" hoặc chuyển sang chế độ Mock API tại Topbar'
-          ]}
+          title={is503 ? 'Công cụ học vụ chưa sẵn sàng (503 TOOL_NOT_READY)' : 'Lỗi kết nối dịch vụ học vụ (Academic Service Unavailable — BR-503)'}
+          message={
+            is503
+              ? 'Hệ thống đang chuẩn bị công cụ tính toán học vụ thật từ Rule Engine. Kết quả học vụ chưa có sẵn, không hiển thị số giả.'
+              : error?.message || 'Máy chủ học vụ phản hồi mã lỗi 503 hoặc kết nối cơ sở dữ liệu tạm thời gián đoạn. Các tính năng tính toán CPA và kiểm tra điều kiện tiên quyết đang tạm dừng.'
+          }
+          code={error?.code || (is503 ? 'TOOL_NOT_READY' : 'ACADEMIC_SERVICE_UNAVAILABLE')}
+          requestId={error?.requestId || `req-tv2-err-${Date.now()}`}
+          details={
+            error?.details?.length
+              ? error.details
+              : [
+                  'Backend Spring Boot: http://localhost:8080/api/v1/academic/status',
+                  'Database Connection Pool: Active (Retry queue: 1)',
+                  'Gợi ý: Nhấn nút "Thử lại kết nối" hoặc chuyển sang chế độ Mock API tại Topbar'
+                ]
+          }
           retryLabel="Thử lại kết nối (Retry)"
           onRetry={() => {
             setComponentState('loaded');
@@ -430,6 +445,26 @@ export function DashboardPage({ mountedRouteSummary }) {
           <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-mid-gray)', maxWidth: '640px' }}>
             Chào <strong style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{studentSession?.fullName || 'Nguyễn Văn An'}</strong> (Mã SV: {studentSession?.studentId || '2020601234'}) &bull; Khóa 16 ngành Công nghệ Thông tin &bull; Khoa CNTT - HaUI
           </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
+            {academicStatus?.policyVersion && (
+              <span className="haui-badge haui-badge--neutral" style={{ fontSize: '11px' }}>
+                Quy chế: {academicStatus.policyVersion}
+              </span>
+            )}
+            {academicStatus?.dataRevision && (
+              <span className="haui-badge haui-badge--neutral" style={{ fontSize: '11px' }}>
+                Hồ sơ: {academicStatus.dataRevision}
+              </span>
+            )}
+            {academicStatus?.riskLevel && (
+              <span
+                className={`haui-badge ${academicStatus.riskLevel === 'NORMAL' ? 'haui-badge--success' : 'haui-badge--error'}`}
+                style={{ fontSize: '11px' }}
+              >
+                {academicStatus.riskLevel === 'NORMAL' ? '✓ Học vụ bình thường' : '⚠️ Cảnh báo học vụ'}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Quick Actions Pills */}
@@ -488,26 +523,28 @@ export function DashboardPage({ mountedRouteSummary }) {
                 <span style={{ fontSize: '14px', color: 'var(--color-mid-gray)' }}>/ 4.00</span>
               </div>
             </div>
-            <span
-              className="haui-stat-trend"
-              style={{
-                color: isCpaPositive ? '#16a34a' : 'var(--color-ember, #e7000b)',
-                backgroundColor: isCpaPositive ? '#f0fdf4' : '#fef2f2'
-              }}
-              title={`So với mục tiêu CPA ${targetCpa.toFixed(2)}`}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
-                {isCpaPositive ? 'trending_up' : 'trending_down'}
+            {diffToTarget !== null && (
+              <span
+                className="haui-stat-trend"
+                style={{
+                  color: isCpaPositive ? '#16a34a' : 'var(--color-ember, #e7000b)',
+                  backgroundColor: isCpaPositive ? '#f0fdf4' : '#fef2f2'
+                }}
+                title={`So với mục tiêu CPA ${targetCpa.toFixed(2)}`}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
+                  {isCpaPositive ? 'trending_up' : 'trending_down'}
+                </span>
+                {isCpaPositive ? `+${diffToTarget.toFixed(2)}` : `${diffToTarget.toFixed(2)}`}
               </span>
-              {isCpaPositive ? `+${diffToTarget.toFixed(2)}` : `${diffToTarget.toFixed(2)}`}
-            </span>
+            )}
           </div>
 
           <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {/* Dòng trên: Xếp hạng */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
               <span style={{ color: 'var(--color-mid-gray)' }}>Xếp loại học lực:</span>
-              <span style={{ color: Number(cpaValue) < 2.0 ? 'var(--color-ember, #e7000b)' : 'var(--color-ink)', fontWeight: 600 }}>
+              <span style={{ color: cpaNum !== null && cpaNum < 2.0 ? 'var(--color-ember, #e7000b)' : 'var(--color-ink)', fontWeight: 600 }}>
                 {getCpaRank(cpaValue)}
               </span>
             </div>
@@ -525,8 +562,8 @@ export function DashboardPage({ mountedRouteSummary }) {
               <div
                 className="haui-progress-bar-fill"
                 style={{
-                  width: `${Math.min(100, (Number(cpaValue) / 4.0) * 100)}%`,
-                  backgroundColor: Number(cpaValue) < 2.0 ? 'var(--color-ember, #e7000b)' : 'var(--color-ink)'
+                  width: cpaNum !== null ? `${Math.min(100, (cpaNum / 4.0) * 100)}%` : '0%',
+                  backgroundColor: cpaNum !== null && cpaNum < 2.0 ? 'var(--color-ember, #e7000b)' : 'var(--color-ink)'
                 }}
               />
             </div>

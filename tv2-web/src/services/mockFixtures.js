@@ -199,6 +199,7 @@ export const MOCK_ACADEMIC_STATUS = Object.freeze({
     { blockId: 'GRAD', name: 'Khối Tốt nghiệp (Đồ án / Thực tập)', accumulatedCredits: 0, totalCreditsRequired: 12, percentage: 0, color: 'var(--color-text-muted)' }
   ],
   dataRevision: 'rev-1001',
+  policyVersion: 'policy-haui-demo-2026@0.0.1-v0',
   fixtureLabel: FIXTURE_TAG,
   regulationTag: UNVERIFIED_RULE_TAG
 });
@@ -396,6 +397,7 @@ export const MOCK_GRADUATION_AUDIT = Object.freeze({
     }
   ],
   dataRevision: 'rev-1001',
+  policyVersion: 'policy-haui-demo-2026@0.0.1-v0',
   fixtureLabel: FIXTURE_TAG,
   regulationTag: UNVERIFIED_RULE_TAG
 });
@@ -564,6 +566,7 @@ export const MOCK_STUDY_PLAN = Object.freeze({
   ],
   planVersion: 1,
   dataRevision: 'rev-1001',
+  policyVersion: 'policy-haui-demo-2026@0.0.1-v0',
   fixtureLabel: FIXTURE_TAG,
   regulationTag: UNVERIFIED_RULE_TAG
 });

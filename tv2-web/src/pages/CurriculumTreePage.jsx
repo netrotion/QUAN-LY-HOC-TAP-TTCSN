@@ -1,403 +1,92 @@
-import React, { useCallback, useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/apiClient.js';
-import { Table, Modal } from '../components/ui/index.js';
+import { Table, Modal, Loading, Error as ErrorBox } from '../components/ui/index.js';
+import { subscribeAcademicStore } from '../services/academicStore.js';
+import { getCourseDisplayMeta } from '../services/curriculumTreeHelper.js';
 
 /**
- * Dữ liệu chi tiết học phần chuẩn xác theo Stitch Prototype `course_tree/code.html`
+ * Dữ liệu bổ trợ mô tả chi tiết học phần theo Prototype (lời khuyên, đề cương, giảng viên)
  */
 const PROTOTYPE_COURSE_DETAILS = Object.freeze({
   IT6003: {
-    code: 'IT6003',
-    name: 'Cấu trúc dữ liệu & Giải thuật',
-    credits: '3 Tín chỉ (2.5 LT + 0.5 TH)',
-    type: 'Cơ sở nhóm ngành CNTT',
-    semester: 'Học kỳ 3 (2022 - 2023)',
-    status: 'Đã hoàn thành',
-    statusClass: 'haui-badge--success',
-    progress: '8.2 / 10',
-    gradeEst: 'Điểm tổng kết: 8.2 (Điểm B+)',
     desc: 'Trang bị các cấu trúc dữ liệu cơ bản và nâng cao (Danh sách liên kết, Cây nhị phân, Bảng băm, Đồ thị) cùng các thuật toán tìm kiếm, sắp xếp và tối ưu độ phức tạp tính toán.',
-    prereqStatus: 'Đã đáp ứng tất cả (1/1)',
-    prereqs: [
-      { code: 'IT1001', name: 'Nhập môn lập trình (C/C++)', grade: '9.0 (Điểm A)', tag: 'Môn tiên quyết', icon: 'check_circle', color: '#16a34a' }
-    ],
-    unlocks: [
-      { code: 'IT6025', name: 'Kiến trúc phần mềm & Mẫu thiết kế', condition: 'Tiên quyết cho Kỳ 6', icon: 'lock_open' },
-      { code: 'IT6080', name: 'Đồ án chuyên ngành KTPM', condition: 'Mở khóa chuỗi đồ án', icon: 'schedule' }
-    ],
     lecturer: 'TS. Lê Hoàng Yến - Bộ môn KHMT',
     advice: 'Nền tảng quan trọng bậc nhất cho toàn bộ các môn lập trình và phân tích thuật toán chuyên sâu sau này.'
   },
   IT6001: {
-    code: 'IT6001',
-    name: 'Lập trình Hướng đối tượng (Java)',
-    credits: '3 Tín chỉ (2 LT + 1 TH)',
-    type: 'Cơ sở nhóm ngành CNTT',
-    semester: 'Học kỳ 3 (2022 - 2023)',
-    status: 'Đã hoàn thành',
-    statusClass: 'haui-badge--success',
-    progress: '9.0 / 10',
-    gradeEst: 'Điểm tổng kết: 9.0 (Điểm A)',
     desc: 'Phương pháp lập trình hướng đối tượng (OOP): Đóng gói, Kế thừa, Đa hình, Trừu tượng hóa trên nền Java Standard Edition, Design Patterns cơ bản và lập trình giao diện Swing/JavaFX.',
-    prereqStatus: 'Đã đáp ứng tất cả (1/1)',
-    prereqs: [
-      { code: 'IT1001', name: 'Nhập môn lập trình', grade: '9.0 (Điểm A)', tag: 'Môn tiên quyết', icon: 'check_circle', color: '#16a34a' }
-    ],
-    unlocks: [
-      { code: 'IT6002', name: 'Lập trình Web cơ bản', condition: 'Tiên quyết học phần Web', icon: 'lock_open' },
-      { code: 'IT6030', name: 'Phát triển ứng dụng Di động', condition: 'Nền tảng OOP cho Mobile', icon: 'lock_open' }
-    ],
     lecturer: 'TS. Đỗ Ngọc Sơn - Bộ môn CNPM',
     advice: 'Kết quả đạt điểm A (9.0) giúp mở khóa thuận lợi toàn bộ các học phần lập trình ứng dụng tiếp theo.'
   },
   IT6005: {
-    code: 'IT6005',
-    name: 'Cơ sở dữ liệu',
-    credits: '3 Tín chỉ (2 LT + 1 TH)',
-    type: 'Cơ sở nhóm ngành CNTT',
-    semester: 'Học kỳ 3 (2022 - 2023)',
-    status: 'Đã hoàn thành',
-    statusClass: 'haui-badge--success',
-    progress: '8.0 / 10',
-    gradeEst: 'Điểm tổng kết: 8.0 (Điểm B+)',
     desc: 'Mô hình dữ liệu quan hệ, đại số quan hệ, thiết kế lược đồ quan hệ và chuẩn hóa dạng 1NF-3NF/BCNF, ngôn ngữ truy vấn SQL trên hệ quản trị SQL Server.',
-    prereqStatus: 'Đã đáp ứng tất cả (1/1)',
-    prereqs: [
-      { code: 'MATH1001', name: 'Toán cao cấp 1', grade: '8.0 (Điểm B+)', tag: 'Môn học trước', icon: 'check_circle', color: '#16a34a' }
-    ],
-    unlocks: [
-      { code: 'IT6012', name: 'Hệ quản trị CSDL', condition: 'Học phần nâng cao Kỳ 5', icon: 'lock_open' },
-      { code: 'IT6015', name: 'Lập trình Web nâng cao', condition: 'Thiết kế CSDL Web Kỳ 6', icon: 'lock_open' }
-    ],
     lecturer: 'ThS. Vũ Thị Mai - Bộ môn HTTT',
     advice: 'Chú trọng kỹ năng thiết kế lược đồ CSDL và tối ưu hóa câu lệnh SQL khi tham gia các dự án đồ án.'
   },
   IT6002: {
-    code: 'IT6002',
-    name: 'Lập trình Web cơ bản',
-    credits: '3 Tín chỉ (2 LT + 1 TH)',
-    type: 'Chuyên ngành bắt buộc',
-    semester: 'Học kỳ 4 (2022 - 2023)',
-    status: 'Đã hoàn thành',
-    statusClass: 'haui-badge--success',
-    progress: '8.8 / 10',
-    gradeEst: 'Điểm tổng kết: 8.8 (Điểm A)',
     desc: 'Nền tảng HTML5, CSS3, JavaScript hiện đại (ES6+), DOM Manipulation, responsive design và lập trình backend cơ bản với Node.js/Express.',
-    prereqStatus: 'Đã đáp ứng tất cả (1/1)',
-    prereqs: [
-      { code: 'IT6001', name: 'Lập trình Hướng đối tượng', grade: '9.0 (Điểm A)', tag: 'Môn tiên quyết', icon: 'check_circle', color: '#16a34a' }
-    ],
-    unlocks: [
-      { code: 'IT6015', name: 'Lập trình Web nâng cao', condition: 'Tiên quyết trực tiếp Kỳ 6', icon: 'lock_open' }
-    ],
     lecturer: 'ThS. Nguyễn Tuấn Anh - Bộ môn CNPM',
     advice: 'Đã hoàn thành xuất sắc, tạo tiền đề vững chắc cho học phần Lập trình Web nâng cao ở kỳ 6.'
   },
   IT6004: {
-    code: 'IT6004',
-    name: 'Công nghệ phần mềm',
-    credits: '3 Tín chỉ (2.5 LT + 0.5 BT lớn)',
-    type: 'Bắt buộc ngành KTPM',
-    semester: 'Học kỳ 4 (2022 - 2023)',
-    status: 'Đã hoàn thành',
-    statusClass: 'haui-badge--success',
-    progress: '8.5 / 10',
-    gradeEst: 'Điểm tổng kết: 8.5 (Điểm A)',
     desc: 'Tổng quan vòng đời phát triển phần mềm (SDLC), mô hình Agile/Scrum, phân tích yêu cầu phần mềm (SRS), kiểm thử cơ bản và quản lý phiên bản với Git/GitHub.',
-    prereqStatus: 'Đã đáp ứng tất cả (1/1)',
-    prereqs: [
-      { code: 'IT6001', name: 'Lập trình Hướng đối tượng', grade: '9.0 (Điểm A)', tag: 'Môn học trước', icon: 'check_circle', color: '#16a34a' }
-    ],
-    unlocks: [
-      { code: 'IT6025', name: 'Kiến trúc phần mềm & Mẫu thiết kế', condition: 'Tiên quyết trực tiếp Kỳ 6', icon: 'lock_open' },
-      { code: 'IT6040', name: 'Kiểm thử phần mềm tự động', condition: 'Tiên quyết Kỳ 7', icon: 'lock_open' }
-    ],
     lecturer: 'PGS.TS. Trần Đình Thắng - Trưởng BM KTPM',
     advice: 'Quy trình làm việc nhóm và kỹ năng viết đặc tả SRS đã đạt chuẩn yêu cầu chuyên ngành.'
   },
   IT6008: {
-    code: 'IT6008',
-    name: 'Mạng máy tính cơ sở',
-    credits: '3 Tín chỉ (2 LT + 1 TH)',
-    type: 'Cơ sở nhóm ngành CNTT',
-    semester: 'Học kỳ 4 (2022 - 2023)',
-    status: 'Đã hoàn thành',
-    statusClass: 'haui-badge--success',
-    progress: '7.5 / 10',
-    gradeEst: 'Điểm tổng kết: 7.5 (Điểm B)',
     desc: 'Kiến trúc phân tầng OSI và TCP/IP, cấu hình mạng con IPv4/IPv6, định tuyến định hướng, giao thức tầng ứng dụng HTTP, DNS, DHCP và an toàn mạng cơ bản.',
-    prereqStatus: 'Đã đáp ứng tất cả (1/1)',
-    prereqs: [
-      { code: 'IT1001', name: 'Nhập môn lập trình', grade: '9.0 (Điểm A)', tag: 'Môn học trước', icon: 'check_circle', color: '#16a34a' }
-    ],
-    unlocks: [
-      { code: 'IT6015', name: 'Lập trình Web nâng cao', condition: 'Kiến thức mạng cho WebSockets & API', icon: 'lock_open' }
-    ],
     lecturer: 'TS. Phạm Văn Bình - Bộ môn MMT',
     advice: 'Đã đáp ứng đủ chuẩn kiến thức mạng máy tính phục vụ xây dựng ứng dụng Web phân tán.'
   },
   IT6011: {
-    code: 'IT6011',
-    name: 'Phân tích & TK Hệ thống',
-    credits: '3 Tín chỉ (2.5 LT + 0.5 BT lớn)',
-    type: 'Chuyên ngành KTPM',
-    semester: 'Học kỳ 5 (2023 - 2024)',
-    status: 'Đã hoàn thành',
-    statusClass: 'haui-badge--success',
-    progress: '8.4 / 10',
-    gradeEst: 'Điểm tổng kết: 8.4 (Điểm B+)',
     desc: 'Mô hình hóa hệ thống bằng UML 2.0 (Use case, Class, Sequence, Activity Diagram), phân tích ca sử dụng và thiết kế kiến trúc hệ thống thông tin doanh nghiệp.',
-    prereqStatus: 'Đã đáp ứng tất cả (2/2)',
-    prereqs: [
-      { code: 'IT6004', name: 'Công nghệ phần mềm', grade: '8.5 (Điểm A)', tag: 'Môn tiên quyết', icon: 'check_circle', color: '#16a34a' },
-      { code: 'IT6005', name: 'Cơ sở dữ liệu', grade: '8.0 (Điểm B+)', tag: 'Môn học trước', icon: 'check_circle', color: '#16a34a' }
-    ],
-    unlocks: [
-      { code: 'IT6080', name: 'Đồ án chuyên ngành KTPM', condition: 'Tài liệu phân tích hệ thống Kỳ 7', icon: 'lock_open' }
-    ],
     lecturer: 'TS. Hoàng Quang Huy - Bộ môn KTPM',
     advice: 'Sử dụng các sơ đồ UML từ bài tập lớn môn này làm bộ khung phân tích cho Đồ án chuyên ngành.'
   },
   IT6012: {
-    code: 'IT6012',
-    name: 'Hệ quản trị CSDL (Oracle/SQL)',
-    credits: '3 Tín chỉ (2 LT + 1 TH)',
-    type: 'Chuyên ngành KTPM',
-    semester: 'Học kỳ 5 (2023 - 2024)',
-    status: 'Đã hoàn thành',
-    statusClass: 'haui-badge--success',
-    progress: '8.6 / 10',
-    gradeEst: 'Điểm tổng kết: 8.6 (Điểm A)',
     desc: 'Quản trị CSDL nâng cao, lập trình T-SQL / PL-SQL, Trigger, Stored Procedure, Transaction & Concurrency Control, lập chỉ mục (Indexing) và tối ưu hóa câu truy vấn.',
-    prereqStatus: 'Đã đáp ứng tất cả (1/1)',
-    prereqs: [
-      { code: 'IT6005', name: 'Cơ sở dữ liệu', grade: '8.0 (Điểm B+)', tag: 'Môn tiên quyết bắt buộc', icon: 'check_circle', color: '#16a34a' }
-    ],
-    unlocks: [
-      { code: 'IT6015', name: 'Lập trình Web nâng cao', condition: 'Tích hợp ORM và CSDL Web', icon: 'lock_open' }
-    ],
     lecturer: 'TS. Nguyễn Thị Thu - Bộ môn HTTT',
     advice: 'Kỹ năng viết Stored Procedure và Transaction của bạn rất tốt, hãy áp dụng vào phần quản trị dữ liệu đồ án.'
   },
   IT6015: {
-    code: 'IT6015',
-    name: 'Lập trình Web nâng cao',
-    credits: '3 Tín chỉ (2 Lý thuyết + 1 Thực hành)',
-    type: 'Chuyên ngành bắt buộc (KTPM)',
-    semester: 'Học kỳ 6 (2023 - 2024)',
-    status: 'Đang học',
-    statusClass: 'haui-badge--primary',
-    progress: '8.5 / 10',
-    gradeEst: 'Dự kiến Đạt: A / A+',
     desc: 'Trang bị kiến thức chuyên sâu về kiến trúc Web hiện đại: Microservices, RESTful API, Single Page Applications (Next.js/React), WebSockets, cơ chế Authentication (OAuth2, JWT) và triển khai CI/CD trên nền tảng đám mây.',
-    prereqStatus: 'Đã đáp ứng tất cả (2/2)',
-    prereqs: [
-      { code: 'IT6002', name: 'Lập trình Web cơ bản', grade: '8.8 (Điểm A)', tag: 'Môn tiên quyết bắt buộc', icon: 'check_circle', color: '#16a34a' },
-      { code: 'IT6005', name: 'Cơ sở dữ liệu nâng cao', grade: '8.0 (Điểm B+)', tag: 'Môn học trước', icon: 'check_circle', color: '#16a34a' }
-    ],
-    unlocks: [
-      { code: 'IT6080', name: 'Đồ án chuyên ngành KTPM', condition: 'Cần đạt ≥ D (Đăng ký Kỳ 7)', icon: 'schedule' },
-      { code: 'IT6099', name: 'Khóa luận tốt nghiệp KTPM', condition: 'Hoàn thành đủ điều kiện chuyên ngành', icon: 'lock_open' }
-    ],
     lecturer: 'TS. Nguyễn Mạnh Hùng - Bộ môn CNPM',
     advice: 'Bạn nên duy trì điểm quá trình môn IT6015 trên 8.0 để đủ điều kiện nhận đề tài Khóa luận độc lập cùng BM Công nghệ Phần mềm ở Học kỳ 8.'
   },
   IT6025: {
-    code: 'IT6025',
-    name: 'Kiến trúc PM & Mẫu thiết kế',
-    credits: '3 Tín chỉ (2.5 Lý thuyết + 0.5 BT lớn)',
-    type: 'Chuyên ngành bắt buộc',
-    semester: 'Học kỳ 6 (2023 - 2024)',
-    status: 'Đang học',
-    statusClass: 'haui-badge--primary',
-    progress: '8.2 / 10',
-    gradeEst: 'Dự kiến Đạt: B+ / A',
     desc: 'Nghiên cứu các mẫu thiết kế hướng đối tượng (GoF Design Patterns), Clean Architecture, Domain-Driven Design (DDD), phân tích hệ thống phân tán chịu tải cao và quy chuẩn thiết kế Enterprise Software.',
-    prereqStatus: 'Đã đáp ứng tất cả (2/2)',
-    prereqs: [
-      { code: 'IT6004', name: 'Công nghệ phần mềm', grade: '8.5 (Điểm A)', tag: 'Môn tiên quyết bắt buộc', icon: 'check_circle', color: '#16a34a' },
-      { code: 'IT6003', name: 'Cấu trúc dữ liệu & GT', grade: '8.2 (Điểm B+)', tag: 'Môn học trước', icon: 'check_circle', color: '#16a34a' }
-    ],
-    unlocks: [
-      { code: 'IT6080', name: 'Đồ án chuyên ngành KTPM', condition: 'Điều kiện cốt lõi kỳ 7', icon: 'schedule' },
-      { code: 'IT6090', name: 'Kiểm thử & Đảm bảo CLPM', condition: 'Môn chuyên ngành tự chọn', icon: 'lock_open' }
-    ],
     lecturer: 'PGS.TS. Trần Đình Thắng - Trưởng BM KTPM',
     advice: 'Môn học cốt lõi cho các kỳ phỏng vấn tuyển dụng vị trí Software Engineer / Backend Developer tại các doanh nghiệp đối tác.'
   },
   IT6030: {
-    code: 'IT6030',
-    name: 'Phát triển ứng dụng Di động',
-    credits: '3 Tín chỉ (2 LT + 1 TH)',
-    type: 'Tự chọn chuyên ngành',
-    semester: 'Học kỳ 6 (2023 - 2024)',
-    status: 'Đang học',
-    statusClass: 'haui-badge--primary',
-    progress: '8.0 / 10',
-    gradeEst: 'Dự kiến Đạt: B+ / A',
     desc: 'Lập trình ứng dụng di động đa nền tảng với Flutter/Dart và native Android (Kotlin), vòng đời Activity/Fragment, quản trị trạng thái (Bloc/Provider) và kết nối REST API.',
-    prereqStatus: 'Đã đáp ứng tất cả (1/1)',
-    prereqs: [
-      { code: 'IT6001', name: 'Lập trình Hướng đối tượng', grade: '9.0 (Điểm A)', tag: 'Môn tiên quyết', icon: 'check_circle', color: '#16a34a' }
-    ],
-    unlocks: [
-      { code: 'IT6080', name: 'Đồ án chuyên ngành KTPM', condition: 'Có thể chọn hướng Mobile App', icon: 'schedule' }
-    ],
     lecturer: 'ThS. Đặng Việt Dũng - Bộ môn CNPM',
     advice: 'Tích lũy sản phẩm đồ án môn học để đưa vào CV ứng tuyển thực tập doanh nghiệp ở kỳ 7.'
   },
   IT6080: {
-    code: 'IT6080',
-    name: 'Đồ án chuyên ngành KTPM',
-    credits: '3 Tín chỉ (Đồ án thực nghiệm)',
-    type: 'Thực tập & Đồ án',
-    semester: 'Học kỳ 7 (Dự kiến mở)',
-    status: 'Đủ điều kiện đăng ký',
-    statusClass: 'haui-badge--neutral',
-    progress: 'Chưa có điểm',
-    gradeEst: 'Mục tiêu: A (≥ 8.5)',
     desc: 'Thực hiện đồ án nghiên cứu phát triển một sản phẩm phần mềm thực tế theo nhóm (Scrum/Agile), ứng dụng công nghệ Microservices, DevOps và bảo vệ trước hội đồng khoa.',
-    prereqStatus: 'Đang chờ hoàn thành kỳ 6',
-    prereqs: [
-      { code: 'IT6015', name: 'Lập trình Web nâng cao', grade: 'Đang học (Kỳ 6)', tag: 'Tiên quyết cốt lõi', icon: 'pending', color: '#737373' },
-      { code: 'IT6025', name: 'Kiến trúc phần mềm', grade: 'Đang học (Kỳ 6)', tag: 'Tiên quyết cốt lõi', icon: 'pending', color: '#737373' }
-    ],
-    unlocks: [
-      { code: 'IT6099', name: 'Khóa luận tốt nghiệp KTPM', condition: 'Bắt buộc qua đồ án ngành', icon: 'lock' }
-    ],
     lecturer: 'Hội đồng Khoa CNTT - HaUI',
-    advice: 'Cần hoàn thành đạt điểm 2 môn tiên quyết IT6015 và IT6025 trong học kỳ 6 này để được cấp quyền đăng ký IT6080 đầu kỳ 7.'
+    advice: 'Cần hoàn thành đạt điểm các môn tiên quyết trong học kỳ 6 này để được cấp quyền đăng ký IT6080 đầu kỳ 7.'
   },
   IT6040: {
-    code: 'IT6040',
-    name: 'Kiểm thử phần mềm tự động',
-    credits: '3 Tín chỉ (2 LT + 1 TH)',
-    type: 'Chuyên ngành KTPM',
-    semester: 'Học kỳ 7 (Dự kiến mở)',
-    status: 'Đủ điều kiện đăng ký',
-    statusClass: 'haui-badge--neutral',
-    progress: 'Chưa có điểm',
-    gradeEst: 'Mục tiêu: B+ / A',
     desc: 'Kỹ thuật kiểm thử tự động với Selenium, Cypress, JUnit, TestNG; kiểm thử API với Postman/RestAssured; xây dựng quy trình CI/CD tích hợp kiểm thử tự động.',
-    prereqStatus: 'Đã hoàn thành tiên quyết',
-    prereqs: [
-      { code: 'IT6004', name: 'Công nghệ phần mềm', grade: '8.5 (Điểm A)', tag: 'Môn tiên quyết', icon: 'check_circle', color: '#16a34a' }
-    ],
-    unlocks: [
-      { code: 'IT6099', name: 'Khóa luận tốt nghiệp KTPM', condition: 'Phần kiểm thử của đồ án tốt nghiệp', icon: 'lock_open' }
-    ],
     lecturer: 'TS. Trần Văn Minh - Bộ môn KTPM',
     advice: 'Học phần bổ trợ thực chiến rất tốt cho kỹ sư phần mềm trước khi ra trường.'
   },
   IT6090: {
-    code: 'IT6090',
-    name: 'Thực tập tốt nghiệp DN',
-    credits: '4 Tín chỉ (Thực tập thực tế)',
-    type: 'Thực tập doanh nghiệp',
-    semester: 'Học kỳ 7 (Dự kiến mở)',
-    status: 'Đủ điều kiện đăng ký',
-    statusClass: 'haui-badge--neutral',
-    progress: 'Chưa có điểm',
-    gradeEst: 'Mục tiêu: Đạt loại Xuất sắc',
     desc: 'Thực tập toàn thời gian tại các doanh nghiệp đối tác của HaUI (Viettel, FPT Software, CMC, VNPAY...), trực tiếp tham gia dự án phần mềm thực tế và viết báo cáo thực tập.',
-    prereqStatus: 'Đã hoàn thành > 90 tín chỉ',
-    prereqs: [
-      { code: 'TCTL90', name: 'Tích lũy tối thiểu 90 tín chỉ', grade: 'Hiện đạt: 108 / 90 TC', tag: 'Điều kiện tiên quyết', icon: 'check_circle', color: '#16a34a' }
-    ],
-    unlocks: [
-      { code: 'IT6099', name: 'Khóa luận tốt nghiệp KTPM', condition: 'Bắt buộc hoàn thành thực tập', icon: 'lock_open' }
-    ],
     lecturer: 'Khoa CNTT & Doanh nghiệp đối tác',
     advice: 'Chuẩn bị hồ sơ CV và nộp giấy tiếp nhận thực tập của công ty cho giáo vụ khoa trước tuần 2 của kỳ 7.'
   },
   IT6099: {
-    code: 'IT6099',
-    name: 'Khóa luận tốt nghiệp (KTPM)',
-    credits: '10 Tín chỉ (Bảo vệ đồ án)',
-    type: 'Tốt nghiệp',
-    semester: 'Học kỳ 8 (Khóa K16)',
-    status: 'Chưa đủ điều kiện (Khóa)',
-    statusClass: 'haui-badge--warning',
-    progress: '0 / 10',
-    gradeEst: 'Yêu cầu tích lũy: CPA ≥ 2.50',
-    desc: 'Công trình tốt nghiệp đại học hệ chính quy 4 năm ngành Kỹ thuật Phần mềm. Đòi hỏi hoàn thành đầy đủ 135 tín chỉ tiên quyết cùng các chứng chỉ tiếng Anh B1, Tin học chuẩn HaUI.',
-    prereqStatus: 'Thiếu 2 điều kiện tiên quyết',
-    prereqs: [
-      { code: 'IT6080', name: 'Đồ án chuyên ngành KTPM', grade: 'Chưa học (Kỳ 7)', tag: 'Tiên quyết bắt buộc', icon: 'lock', color: '#e7000b' },
-      { code: 'TCTL', name: 'Tích lũy tối thiểu 125 TC', grade: 'Hiện đạt: 108 / 125', tag: 'Điều kiện tín chỉ', icon: 'lock', color: '#e7000b' }
-    ],
-    unlocks: [
-      { code: 'GRAD', name: 'Xét tốt nghiệp Kỹ sư CNTT', condition: 'Hoàn thành chương trình', icon: 'verified' }
-    ],
+    desc: 'Công trình tốt nghiệp đại học hệ chính quy 4 năm ngành Kỹ thuật Phần mềm. Đòi hỏi hoàn thành đầy đủ các tín chỉ tiên quyết cùng các chứng chỉ tiếng Anh B1, Tin học chuẩn HaUI.',
     lecturer: 'Hội đồng Bảo vệ Tốt nghiệp Khoa CNTT',
     advice: 'Cần duy trì CPA ≥ 2.50 và hoàn tất toàn bộ học phần nợ trước khi nộp đơn xin nhận đề tài tốt nghiệp.'
   }
 });
 
-/**
- * 6 Học kỳ chính trong Sơ đồ luồng (Flowchart Timeline) chuẩn prototype
- */
-const TIMELINE_SEMESTERS = [
-  {
-    semester: 3,
-    label: 'Học kỳ 3 (Năm 2)',
-    meta: '19 TC (Xong)',
-    courses: [
-      { code: 'IT6003', name: 'Cấu trúc dữ liệu & Giải thuật', block: 'Cơ sở nhóm ngành', credits: 3, statusText: 'Đạt: 8.2 (B+)', statusType: 'passed' },
-      { code: 'IT6001', name: 'Lập trình Hướng đối tượng (Java)', block: 'Cơ sở nhóm ngành', credits: 3, statusText: 'Đạt: 9.0 (A)', statusType: 'passed' },
-      { code: 'IT6005', name: 'Cơ sở dữ liệu', block: 'Cơ sở nhóm ngành', credits: 3, statusText: 'Đạt: 8.0 (B+)', statusType: 'passed' }
-    ]
-  },
-  {
-    semester: 4,
-    label: 'Học kỳ 4 (Năm 2)',
-    meta: '18 TC (Xong)',
-    courses: [
-      { code: 'IT6002', name: 'Lập trình Web cơ bản', block: 'Tiên quyết cho IT6015', credits: 3, statusText: 'Đạt: 8.8 (A)', statusType: 'passed' },
-      { code: 'IT6004', name: 'Công nghệ phần mềm', block: 'Bắt buộc ngành KTPM', credits: 3, statusText: 'Đạt: 8.5 (A)', statusType: 'passed' },
-      { code: 'IT6008', name: 'Mạng máy tính cơ sở', block: 'Cơ sở nhóm ngành', credits: 3, statusText: 'Đạt: 7.5 (B)', statusType: 'passed' }
-    ]
-  },
-  {
-    semester: 5,
-    label: 'Học kỳ 5 (Năm 3)',
-    meta: '17 TC (Xong)',
-    courses: [
-      { code: 'IT6011', name: 'Phân tích & TK Hệ thống', block: 'Chuyên ngành KTPM', credits: 3, statusText: 'Đạt: 8.4 (B+)', statusType: 'passed' },
-      { code: 'IT6012', name: 'Hệ quản trị CSDL (Oracle/SQL)', block: 'Chuyên ngành KTPM', credits: 3, statusText: 'Đạt: 8.6 (A)', statusType: 'passed' }
-    ]
-  },
-  {
-    semester: 6,
-    label: 'Học kỳ 6 (Hiện tại)',
-    meta: '14 TC',
-    isCurrent: true,
-    courses: [
-      { code: 'IT6015', name: 'Lập trình Web nâng cao', block: 'KTPM Bắt buộc', credits: 3, statusText: 'Đang học • QT 8.5', statusType: 'studying' },
-      { code: 'IT6025', name: 'Kiến trúc PM & Mẫu thiết kế', block: 'KTPM Bắt buộc', credits: 3, statusText: 'Đang học • QT 8.2', statusType: 'studying' },
-      { code: 'IT6030', name: 'Phát triển ứng dụng Di động', block: 'Tự chọn chuyên ngành', credits: 3, statusText: 'Đang học • QT 8.0', statusType: 'studying' }
-    ]
-  },
-  {
-    semester: 7,
-    label: 'Học kỳ 7 (Kế tiếp)',
-    meta: '16 TC (Dự kiến)',
-    courses: [
-      { code: 'IT6080', name: 'Đồ án chuyên ngành KTPM', block: 'Tiên quyết: IT6015, IT6025', credits: 3, statusText: 'Đủ điều kiện đăng ký', statusType: 'eligible', dashed: true },
-      { code: 'IT6040', name: 'Kiểm thử phần mềm tự động', block: 'Chuyên ngành KTPM', credits: 3, statusText: 'Đủ điều kiện đăng ký', statusType: 'eligible', dashed: true },
-      { code: 'IT6090', name: 'Thực tập tốt nghiệp DN', block: 'Tích lũy > 90 tín chỉ', credits: 4, statusText: 'Đủ điều kiện đăng ký', statusType: 'eligible', dashed: true }
-    ]
-  },
-  {
-    semester: 8,
-    label: 'Học kỳ 8 (Tốt nghiệp)',
-    meta: '12 TC',
-    courses: [
-      { code: 'IT6099', name: 'Khóa luận tốt nghiệp KTPM', block: 'Tiên quyết: Đồ án ngành + CPA ≥ 2.5', credits: 10, statusText: 'Chưa đủ điều kiện (Khóa)', statusType: 'locked' }
-    ]
-  }
-];
+export { getCourseDisplayMeta };
 
 export function CurriculumTreePage() {
   const navigate = useNavigate();
@@ -415,7 +104,12 @@ export function CurriculumTreePage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Học phần đang được chọn trên Sơ đồ cây (mặc định IT6015 như prototype)
+  // Dữ liệu Cây CTĐT từ Backend API (Contract V1.3.0)
+  const [treeData, setTreeData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Học phần đang được chọn trên Sơ đồ cây
   const [selectedCourseCode, setSelectedCourseCode] = useState('IT6015');
 
   // State kiểm tra điều kiện tiên quyết (POST /api/v1/academic/eligibility)
@@ -424,11 +118,66 @@ export function CurriculumTreePage() {
   const [checkingEligibility, setCheckingEligibility] = useState(false);
   const [eligibilityError, setEligibilityError] = useState(null);
 
-  const selectedCourse = PROTOTYPE_COURSE_DETAILS[selectedCourseCode] || PROTOTYPE_COURSE_DETAILS.IT6015;
+  // Nạp dữ liệu cây CTĐT từ Live Backend API
+  const fetchTreeData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.academic.getCurriculumTree();
+      setTreeData(res);
+      if (res?.courses?.length > 0) {
+        // Nếu môn đang chọn không tồn tại trong danh sách mới, chọn môn đầu tiên
+        const exists = res.courses.some((c) => c.courseCode === selectedCourseCode);
+        if (!exists) {
+          setSelectedCourseCode(res.courses[0].courseCode);
+        }
+      }
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedCourseCode]);
 
-  // Lấy danh sách mã môn tiên quyết và môn phụ thuộc của môn đang chọn
-  const activePrereqCodes = new Set(selectedCourse.prereqs?.map((p) => p.code) || []);
-  const activeUnlockCodes = new Set(selectedCourse.unlocks?.map((u) => u.code) || []);
+  useEffect(() => {
+    fetchTreeData();
+    const unsubStore = subscribeAcademicStore(() => {
+      fetchTreeData();
+    });
+    const unsubApi = api.subscribe(() => {
+      fetchTreeData();
+    });
+    return () => {
+      unsubStore();
+      unsubApi();
+    };
+  }, [fetchTreeData]);
+
+  const courses = useMemo(() => treeData?.courses || [], [treeData]);
+
+  // Tìm học phần đang được chọn
+  const selectedCourse = useMemo(() => {
+    if (!courses.length) return null;
+    return courses.find((c) => c.courseCode === selectedCourseCode) || courses[0];
+  }, [courses, selectedCourseCode]);
+
+  // Lấy chi tiết bổ trợ từ prototype nếu có
+  const selectedCourseSupplement = selectedCourse ? (PROTOTYPE_COURSE_DETAILS[selectedCourse.courseCode] || {}) : {};
+
+  // Mã môn tiên quyết và môn mở khóa của môn đang chọn
+  const activePrereqCodes = useMemo(() => {
+    if (!selectedCourse) return new Set();
+    return new Set(selectedCourse.prerequisiteCourseCodes || []);
+  }, [selectedCourse]);
+
+  const activeUnlockCodes = useMemo(() => {
+    if (!selectedCourse) return new Set();
+    const targetCode = selectedCourse.courseCode;
+    const unlocks = courses
+      .filter((c) => (c.prerequisiteCourseCodes || []).includes(targetCode))
+      .map((c) => c.courseCode);
+    return new Set(unlocks);
+  }, [courses, selectedCourse]);
 
   const handleSelectCourse = (code) => {
     setSelectedCourseCode(code);
@@ -436,7 +185,6 @@ export function CurriculumTreePage() {
 
   const handleScrollToCurrent = () => {
     if (timelineScrollRef.current) {
-      // Cuộn đến cột học kỳ 6 (khoảng giữa)
       timelineScrollRef.current.scrollTo({ left: 680, behavior: 'smooth' });
     }
   };
@@ -475,73 +223,131 @@ export function CurriculumTreePage() {
     navigate(`/planner?course_id=${encodeURIComponent(courseCode)}&plan_id=${encodeURIComponent(activePlanId)}`);
   };
 
-  // Lọc các học kỳ và môn học theo bộ lọc
-  const filteredTimeline = TIMELINE_SEMESTERS.map((sem) => {
-    if (semesterFilter !== 'all' && String(sem.semester) !== String(semesterFilter)) {
-      return null;
-    }
-    const matchingCourses = sem.courses.filter((c) => {
-      if (statusFilter !== 'all' && c.statusType !== statusFilter) return false;
-      if (blockFilter !== 'all') {
-        const details = PROTOTYPE_COURSE_DETAILS[c.code];
-        if (blockFilter === 'major' && !details?.type?.includes('Chuyên ngành')) return false;
-        if (blockFilter === 'core' && !details?.type?.includes('Cơ sở')) return false;
-        if (blockFilter === 'elective' && !details?.type?.includes('Tự chọn')) return false;
-        if (blockFilter === 'internship' && !details?.type?.includes('Thực tập') && !details?.type?.includes('Tốt nghiệp')) return false;
-      }
-      if (searchTerm) {
-        const q = searchTerm.toLowerCase();
-        const codeMatch = c.code.toLowerCase().includes(q);
-        const nameMatch = c.name.toLowerCase().includes(q);
-        if (!codeMatch && !nameMatch) return false;
-      }
-      return true;
-    });
+  // 4 Fast Stats Counters — Tính toán trực tiếp từ mảng courses của API (không tính tự suy diễn)
+  const stats = useMemo(() => {
+    const passedCourses = courses.filter((c) => c.status === 'PASSED');
+    const passedCredits = passedCourses.reduce((sum, c) => sum + (Number(c.credits) || 0), 0);
+    const totalReq = treeData?.totalCreditsRequired || 135;
+    const passedPercent = totalReq > 0 ? Number(((passedCredits / totalReq) * 100).toFixed(1)) : 0;
 
-    if (matchingCourses.length === 0 && (statusFilter !== 'all' || blockFilter !== 'all' || searchTerm)) {
-      return null;
-    }
+    const studyingCourses = courses.filter((c) => c.status === 'IN_PROGRESS');
+    const studyingCredits = studyingCourses.reduce((sum, c) => sum + (Number(c.credits) || 0), 0);
+
+    const eligibleCourses = courses.filter((c) => c.status === 'ELIGIBLE');
+    const eligibleCredits = eligibleCourses.reduce((sum, c) => sum + (Number(c.credits) || 0), 0);
+
+    const lockedCourses = courses.filter((c) => c.status === 'BLOCKED' || c.status === 'FAILED');
+    const lockedCredits = lockedCourses.reduce((sum, c) => sum + (Number(c.credits) || 0), 0);
 
     return {
-      ...sem,
-      courses: matchingCourses
+      passedCourses,
+      passedCredits,
+      passedPercent,
+      studyingCourses,
+      studyingCredits,
+      eligibleCourses,
+      eligibleCredits,
+      lockedCourses,
+      lockedCredits
     };
-  }).filter(Boolean);
+  }, [courses, treeData?.totalCreditsRequired]);
 
-  // Flattened courses cho Table view
-  const allCoursesFlat = Object.values(PROTOTYPE_COURSE_DETAILS);
+  // Phân nhóm học phần theo học kỳ (1..8) cho Sơ đồ luồng Timeline
+  const filteredTimeline = useMemo(() => {
+    const semMap = new Map();
+    const defaultSems = [
+      { semester: 1, label: 'Học kỳ 1 (Năm 1)', meta: 'Đại cương' },
+      { semester: 2, label: 'Học kỳ 2 (Năm 1)', meta: 'Đại cương & Cơ sở' },
+      { semester: 3, label: 'Học kỳ 3 (Năm 2)', meta: 'Cơ sở ngành' },
+      { semester: 4, label: 'Học kỳ 4 (Năm 2)', meta: 'Cơ sở & Chuyên ngành' },
+      { semester: 5, label: 'Học kỳ 5 (Năm 3)', meta: 'Chuyên ngành' },
+      { semester: 6, label: 'Học kỳ 6 (Năm 3)', meta: 'Chuyên ngành (Hiện tại)', isCurrent: true },
+      { semester: 7, label: 'Học kỳ 7 (Năm 4)', meta: 'Đồ án & Thực tập' },
+      { semester: 8, label: 'Học kỳ 8 (Năm 4)', meta: 'Tốt nghiệp' }
+    ];
 
+    defaultSems.forEach((s) => semMap.set(s.semester, { ...s, courses: [] }));
+
+    courses.forEach((c) => {
+      const sNum = Number(c.suggestedSemester) || 1;
+      if (!semMap.has(sNum)) {
+        semMap.set(sNum, { semester: sNum, label: `Học kỳ ${sNum}`, meta: '', courses: [] });
+      }
+      semMap.get(sNum).courses.push(c);
+    });
+
+    const semestersList = Array.from(semMap.values()).sort((a, b) => a.semester - b.semester);
+
+    return semestersList
+      .map((sem) => {
+        if (semesterFilter !== 'all' && String(sem.semester) !== String(semesterFilter)) {
+          return null;
+        }
+
+        const matchingCourses = sem.courses.filter((c) => {
+          const meta = getCourseDisplayMeta(c);
+          if (statusFilter !== 'all' && meta.statusType !== statusFilter) return false;
+          if (blockFilter !== 'all') {
+            const kb = (c.knowledgeBlock || '').toLowerCase();
+            if (blockFilter === 'major' && !kb.includes('chuyên ngành')) return false;
+            if (blockFilter === 'core' && !kb.includes('cơ sở') && !kb.includes('đại cương')) return false;
+            if (blockFilter === 'elective' && !kb.includes('tự chọn')) return false;
+            if (blockFilter === 'internship' && !kb.includes('thực tập') && !kb.includes('tốt nghiệp') && !kb.includes('đồ án')) return false;
+          }
+          if (searchTerm) {
+            const q = searchTerm.toLowerCase();
+            const codeMatch = (c.courseCode || '').toLowerCase().includes(q);
+            const nameMatch = (c.courseName || '').toLowerCase().includes(q);
+            if (!codeMatch && !nameMatch) return false;
+          }
+          return true;
+        });
+
+        if (matchingCourses.length === 0 && (statusFilter !== 'all' || blockFilter !== 'all' || searchTerm)) {
+          return null;
+        }
+
+        return {
+          ...sem,
+          courses: matchingCourses
+        };
+      })
+      .filter(Boolean);
+  }, [courses, semesterFilter, statusFilter, blockFilter, searchTerm]);
+
+  // Cấu hình bảng dữ liệu cho Chế độ Table view
   const tableColumns = [
     {
-      key: 'code',
+      key: 'courseCode',
       title: 'Mã HP',
       width: '110px',
-      render: (val) => <strong style={{ fontFamily: 'var(--font-mono, monospace)', color: 'var(--color-ink)' }}>{val}</strong>
+      render: (val, row) => <strong style={{ fontFamily: 'var(--font-mono, monospace)', color: 'var(--color-ink)' }}>{val || row.code}</strong>
     },
     {
-      key: 'name',
+      key: 'courseName',
       title: 'Tên học phần',
-      render: (val) => <span style={{ fontWeight: 500, color: 'var(--color-ink)' }}>{val}</span>
+      render: (val, row) => <span style={{ fontWeight: 500, color: 'var(--color-ink)' }}>{val || row.name}</span>
     },
     {
       key: 'credits',
       title: 'Khối lượng tín chỉ',
-      width: '180px',
-      render: (val) => <span style={{ fontSize: '13px', color: 'var(--color-mid-gray)' }}>{val}</span>
+      width: '140px',
+      render: (val) => <span style={{ fontSize: '13px', color: 'var(--color-mid-gray)' }}>{val} Tín chỉ</span>
     },
     {
-      key: 'semester',
-      title: 'Học kỳ',
-      width: '160px',
-      render: (val) => <span style={{ fontSize: '12px', padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>{val}</span>
+      key: 'suggestedSemester',
+      title: 'Học kỳ gợi ý',
+      width: '130px',
+      render: (val) => <span style={{ fontSize: '12px', padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>Học kỳ {val}</span>
     },
     {
       key: 'status',
       title: 'Trạng thái',
-      width: '150px',
-      render: (st, row) => (
-        <span className={`haui-badge ${row.statusClass || 'haui-badge--neutral'}`}>{st}</span>
-      )
+      width: '180px',
+      render: (st, row) => {
+        const meta = getCourseDisplayMeta(row);
+        return <span className={`haui-badge ${meta.statusClass}`}>{meta.statusText}</span>;
+      }
     },
     {
       key: 'actions',
@@ -554,7 +360,7 @@ export function CurriculumTreePage() {
           className="haui-pill-btn-canvas"
           style={{ fontSize: '12px', padding: '4px 12px' }}
           onClick={() => {
-            setSelectedCourseCode(row.code);
+            setSelectedCourseCode(row.courseCode || row.code);
             setViewMode('flowchart');
           }}
         >
@@ -564,10 +370,50 @@ export function CurriculumTreePage() {
     }
   ];
 
+  // Xử lý màn hình tải (Loading)
+  if (loading && !treeData) {
+    return (
+      <div className="haui-page-container" style={{ maxWidth: '1720px', margin: '0 auto', padding: '40px 0' }}>
+        <Loading label="Đang tải dữ liệu Cây môn học từ Backend học vụ..." />
+      </div>
+    );
+  }
+
+  // Xử lý màn hình lỗi (đặc biệt lỗi 503 TOOL_NOT_READY)
+  if (error) {
+    const is503 = error.status === 503 || error.code === 'TOOL_NOT_READY';
+    return (
+      <div className="haui-page-container" style={{ maxWidth: '1720px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <ErrorBox
+          title={is503 ? 'Công cụ học vụ chưa sẵn sàng (503 TOOL_NOT_READY)' : 'Lỗi tải dữ liệu Cây môn học'}
+          message={
+            is503
+              ? 'Hệ thống đang chuẩn bị công cụ tính toán học vụ thật từ Rule Engine. Dữ liệu cây môn học tạm thời chưa khả dụng. Tuyệt đối không hiển thị số liệu giả lập.'
+              : error.message || 'Không thể tải cây chương trình đào tạo từ máy chủ học vụ.'
+          }
+          code={error.code || (is503 ? 'TOOL_NOT_READY' : 'TREE_LOAD_ERROR')}
+          requestId={error.requestId || `req-tree-${Date.now()}`}
+          details={
+            error.details?.length
+              ? error.details
+              : [
+                  'API Endpoint: /api/v1/academic/curriculum/tree',
+                  'Quy tắc AGENTS.md: Không tự tính trạng thái học phần ở client khi công cụ backend chưa sẵn sàng.'
+                ]
+          }
+          retryLabel="Thử lại kết nối (Retry)"
+          onRetry={fetchTreeData}
+        />
+      </div>
+    );
+  }
+
+  const selectedMeta = getCourseDisplayMeta(selectedCourse || {});
+
   return (
     <div className="haui-page-container" style={{ maxWidth: '1720px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* =========================================================================
-          SECTION 1: BREADCRUMB & PAGE TITLE & CONTROLS
+          SECTION 1: BREADCRUMB & PAGE TITLE & METADATA BADGES
           ========================================================================= */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
@@ -587,6 +433,23 @@ export function CurriculumTreePage() {
             <h1 style={{ fontSize: '30px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.5px' }}>
               Cây môn học &amp; Sơ đồ tiên quyết
             </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
+              <span className="haui-badge haui-badge--neutral" style={{ fontSize: '11px' }}>
+                Quy chế: {treeData?.policyVersion || 'policy-haui-demo-2026@0.0.1-v0'}
+              </span>
+              <span className="haui-badge haui-badge--neutral" style={{ fontSize: '11px' }}>
+                Hồ sơ: {treeData?.dataRevision || 'REV-SERVER'}
+              </span>
+              {treeData?.transcriptStatus === 'NONE' ? (
+                <span className="haui-badge haui-badge--warning" style={{ fontSize: '11px' }}>
+                  Chưa nạp bảng điểm (NONE)
+                </span>
+              ) : (
+                <span className="haui-badge haui-badge--success" style={{ fontSize: '11px' }}>
+                  Bảng điểm đã xác nhận (CONFIRMED)
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Export & Flow Controls */}
@@ -641,8 +504,8 @@ export function CurriculumTreePage() {
             <button
               type="button"
               className="haui-pill-btn-paper"
-              onClick={() => setSelectedCourseCode('IT6015')}
-              title="Làm mới trạng thái sơ đồ"
+              onClick={fetchTreeData}
+              title="Làm mới trạng thái sơ đồ từ máy chủ"
               style={{ padding: '8px' }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>refresh</span>
@@ -661,7 +524,7 @@ export function CurriculumTreePage() {
       </div>
 
       {/* =========================================================================
-          SECTION 2: 4 FAST STATS COUNTER BADGES (Chuẩn 100% Stitch Prototype)
+          SECTION 2: 4 FAST STATS COUNTER BADGES (Live Server Metrics)
           ========================================================================= */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
         {/* Thẻ 1: Đã hoàn thành */}
@@ -671,9 +534,9 @@ export function CurriculumTreePage() {
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ margin: 0, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)', fontWeight: 600 }}>ĐÃ HOÀN THÀNH</p>
-            <p style={{ margin: '4px 0 2px', fontSize: '24px', fontWeight: 700, color: 'var(--color-ink)', lineHeight: 1 }}>28 môn</p>
+            <p style={{ margin: '4px 0 2px', fontSize: '24px', fontWeight: 700, color: 'var(--color-ink)', lineHeight: 1 }}>{stats.passedCourses.length} môn</p>
             <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-mid-gray)', fontWeight: 500 }}>
-              82 tín chỉ · <strong style={{ color: 'var(--color-ink)' }}>56,5%</strong>
+              {stats.passedCredits} tín chỉ · <strong style={{ color: 'var(--color-ink)' }}>{stats.passedPercent}%</strong>
             </p>
           </div>
         </div>
@@ -685,8 +548,8 @@ export function CurriculumTreePage() {
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ margin: 0, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)', fontWeight: 600 }}>ĐANG THEO HỌC</p>
-            <p style={{ margin: '4px 0 2px', fontSize: '24px', fontWeight: 700, color: 'var(--color-ink)', lineHeight: 1 }}>5 môn</p>
-            <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-mid-gray)', fontWeight: 500 }}>14 tín chỉ · Kỳ 6 hiện tại</p>
+            <p style={{ margin: '4px 0 2px', fontSize: '24px', fontWeight: 700, color: 'var(--color-ink)', lineHeight: 1 }}>{stats.studyingCourses.length} môn</p>
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-mid-gray)', fontWeight: 500 }}>{stats.studyingCredits} tín chỉ</p>
           </div>
         </div>
 
@@ -697,8 +560,8 @@ export function CurriculumTreePage() {
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ margin: 0, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)', fontWeight: 600 }}>ĐỦ ĐIỀU KIỆN ĐĂNG KÝ</p>
-            <p style={{ margin: '4px 0 2px', fontSize: '24px', fontWeight: 700, color: 'var(--color-ink)', lineHeight: 1 }}>12 môn</p>
-            <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-mid-gray)', fontWeight: 500 }}>34 tín chỉ (7 môn sẵn sàng)</p>
+            <p style={{ margin: '4px 0 2px', fontSize: '24px', fontWeight: 700, color: 'var(--color-ink)', lineHeight: 1 }}>{stats.eligibleCourses.length} môn</p>
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-mid-gray)', fontWeight: 500 }}>{stats.eligibleCredits} tín chỉ</p>
           </div>
         </div>
 
@@ -712,8 +575,8 @@ export function CurriculumTreePage() {
               <p style={{ margin: 0, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)', fontWeight: 600 }}>CHƯA ĐỦ ĐIỀU KIỆN</p>
               <span style={{ backgroundColor: 'var(--color-ink)', color: 'var(--color-paper)', fontSize: '10px', padding: '2px 8px', borderRadius: '9999px', fontWeight: 600 }}>Khóa</span>
             </div>
-            <p style={{ margin: '4px 0 2px', fontSize: '24px', fontWeight: 700, color: 'var(--color-ink)', lineHeight: 1 }}>6 môn</p>
-            <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-mid-gray)', fontWeight: 500 }}>15 tín chỉ · Thiếu tiên quyết</p>
+            <p style={{ margin: '4px 0 2px', fontSize: '24px', fontWeight: 700, color: 'var(--color-ink)', lineHeight: 1 }}>{stats.lockedCourses.length} môn</p>
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-mid-gray)', fontWeight: 500 }}>{stats.lockedCredits} tín chỉ · Thiếu tiên quyết</p>
           </div>
         </div>
       </div>
@@ -734,11 +597,13 @@ export function CurriculumTreePage() {
                 style={{ backgroundColor: 'transparent', border: 'none', fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)', outline: 'none', cursor: 'pointer' }}
               >
                 <option value="all">Tất cả kỳ (1 - 8)</option>
-                <option value="3">Kỳ 3 (Năm 2)</option>
-                <option value="4">Kỳ 4 (Năm 2)</option>
-                <option value="5">Kỳ 5 (Năm 3)</option>
+                <option value="1">Kỳ 1</option>
+                <option value="2">Kỳ 2</option>
+                <option value="3">Kỳ 3</option>
+                <option value="4">Kỳ 4</option>
+                <option value="5">Kỳ 5</option>
                 <option value="6">Kỳ 6 (Hiện tại)</option>
-                <option value="7">Kỳ 7 (Kế tiếp)</option>
+                <option value="7">Kỳ 7</option>
                 <option value="8">Kỳ 8 (Tốt nghiệp)</option>
               </select>
             </div>
@@ -752,10 +617,10 @@ export function CurriculumTreePage() {
                 style={{ backgroundColor: 'transparent', border: 'none', fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)', outline: 'none', cursor: 'pointer' }}
               >
                 <option value="all">Tất cả khối</option>
-                <option value="core">Cơ sở nhóm ngành CNTT</option>
-                <option value="major">Chuyên ngành Kỹ thuật Phần mềm</option>
+                <option value="core">Đại cương & Cơ sở ngành</option>
+                <option value="major">Chuyên ngành</option>
                 <option value="elective">Tự chọn chuyên ngành</option>
-                <option value="internship">Thực tập doanh nghiệp &amp; Khóa luận</option>
+                <option value="internship">Thực tập &amp; Khóa luận</option>
               </select>
             </div>
 
@@ -768,10 +633,10 @@ export function CurriculumTreePage() {
                 style={{ backgroundColor: 'transparent', border: 'none', fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)', outline: 'none', cursor: 'pointer' }}
               >
                 <option value="all">Tất cả trạng thái</option>
-                <option value="passed">Đã hoàn thành</option>
-                <option value="studying">Đang học</option>
-                <option value="eligible">Đủ ĐK đăng ký</option>
-                <option value="locked">Khóa (Thiếu môn trước)</option>
+                <option value="passed">Đã hoàn thành (PASSED)</option>
+                <option value="studying">Đang học (IN_PROGRESS)</option>
+                <option value="eligible">Đủ ĐK đăng ký (ELIGIBLE)</option>
+                <option value="locked">Khóa / Nợ môn (BLOCKED/FAILED)</option>
               </select>
             </div>
           </div>
@@ -807,29 +672,25 @@ export function CurriculumTreePage() {
             <span style={{ fontWeight: 600, color: 'var(--color-ink)' }}>Chú thích sơ đồ:</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--color-paper)', border: '1px solid var(--color-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 700, color: 'var(--color-ink)' }}>✓</span>
-              Đã hoàn thành
+              Đã hoàn thành (PASSED)
             </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--color-ink)' }} />
-              Đang học
+              Đang học (IN_PROGRESS)
             </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--color-canvas)', border: '1px solid var(--color-mid-gray)' }} />
-              Đủ điều kiện
+              Đủ điều kiện (ELIGIBLE)
             </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--color-mid-gray)' }}>lock</span>
-              Khóa / Thiếu tiên quyết
-            </span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>⇢</span>
-              Luồng môn tiên quyết
+              Khóa (BLOCKED / FAILED)
             </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>info</span>
-            <span>Dữ liệu mẫu CTĐT K16 CNTT HaUI. Đối chiếu chính thức tại <strong>sv.haui.edu.vn</strong></span>
+            <span>Dữ liệu CTĐT chuẩn Contract 1.3.0. Đối chiếu chính thức tại <strong>sv.haui.edu.vn</strong></span>
           </div>
         </div>
       </div>
@@ -839,7 +700,7 @@ export function CurriculumTreePage() {
           ========================================================================= */}
       {viewMode === 'flowchart' ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px', alignItems: 'start' }}>
-          {/* Main Tree Map Area (8 cols) — Sơ đồ mạng lưới học phần tái thiết kế toàn diện */}
+          {/* Main Tree Map Area (8 cols) */}
           <div
             style={{
               gridColumn: 'span 8',
@@ -862,8 +723,12 @@ export function CurriculumTreePage() {
                   <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>device_hub</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-ink)' }}>Sơ đồ mạng lưới học phần (Theo kỳ)</span>
-                  <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>K16 CNTT (KTPM) · 6 Học kỳ hiển thị luồng hai chiều</span>
+                  <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-ink)' }}>
+                    {treeData?.curriculumName || 'Sơ đồ mạng lưới học phần CTĐT'}
+                  </span>
+                  <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>
+                    Tổng số {courses.length} học phần · Cập nhật từ hồ sơ {treeData?.dataRevision}
+                  </span>
                 </div>
               </div>
 
@@ -916,7 +781,7 @@ export function CurriculumTreePage() {
                     style={{ padding: '6px 10px', fontSize: '11px' }}
                     title="Cuộn về các kỳ trước"
                   >
-                    &larr; Kỳ 3-4
+                    &larr; Kỳ 1-3
                   </button>
                   <button
                     type="button"
@@ -941,122 +806,28 @@ export function CurriculumTreePage() {
             </div>
 
             {/* Current Selected Indicator Banner */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', borderRadius: '12px', backgroundColor: 'var(--color-canvas)', fontSize: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-ember)' }} />
-                <span style={{ color: 'var(--color-mid-gray)' }}>Đang chọn kiểm tra luồng:</span>
-                <strong style={{ color: 'var(--color-ink)', fontFamily: 'var(--font-mono, monospace)' }}>{selectedCourseCode}</strong>
-                <span style={{ color: 'var(--color-ink)' }}>— {selectedCourse.name}</span>
+            {selectedCourse && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', borderRadius: '12px', backgroundColor: 'var(--color-canvas)', fontSize: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-ember)' }} />
+                  <span style={{ color: 'var(--color-mid-gray)' }}>Đang chọn kiểm tra luồng:</span>
+                  <strong style={{ color: 'var(--color-ink)', fontFamily: 'var(--font-mono, monospace)' }}>{selectedCourse.courseCode}</strong>
+                  <span style={{ color: 'var(--color-ink)' }}>— {selectedCourse.courseName}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '11px', color: 'var(--color-mid-gray)' }}>
+                  <span>Tiên quyết: <strong style={{ color: '#16a34a' }}>{selectedCourse.prerequisiteCourseCodes?.length || 0} môn</strong></span>
+                  <span>•</span>
+                  <span>Mở khóa: <strong style={{ color: '#2563eb' }}>{activeUnlockCodes.size} môn</strong></span>
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '11px', color: 'var(--color-mid-gray)' }}>
-                <span>Tiên quyết: <strong style={{ color: '#16a34a' }}>{selectedCourse.prereqs?.length || 0} môn</strong></span>
-                <span>•</span>
-                <span>Mở khóa: <strong style={{ color: '#2563eb' }}>{selectedCourse.unlocks?.length || 0} môn</strong></span>
-              </div>
-            </div>
+            )}
 
-            {/* Horizontal Timeline Container with SVG Connectors Overlay */}
+            {/* Horizontal Timeline Container */}
             <div
               ref={timelineScrollRef}
               className="haui-tree-timeline-scroll"
               style={{ position: 'relative' }}
             >
-              {/* Background SVG Connectors Overlay — Các luồng liên kết tiên quyết được vẽ tinh tế */}
-              <svg
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  width: '100%',
-                  height: '100%',
-                  pointerEvents: 'none',
-                  zIndex: 0
-                }}
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <defs>
-                  <marker id="tree-arrow-active" markerHeight="7" markerWidth="7" orient="auto-start-reverse" refX="6" refY="5" viewBox="0 0 10 10">
-                    <path d="M 0 1 L 8 5 L 0 9 z" fill="#0a0a0a" />
-                  </marker>
-                  <marker id="tree-arrow-muted" markerHeight="6" markerWidth="6" orient="auto-start-reverse" refX="6" refY="5" viewBox="0 0 10 10">
-                    <path d="M 0 1 L 8 5 L 0 9 z" fill="#a1a1aa" />
-                  </marker>
-                </defs>
-
-                {/* Luồng 1: Lập trình Web: IT6001 (OOP) -> IT6002 (Web cơ bản) -> IT6015 (Web nâng cao) -> IT6080 -> IT6099 */}
-                <path
-                  d="M 240 185 C 265 185, 265 85, 290 85"
-                  fill="none"
-                  markerEnd={selectedCourseCode === 'IT6015' || selectedCourseCode === 'IT6002' ? 'url(#tree-arrow-active)' : 'url(#tree-arrow-muted)'}
-                  stroke={selectedCourseCode === 'IT6015' || selectedCourseCode === 'IT6002' ? '#0a0a0a' : '#d4d4d8'}
-                  strokeDasharray={selectedCourseCode === 'IT6015' ? 'none' : '3 3'}
-                  strokeWidth={selectedCourseCode === 'IT6015' ? '2.5' : '1.5'}
-                />
-                <path
-                  d="M 530 85 C 680 85, 690 95, 810 95"
-                  fill="none"
-                  markerEnd={selectedCourseCode === 'IT6015' ? 'url(#tree-arrow-active)' : 'url(#tree-arrow-muted)'}
-                  stroke={selectedCourseCode === 'IT6015' ? '#0a0a0a' : '#d4d4d8'}
-                  strokeDasharray={selectedCourseCode === 'IT6015' ? 'none' : '3 3'}
-                  strokeWidth={selectedCourseCode === 'IT6015' ? '2.5' : '1.5'}
-                />
-
-                {/* Luồng 2: Công nghệ phần mềm: IT6003 (CTDL) -> IT6004 (CNPM) -> IT6025 (Kiến trúc PM) -> IT6080 */}
-                <path
-                  d="M 240 85 C 265 85, 265 185, 290 185"
-                  fill="none"
-                  markerEnd={selectedCourseCode === 'IT6025' || selectedCourseCode === 'IT6004' ? 'url(#tree-arrow-active)' : 'url(#tree-arrow-muted)'}
-                  stroke={selectedCourseCode === 'IT6025' || selectedCourseCode === 'IT6004' ? '#0a0a0a' : '#d4d4d8'}
-                  strokeDasharray={selectedCourseCode === 'IT6025' ? 'none' : '3 3'}
-                  strokeWidth={selectedCourseCode === 'IT6025' ? '2.5' : '1.5'}
-                />
-                <path
-                  d="M 530 185 C 680 185, 690 205, 810 205"
-                  fill="none"
-                  markerEnd={selectedCourseCode === 'IT6025' ? 'url(#tree-arrow-active)' : 'url(#tree-arrow-muted)'}
-                  stroke={selectedCourseCode === 'IT6025' ? '#0a0a0a' : '#d4d4d8'}
-                  strokeDasharray={selectedCourseCode === 'IT6025' ? 'none' : '3 3'}
-                  strokeWidth={selectedCourseCode === 'IT6025' ? '2.5' : '1.5'}
-                />
-
-                {/* Luồng 3: CSDL & Phân tích: IT6005 -> IT6011 + IT6012 */}
-                <path
-                  d="M 240 285 C 400 285, 420 85, 550 85"
-                  fill="none"
-                  markerEnd={selectedCourseCode === 'IT6011' || selectedCourseCode === 'IT6005' ? 'url(#tree-arrow-active)' : 'url(#tree-arrow-muted)'}
-                  stroke={selectedCourseCode === 'IT6011' || selectedCourseCode === 'IT6005' ? '#0a0a0a' : '#d4d4d8'}
-                  strokeDasharray="3 3"
-                  strokeWidth="1.5"
-                />
-
-                {/* Luồng 4: Đồ án ngành Kỳ 7: IT6015 + IT6025 -> IT6080 */}
-                <path
-                  d="M 1050 95 C 1075 95, 1075 85, 1090 85"
-                  fill="none"
-                  markerEnd={selectedCourseCode === 'IT6015' || selectedCourseCode === 'IT6080' ? 'url(#tree-arrow-active)' : 'url(#tree-arrow-muted)'}
-                  stroke={selectedCourseCode === 'IT6015' || selectedCourseCode === 'IT6080' ? '#0a0a0a' : '#d4d4d8'}
-                  strokeDasharray={selectedCourseCode === 'IT6080' ? 'none' : '3 3'}
-                  strokeWidth={selectedCourseCode === 'IT6080' ? '2.5' : '1.5'}
-                />
-                <path
-                  d="M 1050 205 C 1075 205, 1075 95, 1090 95"
-                  fill="none"
-                  markerEnd={selectedCourseCode === 'IT6025' || selectedCourseCode === 'IT6080' ? 'url(#tree-arrow-active)' : 'url(#tree-arrow-muted)'}
-                  stroke={selectedCourseCode === 'IT6025' || selectedCourseCode === 'IT6080' ? '#0a0a0a' : '#d4d4d8'}
-                  strokeDasharray={selectedCourseCode === 'IT6080' ? 'none' : '3 3'}
-                  strokeWidth={selectedCourseCode === 'IT6080' ? '2.5' : '1.5'}
-                />
-
-                {/* Luồng 5: Khóa luận Kỳ 8: IT6080 -> IT6099 */}
-                <path
-                  d="M 1330 85 C 1350 85, 1350 85, 1370 85"
-                  fill="none"
-                  markerEnd={selectedCourseCode === 'IT6080' || selectedCourseCode === 'IT6099' ? 'url(#tree-arrow-active)' : 'url(#tree-arrow-muted)'}
-                  stroke={selectedCourseCode === 'IT6099' ? '#0a0a0a' : '#d4d4d8'}
-                  strokeDasharray="3 3"
-                  strokeWidth="1.5"
-                />
-              </svg>
-
               {/* Semesters Columns Flex Layout */}
               <div style={{ display: 'flex', gap: '24px', minWidth: '1480px', position: 'relative', zIndex: 1 }}>
                 {filteredTimeline.map((sem) => {
@@ -1085,16 +856,18 @@ export function CurriculumTreePage() {
                           <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-ink)' }}>{sem.label}</span>
                         </div>
                         <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '9999px', backgroundColor: isCurrent ? 'var(--color-ink)' : 'var(--color-canvas)', color: isCurrent ? 'var(--color-paper)' : 'var(--color-mid-gray)', fontWeight: 500 }}>
-                          {sem.meta}
+                          {sem.courses.length} môn
                         </span>
                       </div>
 
                       {/* Course Cards inside Semester */}
                       {sem.courses.map((course) => {
-                        const isSelected = selectedCourseCode === course.code;
-                        const isPrereq = activePrereqCodes.has(course.code);
-                        const isUnlock = activeUnlockCodes.has(course.code);
+                        const code = course.courseCode;
+                        const isSelected = selectedCourseCode === code;
+                        const isPrereq = activePrereqCodes.has(code);
+                        const isUnlock = activeUnlockCodes.has(code);
                         const isDimmed = tracerMode === 'tracer' && !isSelected && !isPrereq && !isUnlock;
+                        const meta = getCourseDisplayMeta(course);
 
                         let cardClass = 'haui-tree-map-card';
                         if (isSelected) cardClass += ' haui-tree-map-card--active';
@@ -1104,17 +877,17 @@ export function CurriculumTreePage() {
 
                         return (
                           <div
-                            key={course.code}
+                            key={code}
                             className={cardClass}
-                            onClick={() => handleSelectCourse(course.code)}
+                            onClick={() => handleSelectCourse(code)}
                             style={{
-                              borderStyle: course.dashed && !isSelected ? 'dashed' : 'solid'
+                              cursor: 'pointer'
                             }}
                           >
                             {/* Card Top: Code + Credits + Relation Tag */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-mono, monospace)', color: isSelected ? 'var(--color-ink)' : 'var(--color-ink)' }}>
-                                {course.code}
+                              <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-mono, monospace)', color: 'var(--color-ink)' }}>
+                                {code}
                               </span>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 {isPrereq && (
@@ -1136,24 +909,23 @@ export function CurriculumTreePage() {
                             {/* Card Name & Category */}
                             <div>
                               <h4 style={{ margin: 0, fontSize: '13px', fontWeight: isSelected ? 600 : 500, color: 'var(--color-ink)', lineHeight: 1.3 }}>
-                                {course.name}
+                                {course.courseName}
                               </h4>
                               <p style={{ margin: '3px 0 0', fontSize: '11px', color: 'var(--color-mid-gray)' }}>
-                                {course.block}
+                                {course.knowledgeBlock || 'Học phần CTĐT'}
                               </p>
                             </div>
 
                             {/* Card Bottom: Status & Indicator */}
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid var(--color-hairline)', marginTop: '2px', fontSize: '11px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: course.statusType === 'passed' ? 'var(--color-ink)' : course.statusType === 'studying' ? 'var(--color-ink)' : 'var(--color-mid-gray)', fontWeight: 500 }}>
-                                {course.statusType === 'passed' && <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>check_circle</span>}
-                                {course.statusType === 'studying' && <span className="material-symbols-outlined haui-spin" style={{ fontSize: '14px' }}>progress_activity</span>}
-                                {course.statusType === 'eligible' && <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>how_to_reg</span>}
-                                {course.statusType === 'locked' && <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>lock</span>}
-                                <span>{course.statusText}</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: meta.statusType === 'passed' ? 'var(--color-ink)' : meta.statusType === 'studying' ? 'var(--color-ink)' : 'var(--color-mid-gray)', fontWeight: 500 }}>
+                                <span className={`material-symbols-outlined ${meta.statusType === 'studying' ? 'haui-spin' : ''}`} style={{ fontSize: '14px' }}>
+                                  {meta.icon}
+                                </span>
+                                <span>{meta.statusText}</span>
                               </div>
                               <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--color-mid-gray)' }}>
-                                {isSelected ? 'check' : course.statusType === 'eligible' ? 'add_circle' : 'arrow_forward'}
+                                {isSelected ? 'check' : meta.statusType === 'eligible' ? 'add_circle' : 'arrow_forward'}
                               </span>
                             </div>
                           </div>
@@ -1166,201 +938,243 @@ export function CurriculumTreePage() {
             </div>
           </div>
 
-          {/* Right Detail Panel / Sticky Drawer (4 cols) — Chi tiết học phần và tương tác mở khóa */}
+          {/* Right Detail Panel / Sticky Drawer (4 cols) */}
           <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: '16px', position: 'sticky', top: '80px' }}>
-            <div
-              style={{
-                backgroundColor: 'var(--color-paper)',
-                borderRadius: '24px',
-                border: '1px solid var(--color-hairline)',
-                padding: '24px',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px'
-              }}
-            >
-              {/* Drawer Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '12px', borderBottom: '1px solid var(--color-hairline)' }}>
-                <div style={{ minWidth: 0 }}>
-                  <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)' }}>
-                    Chi tiết học phần
+            {selectedCourse ? (
+              <div
+                style={{
+                  backgroundColor: 'var(--color-paper)',
+                  borderRadius: '24px',
+                  border: '1px solid var(--color-hairline)',
+                  padding: '24px',
+                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px'
+                }}
+              >
+                {/* Drawer Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '12px', borderBottom: '1px solid var(--color-hairline)' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)' }}>
+                      Chi tiết học phần (Contract V1.3.0)
+                    </span>
+                    <h3 style={{ margin: '4px 0 2px', fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)' }}>
+                      {selectedCourse.courseName}
+                    </h3>
+                    <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-mid-gray)' }}>
+                      <strong style={{ color: 'var(--color-ink)' }}>{selectedCourse.courseCode}</strong> • {selectedCourse.credits} Tín chỉ
+                    </p>
+                  </div>
+                  <span className={`haui-badge ${selectedMeta.statusClass}`} style={{ flexShrink: 0 }}>
+                    {selectedMeta.statusLabel}
                   </span>
-                  <h3 style={{ margin: '4px 0 2px', fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)' }}>
-                    {selectedCourse.name}
-                  </h3>
-                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-mid-gray)' }}>
-                    <strong style={{ color: 'var(--color-ink)' }}>{selectedCourse.code}</strong> • {selectedCourse.credits}
-                  </p>
                 </div>
-                <span
-                  style={{
-                    padding: '3px 10px',
-                    borderRadius: '9999px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    backgroundColor: selectedCourse.status === 'Đang học' ? 'var(--color-ink)' : 'var(--color-canvas)',
-                    color: selectedCourse.status === 'Đang học' ? 'var(--color-paper)' : 'var(--color-ink)',
-                    flexShrink: 0
-                  }}
-                >
-                  {selectedCourse.status}
-                </span>
-              </div>
 
-              {/* Academic Assessment Mini Card */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', backgroundColor: 'var(--color-canvas)', padding: '12px 14px', borderRadius: '16px' }}>
-                <div>
-                  <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-mid-gray)' }}>Điểm quá trình (dự kiến)</p>
-                  <p style={{ margin: '2px 0 0', fontSize: '14px', fontWeight: 600, color: 'var(--color-ink)' }}>{selectedCourse.progress}</p>
+                {/* Academic Status Banner */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', backgroundColor: 'var(--color-canvas)', padding: '12px 14px', borderRadius: '16px' }}>
+                  <div>
+                    <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-mid-gray)' }}>Điểm lần gần nhất</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '14px', fontWeight: 600, color: 'var(--color-ink)' }}>
+                      {selectedCourse.letterGrade ? `${selectedCourse.letterGrade} (${selectedCourse.semesterCode || 'e-HaUI'})` : 'Chưa có điểm'}
+                    </p>
+                  </div>
+                  <div>
+                    <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-mid-gray)' }}>Thẩm định đăng ký</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '14px', fontWeight: 600, color: selectedCourse.eligible ? '#16a34a' : 'var(--color-ember)' }}>
+                      {selectedCourse.eligible ? '✓ Đủ điều kiện' : '⚠️ Bị chặn đăng ký'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-mid-gray)' }}>Dự báo xếp loại</p>
-                  <p style={{ margin: '2px 0 0', fontSize: '14px', fontWeight: 600, color: 'var(--color-ink)' }}>{selectedCourse.gradeEst}</p>
-                </div>
-              </div>
 
-              {/* Attributes table */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--color-hairline)' }}>
-                  <span style={{ color: 'var(--color-mid-gray)' }}>Khối kiến thức:</span>
-                  <strong style={{ color: 'var(--color-ink)', textAlign: 'right' }}>{selectedCourse.type}</strong>
+                {/* Attributes table */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--color-hairline)' }}>
+                    <span style={{ color: 'var(--color-mid-gray)' }}>Khối kiến thức:</span>
+                    <strong style={{ color: 'var(--color-ink)', textAlign: 'right' }}>{selectedCourse.knowledgeBlock || 'Đại cương / Cơ sở'}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--color-hairline)' }}>
+                    <span style={{ color: 'var(--color-mid-gray)' }}>Học kỳ gợi ý:</span>
+                    <span style={{ color: 'var(--color-ink)', textAlign: 'right', fontWeight: 500 }}>Học kỳ {selectedCourse.suggestedSemester || 1}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--color-hairline)' }}>
+                    <span style={{ color: 'var(--color-mid-gray)' }}>Tính chất:</span>
+                    <span style={{ color: 'var(--color-ink)', textAlign: 'right', fontWeight: 500 }}>
+                      {selectedCourse.mandatory ? 'Bắt buộc ngành' : 'Tự chọn'}
+                    </span>
+                  </div>
+                  {selectedCourseSupplement.lecturer && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
+                      <span style={{ color: 'var(--color-mid-gray)' }}>Giảng viên / Bộ môn:</span>
+                      <span style={{ color: 'var(--color-ink)', textAlign: 'right', fontWeight: 500 }}>{selectedCourseSupplement.lecturer}</span>
+                    </div>
+                  )}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--color-hairline)' }}>
-                  <span style={{ color: 'var(--color-mid-gray)' }}>Học kỳ đào tạo:</span>
-                  <span style={{ color: 'var(--color-ink)', textAlign: 'right', fontWeight: 500 }}>{selectedCourse.semester}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
-                  <span style={{ color: 'var(--color-mid-gray)' }}>Giảng viên / Bộ môn:</span>
-                  <span style={{ color: 'var(--color-ink)', textAlign: 'right', fontWeight: 500 }}>{selectedCourse.lecturer}</span>
-                </div>
-              </div>
 
-              {/* Course Syllabus Summary */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)' }}>
-                  Đề cương tóm tắt
-                </span>
-                <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-ink)', lineHeight: 1.5, backgroundColor: 'var(--color-surface-alt)', padding: '12px 14px', borderRadius: '16px', border: '1px solid var(--color-hairline)' }}>
-                  {selectedCourse.desc}
-                </p>
-              </div>
+                {/* Course Syllabus Summary */}
+                {selectedCourseSupplement.desc && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)' }}>
+                      Đề cương tóm tắt
+                    </span>
+                    <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-ink)', lineHeight: 1.5, backgroundColor: 'var(--color-surface-alt)', padding: '12px 14px', borderRadius: '16px', border: '1px solid var(--color-hairline)' }}>
+                      {selectedCourseSupplement.desc}
+                    </p>
+                  </div>
+                )}
 
-              {/* Prerequisites Check Section (Clickable Items jump to course!) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {/* Warnings from Rule Engine */}
+                {selectedCourse.warnings?.length > 0 && (
+                  <div style={{ padding: '10px 12px', borderRadius: '12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', fontSize: '12px', color: '#991b1b' }}>
+                    <strong>Cảnh báo quy chế học vụ:</strong>
+                    <ul style={{ margin: '4px 0 0', paddingLeft: '18px' }}>
+                      {selectedCourse.warnings.map((w, idx) => (
+                        <li key={idx}>{w}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Prerequisites Check Section */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)' }}>
+                      Môn tiên quyết &amp; Môn học trước (TIÊN QUYẾT)
+                    </span>
+                    <span style={{ fontSize: '11px', color: selectedCourse.missingPrerequisites?.length ? 'var(--color-ember)' : '#16a34a', fontWeight: 500 }}>
+                      {selectedCourse.missingPrerequisites?.length ? `Thiếu ${selectedCourse.missingPrerequisites.length} điều kiện` : 'Đã đáp ứng tất cả'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {selectedCourse.prerequisiteCourseCodes?.length === 0 ? (
+                      <div style={{ fontSize: '12px', color: 'var(--color-mid-gray)', fontStyle: 'italic', padding: '6px 0' }}>
+                        Không có môn tiên quyết.
+                      </div>
+                    ) : (
+                      selectedCourse.prerequisiteCourseCodes.map((preCode) => {
+                        const preCourse = courses.find((c) => c.courseCode === preCode);
+                        const preMeta = getCourseDisplayMeta(preCourse || {});
+                        return (
+                          <div
+                            key={preCode}
+                            onClick={() => handleSelectCourse(preCode)}
+                            style={{
+                              padding: '10px 12px',
+                              borderRadius: '14px',
+                              backgroundColor: 'var(--color-canvas)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '8px',
+                              cursor: 'pointer',
+                              transition: 'all 150ms'
+                            }}
+                            title={`Xem chi tiết môn ${preCode}`}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                              <span className="material-symbols-outlined" style={{ fontSize: '16px', color: preMeta.statusType === 'passed' ? '#16a34a' : 'var(--color-mid-gray)' }}>
+                                {preMeta.icon}
+                              </span>
+                              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {preCode} - {preCourse?.courseName || preCode}
+                                </span>
+                                <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>Môn tiên quyết</span>
+                              </div>
+                            </div>
+                            <span className={`haui-badge ${preMeta.statusClass}`} style={{ fontSize: '11px', flexShrink: 0 }}>
+                              {preMeta.statusText}
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Unlocks / Dependent Courses Section */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)' }}>
-                    Môn tiên quyết &amp; Môn học trước (TIÊN QUYẾT)
+                    Học phần mở khóa tiếp theo (CHUỖI ẢNH HƯỞNG)
                   </span>
-                  <span style={{ fontSize: '11px', color: 'var(--color-ink)', fontWeight: 500 }}>{selectedCourse.prereqStatus}</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {selectedCourse.prereqs?.map((pr, pIdx) => (
-                    <div
-                      key={pIdx}
-                      onClick={() => handleSelectCourse(pr.code)}
-                      style={{
-                        padding: '10px 12px',
-                        borderRadius: '14px',
-                        backgroundColor: 'var(--color-canvas)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '8px',
-                        cursor: 'pointer',
-                        transition: 'all 150ms'
-                      }}
-                      title={`Xem chi tiết môn ${pr.code}`}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: '16px', color: pr.color || 'var(--color-ink)' }}>{pr.icon}</span>
-                        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {pr.code} - {pr.name}
-                          </span>
-                          <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>{pr.tag}</span>
-                        </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {activeUnlockCodes.size === 0 ? (
+                      <div style={{ fontSize: '12px', color: 'var(--color-mid-gray)', fontStyle: 'italic', padding: '6px 0' }}>
+                        Học phần cuối chuỗi hoặc không có môn phụ thuộc trực tiếp.
                       </div>
-                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'var(--color-paper)', color: 'var(--color-ink)', fontWeight: 600, flexShrink: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                        {pr.grade}
-                      </span>
-                    </div>
-                  ))}
+                    ) : (
+                      Array.from(activeUnlockCodes).map((unCode) => {
+                        const unCourse = courses.find((c) => c.courseCode === unCode);
+                        return (
+                          <div
+                            key={unCode}
+                            onClick={() => handleSelectCourse(unCode)}
+                            style={{
+                              padding: '10px 12px',
+                              borderRadius: '14px',
+                              backgroundColor: 'var(--color-canvas)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '8px',
+                              cursor: 'pointer',
+                              transition: 'all 150ms'
+                            }}
+                            title={`Xem chi tiết môn ${unCode}`}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                              <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-mid-gray)' }}>lock_open</span>
+                              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {unCode} - {unCourse?.courseName || unCode}
+                                </span>
+                                <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>Học phần sau</span>
+                              </div>
+                            </div>
+                            <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-mid-gray)' }}>arrow_forward</span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Unlocks / Dependent Courses Section (Clickable Items jump to course!) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)' }}>
-                  Học phần mở khóa tiếp theo (CHUỖI ẢNH HƯỞNG)
-                </span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {selectedCourse.unlocks?.map((un, uIdx) => (
-                    <div
-                      key={uIdx}
-                      onClick={() => handleSelectCourse(un.code)}
-                      style={{
-                        padding: '10px 12px',
-                        borderRadius: '14px',
-                        backgroundColor: 'var(--color-canvas)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '8px',
-                        cursor: 'pointer',
-                        transition: 'all 150ms'
-                      }}
-                      title={`Xem chi tiết môn ${un.code}`}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-mid-gray)' }}>{un.icon}</span>
-                        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {un.code} - {un.name}
-                          </span>
-                          <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>{un.condition}</span>
-                        </div>
-                      </div>
-                      <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-mid-gray)' }}>arrow_forward</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Action Buttons inside Panel */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '10px', borderTop: '1px solid var(--color-hairline)' }}>
-                <button
-                  type="button"
-                  className="haui-pill-btn-dark"
-                  onClick={() => handleAddCourseToPlanner(selectedCourse.code)}
-                  style={{ justifyContent: 'center', padding: '10px 16px' }}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add_task</span>
-                  <span>Thêm vào Kế hoạch học kỳ 7</span>
-                </button>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                {/* Action Buttons inside Panel */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '10px', borderTop: '1px solid var(--color-hairline)' }}>
                   <button
                     type="button"
-                    className="haui-pill-btn-canvas"
-                    onClick={() => navigate('/what-if')}
-                    style={{ justifyContent: 'center', fontSize: '12px', padding: '8px' }}
+                    className="haui-pill-btn-dark"
+                    onClick={() => handleAddCourseToPlanner(selectedCourse.courseCode)}
+                    style={{ justifyContent: 'center', padding: '10px 16px' }}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>insights</span>
-                    <span>Mô phỏng What-if</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add_task</span>
+                    <span>Thêm vào Kế hoạch học tập (TV3 Planner)</span>
                   </button>
-                  <button
-                    type="button"
-                    className="haui-pill-btn-canvas"
-                    onClick={() => navigate('/chat')}
-                    style={{ justifyContent: 'center', fontSize: '12px', padding: '8px' }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>support_agent</span>
-                    <span>Tư vấn giảng viên / AI</span>
-                  </button>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <button
+                      type="button"
+                      className="haui-pill-btn-canvas"
+                      onClick={() => handleCheckCourseEligibility(selectedCourse.courseCode)}
+                      style={{ justifyContent: 'center', fontSize: '12px', padding: '8px' }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>verified_user</span>
+                      <span>Thẩm định Tiên quyết</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="haui-pill-btn-canvas"
+                      onClick={() => navigate('/chat')}
+                      style={{ justifyContent: 'center', fontSize: '12px', padding: '8px' }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>support_agent</span>
+                      <span>Tư vấn AI Advisor</span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : null}
           </div>
         </div>
       ) : (
@@ -1370,8 +1184,8 @@ export function CurriculumTreePage() {
         <div style={{ backgroundColor: 'var(--color-paper)', borderRadius: '24px', border: '1px solid var(--color-hairline)', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
           <Table
             columns={tableColumns}
-            data={allCoursesFlat}
-            rowKey="code"
+            data={courses}
+            rowKey="courseCode"
             striped
           />
         </div>
@@ -1382,7 +1196,7 @@ export function CurriculumTreePage() {
         isOpen={eligibilityModalOpen}
         onClose={() => setEligibilityModalOpen(false)}
         title={`Thẩm định Điều kiện Tiên quyết: ${selectedCourseCode}`}
-        subtitle={selectedCourse?.name || ''}
+        subtitle={selectedCourse?.courseName || ''}
         size="md"
         footer={
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', width: '100%' }}>
@@ -1407,11 +1221,43 @@ export function CurriculumTreePage() {
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
-          {checkingEligibility && <div>Đang thẩm định điều kiện tiên quyết...</div>}
-          {eligibilityError && <div style={{ color: 'var(--color-ember)' }}>Lỗi: {eligibilityError.message}</div>}
+          {checkingEligibility && <div>Đang thẩm định điều kiện tiên quyết từ Rule Engine...</div>}
+          {eligibilityError && (
+            <div style={{ color: 'var(--color-ember)' }}>
+              Lỗi: {eligibilityError.message}
+            </div>
+          )}
           {eligibilityResult && (
-            <div style={{ padding: '12px 14px', borderRadius: '12px', backgroundColor: 'var(--color-canvas)' }}>
-              <strong>Trạng thái thẩm định:</strong> {eligibilityResult.eligible ? '✓ Đủ điều kiện đăng ký' : '⚠️ Cần kiểm tra lại điều kiện tiên quyết'}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div
+                style={{
+                  padding: '12px 14px',
+                  borderRadius: '12px',
+                  backgroundColor: eligibilityResult.eligible ? '#f0fdf4' : '#fef2f2',
+                  border: `1px solid ${eligibilityResult.eligible ? '#bbf7d0' : '#fecaca'}`,
+                  color: eligibilityResult.eligible ? '#166534' : '#991b1b'
+                }}
+              >
+                <strong>Trạng thái thẩm định:</strong>{' '}
+                {eligibilityResult.eligible ? '✓ Đủ điều kiện đăng ký' : '⚠️ Bị chặn bởi điều kiện tiên quyết (BR-01)'}
+              </div>
+
+              {eligibilityResult.missingPrerequisites?.length > 0 && (
+                <div>
+                  <strong>Điều kiện còn thiếu:</strong>
+                  <ul style={{ margin: '4px 0 0', paddingLeft: '18px', color: 'var(--color-ember)' }}>
+                    {eligibilityResult.missingPrerequisites.map((p, idx) => (
+                      <li key={idx}>{p}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {eligibilityResult.policyVersion && (
+                <div style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>
+                  Phiên bản quy chế: <code>{eligibilityResult.policyVersion}</code>
+                </div>
+              )}
             </div>
           )}
         </div>
