@@ -22,6 +22,7 @@ import {
   mockAcademicService,
   computeServerAcademicMetrics
 } from './mockAcademicService.js';
+import { api } from './apiClient.js';
 
 /**
  * 3 Tài khoản mẫu theo đặc tả Task 3.4:
@@ -268,6 +269,23 @@ export function selectStudentPreset(presetId) {
     lastImportedAt: null
   };
   emitChange();
+
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    try {
+      window.dispatchEvent(
+        new CustomEvent('haui:academic:transcript-updated', {
+          detail: {
+            records: preset.records,
+            persona: preset.id,
+            snapshot: getAcademicSnapshot()
+          }
+        })
+      );
+    } catch {
+      // Ignored
+    }
+  }
+
   return getAcademicSnapshot();
 }
 
@@ -306,6 +324,24 @@ export function commitTranscriptRecords(newRecords, meta = {}) {
   globalState.hasImportedNewTranscript = true;
   globalState.lastImportedAt = new Date().toISOString();
   emitChange();
+
+  // Phát sự kiện toàn hệ thống cho TV2 và TV3 đồng bộ ngay lập tức
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    try {
+      window.dispatchEvent(
+        new CustomEvent('haui:academic:transcript-updated', {
+          detail: {
+            records: newRecords,
+            timestamp: globalState.lastImportedAt,
+            snapshot: getAcademicSnapshot()
+          }
+        })
+      );
+    } catch {
+      // Ignored
+    }
+  }
+
   return getAcademicSnapshot();
 }
 
@@ -610,7 +646,9 @@ export function connectApi(apiInstance) {
     'GET /academic/status': () => getDynamicAcademicStatus(),
     'GET /academic/curriculum': () => getDynamicCurriculumTree(),
     'GET /academic/curriculum/tree': () => mockAcademicService.getCurriculumTree(),
-    'GET /audit/graduation': () => getDynamicGraduationAudit()
+    'GET /audit/graduation': () => getDynamicGraduationAudit(),
+    'GET /academic/transcript': () => mockAcademicService.getTranscript(),
+    'GET /students/me': () => mockAcademicService.getStudentContext()
   });
 
   const snapshot = getAcademicSnapshot();
@@ -620,3 +658,6 @@ export function connectApi(apiInstance) {
     apiInstance.setSessionStudent(nextSnapshot.student);
   });
 }
+
+// Tự động kết nối api singleton với store để kích hoạt dynamic provider
+connectApi(api);

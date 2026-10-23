@@ -147,9 +147,18 @@ export function CurriculumTreePage() {
     const unsubApi = api.subscribe(() => {
       fetchTreeData();
     });
+    const handleTranscriptUpdated = () => {
+      fetchTreeData();
+    };
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('haui:academic:transcript-updated', handleTranscriptUpdated);
+    }
     return () => {
       unsubStore();
       unsubApi();
+      if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+        window.removeEventListener('haui:academic:transcript-updated', handleTranscriptUpdated);
+      }
     };
   }, [fetchTreeData]);
 

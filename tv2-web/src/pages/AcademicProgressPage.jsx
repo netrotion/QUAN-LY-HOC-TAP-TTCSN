@@ -53,9 +53,18 @@ export function AcademicProgressPage() {
     const unsubApi = api.subscribe(() => {
       fetchAudit(reportMode);
     });
+    const handleTranscriptUpdated = () => {
+      fetchAudit(reportMode);
+    };
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('haui:academic:transcript-updated', handleTranscriptUpdated);
+    }
     return () => {
       unsubStore();
       unsubApi();
+      if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+        window.removeEventListener('haui:academic:transcript-updated', handleTranscriptUpdated);
+      }
     };
   }, [fetchAudit, reportMode]);
 

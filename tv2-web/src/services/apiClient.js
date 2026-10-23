@@ -277,7 +277,7 @@ function resolveMockFixture(method, normalizedPath, body, options = {}) {
     case 'GET /students/me':
       return mockAcademicService.getStudentContext();
     case 'GET /academic/status':
-      if (options.state?.sessionStudent?.id && options.state.sessionStudent.id !== 'std-2026-001') {
+      if (mockAcademicService.hasImportedNewTranscript || (options.state?.sessionStudent?.id && options.state.sessionStudent.id !== 'std-2026-001')) {
         return mockAcademicService.getAcademicStatus();
       }
       return { ...MOCK_ACADEMIC_STATUS, policyVersion: 'policy-haui-demo-2026@0.0.1-v0' };
@@ -376,8 +376,12 @@ export function createApiClient(customConfig = {}) {
 
   function setSessionStudent(nextStudent) {
     state.sessionStudent = { ...state.sessionStudent, ...nextStudent };
-    if (nextStudent?.id || nextStudent?.studentId) {
-      mockAcademicService.setActivePersona(nextStudent.id || nextStudent.studentId);
+    const targetId = nextStudent?.id || (
+      String(nextStudent?.studentId || '').includes('normal') || nextStudent?.studentId === '2024604757' ? 'normal' :
+      String(nextStudent?.studentId || '').includes('empty') ? 'empty' : 'at-risk'
+    );
+    if (targetId && mockAcademicService.activePersonaId !== targetId) {
+      mockAcademicService.setActivePersona(targetId);
     }
     notifyListeners();
     return state.sessionStudent;

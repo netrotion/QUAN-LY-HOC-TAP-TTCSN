@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/apiClient.js';
 import { STUDENT_PERSONAS } from '../services/mockFixtures.js';
@@ -9,6 +9,7 @@ import {
   selectStudentPreset,
   subscribeAcademicStore
 } from '../services/academicStore.js';
+import { calculateSemesterGpaTrend } from '../services/mockAcademicService.js';
 
 /**
  * Mẫu dữ liệu Lộ trình đề xuất học kỳ kế tiếp (18 TC — tuân thủ BR-03: 10–24 TC)
@@ -81,6 +82,7 @@ export function DashboardPage({ mountedRouteSummary }) {
   const [componentState, setComponentState] = useState('loaded'); // 'loaded' | 'loading' | 'empty' | 'error'
 
   const [academicStatus, setAcademicStatus] = useState(null);
+  const [transcriptData, setTranscriptData] = useState(null);
   const [bootstrapInfo, setBootstrapInfo] = useState(null);
   const [healthInfo, setHealthInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -100,14 +102,16 @@ export function DashboardPage({ mountedRouteSummary }) {
     setLoading(true);
     setError(null);
     try {
-      const [statusRes, bootRes, healthRes] = await Promise.all([
+      const [statusRes, bootRes, healthRes, transcriptRes] = await Promise.all([
         api.academic.getStatus(),
         api.system.getBootstrap(),
-        api.system.getHealth()
+        api.system.getHealth(),
+        api.academic.getTranscript().catch(() => null)
       ]);
       setAcademicStatus(statusRes);
       setBootstrapInfo(bootRes);
       setHealthInfo(healthRes);
+      setTranscriptData(transcriptRes);
     } catch (err) {
       setError(err);
     } finally {
@@ -123,9 +127,21 @@ export function DashboardPage({ mountedRouteSummary }) {
     const unsubApi = api.subscribe(() => {
       loadDashboardData();
     });
+
+    const handleTranscriptUpdated = () => {
+      loadDashboardData();
+    };
+
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('haui:academic:transcript-updated', handleTranscriptUpdated);
+    }
+
     return () => {
       unsubStore();
       unsubApi();
+      if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+        window.removeEventListener('haui:academic:transcript-updated', handleTranscriptUpdated);
+      }
     };
   }, [loadDashboardData]);
 
@@ -199,6 +215,35 @@ export function DashboardPage({ mountedRouteSummary }) {
     if (num >= 2.0) return 'Trung bình';
     return 'Yếu (Cảnh báo)';
   };
+
+  const semesterTrend = useMemo(() => {
+    if (academicStatus?.semesterTrend && academicStatus.semesterTrend.length > 0) {
+      return academicStatus.semesterTrend;
+    }
+    const rawAttempts =
+      transcriptData?.attempts ||
+      transcriptData?.records ||
+      academicStatus?.attempts ||
+      getAcademicSnapshot().transcriptRecords ||
+      [];
+    const overallCpa =
+      academicStatus?.cpa !== null && academicStatus?.cpa !== undefined
+        ? Number(academicStatus.cpa)
+        : null;
+    return calculateSemesterGpaTrend(rawAttempts, overallCpa);
+  }, [academicStatus, transcriptData]);
+
+  const failedCoursesList = useMemo(() => {
+    if (academicStatus?.failedCourses && Array.isArray(academicStatus.failedCourses)) {
+      return academicStatus.failedCourses;
+    }
+    const rawAttempts =
+      transcriptData?.attempts ||
+      transcriptData?.records ||
+      getAcademicSnapshot().transcriptRecords ||
+      [];
+    return rawAttempts.filter((a) => a.letterGrade === 'F' || a.status === 'FAILED');
+  }, [academicStatus, transcriptData]);
 
   // Render Skeleton Layout khi xem trạng thái 'loading'
   if (componentState === 'loading' || (loading && componentState === 'loaded' && !academicStatus)) {
@@ -666,97 +711,144 @@ export function DashboardPage({ mountedRouteSummary }) {
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px', paddingBottom: '16px' }}>
             <div>
               <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.01em' }}>
-                Biến thiên GPA &amp; Tín chỉ theo 6 học kỳ
+                Biến thiên GPA &amp; CPA tích lũy qua các học kỳ
               </h2>
               <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
-                Quá trình phấn đấu từ Học kỳ 1 đến Học kỳ 6 (Năm học 2021 - 2024)
+                {semesterTrend.length > 0
+                  ? `Quá trình tích lũy học tập qua ${semesterTrend.length} học kỳ đã hoàn thành`
+                  : 'Tiến độ học tập và biến thiên chỉ số GPA/CPA'}
               </p>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '12px', color: 'var(--color-mid-gray)', flexWrap: 'wrap' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ width: '10px', height: '10px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
-                GPA kỳ (Hệ 4)
+                <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--color-ink)' }} />
+                CPA tích lũy
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '12px', height: '2px', backgroundColor: '#0284c7', borderTop: '2px dashed #0284c7' }} />
+                GPA học kỳ
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: 'var(--color-canvas)' }} />
-                Số tín chỉ
+                Tín chỉ
               </span>
             </div>
           </div>
 
           {/* Minimal SVG Visual Chart */}
           <div style={{ width: '100%', paddingTop: '16px', paddingBottom: '8px' }}>
-            <div style={{ position: 'relative', width: '100%', height: '190px' }}>
-              {/* Background Grid Lines */}
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none', opacity: 0.3 }}>
-                <div style={{ width: '100%', borderTop: '1px solid var(--color-hairline)' }} />
-                <div style={{ width: '100%', borderTop: '1px solid var(--color-hairline)' }} />
-                <div style={{ width: '100%', borderTop: '1px solid var(--color-hairline)' }} />
-                <div style={{ width: '100%', borderTop: '1px solid var(--color-hairline)' }} />
+            {semesterTrend.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '36px 20px', color: 'var(--color-mid-gray)', backgroundColor: 'var(--color-canvas)', borderRadius: '16px' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '36px', marginBottom: '6px', opacity: 0.6 }}>query_stats</span>
+                <p style={{ margin: '0 0 10px', fontSize: '13px', color: 'var(--color-ink)', fontWeight: 500 }}>
+                  Chưa có dữ liệu bảng điểm để biểu diễn biến thiên GPA &amp; CPA tích lũy.
+                </p>
+                <button type="button" className="haui-pill-btn-paper" onClick={() => navigate('/transcript')}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>upload_file</span>
+                  <span>Nạp bảng điểm e-HaUI ngay</span>
+                </button>
               </div>
+            ) : (() => {
+              const N = semesterTrend.length;
+              const svgWidth = 600;
+              const padX = N > 1 ? 50 : 300;
+              const availableW = svgWidth - 100;
 
-              {/* SVG Chart Curve & Sparkline points */}
-              <svg style={{ width: '100%', height: '100%', overflow: 'visible' }} preserveAspectRatio="none" viewBox="0 0 600 160">
-                <defs>
-                  <linearGradient id="gpaGradient" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#0a0a0a" stopOpacity="0.12" />
-                    <stop offset="100%" stopColor="#0a0a0a" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-                {/* Credit Volume Bars in Canvas Tone */}
-                <rect fill="#f5f5f5" height="95" rx="6" width="30" x="35" y="60" />
-                <rect fill="#f5f5f5" height="100" rx="6" width="30" x="135" y="55" />
-                <rect fill="#f5f5f5" height="105" rx="6" width="30" x="235" y="50" />
-                <rect fill="#f5f5f5" height="87" rx="6" width="30" x="335" y="68" />
-                <rect fill="#f5f5f5" height="95" rx="6" width="30" x="435" y="60" />
-                <rect fill="#f5f5f5" height="80" rx="6" width="30" x="535" y="75" />
-                {/* Path Area Fill */}
-                <path d="M 50 120 L 150 95 L 250 68 L 350 78 L 450 56 L 550 48 L 550 155 L 50 155 Z" fill="url(#gpaGradient)" />
-                {/* GPA Polyline */}
-                <path d="M 50 120 L 150 95 L 250 68 L 350 78 L 450 56 L 550 48" fill="none" stroke="#0a0a0a" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
-                {/* Node Points */}
-                <circle cx="50" cy="120" fill="#0a0a0a" r="4.5" />
-                <circle cx="150" cy="95" fill="#0a0a0a" r="4.5" />
-                <circle cx="250" cy="68" fill="#0a0a0a" r="4.5" />
-                <circle cx="350" cy="78" fill="#0a0a0a" r="4.5" />
-                <circle cx="450" cy="56" fill="#0a0a0a" r="4.5" />
-                <circle cx="550" cy="48" fill="#0a0a0a" r="5.5" stroke="#ffffff" strokeWidth="2" />
-              </svg>
-            </div>
+              const points = semesterTrend.map((sem, idx) => {
+                const x = N > 1 ? padX + (idx / (N - 1)) * availableW : 300;
+                const cpaVal = sem.cumulativeCpa || 0;
+                const gpaVal = sem.semesterGpa || 0;
+                const yCpa = 150 - (Math.min(4.0, Math.max(0, cpaVal)) / 4.0) * 115;
+                const yGpa = 150 - (Math.min(4.0, Math.max(0, gpaVal)) / 4.0) * 115;
+                const barHeight = Math.min(105, Math.max(16, ((sem.semesterCredits || 15) / 24) * 110));
+                const barW = Math.min(36, Math.max(18, availableW / (N * 2)));
+                const barX = x - barW / 2;
+                const barY = 150 - barHeight;
+                return { x, yCpa, yGpa, barX, barY, barW, barHeight, sem };
+              });
 
-            {/* Horizontal Label Axis */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', textAlign: 'center', paddingTop: '12px', fontSize: '12px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>2.85</span>
-                <span style={{ color: 'var(--color-mid-gray)' }}>HK 1 (18TC)</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>3.02</span>
-                <span style={{ color: 'var(--color-mid-gray)' }}>HK 2 (19TC)</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>3.15</span>
-                <span style={{ color: 'var(--color-mid-gray)' }}>HK 3 (20TC)</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>3.10</span>
-                <span style={{ color: 'var(--color-mid-gray)' }}>HK 4 (17TC)</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>3.20</span>
-                <span style={{ color: 'var(--color-mid-gray)' }}>HK 5 (18TC)</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>3.24</span>
-                <span style={{ color: 'var(--color-mid-gray)' }}>HK 6 (16TC)</span>
-              </div>
-            </div>
+              const cpaPathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.yCpa.toFixed(1)}`).join(' ');
+              const cpaAreaD = `${cpaPathD} L ${points[points.length - 1].x.toFixed(1)} 155 L ${points[0].x.toFixed(1)} 155 Z`;
+              const gpaPathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.yGpa.toFixed(1)}`).join(' ');
+
+              return (
+                <div>
+                  <div style={{ position: 'relative', width: '100%', height: '190px' }}>
+                    {/* Background Grid Lines */}
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none', opacity: 0.3 }}>
+                      <div style={{ width: '100%', borderTop: '1px solid var(--color-hairline)' }} />
+                      <div style={{ width: '100%', borderTop: '1px solid var(--color-hairline)' }} />
+                      <div style={{ width: '100%', borderTop: '1px solid var(--color-hairline)' }} />
+                      <div style={{ width: '100%', borderTop: '1px solid var(--color-hairline)' }} />
+                    </div>
+
+                    <svg style={{ width: '100%', height: '100%', overflow: 'visible' }} preserveAspectRatio="none" viewBox="0 0 600 160">
+                      <defs>
+                        <linearGradient id="gpaGradient" x1="0" x2="0" y1="0" y2="1">
+                          <stop offset="0%" stopColor="#0a0a0a" stopOpacity="0.12" />
+                          <stop offset="100%" stopColor="#0a0a0a" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Chuẩn Giỏi 3.20 Reference line */}
+                      <line x1="20" y1="58" x2="580" y2="58" stroke="#16a34a" strokeDasharray="4 4" strokeWidth="1" opacity="0.6" />
+                      <text x="580" y="52" fill="#16a34a" fontSize="10" textAnchor="end" fontWeight="600">Ngưỡng Giỏi (3.20)</text>
+
+                      {/* Credit Volume Bars in Canvas Tone */}
+                      {points.map((p, i) => (
+                        <rect key={i} fill="var(--color-canvas, #f5f5f5)" height={p.barHeight} rx="5" width={p.barW} x={p.barX} y={p.barY} />
+                      ))}
+
+                      {/* CPA Path Area Fill */}
+                      {N > 1 && <path d={cpaAreaD} fill="url(#gpaGradient)" />}
+
+                      {/* GPA Semester Polyline (Dashed) */}
+                      {N > 1 && (
+                        <path d={gpaPathD} fill="none" stroke="#0284c7" strokeDasharray="4 3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+                      )}
+
+                      {/* CPA Cumulative Polyline (Solid) */}
+                      {N > 1 && (
+                        <path d={cpaPathD} fill="none" stroke="#0a0a0a" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                      )}
+
+                      {/* Node Points */}
+                      {points.map((p, i) => (
+                        <g key={i}>
+                          <circle cx={p.x} cy={p.yGpa} fill="#0284c7" r="3.5" />
+                          <circle cx={p.x} cy={p.yCpa} fill="#0a0a0a" r={i === points.length - 1 ? 5.5 : 4.5} stroke="#ffffff" strokeWidth="2" />
+                        </g>
+                      ))}
+                    </svg>
+                  </div>
+
+                  {/* Horizontal Label Axis */}
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${points.length}, 1fr)`, textAlign: 'center', paddingTop: '12px', fontSize: '12px', gap: '4px' }}>
+                    {points.map((p, i) => (
+                      <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span style={{ color: 'var(--color-ink)', fontWeight: 700 }}>
+                          CPA {p.sem.cumulativeCpa > 0 ? p.sem.cumulativeCpa.toFixed(2) : '—'}
+                        </span>
+                        <span style={{ color: '#0284c7', fontSize: '11px', fontWeight: 600 }}>
+                          GPA: {p.sem.semesterGpa > 0 ? p.sem.semesterGpa.toFixed(2) : '—'}
+                        </span>
+                        <span style={{ color: 'var(--color-mid-gray)', fontSize: '11px' }}>
+                          {p.sem.displayLabel} ({p.sem.semesterCredits}TC)
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
-          <div style={{ paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
-            <span>Tích lũy bình quân: <strong style={{ color: 'var(--color-ink)', fontWeight: 500 }}>18.0 TC/kỳ</strong></span>
+          <div style={{ paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: 'var(--color-mid-gray)', flexWrap: 'wrap', gap: '8px' }}>
+            <span>
+              CPA tích lũy: <strong style={{ color: 'var(--color-ink)', fontWeight: 600 }}>{cpaValue}</strong> ({getCpaRank(cpaValue)}) &bull; Tích lũy: <strong style={{ color: 'var(--color-ink)', fontWeight: 600 }}>{accumulatedCredits}/{totalRequiredCredits} TC</strong>
+            </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--color-ink)', fontWeight: 500 }}>
-              Dự kiến tốt nghiệp: Tháng 06/2025
+              Tiến độ: {creditPercent}% CTĐT
               <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>arrow_forward</span>
             </span>
           </div>
@@ -776,60 +868,25 @@ export function DashboardPage({ mountedRouteSummary }) {
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Item 1 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                  <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Kiến thức đại cương</span>
-                  <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>32/32 TC (100%)</span>
+              {(academicStatus?.knowledgeBlocks && academicStatus.knowledgeBlocks.length > 0 ? academicStatus.knowledgeBlocks : [
+                { blockId: 'GEN', name: 'Kiến thức đại cương', accumulatedCredits: Math.min(accumulatedCredits, 32), totalCreditsRequired: 32, percentage: Math.min(100, Math.round((accumulatedCredits / 32) * 100)) },
+                { blockId: 'CORE', name: 'Cơ sở ngành CNTT', accumulatedCredits: Math.max(0, Math.min(accumulatedCredits - 32, 45)), totalCreditsRequired: 45, percentage: Math.min(100, Math.round((Math.max(0, accumulatedCredits - 32) / 45) * 100)) },
+                { blockId: 'SPEC', name: 'Chuyên ngành bắt buộc (KTPM)', accumulatedCredits: Math.max(0, Math.min(accumulatedCredits - 77, 38)), totalCreditsRequired: 38, percentage: Math.min(100, Math.round((Math.max(0, accumulatedCredits - 77) / 38) * 100)) },
+                { blockId: 'ELEC', name: 'Tự chọn định hướng & Thực tập', accumulatedCredits: Math.max(0, Math.min(accumulatedCredits - 115, 20)), totalCreditsRequired: 20, percentage: Math.min(100, Math.round((Math.max(0, accumulatedCredits - 115) / 20) * 100)) },
+                { blockId: 'GRAD', name: 'Khóa luận / Đồ án tốt nghiệp', accumulatedCredits: 0, totalCreditsRequired: 10, percentage: 0 }
+              ]).map((block) => (
+                <div key={block.blockId || block.name} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                    <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{block.name}</span>
+                    <span style={{ color: block.percentage >= 100 ? 'var(--color-ink)' : 'var(--color-mid-gray)', fontWeight: 600 }}>
+                      {block.accumulatedCredits}/{block.totalCreditsRequired} TC ({block.percentage}%)
+                    </span>
+                  </div>
+                  <div className="haui-progress-bar-minimal">
+                    <div className="haui-progress-bar-fill" style={{ width: `${Math.min(100, block.percentage || 0)}%` }} />
+                  </div>
                 </div>
-                <div className="haui-progress-bar-minimal">
-                  <div className="haui-progress-bar-fill" style={{ width: '100%' }} />
-                </div>
-              </div>
-
-              {/* Item 2 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                  <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Cơ sở ngành CNTT</span>
-                  <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>45/45 TC (100%)</span>
-                </div>
-                <div className="haui-progress-bar-minimal">
-                  <div className="haui-progress-bar-fill" style={{ width: '100%' }} />
-                </div>
-              </div>
-
-              {/* Item 3 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                  <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Chuyên ngành bắt buộc (KTPM)</span>
-                  <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>25/38 TC (65.8%)</span>
-                </div>
-                <div className="haui-progress-bar-minimal">
-                  <div className="haui-progress-bar-fill" style={{ width: '65.8%' }} />
-                </div>
-              </div>
-
-              {/* Item 4 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                  <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Tự chọn định hướng &amp; Thực tập</span>
-                  <span style={{ color: 'var(--color-mid-gray)' }}>6/20 TC (30.0%)</span>
-                </div>
-                <div className="haui-progress-bar-minimal">
-                  <div className="haui-progress-bar-fill" style={{ width: '30%' }} />
-                </div>
-              </div>
-
-              {/* Item 5 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                  <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Khóa luận / Đồ án tốt nghiệp</span>
-                  <span style={{ color: 'var(--color-mid-gray)' }}>0/10 TC (0%)</span>
-                </div>
-                <div className="haui-progress-bar-minimal">
-                  <div className="haui-progress-bar-fill" style={{ width: '4%' }} />
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
@@ -1101,7 +1158,7 @@ export function DashboardPage({ mountedRouteSummary }) {
       <div className="haui-grid haui-grid--2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
         {/* Khối Môn Nợ Tiên Quyết */}
         <Card
-          title="Môn Nợ & Môn Tiên Quyết Cần Gỡ Gấp (Urgent Retakes)"
+          title="Học phần Cần lưu ý & Môn nợ Tiên quyết"
           subtitle="Các học phần không đạt làm tắc nghẽn cây môn học theo BR-01 & BR-07"
           variant="default"
           style={{
@@ -1112,73 +1169,104 @@ export function DashboardPage({ mountedRouteSummary }) {
             overflow: 'hidden'
           }}
           headerAction={
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '4px 12px',
-                borderRadius: '9999px',
-                backgroundColor: '#fee2e2',
-                color: '#b91c1c',
-                fontSize: '12px',
-                fontWeight: 600
-              }}
-            >
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#dc2626' }} />
-              1 Môn nợ
-            </span>
+            failedCoursesList.length > 0 ? (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 12px',
+                  borderRadius: '9999px',
+                  backgroundColor: '#fee2e2',
+                  color: '#b91c1c',
+                  fontSize: '12px',
+                  fontWeight: 600
+                }}
+              >
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#dc2626' }} />
+                {failedCoursesList.length} Môn nợ
+              </span>
+            ) : (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 12px',
+                  borderRadius: '9999px',
+                  backgroundColor: '#dcfce7',
+                  color: '#166534',
+                  fontSize: '12px',
+                  fontWeight: 600
+                }}
+              >
+                ✓ Không có môn nợ
+              </span>
+            )
           }
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px',
-                padding: '16px',
-                borderRadius: '16px',
-                backgroundColor: '#fff8f8',
-                border: '1px solid #fee2e2'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                <span
+            {failedCoursesList.length > 0 ? (
+              failedCoursesList.map((fc) => (
+                <div
+                  key={fc.courseCode}
                   style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    padding: '3px 10px',
-                    borderRadius: '9999px',
-                    backgroundColor: '#dc2626',
-                    color: '#ffffff',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    fontFamily: 'var(--font-mono)'
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                    padding: '16px',
+                    borderRadius: '16px',
+                    backgroundColor: '#fff8f8',
+                    border: '1px solid #fee2e2'
                   }}
                 >
-                  MATH1002
-                </span>
-                <span style={{ fontSize: '12px', color: '#b91c1c', fontWeight: 600 }}>
-                  3 Tín chỉ &bull; Điểm F (0.0)
-                </span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '3px 10px',
+                        borderRadius: '9999px',
+                        backgroundColor: '#dc2626',
+                        color: '#ffffff',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        fontFamily: 'var(--font-mono)'
+                      }}
+                    >
+                      {fc.courseCode}
+                    </span>
+                    <span style={{ fontSize: '12px', color: '#b91c1c', fontWeight: 600 }}>
+                      {fc.credits} Tín chỉ &bull; Điểm {fc.letterGrade || 'F'} (0.0)
+                    </span>
+                  </div>
+                  <strong style={{ fontSize: '15px', color: 'var(--color-ink)' }}>
+                    {fc.courseName || fc.courseCode}
+                  </strong>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#7f1d1d', lineHeight: 1.5 }}>
+                    ⚠️ <strong>Cảnh báo tiên quyết:</strong> Học phần này đang bị điểm F và chặn các môn học tiếp theo. Cần đưa vào Kế hoạch học tập để học lại ngay.
+                  </p>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                    <button
+                      type="button"
+                      className="haui-pill-btn-dark"
+                      style={{ backgroundColor: '#dc2626', fontSize: '13px', padding: '8px 16px' }}
+                      onClick={() => navigate('/planner')}
+                    >
+                      Đưa vào Kế hoạch học kỳ tới &rarr;
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ padding: '24px', textAlign: 'center', color: '#166534', backgroundColor: '#f0fdf4', borderRadius: '16px', border: '1px solid #bbf7d0' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '32px', marginBottom: '6px' }}>task_alt</span>
+                <div style={{ fontWeight: 600, fontSize: '14px' }}>Không có môn nợ học phần</div>
+                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#15803d' }}>
+                  Bạn đang hoàn thành tốt tất cả các môn đã học, không có môn nào bị điểm F cần học lại.
+                </p>
               </div>
-              <strong style={{ fontSize: '15px', color: 'var(--color-ink)' }}>
-                Toán rời rạc (Discrete Mathematics)
-              </strong>
-              <p style={{ margin: 0, fontSize: '13px', color: '#7f1d1d', lineHeight: 1.5 }}>
-                ⚠️ <strong>Môn tiên quyết trực tiếp của:</strong> IT6001 (Cấu trúc dữ liệu &amp; Giải thuật), IT6003 (Lý thuyết đồ thị). Nếu không gỡ ngay kỳ tới, lộ trình tốt nghiệp sẽ bị chậm ít nhất 1 năm.
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
-                <button
-                  type="button"
-                  className="haui-pill-btn-dark"
-                  style={{ backgroundColor: '#dc2626', fontSize: '13px', padding: '8px 16px' }}
-                  onClick={() => navigate('/planner')}
-                >
-                  Đưa vào Kế hoạch học kỳ tới &rarr;
-                </button>
-              </div>
-            </div>
+            )}
           </div>
         </Card>
 

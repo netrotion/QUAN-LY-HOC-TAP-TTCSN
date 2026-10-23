@@ -433,6 +433,111 @@ export function computeServerAcademicMetrics(attempts = [], totalCreditsRequired
 }
 
 /**
+ * Tính toán chuỗi biến thiên GPA học kỳ và CPA tích lũy qua từng kỳ từ danh sách học phần (attempts)
+ * Phục vụ vẽ Biểu đồ biến thiên GPA & CPA tích lũy chuẩn xác theo thời gian.
+ * @param {Array} attempts - Danh sách môn đã học
+ * @param {number|null} [overallCpa] - CPA tổng thể từ server
+ * @returns {Array<{ semesterCode: string, displayLabel: string, semesterGpa: number, cumulativeCpa: number, semesterCredits: number, cumCredits: number, passedCount: number, failedCount: number }>}
+ */
+export function calculateSemesterGpaTrend(attempts = [], overallCpa = null) {
+  if (!Array.isArray(attempts) || attempts.length === 0) {
+    return [];
+  }
+
+  // Nhóm theo học kỳ
+  const semesterMap = new Map();
+  for (const item of attempts) {
+    const sem = item.semesterCode || item.semester_code || item.semester || '2024_1';
+    if (!semesterMap.has(sem)) {
+      semesterMap.set(sem, []);
+    }
+    semesterMap.get(sem).push(item);
+  }
+
+  const sortedSemesters = Array.from(semesterMap.keys()).sort();
+
+  let cumWeightedPoints = 0;
+  let cumGradedCredits = 0;
+  let cumPassedCredits = 0;
+
+  const trend = [];
+
+  for (let i = 0; i < sortedSemesters.length; i++) {
+    const semKey = sortedSemesters[i];
+    const semCourses = semesterMap.get(semKey);
+
+    let semWeightedPoints = 0;
+    let semGradedCredits = 0;
+    let semCredits = 0;
+    let passedCount = 0;
+    let failedCount = 0;
+
+    for (const c of semCourses) {
+      const credits = Number(c.credits || 0);
+      semCredits += credits;
+
+      const letter = c.letterGrade || c.letter_grade;
+      const isFailed = letter === 'F' || c.status === 'FAILED';
+      const isInProgress = (letter === null && c.gradePoint === undefined && c.score10 === null) || c.status === 'IN_PROGRESS';
+
+      if (isInProgress) continue;
+
+      const gp4 = c.gradePoint !== undefined && c.gradePoint !== null
+        ? Number(c.gradePoint)
+        : (letter ? (GRADE_POINT_4_MAP[letter] ?? 2.0) : 2.0);
+
+      semWeightedPoints += gp4 * credits;
+      semGradedCredits += credits;
+      cumWeightedPoints += gp4 * credits;
+      cumGradedCredits += credits;
+
+      if (!isFailed) {
+        cumPassedCredits += credits;
+        passedCount++;
+      } else {
+        failedCount++;
+      }
+    }
+
+    const semesterGpa = semGradedCredits > 0
+      ? Number((semWeightedPoints / semGradedCredits).toFixed(2))
+      : null;
+
+    const cumulativeCpa = cumGradedCredits > 0
+      ? Number((cumWeightedPoints / cumGradedCredits).toFixed(2))
+      : null;
+
+    // Định dạng nhãn hiển thị: '2024_1' -> 'HK 1', '2024_2' -> 'HK 2', ...
+    let displayLabel = semKey;
+    if (semKey.includes('_')) {
+      const parts = semKey.split('_');
+      displayLabel = parts[1] === 'SUMMER' ? 'HK Hè' : `HK ${parts[1]}`;
+    } else if (!isNaN(Number(semKey))) {
+      displayLabel = `HK ${semKey}`;
+    }
+
+    trend.push({
+      semesterCode: semKey,
+      displayLabel,
+      semesterGpa: semesterGpa !== null ? semesterGpa : 0.0,
+      cumulativeCpa: cumulativeCpa !== null ? cumulativeCpa : (overallCpa || 0.0),
+      semesterCredits: semCredits,
+      cumCredits: cumPassedCredits,
+      passedCount,
+      failedCount,
+      totalCourses: semCourses.length
+    });
+  }
+
+  // Nếu kỳ cuối cùng có overallCpa thì cân chỉnh mốc cuối khớp CPA tích lũy chính thức
+  if (trend.length > 0 && overallCpa !== null && overallCpa !== undefined && typeof overallCpa === 'number') {
+    trend[trend.length - 1].cumulativeCpa = Number(overallCpa.toFixed(2));
+  }
+
+  return trend;
+}
+
+/**
  * State Controller lưu trữ dữ liệu Mock Service ở phạm vi singleton
  */
 class MockAcademicServiceState {
@@ -502,7 +607,12 @@ class MockAcademicServiceState {
   }
 
   getAcademicStatus() {
+    const student = this.getActivePersona();
     const context = this.getStudentContext();
+    const failedCourses = student.attempts.filter((a) => a.letterGrade === 'F' || a.status === 'FAILED');
+    const passedCourses = student.attempts.filter((a) => a.letterGrade && a.letterGrade !== 'F' && a.status !== 'FAILED');
+    const inProgressCourses = student.attempts.filter((a) => a.status === 'IN_PROGRESS' || (a.letterGrade === null && a.score10 === null));
+
     return {
       studentId: context.studentId,
       gpa: context.gpa,
@@ -514,6 +624,11 @@ class MockAcademicServiceState {
       warnings: context.warnings,
       dataRevision: context.dataRevision,
       policyVersion: 'policy-haui-demo-2026@0.0.1-v0',
+      semesterTrend: calculateSemesterGpaTrend(student.attempts, context.cpa),
+      failedCourses,
+      passedCourses,
+      inProgressCourses,
+      attempts: student.attempts,
       knowledgeBlocks: [
         { blockId: 'GEN', name: 'Khối kiến thức Đại cương', accumulatedCredits: Math.min(context.accumulatedCredits, 30), totalCreditsRequired: 30, percentage: Math.min(100, Math.round((context.accumulatedCredits / 30) * 100)), color: 'var(--color-success)' },
         { blockId: 'CORE', name: 'Khối Cơ sở ngành', accumulatedCredits: Math.max(0, Math.min(context.accumulatedCredits - 30, 48)), totalCreditsRequired: 48, percentage: Math.min(100, Math.round((Math.max(0, context.accumulatedCredits - 30) / 48) * 100)), color: 'var(--color-primary)' },
@@ -932,7 +1047,7 @@ class MockAcademicServiceState {
     }
 
     const student = this.getActivePersona();
-    if (student.studentId === 'std-2026-001' || !student.studentId) {
+    if (!this.hasImportedNewTranscript && (student.studentId === 'std-2026-001' || !student.studentId)) {
       return { ...MOCK_GRADUATION_AUDIT, policyVersion: 'policy-haui-demo-2026@0.0.1-v0' };
     }
     const metrics = computeServerAcademicMetrics(student.attempts, student.totalCreditsRequired, student);
