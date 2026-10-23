@@ -40,6 +40,11 @@ export function StudyPlannerPage({ api, ui } = {}) {
   const [error, setError] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
 
+  const showToast = useCallback((msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3500);
+  }, []);
+
   // Modals state
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isTreeModalOpen, setIsTreeModalOpen] = useState(false);
@@ -129,11 +134,6 @@ export function StudyPlannerPage({ api, ui } = {}) {
       return () => window.removeEventListener('haui:academic:transcript-updated', handleTranscriptUpdated);
     }
   }, [api, showToast]);
-
-  const showToast = useCallback((msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(''), 3500);
-  }, []);
 
   // Tổng số tín chỉ còn lại trong toàn bộ kế hoạch
   const totalPlannedCredits = useMemo(() => {
