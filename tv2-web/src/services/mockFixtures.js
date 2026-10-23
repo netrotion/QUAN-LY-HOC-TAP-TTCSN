@@ -135,8 +135,8 @@ export const MOCK_SESSION_STUDENT = Object.freeze({
   fullName: 'Nguyễn Văn An',
   cohort: 'K17 (2022 - 2026)',
   majorCode: '7480103',
-  majorName: 'Kỹ thuật phần mềm (CNTT)',
-  faculty: 'Trường Công nghệ Thông tin và Truyền thông (SICT - HaUI)',
+  majorName: 'Kỹ thuật phần mềm (ĐH chính quy)',
+  faculty: 'Trường Đại học Công nghiệp Hà Nội (HaUI)',
   advisorClass: 'KTPM01-K17',
   identitySource: 'SERVER_SESSION_CONTEXT',
   fixtureLabel: FIXTURE_TAG,
@@ -827,7 +827,7 @@ export const MOCK_CURRICULUM_TREE = Object.freeze({
       letterGrade: 'A',
       gradePoint: 4.0,
       difficulty: 'Cơ bản (2/5)',
-      instructorNote: 'Khoa Công nghệ phần mềm — SICT',
+      instructorNote: 'Bộ môn cơ sở chuyên ngành — HaUI',
       description: 'Tư duy thuật toán, cấu trúc điều khiển, hàm và mảng cơ bản bằng ngôn ngữ C/C++.'
     },
     {

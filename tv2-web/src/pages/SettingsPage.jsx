@@ -1,6 +1,6 @@
 ﻿import React, { useState, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { logoutStudent } from '../services/academicStore.js';
+import { logoutStudent, getAcademicSnapshot } from '../services/academicStore.js';
 
 // ponytail: all styles inline using CSS vars — no new CSS file needed
 
@@ -222,23 +222,28 @@ export function SettingsPage() {
               <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--color-mid-gray)' }}><div>Định dạng JPG, PNG</div><div>Tối đa 2.0 MB</div></div>
             </div>
             {/* Fields */}
-            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
-              <Field label="Họ và tên sinh viên" value="Nguyễn Văn An" readOnly />
-              <Field label="Mã số sinh viên (MSSV)" value="2020601234" readOnly locked />
-              <Field label="Ngành đào tạo" value="Kỹ thuật phần mềm (KTPM)" readOnly />
-              <Field label="Lớp sinh hoạt & Khóa" value="K16 CNTT - Khoa CNTT" readOnly />
-              <div style={{ gridColumn: '1 / -1' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={S.label}>Email liên hệ / Nhận thông báo cá nhân</label>
-                  <div style={{ position: 'relative' }}>
-                    <span className="material-symbols-outlined" style={{ position: 'absolute', left: 14, top: 10, fontSize: 18, color: 'var(--color-mid-gray)' }}>mail</span>
-                    <input style={{ ...S.input, paddingLeft: 40, paddingRight: 96 }} value={email} onChange={e => setEmail(e.target.value)} type="email" />
-                    <span style={{ position: 'absolute', right: 14, top: 10, fontSize: 12, color: 'var(--color-mid-gray)' }}>Đã xác minh</span>
+            {(() => {
+              const currentStudent = getAcademicSnapshot().student;
+              return (
+                <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+                  <Field label="Họ và tên sinh viên" value={currentStudent?.fullName || 'Nguyễn Văn An'} readOnly />
+                  <Field label="Mã số sinh viên (MSSV)" value={currentStudent?.studentId || '2024604757'} readOnly locked />
+                  <Field label="Ngành đào tạo" value={currentStudent?.majorName || 'Kỹ thuật phần mềm'} readOnly />
+                  <Field label="Lớp sinh hoạt & Khóa" value={`${currentStudent?.className || '2022DHKTPM01'} • ${currentStudent?.faculty || 'Trường Đại học Công nghiệp Hà Nội'}`} readOnly />
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <label style={S.label}>Email liên hệ / Nhận thông báo cá nhân</label>
+                      <div style={{ position: 'relative' }}>
+                        <span className="material-symbols-outlined" style={{ position: 'absolute', left: 14, top: 10, fontSize: 18, color: 'var(--color-mid-gray)' }}>mail</span>
+                        <input style={{ ...S.input, paddingLeft: 40, paddingRight: 96 }} value={email} onChange={e => setEmail(e.target.value)} type="email" />
+                        <span style={{ position: 'absolute', right: 14, top: 10, fontSize: 12, color: 'var(--color-mid-gray)' }}>Đã xác minh</span>
+                      </div>
+                      <p style={{ fontSize: 12, color: 'var(--color-mid-gray)', margin: 0 }}>Hệ thống sẽ gửi các thông báo nhắc nhở tiến độ tốt nghiệp và cảnh báo môn học tới địa chỉ này.</p>
+                    </div>
                   </div>
-                  <p style={{ fontSize: 12, color: 'var(--color-mid-gray)', margin: 0 }}>Hệ thống sẽ gửi các thông báo nhắc nhở tiến độ tốt nghiệp và cảnh báo môn học tới địa chỉ này.</p>
                 </div>
-              </div>
-            </div>
+              );
+            })()}
           </div>
         </section>
 

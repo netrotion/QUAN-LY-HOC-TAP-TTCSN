@@ -155,7 +155,7 @@ export function Sidebar({ collapsed = false }) {
                 <div className="haui-sidebar__profile-info">
                   <p className="haui-sidebar__profile-name">{student?.fullName || 'Nguyễn Văn An'}</p>
                   <p className="haui-sidebar__profile-meta">
-                    {student?.studentId || '2020601234'} &bull; {student?.cohort?.split(' ')?.[0] || 'K16'} {student?.majorName?.includes('CNTT') ? 'CNTT' : 'KTPM'}
+                    {student?.studentId || '2024604757'} &bull; {student?.cohort?.split(' ')?.[0] || 'K17'} &bull; {student?.majorName || 'Sinh viên HaUI'}
                   </p>
                 </div>
               </NavLink>

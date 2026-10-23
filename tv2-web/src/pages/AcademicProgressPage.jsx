@@ -184,10 +184,10 @@ export function AcademicProgressPage() {
 
   const sessionStudent = api.getConfig().sessionStudent || {
     fullName: 'Nguyễn Văn An',
-    studentId: '2020601234',
-    cohort: 'K16',
-    majorName: 'Kỹ thuật phần mềm (CNTT)',
-    advisorClass: '2020DHKTPM01'
+    studentId: '2024604757',
+    cohort: 'Khóa 17',
+    majorName: 'Chương trình đào tạo Đại học',
+    advisorClass: '2022DHKTPM01'
   };
 
   const isProjected = reportMode === 'projected' || auditData?.reportType === 'PROJECTED';
@@ -302,8 +302,8 @@ export function AcademicProgressPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px', marginBottom: '16px', padding: '10px 14px', backgroundColor: 'var(--color-bg-muted)', border: '1px solid var(--color-border)', borderRadius: '4px' }}>
           <div><strong>Họ và tên sinh viên:</strong> {sessionStudent.fullName || 'Nguyễn Văn An'}</div>
           <div><strong>Mã số sinh viên:</strong> {sessionStudent.studentId || 'std-2026-001'}</div>
-          <div><strong>Ngành đào tạo:</strong> {sessionStudent.majorName || 'Kỹ thuật phần mềm (CNTT)'}</div>
-          <div><strong>Khóa / Lớp:</strong> {sessionStudent.cohort || 'K16'} &bull; {sessionStudent.advisorClass || '2020DHKTPM01'}</div>
+          <div><strong>Ngành đào tạo:</strong> {sessionStudent.majorName || 'Chương trình đào tạo Đại học'}</div>
+          <div><strong>Khóa / Lớp:</strong> {sessionStudent.cohort || 'Đại học chính quy'} &bull; {sessionStudent.advisorClass || 'Lớp sinh hoạt'}</div>
           <div><strong>Tín chỉ tích lũy:</strong> {earnedCredits} / {totalCredits} TC ({pct}%)</div>
           <div>
             <strong>Đủ ĐK Tốt nghiệp:</strong>{' '}
@@ -349,7 +349,7 @@ export function AcademicProgressPage() {
                   boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)'
                 }}
               >
-                {sessionStudent.cohort || 'K16'} - {sessionStudent.majorCode || 'CNTT'}
+                {sessionStudent.cohort || 'Khóa đào tạo'} - {sessionStudent.majorName || sessionStudent.majorCode || 'HaUI'}
               </span>
             </div>
 
@@ -747,7 +747,7 @@ export function AcademicProgressPage() {
                     1. Khối lượng kiến thức &amp; Tín chỉ tích lũy
                   </h3>
                   <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
-                    Yêu cầu hoàn thành tối thiểu 135 tín chỉ theo khung chuẩn K16/K17 CNTT
+                    Yêu cầu hoàn thành tối thiểu 135 tín chỉ theo khung chuẩn CTĐT HaUI
                   </p>
                 </div>
                 <span
@@ -1040,7 +1040,7 @@ export function AcademicProgressPage() {
                       <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-ink)' }}>Chuẩn Tiếng Anh chuyên ngành nâng cao (Mã FL6006)</span>
                       <span style={{ padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', fontSize: '11px', color: 'var(--color-ink)' }}>Đã tích lũy</span>
                     </div>
-                    <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>Đã hoàn thành học phần Tiếng Anh chuyên ngành CNTT tại Kỳ 5 (Điểm B+)</span>
+                    <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>Đã hoàn thành học phần Tiếng Anh chuyên ngành tại Kỳ 5 (Điểm B+)</span>
                   </div>
                   <span className="haui-badge haui-badge--success">✓ ĐÃ HOÀN THÀNH</span>
                 </div>
@@ -1351,7 +1351,7 @@ export function AcademicProgressPage() {
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>download</span>
-                    <span>Tải danh mục chuẩn đầu ra K16 (.pdf)</span>
+                    <span>Tải danh mục chuẩn đầu ra CTĐT HaUI (.pdf)</span>
                   </span>
                   <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>1.8 MB</span>
                 </button>
@@ -1375,7 +1375,7 @@ export function AcademicProgressPage() {
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-ink)' }}>Cần hỗ trợ đối chiếu hồ sơ?</span>
               </div>
               <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-mid-gray)', lineHeight: 1.5 }}>
-                Liên hệ Cố vấn học tập khoa CNTT hoặc phòng Đào tạo (Tầng 2 - Nhà A1, cơ sở 1) trong các ngày làm việc từ thứ 2 đến thứ 6.
+                Liên hệ Cố vấn học tập Khoa/Viện hoặc phòng Đào tạo (Tầng 2 - Nhà A1, cơ sở 1) trong các ngày làm việc từ thứ 2 đến thứ 6.
               </p>
             </div>
           </div>

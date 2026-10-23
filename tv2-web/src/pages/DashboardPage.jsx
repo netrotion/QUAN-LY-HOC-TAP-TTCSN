@@ -488,7 +488,7 @@ export function DashboardPage({ mountedRouteSummary }) {
             Tổng quan học tập
           </h1>
           <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-mid-gray)', maxWidth: '640px' }}>
-            Chào <strong style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{studentSession?.fullName || 'Nguyễn Văn An'}</strong> (Mã SV: {studentSession?.studentId || '2020601234'}) &bull; Khóa 16 ngành Công nghệ Thông tin &bull; Khoa CNTT - HaUI
+            Chào <strong style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{studentSession?.fullName || 'Sinh viên'}</strong> (MSSV: {studentSession?.studentId || '2024604757'}) &bull; {studentSession?.cohort || 'Khóa đào tạo chính quy'} &bull; {studentSession?.majorName || 'Chương trình đào tạo Đại học'} &bull; {studentSession?.faculty || 'Trường Đại học Công nghiệp Hà Nội (HaUI)'}
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
             {academicStatus?.policyVersion && (
@@ -635,7 +635,7 @@ export function DashboardPage({ mountedRouteSummary }) {
           </div>
           <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-              <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Chương trình CNTT K16</span>
+              <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{studentSession?.majorName || 'Chương trình đào tạo HaUI'} ({studentSession?.cohort || 'Toàn khóa'})</span>
               <span style={{ color: 'var(--color-mid-gray)' }}>Còn thiếu {totalRequiredCredits - accumulatedCredits} TC</span>
             </div>
             <div className="haui-progress-bar-minimal">
@@ -846,14 +846,14 @@ export function DashboardPage({ mountedRouteSummary }) {
               <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>Đã tích lũy: {accumulatedCredits}/{totalRequiredCredits} TC</span>
             </div>
             <p style={{ margin: '0 0 20px', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
-              Tiến độ hoàn thành 5 khối theo CTĐT Khoa CNTT
+              Tiến độ hoàn thành các khối kiến thức theo CTĐT ({studentSession?.faculty || 'Trường Đại học Công nghiệp Hà Nội'})
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {(academicStatus?.knowledgeBlocks && academicStatus.knowledgeBlocks.length > 0 ? academicStatus.knowledgeBlocks : [
                 { blockId: 'GEN', name: 'Kiến thức đại cương', accumulatedCredits: Math.min(accumulatedCredits, 32), totalCreditsRequired: 32, percentage: Math.min(100, Math.round((accumulatedCredits / 32) * 100)) },
-                { blockId: 'CORE', name: 'Cơ sở ngành CNTT', accumulatedCredits: Math.max(0, Math.min(accumulatedCredits - 32, 45)), totalCreditsRequired: 45, percentage: Math.min(100, Math.round((Math.max(0, accumulatedCredits - 32) / 45) * 100)) },
-                { blockId: 'SPEC', name: 'Chuyên ngành bắt buộc (KTPM)', accumulatedCredits: Math.max(0, Math.min(accumulatedCredits - 77, 38)), totalCreditsRequired: 38, percentage: Math.min(100, Math.round((Math.max(0, accumulatedCredits - 77) / 38) * 100)) },
+                { blockId: 'CORE', name: 'Kiến thức Cơ sở ngành', accumulatedCredits: Math.max(0, Math.min(accumulatedCredits - 32, 45)), totalCreditsRequired: 45, percentage: Math.min(100, Math.round((Math.max(0, accumulatedCredits - 32) / 45) * 100)) },
+                { blockId: 'SPEC', name: 'Kiến thức Chuyên ngành bắt buộc', accumulatedCredits: Math.max(0, Math.min(accumulatedCredits - 77, 38)), totalCreditsRequired: 38, percentage: Math.min(100, Math.round((Math.max(0, accumulatedCredits - 77) / 38) * 100)) },
                 { blockId: 'ELEC', name: 'Tự chọn định hướng & Thực tập', accumulatedCredits: Math.max(0, Math.min(accumulatedCredits - 115, 20)), totalCreditsRequired: 20, percentage: Math.min(100, Math.round((Math.max(0, accumulatedCredits - 115) / 20) * 100)) },
                 { blockId: 'GRAD', name: 'Khóa luận / Đồ án tốt nghiệp', accumulatedCredits: 0, totalCreditsRequired: 10, percentage: 0 }
               ]).map((block) => (
@@ -930,7 +930,7 @@ export function DashboardPage({ mountedRouteSummary }) {
                 <td style={{ padding: '14px 16px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Lập trình Web nâng cao</span>
-                    <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>IT6015 &bull; Khoa CNTT</span>
+                    <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>IT6015 &bull; {studentSession?.faculty || 'HaUI'}</span>
                   </div>
                 </td>
                 <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>3 TC</td>
@@ -958,7 +958,7 @@ export function DashboardPage({ mountedRouteSummary }) {
                 <td style={{ padding: '14px 16px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Phân tích &amp; Thiết kế hệ thống</span>
-                    <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>IT6018 &bull; Khoa CNTT</span>
+                    <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>IT6018 &bull; {studentSession?.faculty || 'HaUI'}</span>
                   </div>
                 </td>
                 <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>3 TC</td>
@@ -986,7 +986,7 @@ export function DashboardPage({ mountedRouteSummary }) {
                 <td style={{ padding: '14px 16px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Trí tuệ nhân tạo</span>
-                    <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>IT6020 &bull; Khoa CNTT</span>
+                    <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>IT6020 &bull; {studentSession?.faculty || 'HaUI'}</span>
                   </div>
                 </td>
                 <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>3 TC</td>
