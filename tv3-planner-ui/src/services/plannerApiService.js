@@ -154,3 +154,91 @@ export async function restoreStudyPlan(api, planId, payload = {}, opts = {}) {
   }
   throw new Error('API client không hỗ trợ endpoint POST /planner/plans/{planId}/restore');
 }
+
+/**
+ * Đối chiếu kết quả một học kỳ đã học với kế hoạch ACTIVE (US-13).
+ * POST /planner/reconcile
+ * - Kế hoạch không phải ACTIVE -> 409 PLAN_NOT_ACTIVE
+ * - planVersion lệch -> 409 PLAN_VERSION_CONFLICT
+ * - dataRevision cũ -> 409 DATA_REVISION_STALE
+ * @param {Object} api
+ * @param {Object} payload - ReconcileStudyPlanRequest ({ planId, completedSemester, planVersion, dataRevision })
+ * @returns {Promise<Object>} ReconcileStudyPlanResponse
+ */
+export async function reconcileStudyPlan(api, payload = {}, opts = {}) {
+  if (api?.planner && typeof api.planner.reconcile === 'function') {
+    return api.planner.reconcile(payload, opts);
+  }
+  if (typeof api?.post === 'function') {
+    return api.post('/planner/reconcile', payload, opts);
+  }
+  throw new Error('API client không hỗ trợ endpoint POST /planner/reconcile');
+}
+
+/**
+ * Gửi tin nhắn hỏi trợ lý học vụ thông qua AI Advisor Facade.
+ * POST /advisor/chat
+ * - 503 AI_UNAVAILABLE: retryable=true, Retry-After
+ * - 409 CONVERSATION_BUSY: retryable=true
+ * @param {Object} api
+ * @param {Object} payload - ChatRequest ({ conversationId, message, clientTimestamp })
+ * @returns {Promise<Object>} ChatResponse ({ answer, sources, actions, planProposal, warnings })
+ */
+export async function chatAdvisor(api, payload = {}, opts = {}) {
+  if (api?.advisor && typeof api.advisor.chat === 'function') {
+    return api.advisor.chat(payload, opts);
+  }
+  if (typeof api?.post === 'function') {
+    return api.post('/advisor/chat', payload, opts);
+  }
+  throw new Error('API client không hỗ trợ endpoint POST /advisor/chat');
+}
+
+/**
+ * Giả lập điểm What-if (POST /simulation/grades)
+ * @param {Object} api
+ * @param {Object} payload - SimulateGradesRequest ({ courses, dataRevision })
+ * @returns {Promise<Object>} SimulateGradesResponse
+ */
+export async function simulateGrades(api, payload = {}, opts = {}) {
+  if (api?.simulation && typeof api.simulation.simulateGrades === 'function') {
+    return api.simulation.simulateGrades(payload, opts);
+  }
+  if (typeof api?.post === 'function') {
+    return api.post('/simulation/grades', payload, opts);
+  }
+  throw new Error('API client không hỗ trợ endpoint POST /simulation/grades');
+}
+
+/**
+ * Xếp hạng môn nên học lại/cải thiện theo ROI (POST /simulation/retake-ranking)
+ * @param {Object} api
+ * @param {Object} payload - RankRetakeCoursesRequest ({ maxSuggestions, dataRevision })
+ * @returns {Promise<Object>} RankRetakeCoursesResponse
+ */
+export async function rankRetakeCourses(api, payload = {}, opts = {}) {
+  if (api?.simulation && typeof api.simulation.rankRetake === 'function') {
+    return api.simulation.rankRetake(payload, opts);
+  }
+  if (typeof api?.post === 'function') {
+    return api.post('/simulation/retake-ranking', payload, opts);
+  }
+  throw new Error('API client không hỗ trợ endpoint POST /simulation/retake-ranking');
+}
+
+/**
+ * Tính ngược điểm cần đạt cho CPA mục tiêu (POST /simulation/target-grades)
+ * @param {Object} api
+ * @param {Object} payload - CalculateTargetGradesRequest ({ targetCpa, targetGraduationSemester, dataRevision })
+ * @returns {Promise<Object>} CalculateTargetGradesResponse
+ */
+export async function calculateTargetGrades(api, payload = {}, opts = {}) {
+  if (api?.simulation && typeof api.simulation.calculateTargetGrades === 'function') {
+    return api.simulation.calculateTargetGrades(payload, opts);
+  }
+  if (typeof api?.post === 'function') {
+    return api.post('/simulation/target-grades', payload, opts);
+  }
+  throw new Error('API client không hỗ trợ endpoint POST /simulation/target-grades');
+}
+

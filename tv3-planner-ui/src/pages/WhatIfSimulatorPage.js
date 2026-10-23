@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { plannerStore, PLAN_STATUSES } from '../services/plannerStore.js';
+import * as plannerApi from '../services/plannerApiService.js';
 
 const h = React.createElement;
 
@@ -212,8 +213,35 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
 
         if (toolId === 'grades') {
           const coursesToSimulate = overrideData.simCourses || simCourses;
-          if (api?.simulation?.simulateGrades) {
-            res = await api.simulation.simulateGrades({ courses: coursesToSimulate });
+          if (api && (api.simulation?.simulateGrades || typeof api.post === 'function')) {
+            const apiRes = await plannerApi.simulateGrades(api, {
+              courses: coursesToSimulate.map((c) => ({
+                courseCode: c.courseCode,
+                credits: Number(c.credits) || 3,
+                expectedGrade: c.expectedGrade,
+                expectedGradePoints: GRADE_POINTS_MAP[c.expectedGrade] ?? 3.0
+              }))
+            });
+
+            const projCpa = apiRes.projectedCpa ?? null;
+            let rankChange = 'Duy trì Khá';
+            if (projCpa !== null) {
+              if (projCpa >= 3.6) rankChange = 'Đạt Bằng Xuất sắc (CPA ≥ 3.60)';
+              else if (projCpa >= 3.2) rankChange = 'Chính thức đạt ngưỡng Bằng Giỏi (CPA ≥ 3.20)';
+              else if (projCpa >= 2.5) rankChange = 'Xếp loại Khá (CPA ≥ 2.50)';
+            }
+
+            res = {
+              currentCpa: apiRes.currentCpa ?? null,
+              expectedGpa: apiRes.expectedGpa ?? null,
+              projectedCpa: projCpa,
+              cpaDelta: apiRes.cpaDelta ?? null,
+              rankChange,
+              totalCredits: coursesToSimulate.reduce((sum, c) => sum + Number(c.credits || 0), 0),
+              courses: coursesToSimulate,
+              policyVersion: apiRes.policyVersion || null,
+              dataRevision: apiRes.dataRevision || null
+            };
           } else {
             const totalCredits = coursesToSimulate.reduce((sum, c) => sum + Number(c.credits || 0), 0);
             const totalPoints = coursesToSimulate.reduce(
@@ -248,8 +276,34 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
           const candidates = overrideData.retakeCandidates || retakeCandidates;
           const maxCourses = overrideData.maxRetakeCourses || maxRetakeCourses;
 
-          if (api?.simulation?.rankRetake) {
-            res = await api.simulation.rankRetake({ maxCourses: Number(maxCourses) || 3 });
+          if (api && (api.simulation?.rankRetake || typeof api.post === 'function')) {
+            const apiRes = await plannerApi.rankRetakeCourses(api, {
+              maxSuggestions: Number(maxCourses) || 3
+            });
+            const recommendations = (apiRes.recommendations || []).map((rec, idx) => ({
+              ...rec,
+              selected: idx < 2,
+              badge: idx === 0 ? 'Khuyên dùng số 1 (ROI cao nhất)' : `Khuyên dùng số ${idx + 1}`
+            }));
+            const selectedCount = recommendations.filter((r) => r.selected).length;
+            const totalRetakeCredits = recommendations
+              .filter((r) => r.selected)
+              .reduce((sum, r) => sum + (Number(r.credits) || 0), 0);
+            const totalPotentialCpaGain = Number(
+              recommendations
+                .filter((r) => r.selected)
+                .reduce((sum, r) => sum + (Number(r.cpaDelta) || 0), 0)
+                .toFixed(2)
+            );
+
+            res = {
+              recommendations,
+              selectedCount,
+              totalRetakeCredits,
+              totalPotentialCpaGain,
+              policyVersion: apiRes.policyVersion || null,
+              dataRevision: apiRes.dataRevision || null
+            };
           } else {
             const ranked = candidates
               .map((item) => {
@@ -288,8 +342,47 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
         } else if (toolId === 'target') {
           const targetCpa = Number(overrideData.targetCpaInput || targetCpaInput) || 3.2;
 
-          if (api?.simulation?.calculateTargetGrades) {
-            res = await api.simulation.calculateTargetGrades({ targetCpa });
+          if (api && (api.simulation?.calculateTargetGrades || typeof api.post === 'function')) {
+            const apiRes = await plannerApi.calculateTargetGrades(api, {
+              targetCpa,
+              targetGraduationSemester: '2026_1'
+            });
+
+            const reqAvg = apiRes.requiredAverageGpa ?? null;
+            const achievable = reqAvg !== null ? reqAvg <= 4.0 : false;
+
+            let targetRankLabel = 'Bằng Khá (CPA ≥ 2.50)';
+            if (targetCpa >= 3.6) targetRankLabel = 'Bằng Xuất sắc (CPA ≥ 3.60)';
+            else if (targetCpa >= 3.2) targetRankLabel = 'Bằng Giỏi (CPA ≥ 3.20)';
+
+            let allocationSummary = '';
+            if (reqAvg === null) {
+              allocationSummary = 'Chưa xác định được điểm trung bình do thiếu thông tin tín chỉ tích lũy.';
+            } else if (reqAvg > 4.0) {
+              allocationSummary = 'Mục tiêu không khả thi: Cần GPA vượt quá 4.00 trên các tín chỉ còn lại.';
+            } else if (reqAvg >= 3.6) {
+              allocationSummary =
+                'Yêu cầu rất cao: Cần tối thiểu 80% môn đạt điểm A (4.0), 20% môn đạt điểm B+ (3.5), không được có môn nào dưới B+.';
+            } else if (reqAvg >= 3.3) {
+              allocationSummary =
+                'Cần tối thiểu 60% môn đạt điểm A (4.0), 40% môn đạt điểm B+ (3.5), không có môn nào dưới B (3.0).';
+            } else {
+              allocationSummary = 'Cần duy trì mức điểm B và B+ đồng đều trên tất cả các học phần còn lại.';
+            }
+
+            res = {
+              currentCpa: apiRes.currentCpa ?? null,
+              targetCpa: apiRes.targetCpa ?? targetCpa,
+              targetRankLabel,
+              remainingCredits: apiRes.remainingCredits ?? null,
+              requiredAverageGpa: reqAvg,
+              achievable,
+              allocationSummary,
+              courseRequirements: apiRes.courseRequirements || [],
+              warnings: apiRes.warnings || [],
+              policyVersion: apiRes.policyVersion || null,
+              dataRevision: apiRes.dataRevision || null
+            };
           } else {
             const currentCpa = 3.18;
             const earnedCredits = 108;

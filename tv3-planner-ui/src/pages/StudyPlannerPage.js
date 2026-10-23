@@ -31,7 +31,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
   // State kế hoạch từ plannerStore
   const [storeState, setStoreState] = useState(() => plannerStore.getState());
   // `validationResult` do store quản lý: tự xóa khi kế hoạch bị chỉnh sửa, tránh hiển thị kết quả thẩm định cũ
-  const { plan, incomingProposal, validation: validationResult } = storeState;
+  const { plan, incomingProposal, validation: validationResult, reconcileResult } = storeState;
   const isValidated = plan?.status === PLAN_STATUSES.VALIDATED;
   const activeEntry = storeState.history?.find((h) => h.status === PLAN_STATUSES.ACTIVE) || null;
 
@@ -46,6 +46,11 @@ export function StudyPlannerPage({ api, ui } = {}) {
   const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);
   const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
   const [selectedSemesterForAdd, setSelectedSemesterForAdd] = useState('2026_1');
+
+  // Đối chiếu kết quả học kỳ (Reconcile)
+  const [isReconcileModalOpen, setIsReconcileModalOpen] = useState(false);
+  const [reconcileSemester, setReconcileSemester] = useState('2025_1');
+  const [reconciling, setReconciling] = useState(false);
 
   // Chuyển môn giữa các học kỳ
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
@@ -202,6 +207,40 @@ export function StudyPlannerPage({ api, ui } = {}) {
     setIsMoveModalOpen(false);
     showToast(res.message);
   }, [moveCourseTarget, selectedTargetSemester, showToast]);
+
+  // Hành động: Đối chiếu kết quả học kỳ đã hoàn thành với kế hoạch ACTIVE (POST /planner/reconcile)
+  const handleReconcilePlan = useCallback(async () => {
+    setReconciling(true);
+    try {
+      if (api && typeof plannerStore.reconcilePlanAsync === 'function') {
+        const res = await plannerStore.reconcilePlanAsync(api, reconcileSemester);
+        if (res.planNotActive) {
+          showToast('⚠️ Chỉ có thể đối soát trên kế hoạch đang theo dõi (ACTIVE).');
+        } else if (res.success) {
+          showToast(res.message);
+        } else {
+          showToast(`⚠️ ${res.message}`);
+        }
+      } else {
+        showToast('⚠️ API đối soát kế hoạch chưa sẵn sàng.');
+      }
+    } catch (err) {
+      showToast(`⚠️ Lỗi đối chiếu học kỳ: ${err?.message || 'Sự cố kết nối'}`);
+    } finally {
+      setReconciling(false);
+    }
+  }, [api, reconcileSemester, showToast]);
+
+  // Hành động: Tạo bản nháp điều chỉnh từ kết quả đối soát
+  const handleApplyReconcileAdjustments = useCallback(() => {
+    const draft = plannerStore.applyReconcileAdjustmentsAsDraft();
+    if (draft) {
+      setIsReconcileModalOpen(false);
+      showToast('✓ Đã tạo bản nháp điều chỉnh lộ trình! Bạn có thể xem lại và bấm "Lưu bản nháp".');
+    } else {
+      showToast('Không có kiến nghị điều chỉnh để áp dụng.');
+    }
+  }, [showToast]);
 
   // Hành động: Lưu bản nháp (Save Draft)
   // DRAFT lưu được khi đúng định dạng; Sửa bản ACTIVE tạo DRAFT kế thừa; Lưu lỗi KHÔNG làm mất nội dung
@@ -477,6 +516,17 @@ export function StudyPlannerPage({ api, ui } = {}) {
         Button
           ? React.createElement(
               Button,
+              {
+                variant: 'secondary',
+                size: 'sm',
+                onClick: () => setIsReconcileModalOpen(true)
+              },
+              '🔍 Đối chiếu học kỳ'
+            )
+          : null,
+        Button
+          ? React.createElement(
+              Button,
               { variant: 'ghost', size: 'sm', onClick: handleDiscardChanges },
               '↩️ Hủy thay đổi'
             )
@@ -549,56 +599,145 @@ export function StudyPlannerPage({ api, ui } = {}) {
       )
     : null;
 
-  // Banner nhận đề xuất từ AI Chat hoặc What-if
+  // Banner nhận đề xuất từ AI Chat hoặc What-if (Review Diff -> Save/Cancel)
   const proposalBanner = incomingProposal
     ? React.createElement(
         'div',
         {
           style: {
-            padding: '14px 18px',
+            padding: '16px 20px',
             marginBottom: '20px',
             borderRadius: '16px',
             background: '#eff6ff',
             border: '1.5px solid #3b82f6',
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
+            flexDirection: 'column',
             gap: '12px'
           }
         },
         React.createElement(
           'div',
-          null,
+          {
+            style: {
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              flexWrap: 'wrap',
+              gap: '8px'
+            }
+          },
           React.createElement(
             'div',
-            { style: { fontWeight: 700, fontSize: '14px', color: '#1d4ed8' } },
-            `✨ Có phương án lộ trình đề xuất từ: ${incomingProposal.sourceName || 'AI Advisor'} (${incomingProposal.receivedAt || 'Vừa xong'})`
+            null,
+            React.createElement(
+              'div',
+              {
+                style: {
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  color: '#1d4ed8',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }
+              },
+              `✨ Đề xuất lộ trình mới từ: ${incomingProposal.sourceName || 'AI Advisor'}`,
+              React.createElement(
+                'span',
+                {
+                  style: {
+                    fontSize: '11px',
+                    padding: '2px 8px',
+                    borderRadius: '9999px',
+                    backgroundColor: '#dbeafe',
+                    color: '#1e40af'
+                  }
+                },
+                incomingProposal.receivedAt || 'Vừa xong'
+              )
+            ),
+            React.createElement(
+              'div',
+              { style: { fontSize: '13px', color: '#1e40af', marginTop: '4px' } },
+              incomingProposal.summary ||
+                `CPA dự kiến: ${incomingProposal.projectedCpa ? `${incomingProposal.projectedCpa} (Dự kiến)` : '3.25 (Dự kiến)'} · Phân bổ: ${incomingProposal.semesters?.length || 2} học kỳ.`
+            )
           ),
           React.createElement(
             'div',
-            { style: { fontSize: '13px', color: '#1e40af', marginTop: '2px' } },
-            `CPA dự kiến: ${incomingProposal.projectedCpa || '3.25'} · Phân bổ: ${incomingProposal.semesters?.length || 2} học kỳ. Bạn có muốn nạp phương án này vào Kế hoạch học tập không?`
+            { style: { display: 'flex', gap: '8px' } },
+            Button
+              ? React.createElement(
+                  Button,
+                  { variant: 'primary', size: 'sm', onClick: handleAcceptProposal },
+                  'Chấp nhận phương án'
+                )
+              : null,
+            Button
+              ? React.createElement(
+                  Button,
+                  { variant: 'ghost', size: 'sm', onClick: handleDismissProposal },
+                  'Hủy'
+                )
+              : null
           )
         ),
-        React.createElement(
-          'div',
-          { style: { display: 'flex', gap: '8px' } },
-          Button
-            ? React.createElement(
-                Button,
-                { variant: 'primary', size: 'sm', onClick: handleAcceptProposal },
-                'Chấp nhận phương án'
-              )
-            : null,
-          Button
-            ? React.createElement(
-                Button,
-                { variant: 'ghost', size: 'sm', onClick: handleDismissProposal },
-                'Hủy'
-              )
-            : null
-        )
+        // Khối Diff So sánh (Review Diff)
+        incomingProposal.diff
+          ? React.createElement(
+              'div',
+              {
+                style: {
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #bfdbfe',
+                  display: 'flex',
+                  gap: '16px',
+                  flexWrap: 'wrap',
+                  fontSize: '12px'
+                }
+              },
+              React.createElement(
+                'div',
+                null,
+                React.createElement('span', { style: { color: '#64748b' } }, 'Thay đổi tín chỉ: '),
+                React.createElement(
+                  'strong',
+                  { style: { color: incomingProposal.diff.creditsDelta > 0 ? '#15803d' : '#0f172a' } },
+                  incomingProposal.diff.creditsDelta > 0
+                    ? `+${incomingProposal.diff.creditsDelta} TC`
+                    : `${incomingProposal.diff.creditsDelta || 0} TC`
+                ),
+                ` (${incomingProposal.diff.currentCredits} → ${incomingProposal.diff.proposedCredits} TC)`
+              ),
+              incomingProposal.diff.cpaDelta !== null && incomingProposal.diff.cpaDelta !== undefined
+                ? React.createElement(
+                    'div',
+                    null,
+                    React.createElement('span', { style: { color: '#64748b' } }, 'Biến thiên CPA: '),
+                    React.createElement(
+                      'strong',
+                      { style: { color: incomingProposal.diff.cpaDelta >= 0 ? '#15803d' : '#b91c1c' } },
+                      incomingProposal.diff.cpaDelta >= 0 ? `+${incomingProposal.diff.cpaDelta}` : `${incomingProposal.diff.cpaDelta}`
+                    ),
+                    ` (${incomingProposal.diff.currentCpa || '3.18'} → ${incomingProposal.diff.proposedCpa})`
+                  )
+                : null,
+              incomingProposal.diff.addedCourses?.length > 0
+                ? React.createElement(
+                    'div',
+                    null,
+                    React.createElement('span', { style: { color: '#64748b' } }, 'Môn bổ sung: '),
+                    React.createElement(
+                      'strong',
+                      { style: { color: '#1d4ed8' } },
+                      incomingProposal.diff.addedCourses.map((c) => c.courseCode).join(', ')
+                    )
+                  )
+                : null
+            )
+          : null
       )
     : null;
 
@@ -1280,6 +1419,205 @@ export function StudyPlannerPage({ api, ui } = {}) {
     : null;
 
   // ==========================================
+  // MODAL ĐỐI CHIẾU KẾ HOẠCH HỌC KỲ (RECONCILE MODAL)
+  // ==========================================
+  const reconcileModal = Modal
+    ? React.createElement(
+        Modal,
+        {
+          isOpen: isReconcileModalOpen,
+          onClose: () => setIsReconcileModalOpen(false),
+          title: 'Đối chiếu kết quả học kỳ với kế hoạch học tập (Reconcile)',
+          subtitle:
+            'So sánh bảng điểm đã xác nhận với kế hoạch ACTIVE để phát hiện môn trượt/bỏ lỡ và kiến nghị điều chỉnh.',
+          size: 'lg',
+          footer: React.createElement(
+            'div',
+            { style: { display: 'flex', justifyContent: 'flex-end', gap: '8px' } },
+            Button
+              ? React.createElement(
+                  Button,
+                  { variant: 'ghost', size: 'sm', onClick: () => setIsReconcileModalOpen(false) },
+                  'Đóng'
+                )
+              : null,
+            reconcileResult && reconcileResult.adjustmentsRecommended?.length > 0 && Button
+              ? React.createElement(
+                  Button,
+                  {
+                    variant: 'primary',
+                    size: 'sm',
+                    onClick: handleApplyReconcileAdjustments
+                  },
+                  '⚡ Tạo bản nháp điều chỉnh (DRAFT)'
+                )
+              : null
+          )
+        },
+        React.createElement(
+          'div',
+          { style: { display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px' } },
+          plan.status !== PLAN_STATUSES.ACTIVE && !activeEntry
+            ? React.createElement(
+                'div',
+                {
+                  style: {
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    backgroundColor: '#fffbeb',
+                    border: '1px solid #fef3c7',
+                    color: '#92400e',
+                    lineHeight: 1.5
+                  }
+                },
+                '⚠️ Lưu ý: Nghiệp vụ đối soát theo quy chuẩn US-13 chỉ áp dụng trên bản kế hoạch chính thức đang theo dõi (ACTIVE). Nếu kế hoạch hiện tại là DRAFT, hệ thống sẽ đối soát với bản ACTIVE trong lịch sử nếu có.'
+              )
+            : null,
+          React.createElement(
+            'div',
+            { style: { display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' } },
+            React.createElement(
+              'label',
+              { style: { fontWeight: 600, color: 'var(--color-ink, #0a0a0a)' } },
+              'Học kỳ vừa có kết quả:'
+            ),
+            React.createElement(
+              'select',
+              {
+                value: reconcileSemester,
+                onChange: (e) => setReconcileSemester(e.target.value),
+                style: {
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  backgroundColor: 'var(--color-paper, #ffffff)',
+                  fontSize: '13px'
+                }
+              },
+              React.createElement('option', { value: '2025_1' }, 'Học kỳ 1 (2024-2025) - 2025_1'),
+              React.createElement('option', { value: '2025_2' }, 'Học kỳ 2 (2024-2025) - 2025_2'),
+              React.createElement('option', { value: '2025_SUMMER' }, 'Học kỳ hè (2024-2025) - 2025_SUMMER'),
+              React.createElement('option', { value: '2026_1' }, 'Học kỳ 1 (2025-2026) - 2026_1')
+            ),
+            Button
+              ? React.createElement(
+                  Button,
+                  {
+                    variant: 'secondary',
+                    size: 'sm',
+                    loading: reconciling,
+                    onClick: handleReconcilePlan
+                  },
+                  'Thực hiện đối chiếu'
+                )
+              : null
+          ),
+          reconcileResult
+            ? React.createElement(
+                'div',
+                {
+                  style: {
+                    padding: '16px',
+                    borderRadius: '16px',
+                    backgroundColor: reconcileResult.onTrack ? '#f0fdf4' : '#fff7ed',
+                    border: `1.5px solid ${reconcileResult.onTrack ? '#86efac' : '#fdba74'}`,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px'
+                  }
+                },
+                React.createElement(
+                  'div',
+                  { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                  React.createElement(
+                    'strong',
+                    { style: { fontSize: '15px', color: reconcileResult.onTrack ? '#166534' : '#9a3412' } },
+                    reconcileResult.onTrack ? '✓ Kế hoạch ĐÚNG TIẾN ĐỘ' : '⚠️ Cần điều chỉnh kế hoạch học tập'
+                  ),
+                  reconcileResult.policyVersion
+                    ? React.createElement(
+                        'span',
+                        {
+                          style: {
+                            fontSize: '11px',
+                            padding: '2px 8px',
+                            borderRadius: '9999px',
+                            backgroundColor: '#ffffff',
+                            color: '#64748b',
+                            border: '1px solid #cbd5e1'
+                          }
+                        },
+                        `Quy chế: ${reconcileResult.policyVersion}`
+                      )
+                    : null
+                ),
+                React.createElement(
+                  'div',
+                  {
+                    style: {
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                      gap: '12px'
+                    }
+                  },
+                  React.createElement(
+                    'div',
+                    null,
+                    React.createElement(
+                      'div',
+                      { style: { fontWeight: 600, color: '#166534', marginBottom: '4px' } },
+                      `Môn đã hoàn thành (${reconcileResult.completedCourses?.length || 0}):`
+                    ),
+                    reconcileResult.completedCourses?.length > 0
+                      ? React.createElement(
+                          'ul',
+                          { style: { margin: 0, paddingLeft: '18px', color: '#15803d' } },
+                          reconcileResult.completedCourses.map((c, i) => React.createElement('li', { key: i }, c))
+                        )
+                      : React.createElement('div', { style: { color: '#64748b', fontStyle: 'italic' } }, 'Không có môn nào')
+                  ),
+                  React.createElement(
+                    'div',
+                    null,
+                    React.createElement(
+                      'div',
+                      { style: { fontWeight: 600, color: '#991b1b', marginBottom: '4px' } },
+                      `Môn trượt / bỏ lỡ (${reconcileResult.missedOrFailedCourses?.length || 0}):`
+                    ),
+                    reconcileResult.missedOrFailedCourses?.length > 0
+                      ? React.createElement(
+                          'ul',
+                          { style: { margin: 0, paddingLeft: '18px', color: '#b91c1c' } },
+                          reconcileResult.missedOrFailedCourses.map((c, i) => React.createElement('li', { key: i }, c))
+                        )
+                      : React.createElement('div', { style: { color: '#16a34a' } }, '✓ Không có môn nợ')
+                  )
+                ),
+                reconcileResult.adjustmentsRecommended?.length > 0
+                  ? React.createElement(
+                      'div',
+                      { style: { marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #fed7aa' } },
+                      React.createElement(
+                        'div',
+                        { style: { fontWeight: 600, color: '#9a3412', marginBottom: '4px' } },
+                        'Đề xuất điều chỉnh lộ trình:'
+                      ),
+                      React.createElement(
+                        'ul',
+                        { style: { margin: 0, paddingLeft: '18px', color: '#7c2d12' } },
+                        reconcileResult.adjustmentsRecommended.map((adj, i) =>
+                          React.createElement('li', { key: i }, adj)
+                        )
+                      )
+                    )
+                  : null
+              )
+            : null
+        )
+      )
+    : null;
+
+  // ==========================================
   // RENDER TỔNG THỂ TRANG
   // ==========================================
   return React.createElement(
@@ -1298,6 +1636,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
     activateModal,
     addCourseModal,
     moveCourseModal,
+    reconcileModal,
     React.createElement(PlanHistoryModal, {
       isOpen: isHistoryModalOpen,
       onClose: () => setIsHistoryModalOpen(false),

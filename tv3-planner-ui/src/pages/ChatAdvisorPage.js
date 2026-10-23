@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { plannerStore, PLAN_STATUSES } from '../services/plannerStore.js';
+import * as plannerApi from '../services/plannerApiService.js';
 
 /**
  * 4 Gợi ý câu hỏi thông minh (Quick Prompt Pills) chuẩn Màn hình 2 UI Flow & prototype `ai_advisor`
@@ -441,8 +442,13 @@ export function ChatAdvisorPage({
     }
   }, [api]);
 
-  // ID phiên hội thoại (Conversation ID)
-  const [conversationId, setConversationId] = useState(() => `conv-${Date.now()}`);
+  // ID phiên hội thoại (Conversation ID chuẩn UUID theo OpenAPI V1)
+  const [conversationId, setConversationId] = useState(() => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    return 'c1111111-2222-3333-4444-555555555555';
+  });
   const messagesEndRef = useRef(null);
 
   const showToast = useCallback((msg) => {
@@ -470,9 +476,9 @@ export function ChatAdvisorPage({
     }
   }, []);
 
-  // Xử lý nút đính kèm -> mở luồng nhập bảng điểm chung của TV2
+  // Xử lý nút đính kèm -> mở luồng nhập bảng điểm chung của TV2 (/transcript)
   const handleAttachmentClick = useCallback(() => {
-    showToast('Đang chuyển đến luồng Nhập bảng điểm chung của TV2...');
+    showToast('Đang chuyển đến luồng Nhập bảng điểm chung của TV2 (/transcript)...');
     if (typeof onOpenTranscript === 'function') {
       onOpenTranscript();
     } else {
@@ -480,7 +486,7 @@ export function ChatAdvisorPage({
     }
   }, [onOpenTranscript, navigateTo, showToast]);
 
-  // Xử lý gửi tin nhắn tới API cố vấn học vụ (api.advisor.chat - thuần JSON)
+  // Xử lý gửi tin nhắn tới API cố vấn học vụ (api.advisor.chat / POST /advisor/chat)
   const handleSendMessage = useCallback(async (customText) => {
     const rawText = typeof customText === 'string' ? customText : inputValue;
     if (!rawText || !rawText.trim()) return;
@@ -507,19 +513,19 @@ export function ChatAdvisorPage({
     try {
       let response = null;
 
-      // Gửi nhận JSON trước (REST API call qua TV2 api client)
-      if (api && api.advisor && typeof api.advisor.chat === 'function') {
-        response = await api.advisor.chat({
+      // Ưu tiên gọi API thật POST /advisor/chat qua plannerApi hoặc api client
+      if (api && (api.advisor?.chat || typeof api.post === 'function')) {
+        response = await plannerApi.chatAdvisor(api, {
           conversationId,
           message: trimmed,
           clientTimestamp: new Date().toISOString()
         });
       } else {
-        // Fallback response mô phỏng thuần JSON tuân thủ F23-008: P04 quy chế vs P05 lộ trình
+        // Fallback response mô phỏng thuần JSON tuân thủ F23-008: P04 quy chế vs P05 lộ trình khi không có API
         response = generateMockChatResponse(trimmed, plannerStore.getPlan());
       }
 
-      // 2. Thêm tin nhắn phản hồi của AI vào hội thoại
+      // 2. Thêm tin nhắn phản hồi của AI vào hội thoại (chỉ khi có câu trả lời thật từ server)
       const aiMsg = {
         id: `msg-ai-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
         sender: 'assistant',
@@ -542,14 +548,36 @@ export function ChatAdvisorPage({
       setMessages((prev) => [...prev, aiMsg]);
       setLastFailedQuery(null);
     } catch (err) {
-      const errMsg = err?.message || 'Không thể nhận phản hồi từ dịch vụ Trợ lý AI Cố vấn học vụ.';
+      const isUnavailable =
+        err?.status === 503 ||
+        err?.code === 'AI_UNAVAILABLE' ||
+        err?.body?.code === 'AI_UNAVAILABLE';
+      const isBusy =
+        err?.status === 409 ||
+        err?.code === 'CONVERSATION_BUSY' ||
+        err?.body?.code === 'CONVERSATION_BUSY';
+
+      const errMsg = isUnavailable
+        ? 'Trợ lý AI chưa sẵn sàng hoặc quá tải (503 AI_UNAVAILABLE). Vui lòng thử lại sau.'
+        : isBusy
+          ? 'Hội thoại đang bận do lượt ghi khác (409 CONVERSATION_BUSY). Vui lòng thử lại.'
+          : (err?.message || 'Không thể nhận phản hồi từ dịch vụ Trợ lý AI Cố vấn học vụ.');
+
       setError({
-        code: err?.code || 'CHAT_REQUEST_FAILED',
+        code: err?.code || (isUnavailable ? 'AI_UNAVAILABLE' : isBusy ? 'CONVERSATION_BUSY' : 'CHAT_REQUEST_FAILED'),
+        status: err?.status,
+        retryable: isUnavailable || isBusy || Boolean(err?.retryable),
+        retryAfter: err?.retryAfter || (isUnavailable ? 5 : undefined),
         message: errMsg,
-        details: err?.details || ['Kiểm tra kết nối mạng tới Backend Spring Boot (/api/v1/advisor/chat).']
+        details: err?.details || [
+          isUnavailable
+            ? 'AI_UNAVAILABLE: retryable=true, header Retry-After'
+            : 'Kiểm tra kết nối mạng tới Backend Spring Boot (/api/v1/advisor/chat).'
+        ]
       });
 
-      // Đánh dấu tin nhắn gần nhất bị lỗi để có thể thử lại
+      // Đánh dấu tin nhắn gần nhất bị lỗi để người dùng có thể Thử lại
+      // TUYỆT ĐỐI KHÔNG hiển thị câu trả lời giả mạo khi AI lỗi
       setMessages((prev) =>
         prev.map((m) =>
           m.id === userMsgId ? { ...m, failed: true, errorText: errMsg } : m
@@ -601,13 +629,16 @@ export function ChatAdvisorPage({
     showToast('Đã hủy bỏ đề xuất phương án, giữ nguyên kế hoạch hiện tại.');
   }, [showToast]);
 
-  // Bắt đầu phiên hội thoại mới (Làm mới phiên chat)
+  // Bắt đầu phiên hội thoại mới (Làm mới phiên chat với UUID mới)
   const handleNewConversation = useCallback(() => {
     setMessages([]);
     setError(null);
     setInputValue('');
     setLastFailedQuery(null);
-    const newId = `conv-${Date.now()}`;
+    const newId =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `c${Date.now()}-2222-3333-4444-555555555555`;
     setConversationId(newId);
     showToast('Đã làm mới phiên chat. Bạn có thể bắt đầu với câu hỏi mới!');
   }, [showToast]);
@@ -1380,7 +1411,10 @@ export function ChatAdvisorPage({
                             React.createElement(
                               'p',
                               { style: { margin: 0, fontSize: '13px', color: 'var(--color-mid-gray)', lineHeight: 1.5 } },
-                              `Học kỳ 1 (2026-2027): 18 tín chỉ · CPA dự kiến: ${msg.planProposal.projectedCpa || '3.25'} (Bằng Giỏi) · 6 học phần cân bằng tải theo chuẩn quy chế HaUI.`
+                              msg.planProposal.summary ||
+                                (msg.planProposal.semesters && msg.planProposal.semesters.length > 0
+                                  ? `Lộ trình ${msg.planProposal.semesters.length} học kỳ đề xuất · CPA dự kiến: ${msg.planProposal.projectedCpa ? `${msg.planProposal.projectedCpa} (Dự kiến)` : 'Chưa xác định'}`
+                                  : `Học kỳ 1 (2026-2027): 18 tín chỉ · CPA dự kiến: ${msg.planProposal.projectedCpa ? `${msg.planProposal.projectedCpa} (Dự kiến)` : '3.25 (Dự kiến)'}`)
                             ),
                             !msg.proposalAccepted
                               ? React.createElement(

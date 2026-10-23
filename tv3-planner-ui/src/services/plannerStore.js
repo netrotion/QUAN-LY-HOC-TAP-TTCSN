@@ -390,6 +390,7 @@ class PlannerStore {
     this.baseline = clone(this.plan);
     this.validation = null; // Kết quả thẩm định gắn với nội dung kế hoạch hiện tại
     this.incomingProposal = null; // Đề xuất từ AI Chat hoặc What-if đang chờ duyệt
+    this.reconcileResult = null; // Kết quả đối chiếu học kỳ với bản ACTIVE
     this.apiError = null;
     this.loading = false;
     this.isLive = false;
@@ -419,6 +420,7 @@ class PlannerStore {
       history: this.history,
       incomingProposal: this.incomingProposal,
       validation: this.validation,
+      reconcileResult: this.reconcileResult,
       apiError: this.apiError,
       loading: this.loading,
       isLive: this.isLive
@@ -439,6 +441,15 @@ class PlannerStore {
 
   getValidation() {
     return this.validation;
+  }
+
+  getReconcileResult() {
+    return this.reconcileResult;
+  }
+
+  clearReconcileResult() {
+    this.reconcileResult = null;
+    this.notify();
   }
 
   getActiveEntry() {
@@ -510,9 +521,49 @@ class PlannerStore {
 
   // Nhận đề xuất lộ trình từ AI Advisor hoặc What-if Simulator
   setIncomingProposal(proposal, sourceName = 'AI Advisor') {
+    // Tính toán diff chi tiết giữa kế hoạch hiện hành và phương án đề xuất
+    const currentCourses = (this.plan.semesters || []).flatMap((s) =>
+      (s.courses || []).map((c) => ({ ...c, semesterCode: s.semesterCode }))
+    );
+    const proposedCourses = (proposal.semesters || []).flatMap((s) =>
+      (s.courses || []).map((c) => ({ ...c, semesterCode: s.semesterCode }))
+    );
+
+    const currentCodes = new Set(currentCourses.map((c) => c.courseCode));
+    const proposedCodes = new Set(proposedCourses.map((c) => c.courseCode));
+
+    const addedCourses = proposedCourses.filter((c) => !currentCodes.has(c.courseCode));
+    const removedCourses = currentCourses.filter((c) => !proposedCodes.has(c.courseCode));
+
+    const currentCredits = this.plan.semesters
+      ? this.plan.semesters.reduce((sum, s) => sum + (Number(s.totalCredits) || 0), 0)
+      : 0;
+    const proposedCredits = proposal.semesters
+      ? proposal.semesters.reduce((sum, s) => sum + (Number(s.totalCredits) || 0), 0)
+      : (Number(proposal.totalCredits) || 0);
+
+    const currentCpa = this.plan.projectedCpa || this.plan.targetCpa || null;
+    const proposedCpa = proposal.projectedCpa || proposal.targetCpa || null;
+    const cpaDelta =
+      proposedCpa !== null && currentCpa !== null
+        ? Number((proposedCpa - currentCpa).toFixed(2))
+        : null;
+
+    const diff = {
+      addedCourses,
+      removedCourses,
+      creditsDelta: proposedCredits - currentCredits,
+      currentCredits,
+      proposedCredits,
+      currentCpa,
+      proposedCpa,
+      cpaDelta
+    };
+
     this.incomingProposal = {
       ...proposal,
       sourceName,
+      diff,
       receivedAt: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
     };
     this.notify();
@@ -1481,6 +1532,136 @@ class PlannerStore {
     }
   }
 
+  /**
+   * Đối chiếu kết quả học kỳ đã hoàn thành với kế hoạch ACTIVE (POST /planner/reconcile).
+   * - Chỉ chạy trên kế hoạch ACTIVE (nếu đang ở DRAFT thì tìm bản ACTIVE trong lịch sử hoặc từ chối).
+   * - Server trả 409 PLAN_NOT_ACTIVE nếu kế hoạch chỉ định không phải ACTIVE.
+   * - Không làm thay đổi kế hoạch hiện tại (read-only).
+   * @param {Object} api - Injected API client
+   * @param {string} completedSemester - Học kỳ vừa hoàn thành (ví dụ: '2025_1', '2025_2', '2026_1')
+   */
+  async reconcilePlanAsync(api, completedSemester = '2025_1') {
+    if (!api) return { success: false, message: 'Thiếu API client' };
+
+    // Tìm kế hoạch ACTIVE để đối soát
+    let activeTarget = null;
+    if (this.plan.status === PLAN_STATUSES.ACTIVE) {
+      activeTarget = this.plan;
+    } else {
+      activeTarget = this.history.find((h) => h.status === PLAN_STATUSES.ACTIVE) || null;
+    }
+
+    if (!activeTarget) {
+      return {
+        success: false,
+        code: 'PLAN_NOT_ACTIVE',
+        planNotActive: true,
+        message: 'Chỉ có thể đối soát trên kế hoạch đang theo dõi (ACTIVE).'
+      };
+    }
+
+    this.loading = true;
+    this.notify();
+    try {
+      const payload = {
+        planId: activeTarget.planId,
+        completedSemester,
+        planVersion: activeTarget.planVersion || 1,
+        dataRevision: activeTarget.dataRevision || this.plan.dataRevision || null
+      };
+
+      const res = await plannerApi.reconcileStudyPlan(api, payload);
+      this.isLive = true;
+      this.apiError = null;
+
+      this.reconcileResult = {
+        planId: res.planId || activeTarget.planId,
+        completedSemester,
+        onTrack: Boolean(res.onTrack),
+        completedCourses: res.completedCourses || [],
+        missedOrFailedCourses: res.missedOrFailedCourses || [],
+        adjustmentsRecommended: res.adjustmentsRecommended || [],
+        planVersion: res.planVersion || activeTarget.planVersion,
+        dataRevision: res.dataRevision || activeTarget.dataRevision,
+        policyVersion: res.policyVersion || null,
+        reconciledAt: new Date().toLocaleTimeString('vi-VN')
+      };
+
+      this.notify();
+      return {
+        success: true,
+        onTrack: res.onTrack,
+        data: this.reconcileResult,
+        message: res.onTrack
+          ? `Học kỳ ${completedSemester}: Tiến độ ĐÚNG KẾ HOẠCH! (${res.completedCourses?.length || 0} môn hoàn thành)`
+          : `Học kỳ ${completedSemester}: Phát hiện ${res.missedOrFailedCourses?.length || 0} môn chưa đạt/bỏ lỡ. Cần điều chỉnh lộ trình!`
+      };
+    } catch (err) {
+      this.apiError = err;
+      const isPlanNotActive =
+        err?.status === 409 &&
+        (err?.code === 'PLAN_NOT_ACTIVE' || String(err?.message || '').includes('PLAN_NOT_ACTIVE'));
+      return {
+        success: false,
+        code: err?.code || (isPlanNotActive ? 'PLAN_NOT_ACTIVE' : 'RECONCILE_FAILED'),
+        planNotActive: isPlanNotActive,
+        error: err,
+        message: isPlanNotActive
+          ? 'Chỉ có thể đối soát trên kế hoạch đang theo dõi (ACTIVE).'
+          : `Lỗi đối chiếu học kỳ: ${err?.message || 'Sự cố kết nối'}`
+      };
+    } finally {
+      this.loading = false;
+      this.notify();
+    }
+  }
+
+  /**
+   * Tạo bản DRAFT đề xuất mới từ các kiến nghị điều chỉnh đối soát (Reconcile Adjustments),
+   * bảo toàn 100% bản ACTIVE hiện có.
+   */
+  applyReconcileAdjustmentsAsDraft() {
+    if (!this.reconcileResult) return null;
+    const { adjustmentsRecommended, missedOrFailedCourses, completedSemester } = this.reconcileResult;
+
+    // Lấy bản kế hoạch gốc (ACTIVE)
+    const basePlan =
+      this.plan.status === PLAN_STATUSES.ACTIVE
+        ? this.plan
+        : this.history.find((h) => h.status === PLAN_STATUSES.ACTIVE)?.snapshot || this.plan;
+
+    const draftPlan = clone(basePlan);
+    draftPlan.planName = `Kế hoạch điều chỉnh sau đối soát ${completedSemester}`;
+    draftPlan.status = PLAN_STATUSES.DRAFT;
+    draftPlan.planId = null;
+    draftPlan.planVersion = null;
+    draftPlan.sourcePlanId = basePlan.planId;
+    draftPlan.reconcileNotes = adjustmentsRecommended || [];
+
+    // Nếu có môn trượt cần xếp lại vào kỳ tiếp theo
+    if (missedOrFailedCourses && missedOrFailedCourses.length > 0 && draftPlan.semesters?.[0]) {
+      const existingCodes = new Set(draftPlan.semesters[0].courses.map((c) => c.courseCode));
+      for (const courseCode of missedOrFailedCourses) {
+        if (!existingCodes.has(courseCode)) {
+          draftPlan.semesters[0].courses.push({
+            courseCode,
+            courseName: `Học lại: ${courseCode}`,
+            credits: 3,
+            courseType: 'Học lại (Đối soát học kỳ)',
+            targetGrade: 'B (3.0)',
+            rationale: `Bổ sung sau đối soát kết quả học kỳ ${completedSemester}`
+          });
+        }
+      }
+      draftPlan.semesters[0].totalCredits = draftPlan.semesters[0].courses.reduce(
+        (sum, c) => sum + (Number(c.credits) || 0),
+        0
+      );
+    }
+
+    this.setIncomingProposal(draftPlan, `Đối soát học vụ (${completedSemester})`);
+    return draftPlan;
+  }
 }
 
 export const plannerStore = new PlannerStore();
