@@ -566,7 +566,7 @@ export function DashboardPage({ mountedRouteSummary }) {
             Tổng quan học tập
           </h1>
           <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-mid-gray)', maxWidth: '640px' }}>
-            Chào <strong style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{studentSession?.fullName || 'Sinh viên'}</strong> (MSSV: {studentSession?.studentId || '2024604757'}) &bull; {studentSession?.cohort || 'Khóa đào tạo chính quy'} &bull; {studentSession?.majorName || 'Chương trình đào tạo Đại học'} &bull; {studentSession?.faculty || 'Trường Đại học Công nghiệp Hà Nội (HaUI)'}
+            Chào <strong style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{studentSession?.fullName || 'Sinh viên'}</strong> (MSSV: {studentSession?.studentId || '2024604757'}) &bull; {studentSession?.cohort || 'Khóa đào tạo chính quy'} &bull; {studentSession?.majorName || 'Chương trình đào tạo Đại học'} &bull; {studentSession?.faculty || 'Đại học Công nghiệp Hà Nội (HaUI)'}
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
             {academicStatus?.policyVersion && (
@@ -942,7 +942,7 @@ export function DashboardPage({ mountedRouteSummary }) {
               <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>Đã tích lũy: {accumulatedCredits}/{totalRequiredCredits} TC</span>
             </div>
             <p style={{ margin: '0 0 20px', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
-              Tiến độ hoàn thành các môn kiến thức theo CTĐT ({studentSession?.faculty || 'Trường Đại học Công nghiệp Hà Nội'})
+              Tiến độ hoàn thành các môn kiến thức theo CTĐT ({studentSession?.faculty || 'Đại học Công nghiệp Hà Nội'})
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

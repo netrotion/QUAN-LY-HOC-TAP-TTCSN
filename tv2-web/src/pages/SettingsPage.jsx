@@ -229,7 +229,7 @@ export function SettingsPage() {
                   <Field label="Họ và tên sinh viên" value={currentStudent?.fullName || 'Nguyễn Văn An'} readOnly />
                   <Field label="Mã số sinh viên (MSSV)" value={currentStudent?.studentId || '2024604757'} readOnly locked />
                   <Field label="Ngành đào tạo" value={currentStudent?.majorName || 'Kỹ thuật phần mềm'} readOnly />
-                  <Field label="Lớp sinh hoạt & Khóa" value={`${currentStudent?.className || '2022DHKTPM01'} • ${currentStudent?.faculty || 'Trường Đại học Công nghiệp Hà Nội'}`} readOnly />
+                  <Field label="Lớp sinh hoạt & Khóa" value={`${currentStudent?.className || '2022DHKTPM01'} • ${currentStudent?.faculty || 'Đại học Công nghiệp Hà Nội'}`} readOnly />
                   <div style={{ gridColumn: '1 / -1' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <label style={S.label}>Email liên hệ / Nhận thông báo cá nhân</label>

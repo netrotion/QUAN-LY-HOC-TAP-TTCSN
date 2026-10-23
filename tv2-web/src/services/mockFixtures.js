@@ -136,7 +136,7 @@ export const MOCK_SESSION_STUDENT = Object.freeze({
   cohort: 'K17 (2022 - 2026)',
   majorCode: '7480103',
   majorName: 'Kỹ thuật phần mềm (ĐH chính quy)',
-  faculty: 'Trường Đại học Công nghiệp Hà Nội (HaUI)',
+  faculty: 'Đại học Công nghiệp Hà Nội (HaUI)',
   advisorClass: 'KTPM01-K17',
   identitySource: 'SERVER_SESSION_CONTEXT',
   fixtureLabel: FIXTURE_TAG,
