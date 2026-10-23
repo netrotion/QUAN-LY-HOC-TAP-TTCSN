@@ -1244,7 +1244,7 @@ export function AcademicProgressPage() {
                       Tích lũy 6 TC tự chọn &amp; 10 TC Khóa luận
                     </p>
                     <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-mid-gray)', lineHeight: 1.4 }}>
-                      Đăng ký 2 môn tự chọn IT6010, IT6015 và đăng ký giảng viên hướng dẫn ĐATN vào đầu học kỳ 8.
+                      Đăng ký 2 môn tự chọn IT6010, IT6015 và đăng ký đề tài ĐATN vào đầu học kỳ 8.
                     </p>
                   </div>
                 </div>

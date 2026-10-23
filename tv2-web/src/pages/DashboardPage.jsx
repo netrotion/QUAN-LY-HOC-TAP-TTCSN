@@ -919,7 +919,6 @@ export function DashboardPage({ mountedRouteSummary }) {
               <tr style={{ color: 'var(--color-mid-gray)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em', backgroundColor: '#fafafa' }}>
                 <th style={{ padding: '12px 16px', borderRadius: '12px 0 0 12px' }}>Mã &amp; Tên học phần</th>
                 <th style={{ padding: '12px 12px' }}>Tín chỉ</th>
-                <th style={{ padding: '12px 16px' }}>Giảng viên phụ trách</th>
                 <th style={{ padding: '12px 16px' }}>Đánh giá quá trình</th>
                 <th style={{ padding: '12px 16px' }}>Trạng thái / Lưu ý</th>
                 <th style={{ padding: '12px 12px', textAlign: 'right', borderRadius: '0 12px 12px 0' }}>Chi tiết</th>
@@ -935,7 +934,6 @@ export function DashboardPage({ mountedRouteSummary }) {
                   </div>
                 </td>
                 <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>3 TC</td>
-                <td style={{ padding: '14px 16px', color: 'var(--color-mid-gray)' }}>TS. Trần Văn Minh</td>
                 <td style={{ padding: '14px 16px' }}>
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--color-canvas)', padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', color: 'var(--color-ink)' }}>
                     <span>Quá trình:</span>
@@ -964,7 +962,6 @@ export function DashboardPage({ mountedRouteSummary }) {
                   </div>
                 </td>
                 <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>3 TC</td>
-                <td style={{ padding: '14px 16px', color: 'var(--color-mid-gray)' }}>ThS. Lê Hoàng Yến</td>
                 <td style={{ padding: '14px 16px' }}>
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--color-canvas)', padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', color: 'var(--color-ink)' }}>
                     <span>Quá trình:</span>
@@ -993,7 +990,6 @@ export function DashboardPage({ mountedRouteSummary }) {
                   </div>
                 </td>
                 <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>3 TC</td>
-                <td style={{ padding: '14px 16px', color: 'var(--color-mid-gray)' }}>PGS.TS. Phạm Quốc Hùng</td>
                 <td style={{ padding: '14px 16px' }}>
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--color-canvas)', padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', color: 'var(--color-ink)' }}>
                     <span>Quá trình:</span>
@@ -1027,7 +1023,6 @@ export function DashboardPage({ mountedRouteSummary }) {
                   </div>
                 </td>
                 <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>3 TC</td>
-                <td style={{ padding: '14px 16px', color: 'var(--color-mid-gray)' }}>TS. Đỗ Ngọc Sơn</td>
                 <td style={{ padding: '14px 16px' }}>
                   <span style={{ fontSize: '12px', color: 'var(--color-ember)', fontWeight: 600 }}>Điểm F (0.0)</span>
                 </td>
@@ -1057,7 +1052,6 @@ export function DashboardPage({ mountedRouteSummary }) {
                   </div>
                 </td>
                 <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>2 TC</td>
-                <td style={{ padding: '14px 16px', color: 'var(--color-mid-gray)' }}>ThS. Vũ Thị Mai</td>
                 <td style={{ padding: '14px 16px' }}>
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--color-canvas)', padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', color: 'var(--color-ink)' }}>
                     <span>Quá trình:</span>

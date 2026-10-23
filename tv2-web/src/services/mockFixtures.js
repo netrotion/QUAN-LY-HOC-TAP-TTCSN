@@ -1064,7 +1064,7 @@ export const MOCK_CURRICULUM_TREE = Object.freeze({
       gradePoint: null,
       difficulty: 'Đồ án tổng hợp (5/5)',
       instructorNote: 'Quy tắc BR-09: Yêu cầu tích lũy >= 85% tổng tín chỉ CTĐT (115/135 TC) và không nợ tiên quyết',
-      description: 'Thực hiện đề tài tốt nghiệp toàn diện dưới sự hướng dẫn của giảng viên bộ môn.'
+      description: 'Thực hiện đề tài tốt nghiệp toàn diện theo đề cương hướng dẫn của bộ môn.'
     }
   ]
 });

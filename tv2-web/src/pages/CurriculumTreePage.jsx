@@ -6,82 +6,67 @@ import { subscribeAcademicStore } from '../services/academicStore.js';
 import { getCourseDisplayMeta } from '../services/curriculumTreeHelper.js';
 
 /**
- * Dữ liệu bổ trợ mô tả chi tiết học phần theo Prototype (lời khuyên, đề cương, giảng viên)
+ * Dữ liệu bổ trợ mô tả chi tiết học phần theo Prototype (lời khuyên, đề cương)
  */
 const PROTOTYPE_COURSE_DETAILS = Object.freeze({
   IT6003: {
     desc: 'Trang bị các cấu trúc dữ liệu cơ bản và nâng cao (Danh sách liên kết, Cây nhị phân, Bảng băm, Đồ thị) cùng các thuật toán tìm kiếm, sắp xếp và tối ưu độ phức tạp tính toán.',
-    lecturer: 'TS. Lê Hoàng Yến - Bộ môn KHMT',
     advice: 'Nền tảng quan trọng bậc nhất cho toàn bộ các môn lập trình và phân tích thuật toán chuyên sâu sau này.'
   },
   IT6001: {
     desc: 'Phương pháp lập trình hướng đối tượng (OOP): Đóng gói, Kế thừa, Đa hình, Trừu tượng hóa trên nền Java Standard Edition, Design Patterns cơ bản và lập trình giao diện Swing/JavaFX.',
-    lecturer: 'TS. Đỗ Ngọc Sơn - Bộ môn CNPM',
     advice: 'Kết quả đạt điểm A (9.0) giúp mở khóa thuận lợi toàn bộ các học phần lập trình ứng dụng tiếp theo.'
   },
   IT6005: {
     desc: 'Mô hình dữ liệu quan hệ, đại số quan hệ, thiết kế lược đồ quan hệ và chuẩn hóa dạng 1NF-3NF/BCNF, ngôn ngữ truy vấn SQL trên hệ quản trị SQL Server.',
-    lecturer: 'ThS. Vũ Thị Mai - Bộ môn HTTT',
     advice: 'Chú trọng kỹ năng thiết kế lược đồ CSDL và tối ưu hóa câu lệnh SQL khi tham gia các dự án đồ án.'
   },
   IT6002: {
     desc: 'Nền tảng HTML5, CSS3, JavaScript hiện đại (ES6+), DOM Manipulation, responsive design và lập trình backend cơ bản với Node.js/Express.',
-    lecturer: 'ThS. Nguyễn Tuấn Anh - Bộ môn CNPM',
     advice: 'Đã hoàn thành xuất sắc, tạo tiền đề vững chắc cho học phần Lập trình Web nâng cao ở kỳ 6.'
   },
   IT6004: {
     desc: 'Tổng quan vòng đời phát triển phần mềm (SDLC), mô hình Agile/Scrum, phân tích yêu cầu phần mềm (SRS), kiểm thử cơ bản và quản lý phiên bản với Git/GitHub.',
-    lecturer: 'PGS.TS. Trần Đình Thắng - Trưởng BM KTPM',
     advice: 'Quy trình làm việc nhóm và kỹ năng viết đặc tả SRS đã đạt chuẩn yêu cầu chuyên ngành.'
   },
   IT6008: {
     desc: 'Kiến trúc phân tầng OSI và TCP/IP, cấu hình mạng con IPv4/IPv6, định tuyến định hướng, giao thức tầng ứng dụng HTTP, DNS, DHCP và an toàn mạng cơ bản.',
-    lecturer: 'TS. Phạm Văn Bình - Bộ môn MMT',
     advice: 'Đã đáp ứng đủ chuẩn kiến thức mạng máy tính phục vụ xây dựng ứng dụng Web phân tán.'
   },
   IT6011: {
     desc: 'Mô hình hóa hệ thống bằng UML 2.0 (Use case, Class, Sequence, Activity Diagram), phân tích ca sử dụng và thiết kế kiến trúc hệ thống thông tin doanh nghiệp.',
-    lecturer: 'TS. Hoàng Quang Huy - Bộ môn KTPM',
     advice: 'Sử dụng các sơ đồ UML từ bài tập lớn môn này làm bộ khung phân tích cho Đồ án chuyên ngành.'
   },
   IT6012: {
     desc: 'Quản trị CSDL nâng cao, lập trình T-SQL / PL-SQL, Trigger, Stored Procedure, Transaction & Concurrency Control, lập chỉ mục (Indexing) và tối ưu hóa câu truy vấn.',
-    lecturer: 'TS. Nguyễn Thị Thu - Bộ môn HTTT',
     advice: 'Kỹ năng viết Stored Procedure và Transaction của bạn rất tốt, hãy áp dụng vào phần quản trị dữ liệu đồ án.'
   },
   IT6015: {
     desc: 'Trang bị kiến thức chuyên sâu về kiến trúc Web hiện đại: Microservices, RESTful API, Single Page Applications (Next.js/React), WebSockets, cơ chế Authentication (OAuth2, JWT) và triển khai CI/CD trên nền tảng đám mây.',
-    lecturer: 'TS. Nguyễn Mạnh Hùng - Bộ môn CNPM',
     advice: 'Bạn nên duy trì điểm quá trình môn IT6015 trên 8.0 để đủ điều kiện nhận đề tài Khóa luận độc lập cùng BM Công nghệ Phần mềm ở Học kỳ 8.'
   },
   IT6025: {
     desc: 'Nghiên cứu các mẫu thiết kế hướng đối tượng (GoF Design Patterns), Clean Architecture, Domain-Driven Design (DDD), phân tích hệ thống phân tán chịu tải cao và quy chuẩn thiết kế Enterprise Software.',
-    lecturer: 'PGS.TS. Trần Đình Thắng - Trưởng BM KTPM',
     advice: 'Môn học cốt lõi cho các kỳ phỏng vấn tuyển dụng vị trí Software Engineer / Backend Developer tại các doanh nghiệp đối tác.'
   },
   IT6030: {
     desc: 'Lập trình ứng dụng di động đa nền tảng với Flutter/Dart và native Android (Kotlin), vòng đời Activity/Fragment, quản trị trạng thái (Bloc/Provider) và kết nối REST API.',
-    lecturer: 'ThS. Đặng Việt Dũng - Bộ môn CNPM',
     advice: 'Tích lũy sản phẩm đồ án môn học để đưa vào CV ứng tuyển thực tập doanh nghiệp ở kỳ 7.'
   },
   IT6080: {
     desc: 'Thực hiện đồ án nghiên cứu phát triển một sản phẩm phần mềm thực tế theo nhóm (Scrum/Agile), ứng dụng công nghệ Microservices, DevOps và bảo vệ trước hội đồng khoa.',
-    lecturer: 'Hội đồng Khoa CNTT - HaUI',
     advice: 'Cần hoàn thành đạt điểm các môn tiên quyết trong học kỳ 6 này để được cấp quyền đăng ký IT6080 đầu kỳ 7.'
   },
   IT6040: {
     desc: 'Kỹ thuật kiểm thử tự động với Selenium, Cypress, JUnit, TestNG; kiểm thử API với Postman/RestAssured; xây dựng quy trình CI/CD tích hợp kiểm thử tự động.',
-    lecturer: 'TS. Trần Văn Minh - Bộ môn KTPM',
     advice: 'Học phần bổ trợ thực chiến rất tốt cho kỹ sư phần mềm trước khi ra trường.'
   },
   IT6090: {
     desc: 'Thực tập toàn thời gian tại các doanh nghiệp đối tác của HaUI (Viettel, FPT Software, CMC, VNPAY...), trực tiếp tham gia dự án phần mềm thực tế và viết báo cáo thực tập.',
-    lecturer: 'Khoa CNTT & Doanh nghiệp đối tác',
     advice: 'Chuẩn bị hồ sơ CV và nộp giấy tiếp nhận thực tập của công ty cho giáo vụ khoa trước tuần 2 của kỳ 7.'
   },
   IT6099: {
     desc: 'Công trình tốt nghiệp đại học hệ chính quy 4 năm ngành Kỹ thuật Phần mềm. Đòi hỏi hoàn thành đầy đủ các tín chỉ tiên quyết cùng các chứng chỉ tiếng Anh B1, Tin học chuẩn HaUI.',
-    lecturer: 'Hội đồng Bảo vệ Tốt nghiệp Khoa CNTT',
     advice: 'Cần duy trì CPA ≥ 2.50 và hoàn tất toàn bộ học phần nợ trước khi nộp đơn xin nhận đề tài tốt nghiệp.'
   }
 });
@@ -1012,12 +997,6 @@ export function CurriculumTreePage() {
                       {selectedCourse.mandatory ? 'Bắt buộc ngành' : 'Tự chọn'}
                     </span>
                   </div>
-                  {selectedCourseSupplement.lecturer && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
-                      <span style={{ color: 'var(--color-mid-gray)' }}>Giảng viên / Bộ môn:</span>
-                      <span style={{ color: 'var(--color-ink)', textAlign: 'right', fontWeight: 500 }}>{selectedCourseSupplement.lecturer}</span>
-                    </div>
-                  )}
                 </div>
 
                 {/* Course Syllabus Summary */}
