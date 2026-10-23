@@ -463,19 +463,29 @@ export function ChatAdvisorPage({
     return 'c1111111-2222-3333-4444-555555555555';
   });
   const messagesEndRef = useRef(null);
+  const isInitialMount = useRef(true);
 
   const showToast = useCallback((msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3500);
   }, []);
 
-  // Cuộn xuống tin nhắn mới nhất
+  // Cuộn xuống tin nhắn mới nhất khi có tương tác (không tự nhảy xuống đáy lúc vừa mở trang)
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+        window.scrollTo(0, 0);
+      }
+      return;
+    }
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
   }, [messages, loading, scrollToBottom]);
 
   // Điều hướng an toàn hỗ trợ cả HashRouter và BrowserRouter
