@@ -64,6 +64,24 @@ export function StudyPlannerPage({ api, ui } = {}) {
     return unsubscribe;
   }, []);
 
+  // Tự động tải danh sách kế hoạch từ máy chủ khi mount (Mở lại sau reload)
+  useEffect(() => {
+    let planIdFromUrl = null;
+    if (typeof window !== 'undefined' && window.location?.search) {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        planIdFromUrl = params.get('plan_id') || params.get('planId');
+      } catch {
+        // Bỏ qua lỗi parsing URL trên môi trường test Node.js
+      }
+    }
+    if (api && typeof plannerStore.fetchPlansAsync === 'function') {
+      plannerStore.fetchPlansAsync(api, planIdFromUrl).catch((err) => {
+        // Bỏ qua lỗi kết nối ban đầu, giữ nguyên fixture/fallback
+      });
+    }
+  }, [api]);
+
   // Lắng nghe custom event từ Chat / What-if nếu có
   useEffect(() => {
     const handleProposalEvent = (e) => {
@@ -78,6 +96,21 @@ export function StudyPlannerPage({ api, ui } = {}) {
     }
   }, []);
 
+  // Lắng nghe sự kiện cập nhật bảng điểm từ luồng /transcript (Đồng bộ toàn hệ thống)
+  useEffect(() => {
+    const handleTranscriptUpdated = (e) => {
+      showToast('Bảng điểm đã được cập nhật! Các điều kiện tiên quyết và tín chỉ đã được đồng bộ.');
+      if (api && typeof plannerStore.fetchPlansAsync === 'function') {
+        plannerStore.fetchPlansAsync(api).catch(() => {});
+      }
+    };
+
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('haui:academic:transcript-updated', handleTranscriptUpdated);
+      return () => window.removeEventListener('haui:academic:transcript-updated', handleTranscriptUpdated);
+    }
+  }, [api, showToast]);
+
   const showToast = useCallback((msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3500);
@@ -89,56 +122,63 @@ export function StudyPlannerPage({ api, ui } = {}) {
     return plan.semesters.reduce((sum, sem) => sum + (Number(sem.totalCredits) || 0), 0);
   }, [plan]);
 
-  // Gọi API tạo/tải lại kế hoạch học tập đề xuất từ backend
-  const handleFetchPlan = useCallback(async () => {
+  // Hành động: Tạo phương án trực tiếp không cần Chat (POST /planner/generate)
+  const handleGeneratePlan = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      if (api && api.planner && typeof api.planner.generate === 'function') {
-        const response = await api.planner.generate({ targetSemester: '2026_1' });
-        if (response && response.semesters) {
-          // Merge thông tin từ response vào store
-          plannerStore.setIncomingProposal(response, 'Backend API');
-          plannerStore.acceptProposal();
+      if (api && typeof plannerStore.generatePlanAsync === 'function') {
+        const res = await plannerStore.generatePlanAsync(api, {
+          targetGraduationSemester: '2026_1',
+          includeSummerSemesters: true
+        });
+        if (res.success) {
+          showToast(res.message || 'Đã sinh phương án học tập đề xuất (DRAFT)!');
+        } else {
+          showToast(`⚠️ ${res.message}`);
         }
       } else {
-        // Khôi phục về dữ liệu chuẩn của store
         plannerStore.resetToDefault();
+        showToast('Đã tải lại kế hoạch học tập tối ưu!');
       }
-      showToast('Đã tải lại kế hoạch học tập tối ưu!');
     } catch (err) {
       setError(err);
+      showToast(`⚠️ Lỗi sinh phương án: ${err?.message || 'Sự cố kết nối'}`);
     } finally {
       setLoading(false);
     }
   }, [api, showToast]);
 
+  const handleFetchPlan = handleGeneratePlan;
+
   // Hành động: Kiểm tra điều kiện (Thẩm định quy chế): DRAFT → VALIDATED
-  // Store luôn là nơi chuyển trạng thái; kết quả backend (nếu có) chỉ được gộp thêm vi phạm/cảnh báo.
+  // Sử dụng API thật POST /planner/validate; xử lý 503 TOOL_NOT_READY an toàn
   const handleValidatePlan = useCallback(async () => {
     setValidating(true);
-    let external = {};
     try {
-      if (api && api.planner && typeof api.planner.validate === 'function') {
-        const firstSem = plan?.semesters?.[0];
-        const apiRes = await api.planner.validate({ totalCredits: Number(firstSem?.totalCredits) || 0 });
-        external = {
-          externalViolations: apiRes?.valid === false ? apiRes.violations || [] : [],
-          externalWarnings: apiRes?.warnings || []
-        };
+      if (api && typeof plannerStore.validatePlanAsync === 'function') {
+        const res = await plannerStore.validatePlanAsync(api);
+        if (res.toolNotReady) {
+          showToast('⚠️ Công cụ thẩm định quy chế học vụ chưa sẵn sàng (503 TOOL_NOT_READY).');
+        } else if (res.valid) {
+          showToast(res.message || 'Kế hoạch hợp lệ theo quy chế HaUI — đã chuyển sang VALIDATED, có thể kích hoạt.');
+        } else {
+          showToast(res.message || `Phát hiện ${res.violations?.length || 0} vi phạm quy chế — kế hoạch vẫn ở DRAFT.`);
+        }
+      } else {
+        const res = plannerStore.validatePlan();
+        showToast(
+          res.valid
+            ? 'Kế hoạch hợp lệ theo quy chế HaUI — đã chuyển sang VALIDATED, có thể kích hoạt.'
+            : `Phát hiện ${res.violations.length} vi phạm quy chế — kế hoạch vẫn ở DRAFT.`
+        );
       }
     } catch (err) {
-      // Backend không phản hồi: vẫn thẩm định bằng bộ quy chế cục bộ
+      showToast(`⚠️ Lỗi khi kiểm tra điều kiện: ${err?.message || 'Sự cố kết nối'}`);
     } finally {
-      const res = plannerStore.validatePlan(external);
       setValidating(false);
-      showToast(
-        res.valid
-          ? 'Kế hoạch hợp lệ theo quy chế HaUI — đã chuyển sang VALIDATED, có thể kích hoạt.'
-          : `Phát hiện ${res.violations.length} vi phạm quy chế — kế hoạch vẫn ở DRAFT.`
-      );
     }
-  }, [api, plan, showToast]);
+  }, [api, showToast]);
 
   // Hành động: Mở modal chuyển môn
   const handleOpenMoveModal = useCallback(
@@ -164,31 +204,22 @@ export function StudyPlannerPage({ api, ui } = {}) {
   }, [moveCourseTarget, selectedTargetSemester, showToast]);
 
   // Hành động: Lưu bản nháp (Save Draft)
-  // DRAFT lưu được khi đúng định dạng; Lưu lỗi KHÔNG làm mất nội dung đang chỉnh sửa
+  // DRAFT lưu được khi đúng định dạng; Sửa bản ACTIVE tạo DRAFT kế thừa; Lưu lỗi KHÔNG làm mất nội dung
   const handleSaveDraft = useCallback(async () => {
     setSaving(true);
     try {
-      const storeRes = plannerStore.saveDraft();
-      if (!storeRes.success) {
+      let storeRes;
+      if (api && typeof plannerStore.saveDraftAsync === 'function') {
+        storeRes = await plannerStore.saveDraftAsync(api);
+      } else {
+        storeRes = plannerStore.saveDraft();
+      }
+
+      if (storeRes.success) {
+        showToast(storeRes.message || 'Đã lưu thành công bản nháp vào hệ thống!');
+      } else {
         showToast(`⚠️ ${storeRes.message}`);
-        return;
       }
-
-      // Nếu có backend API từ TV2 thì gọi đồng bộ (mock hoặc live)
-      if (api && api.planner && typeof api.planner.save === 'function') {
-        await api.planner.save(plannerStore.getPlan());
-      } else if (api && typeof api.post === 'function') {
-        try {
-          await api.post('/planner/plans', {
-            planName: plannerStore.getPlan().planName,
-            semesters: plannerStore.getPlan().semesters
-          });
-        } catch {
-          // Bỏ qua nếu backend chưa hỗ trợ endpoint này
-        }
-      }
-
-      showToast(storeRes.message);
     } catch (err) {
       // Lưu lỗi không mất nội dung: thông báo lỗi nhưng giữ nguyên kế hoạch trong store
       showToast(`⚠️ Lỗi khi lưu máy chủ: ${err?.message || 'Sự cố kết nối'}. Nội dung nháp vẫn được giữ nguyên.`);
@@ -198,12 +229,21 @@ export function StudyPlannerPage({ api, ui } = {}) {
   }, [api, showToast]);
 
   // Hành động: Kích hoạt kế hoạch (Bắt đầu theo dõi)
-  // F23-005: store từ chối nếu kế hoạch chưa VALIDATED hoặc còn vi phạm quy chế
-  const handleConfirmActivate = useCallback(() => {
+  // Chỉ kích hoạt khi đã VALIDATED; bản ACTIVE cũ chuyển ARCHIVED
+  const handleConfirmActivate = useCallback(async () => {
     setIsActivateModalOpen(false);
-    const res = plannerStore.activatePlan();
-    showToast(res.success ? res.message : `⚠️ ${res.message}`);
-  }, [showToast]);
+    try {
+      let res;
+      if (api && typeof plannerStore.activatePlanAsync === 'function') {
+        res = await plannerStore.activatePlanAsync(api);
+      } else {
+        res = plannerStore.activatePlan();
+      }
+      showToast(res.success ? res.message : `⚠️ ${res.message}`);
+    } catch (err) {
+      showToast(`⚠️ Lỗi khi kích hoạt: ${err?.message || 'Sự cố kết nối'}`);
+    }
+  }, [api, showToast]);
 
   // Hành động: Chấp nhận đề xuất từ AI / What-if
   const handleAcceptProposal = useCallback(() => {
@@ -347,6 +387,39 @@ export function StudyPlannerPage({ api, ui } = {}) {
               ? `● Kế hoạch đang theo dõi (ACTIVE)`
               : `Bản nháp ${plan?.version || 'v2.4'} (Chưa kích hoạt)`
           ),
+          plan?.sourcePlanId
+            ? React.createElement(
+                'span',
+                {
+                  style: {
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    padding: '3px 10px',
+                    borderRadius: '9999px',
+                    background: '#fef3c7',
+                    color: '#b45309',
+                    border: '1px solid #fde68a'
+                  }
+                },
+                `Kế thừa từ ${plan.sourcePlanId}`
+              )
+            : null,
+          plan?.policyVersion
+            ? React.createElement(
+                'span',
+                {
+                  style: {
+                    fontSize: '11px',
+                    padding: '3px 10px',
+                    borderRadius: '9999px',
+                    background: '#f1f5f9',
+                    color: '#475569',
+                    border: '1px solid #e2e8f0'
+                  }
+                },
+                `Quy chế: ${plan.policyVersion}`
+              )
+            : null,
           React.createElement(
             'span',
             {
@@ -383,6 +456,13 @@ export function StudyPlannerPage({ api, ui } = {}) {
         Button
           ? React.createElement(
               Button,
+              { variant: 'secondary', size: 'sm', onClick: handleGeneratePlan },
+              '⚡ Tạo phương án đề xuất'
+            )
+          : null,
+        Button
+          ? React.createElement(
+              Button,
               { variant: 'ghost', size: 'sm', onClick: () => setIsTreeModalOpen(true) },
               '🌳 Xem Cây môn học (Tùy chọn)'
             )
@@ -392,6 +472,13 @@ export function StudyPlannerPage({ api, ui } = {}) {
               Button,
               { variant: 'secondary', size: 'sm', onClick: () => setIsHistoryModalOpen(true) },
               '📜 Lịch sử & Mở lại'
+            )
+          : null,
+        Button
+          ? React.createElement(
+              Button,
+              { variant: 'ghost', size: 'sm', onClick: handleDiscardChanges },
+              '↩️ Hủy thay đổi'
             )
           : null,
         Button
@@ -725,7 +812,20 @@ export function StudyPlannerPage({ api, ui } = {}) {
           },
           plan.projectedRank || 'Bằng Giỏi (CPA ≥ 3.20)'
         ),
-        React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Dự phóng kế hoạch')
+        React.createElement(
+          'span',
+          {
+            style: {
+              fontSize: '11px',
+              fontWeight: 600,
+              padding: '2px 6px',
+              borderRadius: '4px',
+              background: '#e0f2fe',
+              color: '#0369a1'
+            }
+          },
+          'Dự kiến'
+        )
       )
     ),
 
@@ -1202,6 +1302,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
       isOpen: isHistoryModalOpen,
       onClose: () => setIsHistoryModalOpen(false),
       ui,
+      api,
       onPlanChanged: () => {
         showToast('Kế hoạch đã được cập nhật từ Lịch sử!');
       }

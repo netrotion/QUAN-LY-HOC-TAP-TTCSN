@@ -10,6 +10,7 @@ import {
   validatePlanFormat,
   evaluatePlanRules
 } from './services/plannerStore.js';
+import * as plannerApi from './services/plannerApiService.js';
 
 /**
  * HaUI Advisor - Planner UI Feature Package (TV3)
@@ -74,6 +75,7 @@ export {
   PlanHistoryModal,
   CurriculumTreeModal,
   plannerStore,
+  plannerApi,
   PLAN_STATUSES,
   validatePlanFormat,
   evaluatePlanRules,

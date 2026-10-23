@@ -15,9 +15,10 @@ import { plannerStore, PLAN_STATUSES } from '../services/plannerStore.js';
  * @param {boolean} props.isOpen
  * @param {Function} props.onClose
  * @param {Object} props.ui - Bộ UI chung từ TV2
+ * @param {Object} [props.api] - API client từ TV2
  * @param {Function} [props.onPlanChanged] - Callback khi trạng thái kế hoạch thay đổi
  */
-export function PlanHistoryModal({ isOpen, onClose, ui, onPlanChanged }) {
+export function PlanHistoryModal({ isOpen, onClose, ui, api, onPlanChanged }) {
   const { Modal, Button, Card } = ui || {};
   const [filterTab, setFilterTab] = useState('ALL'); // 'ALL' | 'ACTIVE' | 'DRAFT' | 'ARCHIVED'
   const [toast, setToast] = useState(null); // { message, ok }
@@ -41,17 +42,40 @@ export function PlanHistoryModal({ isOpen, onClose, ui, onPlanChanged }) {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleRestore = (planId) => {
-    const res = plannerStore.restorePlan(planId);
+  const handleRestore = async (planId) => {
+    let res;
+    if (api && typeof plannerStore.restorePlanAsync === 'function') {
+      res = await plannerStore.restorePlanAsync(api, planId);
+    } else {
+      res = plannerStore.restorePlan(planId);
+    }
     showToast(res);
     if (typeof onPlanChanged === 'function') {
       onPlanChanged();
     }
   };
 
-  const handleActivate = (planId) => {
+  const handleActivate = async (planId) => {
     // F23-002: kích hoạt đúng bản được chọn trong lịch sử
-    const res = plannerStore.activatePlan(planId);
+    let res;
+    if (api && typeof plannerStore.activatePlanAsync === 'function') {
+      res = await plannerStore.activatePlanAsync(api, planId);
+    } else {
+      res = plannerStore.activatePlan(planId);
+    }
+    showToast(res);
+    if (typeof onPlanChanged === 'function') {
+      onPlanChanged();
+    }
+  };
+
+  const handleDeleteDraft = async (planId, planVersion) => {
+    let res;
+    if (api && typeof plannerStore.deleteDraftAsync === 'function') {
+      res = await plannerStore.deleteDraftAsync(api, planId, planVersion);
+    } else {
+      res = plannerStore.deleteDraftAsync(null, planId, planVersion);
+    }
     showToast(res);
     if (typeof onPlanChanged === 'function') {
       onPlanChanged();
@@ -288,6 +312,18 @@ export function PlanHistoryModal({ isOpen, onClose, ui, onPlanChanged }) {
                     onClick: () => handleRestore(item.planId)
                   },
                   'Mở lại / Chỉnh sửa'
+                )
+              : null,
+            // Nút "Hủy bản nháp" cho các bản DRAFT
+            isDraft && !isCurrentActive && Button
+              ? React.createElement(
+                  Button,
+                  {
+                    variant: 'ghost',
+                    size: 'sm',
+                    onClick: () => handleDeleteDraft(item.planId, item.planVersion)
+                  },
+                  'Hủy bản nháp'
                 )
               : null,
             // Nút kích hoạt nếu là bản nháp

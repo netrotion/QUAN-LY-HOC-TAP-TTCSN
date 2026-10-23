@@ -4,6 +4,8 @@
  * và điều phối luồng hội tụ đề xuất từ AI Advisor, What-if Simulator và Graduation Audit.
  */
 
+import * as plannerApi from './plannerApiService.js';
+
 // Danh sách các trạng thái kế hoạch theo State Machine chuẩn
 export const PLAN_STATUSES = Object.freeze({
   DRAFT: 'DRAFT',
@@ -388,6 +390,9 @@ class PlannerStore {
     this.baseline = clone(this.plan);
     this.validation = null; // Kết quả thẩm định gắn với nội dung kế hoạch hiện tại
     this.incomingProposal = null; // Đề xuất từ AI Chat hoặc What-if đang chờ duyệt
+    this.apiError = null;
+    this.loading = false;
+    this.isLive = false;
   }
 
   subscribe(listener) {
@@ -413,7 +418,10 @@ class PlannerStore {
       plan: this.plan,
       history: this.history,
       incomingProposal: this.incomingProposal,
-      validation: this.validation
+      validation: this.validation,
+      apiError: this.apiError,
+      loading: this.loading,
+      isLive: this.isLive
     };
   }
 
@@ -867,6 +875,612 @@ class PlannerStore {
     this.loadInitialState();
     this.notify();
   }
+
+  // =========================================================================
+  // LIVE API INTEGRATION METHODS (Task 4.3a)
+  // =========================================================================
+
+  /**
+   * Cập nhật thông tin chi tiết kế hoạch từ DTO server vào Store.
+   * @param {Object} detail - StudyPlanDetailResponse
+   */
+  loadPlanDetail(detail) {
+    if (!detail) return;
+    const semesters = (detail.semesters || []).map((s) => ({
+      semesterCode: s.semesterCode,
+      semesterName: s.semesterName || s.semesterCode,
+      totalCredits: s.totalCredits ?? sumCredits(s.courses || []),
+      expectedGpa: s.expectedGpa ?? null,
+      courses: (s.courses || []).map((c) => ({
+        courseCode: c.courseCode,
+        courseName: c.courseName || c.courseCode,
+        credits: Number(c.credits) || 3,
+        courseType: c.courseType || 'Chuẩn CTĐT',
+        targetGrade: c.targetGrade || 'A (4.0)',
+        rationale: c.rationale || ''
+      }))
+    }));
+
+    this.plan = {
+      planId: detail.planId,
+      planName: detail.planName,
+      planVersion: detail.planVersion || 1,
+      version: `v${detail.planVersion || 1}`,
+      status: detail.status || PLAN_STATUSES.DRAFT,
+      sourcePlanId: detail.sourcePlanId || null,
+      dataRevision: detail.dataRevision || null,
+      policyVersion: detail.policyVersion || null,
+      validatedAt: detail.validatedAt || null,
+      targetCpa: detail.targetCpa ?? null,
+      projectedCpa: detail.projectedCpa ?? null,
+      targetGraduationSemester: detail.targetGraduationSemester || null,
+      maxCreditsPerSemester: detail.maxCreditsPerSemester || null,
+      totalCredits: detail.totalCredits || semesters.reduce((sum, s) => sum + (Number(s.totalCredits) || 0), 0),
+      semesters,
+      warnings: detail.warnings || [],
+      actions: detail.actions || [],
+      updatedAt: detail.updatedAt || 'Vừa xong'
+    };
+
+    this.baseline = clone(this.plan);
+    this.validation = detail.validatedAt
+      ? {
+          valid: true,
+          status: this.plan.status,
+          planId: this.plan.planId,
+          policyVersion: this.plan.policyVersion,
+          violations: [],
+          warnings: this.plan.warnings || []
+        }
+      : null;
+    this.notify();
+  }
+
+  /**
+   * Nạp danh sách kế hoạch từ máy chủ và mở bản ACTIVE hoặc bản chỉ định.
+   * Phục vụ kịch bản "Mở lại sau reload".
+   * Giữ nguyên nội dung khi API gặp sự cố.
+   */
+  async fetchPlansAsync(api, preferredPlanId = null) {
+    if (!api) return { success: false, message: 'Thiếu API client' };
+    this.loading = true;
+    this.notify();
+    try {
+      const listRes = await plannerApi.listStudyPlans(api);
+      const plans = Array.isArray(listRes?.plans) ? listRes.plans : [];
+      this.isLive = true;
+      this.apiError = null;
+
+      if (plans.length > 0) {
+        this.history = plans.map((p) => ({
+          planId: p.planId,
+          version: `v${p.planVersion || 1}`,
+          planVersion: p.planVersion || 1,
+          name: p.planName,
+          status: p.status,
+          sourcePlanId: p.sourcePlanId || null,
+          updatedAt: p.updatedAt ? new Date(p.updatedAt).toLocaleTimeString('vi-VN') : 'Gần đây',
+          totalCredits: p.totalCredits || 0,
+          projectedCpa: p.projectedCpa,
+          badge:
+            p.status === PLAN_STATUSES.ACTIVE
+              ? 'Đang áp dụng (ACTIVE)'
+              : p.status === PLAN_STATUSES.VALIDATED
+                ? 'Đã thẩm định'
+                : p.status === PLAN_STATUSES.DRAFT
+                  ? 'Bản nháp'
+                  : 'Lưu trữ (ARCHIVED)',
+          note: p.sourcePlanId ? `Kế thừa từ ${p.sourcePlanId}` : 'Kế hoạch học tập'
+        }));
+
+        let target = null;
+        if (preferredPlanId) {
+          target = plans.find((p) => p.planId === preferredPlanId);
+        }
+        if (!target) {
+          target = plans.find((p) => p.status === PLAN_STATUSES.ACTIVE) || plans[0];
+        }
+
+        if (target) {
+          const detail = await plannerApi.getStudyPlan(api, target.planId);
+          this.loadPlanDetail(detail);
+        }
+      }
+      return { success: true, count: plans.length };
+    } catch (err) {
+      // Giữ nguyên nội dung khi API lỗi!
+      this.apiError = err;
+      return {
+        success: false,
+        error: err,
+        message: err?.message || 'Lỗi khi tải kế hoạch từ máy chủ'
+      };
+    } finally {
+      this.loading = false;
+      this.notify();
+    }
+  }
+
+  /**
+   * Tạo phương án trực tiếp không cần Chat thông qua POST /planner/generate.
+   * Giữ nguyên nội dung khi API lỗi.
+   */
+  async generatePlanAsync(api, options = {}) {
+    if (!api) return { success: false, message: 'Thiếu API client' };
+    this.loading = true;
+    this.notify();
+    try {
+      const res = await plannerApi.generateStudyPlan(api, {
+        targetGraduationSemester: options.targetGraduationSemester || '2026_1',
+        targetCpa: options.targetCpa ?? this.plan.targetCpa ?? 3.20,
+        maxCreditsPerSemester: options.maxCreditsPerSemester ?? 24,
+        includeSummerSemesters: options.includeSummerSemesters ?? true,
+        selectedRetakeCourseCodes: options.selectedRetakeCourseCodes || [],
+        dataRevision: options.dataRevision || this.plan.dataRevision || null
+      });
+
+      this.isLive = true;
+      this.apiError = null;
+
+      const semesters = (res.semesters || []).map((s) => ({
+        semesterCode: s.semesterCode,
+        semesterName: s.semesterName || s.semesterCode,
+        totalCredits: s.totalCredits ?? sumCredits(s.courses || []),
+        expectedGpa: s.expectedGpa ?? null,
+        courses: (s.courses || []).map((c) => ({
+          courseCode: c.courseCode,
+          courseName: c.courseName || c.courseCode,
+          credits: Number(c.credits) || 3,
+          courseType: c.courseType || 'Chuẩn CTĐT',
+          targetGrade: c.targetGrade || 'A (4.0)',
+          rationale: c.rationale || ''
+        }))
+      }));
+
+      // Kế hoạch được sinh luôn ở DRAFT, chưa lưu (planId/planVersion null)
+      this.plan = {
+        ...this.plan,
+        planId: null,
+        planVersion: null,
+        planName: res.planName || 'Kế hoạch học tập đề xuất',
+        version: this.nextVersion(),
+        status: PLAN_STATUSES.DRAFT,
+        sourcePlanId: null,
+        targetCpa: res.targetCpa ?? this.plan.targetCpa,
+        projectedCpa: res.projectedCpa ?? null,
+        totalCredits: res.totalCredits ?? semesters.reduce((sum, s) => sum + (Number(s.totalCredits) || 0), 0),
+        semesters,
+        warnings: res.warnings || [],
+        actions: res.actions || [],
+        dataRevision: res.dataRevision || this.plan.dataRevision,
+        policyVersion: res.policyVersion || this.plan.policyVersion,
+        proposalId: res.proposalId
+      };
+
+      this.validation = null; // Chưa thẩm định
+      this.baseline = clone(this.plan);
+      this.notify();
+
+      return {
+        success: true,
+        plan: this.plan,
+        warnings: res.warnings || [],
+        policyVersion: res.policyVersion,
+        message: 'Đã sinh phương án lộ trình học tập đề xuất thành công!'
+      };
+    } catch (err) {
+      // Giữ nguyên nội dung khi API lỗi!
+      this.apiError = err;
+      return {
+        success: false,
+        error: err,
+        message: err?.message || 'Lỗi khi sinh phương án từ máy chủ'
+      };
+    } finally {
+      this.loading = false;
+      this.notify();
+    }
+  }
+
+  /**
+   * Lưu nháp kế hoạch học tập qua POST /planner/plans.
+   * - Nếu sửa trên bản ACTIVE: server tự động tách sang bản DRAFT mới kế thừa, bản ACTIVE giữ nguyên.
+   * - Giữ nguyên toàn bộ nội dung khi API lỗi.
+   */
+  async saveDraftAsync(api, customName = null) {
+    const formatCheck = validatePlanFormat(this.plan);
+    if (!formatCheck.valid) {
+      return {
+        success: false,
+        code: 'INVALID_FORMAT',
+        errors: formatCheck.errors,
+        message: `Dữ liệu kế hoạch không đúng định dạng: ${formatCheck.errors.join('; ')}`
+      };
+    }
+
+    if (!api) {
+      return this.saveDraft(customName);
+    }
+
+    this.loading = true;
+    this.notify();
+    try {
+      let sendPlanId = null;
+      let sendPlanVersion = null;
+
+      const isTemporaryDraftId = typeof this.plan.planId === 'string' && this.plan.planId.startsWith('plan-draft-');
+      if (this.plan.sourcePlanId) {
+        // Đang sửa bản kế thừa từ ACTIVE: gửi ID và version của bản gốc ACTIVE
+        sendPlanId = this.plan.sourcePlanId;
+        const sourceEntry = this.history.find((h) => h.planId === this.plan.sourcePlanId);
+        sendPlanVersion = sourceEntry?.planVersion || 1;
+      } else if (this.plan.planId && !isTemporaryDraftId) {
+        sendPlanId = this.plan.planId;
+        sendPlanVersion = this.plan.planVersion || 1;
+      }
+
+      const payload = {
+        planId: sendPlanId,
+        planName: customName || this.plan.planName,
+        planVersion: sendPlanVersion,
+        dataRevision: this.plan.dataRevision || null,
+        targetCpa: this.plan.targetCpa || null,
+        targetGraduationSemester: this.plan.targetGraduationSemester || null,
+        maxCreditsPerSemester: this.plan.maxCreditsPerSemester || null,
+        semesters: (this.plan.semesters || []).map((s) => ({
+          semesterCode: s.semesterCode,
+          semesterName: s.semesterName,
+          totalCredits: s.totalCredits,
+          expectedGpa: s.expectedGpa,
+          courses: (s.courses || []).map((c) => ({
+            courseCode: c.courseCode,
+            courseName: c.courseName,
+            credits: Number(c.credits) || 3,
+            courseType: c.courseType,
+            targetGrade: c.targetGrade,
+            rationale: c.rationale
+          }))
+        })),
+        actions: this.plan.actions || []
+      };
+
+      const res = await plannerApi.saveStudyPlan(api, payload);
+      this.isLive = true;
+      this.apiError = null;
+
+      this.plan = {
+        ...this.plan,
+        planId: res.planId,
+        planName: res.planName || this.plan.planName,
+        status: PLAN_STATUSES.DRAFT,
+        planVersion: res.planVersion,
+        version: `v${res.planVersion}`,
+        sourcePlanId: res.sourcePlanId || null,
+        dataRevision: res.dataRevision || this.plan.dataRevision,
+        updatedAt: res.updatedAt || 'Vừa xong'
+      };
+      this.validation = null;
+      this.baseline = clone(this.plan);
+
+      this.upsertHistoryEntry(
+        this.buildHistoryEntry(PLAN_STATUSES.DRAFT, {
+          updatedAt: 'Vừa xong',
+          badge: 'Bản nháp (Đã lưu)',
+          note: res.message || 'Bản nháp chưa được kiểm tra điều kiện.'
+        })
+      );
+
+      return {
+        success: true,
+        planId: res.planId,
+        planVersion: res.planVersion,
+        message: res.message || 'Đã lưu thành công bản nháp vào hệ thống!',
+        plan: this.plan
+      };
+    } catch (err) {
+      // Giữ nguyên nội dung kế hoạch khi API lỗi!
+      this.apiError = err;
+      return {
+        success: false,
+        error: err,
+        message: `Lỗi khi lưu máy chủ: ${err?.message || 'Sự cố kết nối'}. Nội dung nháp vẫn được giữ nguyên.`
+      };
+    } finally {
+      this.loading = false;
+      this.notify();
+    }
+  }
+
+  /**
+   * Thẩm định kế hoạch học tập qua POST /planner/validate.
+   * - Xử lý 503 TOOL_NOT_READY: thông báo rõ ràng, chặn kích hoạt.
+   * - Giữ nguyên nội dung khi API lỗi.
+   */
+  async validatePlanAsync(api) {
+    if (!api) {
+      return this.validatePlan();
+    }
+
+    this.loading = true;
+    this.notify();
+    try {
+      const isSaved = Boolean(this.plan.planId) && !this.plan.planId.startsWith('plan-draft-');
+      const payload = isSaved
+        ? {
+            planId: this.plan.planId,
+            planVersion: this.plan.planVersion || 1,
+            dataRevision: this.plan.dataRevision || null
+          }
+        : {
+            semesters: this.plan.semesters,
+            dataRevision: this.plan.dataRevision || null
+          };
+
+      const res = await plannerApi.validateStudyPlan(api, payload);
+      this.isLive = true;
+      this.apiError = null;
+
+      const isValid = Boolean(res.valid);
+      const newStatus =
+        isSaved && isValid
+          ? PLAN_STATUSES.VALIDATED
+          : this.plan.status === PLAN_STATUSES.ACTIVE
+            ? PLAN_STATUSES.ACTIVE
+            : PLAN_STATUSES.DRAFT;
+
+      this.plan = {
+        ...this.plan,
+        status: newStatus,
+        policyVersion: res.policyVersion || this.plan.policyVersion,
+        dataRevision: res.dataRevision || this.plan.dataRevision
+      };
+
+      this.validation = {
+        valid: isValid,
+        status: newStatus,
+        planId: this.plan.planId,
+        violations: res.violations || [],
+        warnings: res.warnings || [],
+        policyVersion: res.policyVersion,
+        validationMode: res.validationMode
+      };
+
+      if (isSaved) {
+        this.upsertHistoryEntry(
+          this.buildHistoryEntry(newStatus, {
+            updatedAt: 'Vừa thẩm định',
+            badge: newStatus === PLAN_STATUSES.VALIDATED ? 'Đã thẩm định (VALIDATED)' : 'Bản nháp (DRAFT)',
+            note: isValid ? 'Đã kiểm tra điều kiện đạt chuẩn.' : `Vi phạm ${res.violations?.length || 0} điều kiện.`
+          })
+        );
+      }
+
+      return {
+        success: true,
+        valid: isValid,
+        status: newStatus,
+        violations: res.violations || [],
+        warnings: res.warnings || [],
+        policyVersion: res.policyVersion,
+        message: isValid
+          ? isSaved
+            ? 'Kế hoạch hợp lệ theo quy chế — đã chuyển sang VALIDATED, có thể kích hoạt.'
+            : 'Kiểm tra nhanh: Nội dung hợp lệ (Cần lưu bản nháp và thẩm định lại trước khi kích hoạt).'
+          : `Phát hiện ${res.violations?.length || 0} vi phạm quy chế — kế hoạch vẫn ở DRAFT.`
+      };
+    } catch (err) {
+      // Giữ nguyên nội dung khi API lỗi!
+      this.apiError = err;
+      const isToolNotReady = err?.status === 503 || err?.code === 'TOOL_NOT_READY';
+      this.validation = {
+        valid: false,
+        status: this.plan.status,
+        planId: this.plan.planId,
+        toolNotReady: isToolNotReady,
+        violations: isToolNotReady ? [] : [err?.message || 'Lỗi thẩm định từ máy chủ'],
+        warnings: isToolNotReady ? ['Công cụ kiểm tra điều kiện chưa sẵn sàng (503 TOOL_NOT_READY). Vui lòng thử lại sau.'] : []
+      };
+      return {
+        success: false,
+        error: err,
+        toolNotReady: isToolNotReady,
+        message: isToolNotReady
+          ? 'Công cụ kiểm tra điều kiện chưa sẵn sàng (503 TOOL_NOT_READY).'
+          : `Lỗi thẩm định máy chủ: ${err?.message || 'Sự cố kết nối'}`
+      };
+    } finally {
+      this.loading = false;
+      this.notify();
+    }
+  }
+
+  /**
+   * Kích hoạt kế hoạch học tập qua POST /planner/plans/{planId}/activate.
+   * - Chỉ bản VALIDATED mới được kích hoạt.
+   * - Kích hoạt thành công chuyển bản cũ thành ARCHIVED.
+   * - Giữ nguyên nội dung khi API lỗi.
+   */
+  async activatePlanAsync(api, targetPlanId = null) {
+    const planToActivate =
+      targetPlanId && targetPlanId !== this.plan.planId
+        ? this.history.find((h) => h.planId === targetPlanId)
+        : this.plan;
+
+    if (!planToActivate) {
+      return { success: false, code: 'PLAN_NOT_FOUND', message: 'Không tìm thấy kế hoạch để kích hoạt.' };
+    }
+
+    if (!api) {
+      return this.activatePlan(targetPlanId);
+    }
+
+    if (planToActivate.status !== PLAN_STATUSES.VALIDATED) {
+      return {
+        success: false,
+        code: 'PLAN_NOT_VALIDATED',
+        message: 'Chỉ kích hoạt được kế hoạch đã thẩm định hợp lệ (VALIDATED). Vui lòng bấm "Kiểm tra điều kiện" trước.'
+      };
+    }
+
+    this.loading = true;
+    this.notify();
+    try {
+      const res = await plannerApi.activateStudyPlan(api, planToActivate.planId, {
+        planVersion: planToActivate.planVersion || 1,
+        dataRevision: planToActivate.dataRevision || null
+      });
+
+      this.isLive = true;
+      this.apiError = null;
+
+      const activatedId = res.planId;
+      this.history = this.history.map((h) => {
+        if (h.status === PLAN_STATUSES.ACTIVE && h.planId !== activatedId) {
+          return {
+            ...h,
+            status: PLAN_STATUSES.ARCHIVED,
+            badge: 'Lưu trữ (Đã thay thế)',
+            note: 'Lưu trữ tự động khi kích hoạt bản mới',
+            snapshot: h.snapshot ? { ...h.snapshot, status: PLAN_STATUSES.ARCHIVED } : h.snapshot
+          };
+        }
+        return h;
+      });
+
+      this.plan = {
+        ...this.plan,
+        planId: activatedId,
+        status: PLAN_STATUSES.ACTIVE
+      };
+
+      this.upsertHistoryEntry(
+        this.buildHistoryEntry(PLAN_STATUSES.ACTIVE, {
+          updatedAt: 'Vừa kích hoạt',
+          badge: 'Đang áp dụng (ACTIVE)',
+          note: res.message || 'Kế hoạch học tập chính thức đang được hệ thống theo dõi tiến độ.'
+        })
+      );
+
+      this.baseline = clone(this.plan);
+      this.validation = null;
+
+      return {
+        success: true,
+        planId: activatedId,
+        message: res.message || 'Kế hoạch đã được kích hoạt chính thức thành công!'
+      };
+    } catch (err) {
+      // Giữ nguyên nội dung khi API lỗi!
+      this.apiError = err;
+      return {
+        success: false,
+        error: err,
+        code: err?.code || 'ACTIVATION_FAILED',
+        message: `Không thể kích hoạt kế hoạch: ${err?.message || 'Lỗi từ máy chủ'}`
+      };
+    } finally {
+      this.loading = false;
+      this.notify();
+    }
+  }
+
+  /**
+   * Hủy bản nháp kế hoạch học tập qua DELETE /planner/plans/{planId}?planVersion=...
+   * Giữ nguyên nội dung khi API lỗi.
+   */
+  async deleteDraftAsync(api, planId = null, planVersion = null) {
+    const targetId = planId || this.plan.planId;
+    const targetVersion = planVersion || this.plan.planVersion || 1;
+
+    if (!api) {
+      this.history = this.history.filter((h) => h.planId !== targetId);
+      this.discardDraftChanges();
+      return { success: true, message: 'Đã hủy bản nháp.' };
+    }
+
+    this.loading = true;
+    this.notify();
+    try {
+      await plannerApi.deleteStudyPlan(api, targetId, targetVersion);
+      this.isLive = true;
+      this.apiError = null;
+
+      this.history = this.history.filter((h) => h.planId !== targetId);
+
+      if (this.plan.planId === targetId) {
+        const activeItem = this.history.find((h) => h.status === PLAN_STATUSES.ACTIVE);
+        if (activeItem) {
+          const detail = await plannerApi.getStudyPlan(api, activeItem.planId);
+          this.loadPlanDetail(detail);
+        } else if (this.history.length > 0) {
+          const detail = await plannerApi.getStudyPlan(api, this.history[0].planId);
+          this.loadPlanDetail(detail);
+        } else {
+          this.resetToDefault();
+        }
+      }
+
+      return { success: true, message: 'Đã hủy bản nháp thành công!' };
+    } catch (err) {
+      // Giữ nguyên nội dung khi API lỗi!
+      this.apiError = err;
+      return {
+        success: false,
+        error: err,
+        message: `Lỗi khi hủy bản nháp: ${err?.message || 'Sự cố kết nối'}`
+      };
+    } finally {
+      this.loading = false;
+      this.notify();
+    }
+  }
+
+  /**
+   * Mở lại kế hoạch (Restore) qua POST /planner/plans/{planId}/restore.
+   * Tạo bản DRAFT mới sao chép nội dung, bản cũ giữ nguyên.
+   * Giữ nguyên nội dung khi API lỗi.
+   */
+  async restorePlanAsync(api, planId, customName = null) {
+    if (!api) {
+      return this.restorePlan(planId);
+    }
+
+    this.loading = true;
+    this.notify();
+    try {
+      const detail = await plannerApi.restoreStudyPlan(api, planId, { planName: customName });
+      this.isLive = true;
+      this.apiError = null;
+
+      this.loadPlanDetail(detail);
+
+      this.upsertHistoryEntry(
+        this.buildHistoryEntry(PLAN_STATUSES.DRAFT, {
+          updatedAt: 'Vừa khôi phục',
+          badge: 'Bản nháp (Đã khôi phục)',
+          note: `Khôi phục từ kế hoạch ${planId}`
+        })
+      );
+
+      return {
+        success: true,
+        plan: this.plan,
+        message: 'Đã mở lại kế hoạch dưới dạng bản nháp mới để bạn tiếp tục chỉnh sửa!'
+      };
+    } catch (err) {
+      // Giữ nguyên nội dung khi API lỗi!
+      this.apiError = err;
+      return {
+        success: false,
+        error: err,
+        message: `Lỗi khi mở lại kế hoạch: ${err?.message || 'Sự cố kết nối'}`
+      };
+    } finally {
+      this.loading = false;
+      this.notify();
+    }
+  }
+
 }
 
 export const plannerStore = new PlannerStore();

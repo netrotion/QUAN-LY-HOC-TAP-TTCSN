@@ -176,6 +176,15 @@ export function StudentProfilePage({
     if (initialProfileData === undefined) {
       handleFetchProfile();
     }
+
+    const handleTranscriptUpdated = () => {
+      handleFetchProfile();
+    };
+
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('haui:academic:transcript-updated', handleTranscriptUpdated);
+      return () => window.removeEventListener('haui:academic:transcript-updated', handleTranscriptUpdated);
+    }
   }, [handleFetchProfile, initialProfileData]);
 
   // Nạp hồ sơ mẫu K16
