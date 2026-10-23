@@ -417,12 +417,12 @@ export function ChatAdvisorPage({
 } = {}) {
   const { Button, Card, Loading, Error: ErrorBox, EmptyState } = ui || {};
 
-  // State hội thoại — mặc định hiển thị cuộc trò chuyện sinh động chuẩn prototype nếu không truyền prop
+  // State hội thoại — mặc định khởi đầu sạch (Empty State) để người dùng tự chọn câu hỏi hoặc gõ tin nhắn
   const [messages, setMessages] = useState(() => {
     if (initialMessages !== undefined && initialMessages !== null) {
       return initialMessages;
     }
-    return [...DEFAULT_PROTOTYPE_MESSAGES];
+    return [];
   });
 
   const [inputValue, setInputValue] = useState('');
@@ -1755,7 +1755,7 @@ export function ChatAdvisorPage({
               'div',
               { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
               React.createElement('span', { style: { color: 'var(--color-mid-gray)' } }, 'Sinh viên'),
-              React.createElement('strong', { style: { color: 'var(--color-ink)' } }, `${student?.fullName || 'Nguyễn Văn An'} (${student?.studentId || '2020601234'})`)
+              React.createElement('strong', { style: { color: 'var(--color-ink)' } }, `${student?.fullName || 'Sinh viên'} (${student?.studentId || '2024604757'})`)
             ),
             React.createElement(
               'div',
@@ -1764,8 +1764,10 @@ export function ChatAdvisorPage({
               React.createElement(
                 'div',
                 { style: { display: 'flex', alignItems: 'center', gap: '6px' } },
-                React.createElement('strong', { style: { color: 'var(--color-ink)' } }, student?.cpa ? Number(student.cpa).toFixed(2) : '3.18 / 4.00'),
-                React.createElement('span', { style: { padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', fontSize: '11px', fontWeight: 500 } }, 'Tiệm cận Giỏi')
+                React.createElement('strong', { style: { color: 'var(--color-ink)' } }, student?.cpa ? `${Number(student.cpa).toFixed(2)} / 4.00` : '—'),
+                student?.cpa
+                  ? React.createElement('span', { style: { padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', fontSize: '11px', fontWeight: 500 } }, Number(student.cpa) >= 3.2 ? 'Giỏi' : Number(student.cpa) >= 2.5 ? 'Khá' : 'Trung bình')
+                  : React.createElement('span', { style: { padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', fontSize: '11px', color: 'var(--color-mid-gray)' } }, 'Chưa có')
               )
             ),
             React.createElement(
@@ -1775,19 +1777,19 @@ export function ChatAdvisorPage({
                 'div',
                 { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
                 React.createElement('span', { style: { color: 'var(--color-mid-gray)' } }, 'Tín chỉ tích lũy'),
-                React.createElement('strong', { style: { color: 'var(--color-ink)' } }, '108 / 145 TC (74.4%)')
+                React.createElement('strong', { style: { color: 'var(--color-ink)' } }, `${student?.accumulatedCredits ?? 0} / ${student?.totalCreditsRequired || 135} TC (${student?.progressPercent ?? 0}%)`)
               ),
               React.createElement(
                 'div',
                 { className: 'haui-progress-bar-minimal' },
-                React.createElement('div', { className: 'haui-progress-bar-fill', style: { width: '74.4%' } })
+                React.createElement('div', { className: 'haui-progress-bar-fill', style: { width: `${Math.min(100, student?.progressPercent ?? 0)}%` } })
               )
             ),
             React.createElement(
               'div',
               { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
               React.createElement('span', { style: { color: 'var(--color-mid-gray)' } }, 'Phiên bản kế hoạch'),
-              React.createElement('strong', { style: { color: 'var(--color-ink)' } }, 'Bản nháp v2.4')
+              React.createElement('strong', { style: { color: 'var(--color-ink)' } }, plannerStore.getPlan()?.version || 'Chưa lưu')
             ),
             React.createElement(
               'div',
@@ -1796,8 +1798,8 @@ export function ChatAdvisorPage({
               React.createElement(
                 'span',
                 { style: { display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--color-ink)', fontWeight: 500 } },
-                React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'cloud_done'),
-                'Đã tải (28/28 môn)'
+                React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, student?.hasTranscript !== false ? 'cloud_done' : 'cloud_off'),
+                student?.hasTranscript !== false ? 'Đã đồng bộ' : 'Chưa nạp điểm'
               )
             )
           ),

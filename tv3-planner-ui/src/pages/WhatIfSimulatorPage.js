@@ -623,6 +623,54 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
   const targetCpaVal = parseFloat(targetCpaInput) || 3.20;
   const targetDiff = +(simulatedCpaVal - targetCpaVal).toFixed(2);
 
+  const sessionStudent = api?.getConfig?.()?.sessionStudent;
+  const isStudentEmpty = Boolean(
+    sessionStudent &&
+    (sessionStudent.hasTranscript === false || sessionStudent.id === 'empty' || sessionStudent.studentId === 'std-2026-empty')
+  );
+
+  if (isStudentEmpty) {
+    return h(
+      'div',
+      { className: 'haui-page-container', style: { maxWidth: '1440px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' } },
+      h(
+        'div',
+        {
+          style: {
+            padding: '48px 24px',
+            textAlign: 'center',
+            backgroundColor: 'var(--color-paper, #ffffff)',
+            borderRadius: '24px',
+            border: '1px solid var(--color-hairline, #e5e5e5)',
+            margin: '24px auto',
+            maxWidth: '640px',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '12px'
+          }
+        },
+        h('span', { className: 'material-symbols-outlined', style: { fontSize: '48px', color: 'var(--color-mid-gray, #737373)', marginBottom: '4px' } }, 'insights'),
+        h('h2', { style: { fontSize: '20px', fontWeight: 600, color: 'var(--color-ink, #0a0a0a)', margin: 0 } }, 'Chưa có dữ liệu bảng điểm để chạy What-if'),
+        h('p', { style: { fontSize: '14px', color: 'var(--color-mid-gray, #737373)', margin: '0 0 16px', lineHeight: 1.6, maxWidth: '480px' } }, 'Bộ công cụ mô phỏng điểm số (Màn 6), tối ưu hóa ROI học cải thiện (Màn 7) và tính điểm mục tiêu ngược (Màn 8) cần dữ liệu bảng điểm cá nhân để tính toán. Vui lòng nạp bảng điểm từ sv.haui.edu.vn để kích hoạt.'),
+        h(
+          'button',
+          {
+            type: 'button',
+            className: 'haui-pill-btn-dark',
+            onClick: () => {
+              if (typeof onNavigate === 'function') onNavigate('/transcript');
+              else if (typeof window !== 'undefined') window.location.href = '/transcript';
+            }
+          },
+          h('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' } }, 'upload_file'),
+          h('span', null, 'Nạp bảng điểm e-HaUI ngay')
+        )
+      )
+    );
+  }
+
   return h(
     'div',
     { className: 'haui-page-container', style: { maxWidth: '1440px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' } },

@@ -808,7 +808,13 @@ export function StudyPlannerPage({ api, ui } = {}) {
     );
   }
 
-  if (!plan || !plan.semesters || plan.semesters.length === 0) {
+  const sessionStudent = api?.getConfig?.()?.sessionStudent;
+  const isStudentEmpty = Boolean(
+    sessionStudent &&
+    (sessionStudent.hasTranscript === false || sessionStudent.id === 'empty' || sessionStudent.studentId === 'std-2026-empty')
+  );
+
+  if (isStudentEmpty || !plan || !plan.semesters || plan.semesters.length === 0) {
     return React.createElement(
       'div',
       { className: 'haui-page-container' },
@@ -816,10 +822,12 @@ export function StudyPlannerPage({ api, ui } = {}) {
       testToolbar,
       EmptyState
         ? React.createElement(EmptyState, {
-            title: 'Chưa có kế hoạch học tập nào',
-            description: 'Bạn chưa tạo lộ trình học tập hoặc đã xóa các môn. Nhấn nút bên dưới để khôi phục phương án mẫu.',
-            actionLabel: 'Tạo kế hoạch học tập mới',
-            onAction: handleFetchPlan
+            title: isStudentEmpty ? 'Chưa có dữ liệu bảng điểm & Kế hoạch' : 'Chưa có kế hoạch học tập nào',
+            description: isStudentEmpty
+              ? 'Hồ sơ của bạn chưa có dữ liệu bảng điểm. Vui lòng nạp bảng điểm từ sv.haui.edu.vn hoặc bấm nút bên dưới để tạo phương án học tập đề xuất.'
+              : 'Bạn chưa tạo lộ trình học tập hoặc chưa có môn học trong kế hoạch. Nhấn nút bên dưới để tạo phương án học tập đề xuất.',
+            actionLabel: '⚡ Tạo phương án đề xuất',
+            onAction: handleGeneratePlan
           })
         : React.createElement('div', null, 'Chưa có kế hoạch nào.')
     );

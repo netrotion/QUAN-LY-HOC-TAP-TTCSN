@@ -25,9 +25,16 @@ export function PlanHistoryModal({ isOpen, onClose, ui, api, onPlanChanged }) {
 
   if (!isOpen) return null;
 
-  const history = plannerStore.getHistory();
-  const currentPlan = plannerStore.getPlan();
-  const activeEntry = plannerStore.getActiveEntry();
+  const sessionStudent = api?.getConfig?.()?.sessionStudent;
+  const isStudentEmpty = Boolean(
+    sessionStudent &&
+    (sessionStudent.hasTranscript === false || sessionStudent.id === 'empty' || sessionStudent.studentId === 'std-2026-empty')
+  );
+
+  const rawHistory = isStudentEmpty ? [] : plannerStore.getHistory();
+  const history = rawHistory;
+  const currentPlan = isStudentEmpty ? { semesters: [], projectedCpa: null } : plannerStore.getPlan();
+  const activeEntry = isStudentEmpty ? null : plannerStore.getActiveEntry();
   const currentPlanCredits = (currentPlan.semesters || []).reduce((sum, s) => sum + (Number(s.totalCredits) || 0), 0);
 
   const filteredHistory = history.filter((item) => {
@@ -245,7 +252,24 @@ export function PlanHistoryModal({ isOpen, onClose, ui, api, onPlanChanged }) {
     React.createElement(
       'div',
       { style: { display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '340px', overflowY: 'auto' } },
-      filteredHistory.map((item) => {
+      filteredHistory.length === 0
+        ? React.createElement(
+            'div',
+            {
+              style: {
+                padding: '36px 16px',
+                textAlign: 'center',
+                backgroundColor: 'var(--color-surface-alt, #fafafa)',
+                borderRadius: '16px',
+                border: '1px solid var(--color-hairline, #e5e5e5)',
+                color: 'var(--color-mid-gray, #737373)'
+              }
+            },
+            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '32px', marginBottom: '8px' } }, 'folder_open'),
+            React.createElement('div', { style: { fontWeight: 600, color: 'var(--color-ink, #0a0a0a)', fontSize: '14px' } }, 'Chưa có bản kế hoạch nào trong lịch sử'),
+            React.createElement('p', { style: { margin: '4px 0 0', fontSize: '12px' } }, 'Hãy lưu bản nháp hoặc kích hoạt kế hoạch để bắt đầu theo dõi.')
+          )
+        : filteredHistory.map((item) => {
         const isCurrentActive = item.status === PLAN_STATUSES.ACTIVE;
         const isDraft = item.status === PLAN_STATUSES.DRAFT;
         // F23-005: bản nháp đang mở trên Planner chỉ được kích hoạt sau khi đạt VALIDATED
