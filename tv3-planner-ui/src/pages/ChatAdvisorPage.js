@@ -388,7 +388,7 @@ export function generateMockChatResponse(queryText, plan = null) {
       },
       {
         title: 'Chương trình đào tạo chính quy — Đại học Công nghiệp Hà Nội (HaUI)',
-        section: 'Cấu trúc khối kiến thức & Phân bổ học kỳ gợi ý'
+        section: 'Cấu trúc môn kiến thức & Phân bổ học kỳ gợi ý'
       }
     ],
     actions: [],
