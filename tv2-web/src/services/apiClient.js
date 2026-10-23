@@ -309,7 +309,70 @@ function resolveMockFixture(method, normalizedPath, body, options = {}) {
       return { ...MOCK_TARGET_GRADES };
     case 'POST /advisor/chat':
       return createMockChatResponse(body);
+    case 'GET /planner/plans':
+      return {
+        plans: [
+          {
+            planId: 'plan-2026-9001',
+            planName: 'Kế hoạch học tập tối ưu KTPM K16 (Bản nháp)',
+            planVersion: 1,
+            status: 'ACTIVE',
+            totalCredits: 37,
+            projectedCpa: 3.32,
+            updatedAt: new Date().toISOString()
+          }
+        ]
+      };
+    case 'POST /planner/plans': {
+      const planId = body?.planId || `plan-draft-${Date.now()}`;
+      return {
+        planId,
+        planName: body?.planName || 'Kế hoạch học tập đề xuất',
+        planVersion: (body?.planVersion || 0) + 1,
+        status: 'DRAFT',
+        sourcePlanId: body?.planId || null,
+        dataRevision: body?.dataRevision || 'rev-1001',
+        semesters: body?.semesters || MOCK_STUDY_PLAN.semesters,
+        message: 'Đã lưu thành công bản nháp vào hệ thống!'
+      };
+    }
     default:
+      if (cleanPath.startsWith('/planner/plans/')) {
+        const afterPrefix = cleanPath.slice('/planner/plans/'.length);
+        if (upperMethod === 'GET') {
+          const planId = decodeURIComponent(afterPrefix);
+          return {
+            ...MOCK_STUDY_PLAN,
+            planId,
+            planName: 'Kế hoạch học tập tối ưu KTPM K16',
+            status: 'ACTIVE',
+            planVersion: 1
+          };
+        }
+        if (upperMethod === 'POST' && afterPrefix.endsWith('/activate')) {
+          const planId = decodeURIComponent(afterPrefix.slice(0, -'/activate'.length));
+          return {
+            planId,
+            planVersion: body?.planVersion || 1,
+            status: 'ACTIVE',
+            message: 'Kế hoạch đã được kích hoạt chính thức thành công!'
+          };
+        }
+        if (upperMethod === 'POST' && afterPrefix.endsWith('/restore')) {
+          const planId = decodeURIComponent(afterPrefix.slice(0, -'/restore'.length));
+          return {
+            ...MOCK_STUDY_PLAN,
+            planId: `plan-restored-${Date.now()}`,
+            planName: body?.planName || `Khôi phục từ ${planId}`,
+            status: 'DRAFT',
+            planVersion: 1,
+            message: 'Đã mở lại kế hoạch dưới dạng bản nháp mới!'
+          };
+        }
+        if (upperMethod === 'DELETE') {
+          return { success: true, message: 'Đã hủy bản nháp thành công!' };
+        }
+      }
       throw new ApiClientError({
         code: 'MOCK_ROUTE_NOT_FOUND',
         status: 404,
@@ -676,7 +739,13 @@ export function createApiClient(customConfig = {}) {
   const planner = Object.freeze({
     generate: (payload = {}, opts) => post('/planner/generate', payload, opts),
     validate: (payload = {}, opts) => post('/planner/validate', payload, opts),
-    reconcile: (payload = {}, opts) => post('/planner/reconcile', payload, opts)
+    reconcile: (payload = {}, opts) => post('/planner/reconcile', payload, opts),
+    listPlans: (opts) => get('/planner/plans', opts),
+    getPlan: (planId, opts) => get(`/planner/plans/${encodeURIComponent(planId)}`, opts),
+    savePlan: (payload = {}, opts) => post('/planner/plans', payload, opts),
+    deletePlan: (planId, planVersion, opts) => del(`/planner/plans/${encodeURIComponent(planId)}${planVersion !== undefined && planVersion !== null ? `?planVersion=${encodeURIComponent(planVersion)}` : ''}`, opts),
+    activatePlan: (planId, payload = {}, opts) => post(`/planner/plans/${encodeURIComponent(planId)}/activate`, payload, opts),
+    restorePlan: (planId, payload = {}, opts) => post(`/planner/plans/${encodeURIComponent(planId)}/restore`, payload, opts)
   });
 
   const simulation = Object.freeze({
