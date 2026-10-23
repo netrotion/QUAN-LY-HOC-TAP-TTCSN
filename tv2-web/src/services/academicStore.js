@@ -405,7 +405,7 @@ export function getDynamicGraduationAudit(mode = 'actual') {
       {
         id: 'CHK-02',
         category: '2. KHỐI BẮT BUỘC',
-        name: 'Khối kiến thức giáo dục đại cương & bắt buộc ngành',
+        name: 'Môn kiến thức giáo dục đại cương & bắt buộc ngành',
         completed: earned >= 94,
         totalCreditsRequired: 94,
         accumulatedCredits: Math.min(94, earned),
@@ -416,7 +416,7 @@ export function getDynamicGraduationAudit(mode = 'actual') {
       {
         id: 'CHK-03',
         category: '3. TỰ CHỌN CHUYÊN NGÀNH',
-        name: 'Khối kiến thức tự chọn chuyên ngành',
+        name: 'Môn kiến thức tự chọn chuyên ngành',
         completed: earned >= 106,
         totalCreditsRequired: 12,
         accumulatedCredits: Math.min(12, Math.max(0, earned - 94)),
@@ -558,7 +558,7 @@ export const AUDIT_REMEDIATION_PROPOSAL = Object.freeze({
           credits: 3,
           courseType: 'Bắt buộc chuyên ngành',
           targetGrade: 'B (3.0)',
-          rationale: 'Hoàn tất khối kiến thức chuyên ngành bắt buộc'
+          rationale: 'Hoàn tất môn kiến thức chuyên ngành bắt buộc'
         }
       ]
     },

@@ -192,11 +192,11 @@ export const MOCK_ACADEMIC_STATUS = Object.freeze({
     'Điểm GPA học kỳ hiện tại đang ở trạng thái null / UNKNOWN (chưa khóa sổ điểm từ e-HaUI)'
   ],
   knowledgeBlocks: [
-    { blockId: 'GEN', name: 'Khối kiến thức Đại cương', accumulatedCredits: 25.5, totalCreditsRequired: 30, percentage: 85, color: 'var(--color-success)' },
-    { blockId: 'CORE', name: 'Khối Cơ sở ngành', accumulatedCredits: 24, totalCreditsRequired: 48, percentage: 50, color: 'var(--color-primary)' },
-    { blockId: 'SPEC', name: 'Khối Chuyên ngành', accumulatedCredits: 3, totalCreditsRequired: 30, percentage: 10, color: 'var(--color-info)' },
-    { blockId: 'ELEC', name: 'Khối Tự chọn', accumulatedCredits: 3, totalCreditsRequired: 15, percentage: 20, color: 'var(--color-warning)' },
-    { blockId: 'GRAD', name: 'Khối Tốt nghiệp (Đồ án / Thực tập)', accumulatedCredits: 0, totalCreditsRequired: 12, percentage: 0, color: 'var(--color-text-muted)' }
+    { blockId: 'GEN', name: 'Môn kiến thức Đại cương', accumulatedCredits: 25.5, totalCreditsRequired: 30, percentage: 85, color: 'var(--color-success)' },
+    { blockId: 'CORE', name: 'Môn kiến thức Cơ sở ngành', accumulatedCredits: 24, totalCreditsRequired: 48, percentage: 50, color: 'var(--color-primary)' },
+    { blockId: 'SPEC', name: 'Môn kiến thức Chuyên ngành', accumulatedCredits: 3, totalCreditsRequired: 30, percentage: 10, color: 'var(--color-info)' },
+    { blockId: 'ELEC', name: 'Môn kiến thức Tự chọn', accumulatedCredits: 3, totalCreditsRequired: 15, percentage: 20, color: 'var(--color-warning)' },
+    { blockId: 'GRAD', name: 'Môn kiến thức Tốt nghiệp (Đồ án / Thực tập)', accumulatedCredits: 0, totalCreditsRequired: 12, percentage: 0, color: 'var(--color-text-muted)' }
   ],
   dataRevision: 'rev-1001',
   policyVersion: 'policy-haui-demo-2026@0.0.1-v0',
@@ -328,7 +328,7 @@ export const MOCK_GRADUATION_AUDIT = Object.freeze({
     {
       id: 'CHK-02',
       category: '2. KHỐI BẮT BUỘC',
-      name: 'Khối kiến thức giáo dục đại cương & bắt buộc ngành',
+      name: 'Môn kiến thức giáo dục đại cương & bắt buộc ngành',
       completed: true,
       totalCreditsRequired: 94,
       accumulatedCredits: 94,
@@ -337,7 +337,7 @@ export const MOCK_GRADUATION_AUDIT = Object.freeze({
     {
       id: 'CHK-03',
       category: '3. TỰ CHỌN CHUYÊN NGÀNH',
-      name: 'Khối kiến thức tự chọn chuyên ngành',
+      name: 'Môn kiến thức tự chọn chuyên ngành',
       completed: false,
       totalCreditsRequired: 12,
       accumulatedCredits: 6,
@@ -431,16 +431,16 @@ export const MOCK_PROJECTED_GRADUATION_AUDIT = Object.freeze({
     {
       id: 'CHK-02',
       category: '2. KHỐI BẮT BUỘC',
-      name: 'Khối kiến thức giáo dục đại cương & bắt buộc ngành',
+      name: 'Môn kiến thức giáo dục đại cương & bắt buộc ngành',
       completed: true,
       totalCreditsRequired: 94,
       accumulatedCredits: 94,
-      statusMessage: 'Hoàn thành 100% khối kiến thức bắt buộc (đã bao gồm gỡ nợ MATH1002)'
+      statusMessage: 'Hoàn thành 100% môn kiến thức bắt buộc (đã bao gồm gỡ nợ MATH1002)'
     },
     {
       id: 'CHK-03',
       category: '3. TỰ CHỌN CHUYÊN NGÀNH',
-      name: 'Khối kiến thức tự chọn chuyên ngành',
+      name: 'Môn kiến thức tự chọn chuyên ngành',
       completed: true,
       totalCreditsRequired: 12,
       accumulatedCredits: 12,

@@ -604,13 +604,13 @@ export function CurriculumTreePage() {
 
             {/* Block filter */}
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--color-canvas)', padding: '6px 14px', borderRadius: '9999px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>Khối kiến thức:</span>
+              <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>Môn kiến thức:</span>
               <select
                 value={blockFilter}
                 onChange={(e) => setBlockFilter(e.target.value)}
                 style={{ backgroundColor: 'transparent', border: 'none', fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)', outline: 'none', cursor: 'pointer' }}
               >
-                <option value="all">Tất cả khối</option>
+                <option value="all">Tất cả môn kiến thức</option>
                 <option value="core">Đại cương & Cơ sở ngành</option>
                 <option value="major">Chuyên ngành</option>
                 <option value="elective">Tự chọn chuyên ngành</option>
@@ -984,7 +984,7 @@ export function CurriculumTreePage() {
                 {/* Attributes table */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--color-hairline)' }}>
-                    <span style={{ color: 'var(--color-mid-gray)' }}>Khối kiến thức:</span>
+                    <span style={{ color: 'var(--color-mid-gray)' }}>Môn kiến thức:</span>
                     <strong style={{ color: 'var(--color-ink)', textAlign: 'right' }}>{selectedCourse.knowledgeBlock || 'Đại cương / Cơ sở'}</strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--color-hairline)' }}>

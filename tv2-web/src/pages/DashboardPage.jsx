@@ -841,21 +841,21 @@ export function DashboardPage({ mountedRouteSummary }) {
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.01em' }}>
-                Cấu trúc khối kiến thức
+                Cấu trúc môn kiến thức
               </h2>
               <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>Đã tích lũy: {accumulatedCredits}/{totalRequiredCredits} TC</span>
             </div>
             <p style={{ margin: '0 0 20px', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
-              Tiến độ hoàn thành các khối kiến thức theo CTĐT ({studentSession?.faculty || 'Trường Đại học Công nghiệp Hà Nội'})
+              Tiến độ hoàn thành các môn kiến thức theo CTĐT ({studentSession?.faculty || 'Trường Đại học Công nghiệp Hà Nội'})
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {(academicStatus?.knowledgeBlocks && academicStatus.knowledgeBlocks.length > 0 ? academicStatus.knowledgeBlocks : [
-                { blockId: 'GEN', name: 'Kiến thức đại cương', accumulatedCredits: Math.min(accumulatedCredits, 32), totalCreditsRequired: 32, percentage: Math.min(100, Math.round((accumulatedCredits / 32) * 100)) },
-                { blockId: 'CORE', name: 'Kiến thức Cơ sở ngành', accumulatedCredits: Math.max(0, Math.min(accumulatedCredits - 32, 45)), totalCreditsRequired: 45, percentage: Math.min(100, Math.round((Math.max(0, accumulatedCredits - 32) / 45) * 100)) },
-                { blockId: 'SPEC', name: 'Kiến thức Chuyên ngành bắt buộc', accumulatedCredits: Math.max(0, Math.min(accumulatedCredits - 77, 38)), totalCreditsRequired: 38, percentage: Math.min(100, Math.round((Math.max(0, accumulatedCredits - 77) / 38) * 100)) },
-                { blockId: 'ELEC', name: 'Tự chọn định hướng & Thực tập', accumulatedCredits: Math.max(0, Math.min(accumulatedCredits - 115, 20)), totalCreditsRequired: 20, percentage: Math.min(100, Math.round((Math.max(0, accumulatedCredits - 115) / 20) * 100)) },
-                { blockId: 'GRAD', name: 'Khóa luận / Đồ án tốt nghiệp', accumulatedCredits: 0, totalCreditsRequired: 10, percentage: 0 }
+                { blockId: 'GEN', name: 'Môn kiến thức đại cương', accumulatedCredits: Math.min(accumulatedCredits, 32), totalCreditsRequired: 32, percentage: Math.min(100, Math.round((accumulatedCredits / 32) * 100)) },
+                { blockId: 'CORE', name: 'Môn kiến thức cơ sở ngành', accumulatedCredits: Math.max(0, Math.min(accumulatedCredits - 32, 45)), totalCreditsRequired: 45, percentage: Math.min(100, Math.round((Math.max(0, accumulatedCredits - 32) / 45) * 100)) },
+                { blockId: 'SPEC', name: 'Môn kiến thức chuyên ngành bắt buộc', accumulatedCredits: Math.max(0, Math.min(accumulatedCredits - 77, 38)), totalCreditsRequired: 38, percentage: Math.min(100, Math.round((Math.max(0, accumulatedCredits - 77) / 38) * 100)) },
+                { blockId: 'ELEC', name: 'Môn kiến thức tự chọn & thực tập', accumulatedCredits: Math.max(0, Math.min(accumulatedCredits - 115, 20)), totalCreditsRequired: 20, percentage: Math.min(100, Math.round((Math.max(0, accumulatedCredits - 115) / 20) * 100)) },
+                { blockId: 'GRAD', name: 'Môn kiến thức tốt nghiệp (Đồ án)', accumulatedCredits: 0, totalCreditsRequired: 10, percentage: 0 }
               ]).map((block) => (
                 <div key={block.blockId || block.name} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>

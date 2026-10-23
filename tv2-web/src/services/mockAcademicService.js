@@ -65,7 +65,7 @@ export const CURRICULUM_COURSES_BASE = Object.freeze([
     priorCourseCodes: [],
     corequisiteCourseCodes: [],
     unlocks: [],
-    instructorNote: 'Khối kiến thức lý luận chính trị bắt buộc.'
+    instructorNote: 'Môn kiến thức lý luận chính trị bắt buộc.'
   },
   {
     courseCode: 'MATH1002',
@@ -630,11 +630,11 @@ class MockAcademicServiceState {
       inProgressCourses,
       attempts: student.attempts,
       knowledgeBlocks: [
-        { blockId: 'GEN', name: 'Khối kiến thức Đại cương', accumulatedCredits: Math.min(context.accumulatedCredits, 30), totalCreditsRequired: 30, percentage: Math.min(100, Math.round((context.accumulatedCredits / 30) * 100)), color: 'var(--color-success)' },
-        { blockId: 'CORE', name: 'Khối Cơ sở ngành', accumulatedCredits: Math.max(0, Math.min(context.accumulatedCredits - 30, 48)), totalCreditsRequired: 48, percentage: Math.min(100, Math.round((Math.max(0, context.accumulatedCredits - 30) / 48) * 100)), color: 'var(--color-primary)' },
-        { blockId: 'SPEC', name: 'Khối Chuyên ngành', accumulatedCredits: Math.max(0, Math.min(context.accumulatedCredits - 78, 30)), totalCreditsRequired: 30, percentage: Math.min(100, Math.round((Math.max(0, context.accumulatedCredits - 78) / 30) * 100)), color: 'var(--color-info)' },
-        { blockId: 'ELEC', name: 'Khối Tự chọn', accumulatedCredits: Math.max(0, Math.min(context.accumulatedCredits - 108, 15)), totalCreditsRequired: 15, percentage: Math.min(100, Math.round((Math.max(0, context.accumulatedCredits - 108) / 15) * 100)), color: 'var(--color-warning)' },
-        { blockId: 'GRAD', name: 'Khối Tốt nghiệp (Đồ án)', accumulatedCredits: 0, totalCreditsRequired: 12, percentage: 0, color: 'var(--color-text-muted)' }
+        { blockId: 'GEN', name: 'Môn kiến thức Đại cương', accumulatedCredits: Math.min(context.accumulatedCredits, 30), totalCreditsRequired: 30, percentage: Math.min(100, Math.round((context.accumulatedCredits / 30) * 100)), color: 'var(--color-success)' },
+        { blockId: 'CORE', name: 'Môn kiến thức Cơ sở ngành', accumulatedCredits: Math.max(0, Math.min(context.accumulatedCredits - 30, 48)), totalCreditsRequired: 48, percentage: Math.min(100, Math.round((Math.max(0, context.accumulatedCredits - 30) / 48) * 100)), color: 'var(--color-primary)' },
+        { blockId: 'SPEC', name: 'Môn kiến thức Chuyên ngành', accumulatedCredits: Math.max(0, Math.min(context.accumulatedCredits - 78, 30)), totalCreditsRequired: 30, percentage: Math.min(100, Math.round((Math.max(0, context.accumulatedCredits - 78) / 30) * 100)), color: 'var(--color-info)' },
+        { blockId: 'ELEC', name: 'Môn kiến thức Tự chọn', accumulatedCredits: Math.max(0, Math.min(context.accumulatedCredits - 108, 15)), totalCreditsRequired: 15, percentage: Math.min(100, Math.round((Math.max(0, context.accumulatedCredits - 108) / 15) * 100)), color: 'var(--color-warning)' },
+        { blockId: 'GRAD', name: 'Môn kiến thức Tốt nghiệp (Đồ án)', accumulatedCredits: 0, totalCreditsRequired: 12, percentage: 0, color: 'var(--color-text-muted)' }
       ],
       fixtureLabel: FIXTURE_TAG
     };
@@ -1071,7 +1071,7 @@ class MockAcademicServiceState {
       {
         id: 'CHK-02',
         category: '2. KHỐI BẮT BUỘC',
-        name: 'Khối kiến thức giáo dục đại cương & bắt buộc ngành',
+        name: 'Môn kiến thức giáo dục đại cương & bắt buộc ngành',
         completed: earned >= 94,
         totalCreditsRequired: 94,
         accumulatedCredits: Math.min(94, earned),
@@ -1082,7 +1082,7 @@ class MockAcademicServiceState {
       {
         id: 'CHK-03',
         category: '3. TỰ CHỌN CHUYÊN NGÀNH',
-        name: 'Khối kiến thức tự chọn chuyên ngành',
+        name: 'Môn kiến thức tự chọn chuyên ngành',
         completed: earned >= 106,
         totalCreditsRequired: 12,
         accumulatedCredits: Math.min(12, Math.max(0, earned - 94)),
