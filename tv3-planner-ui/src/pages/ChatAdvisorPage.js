@@ -442,6 +442,19 @@ export function ChatAdvisorPage({
     }
   }, [api]);
 
+  useEffect(() => {
+    const handleTranscriptUpdated = (e) => {
+      if (e?.detail?.snapshot?.student) {
+        setStudent(e.detail.snapshot.student);
+      }
+    };
+
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('haui:academic:transcript-updated', handleTranscriptUpdated);
+      return () => window.removeEventListener('haui:academic:transcript-updated', handleTranscriptUpdated);
+    }
+  }, []);
+
   // ID phiên hội thoại (Conversation ID chuẩn UUID theo OpenAPI V1)
   const [conversationId, setConversationId] = useState(() => {
     if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {

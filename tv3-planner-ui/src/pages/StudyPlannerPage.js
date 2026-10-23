@@ -105,6 +105,20 @@ export function StudyPlannerPage({ api, ui } = {}) {
   useEffect(() => {
     const handleTranscriptUpdated = (e) => {
       showToast('Bảng điểm đã được cập nhật! Các điều kiện tiên quyết và tín chỉ đã được đồng bộ.');
+      if (e?.detail?.snapshot?.metrics) {
+        const m = e.detail.snapshot.metrics;
+        if (m.accumulatedCredits !== undefined && m.accumulatedCredits !== null) {
+          plannerStore.plan.totalEarnedCredits = m.accumulatedCredits;
+          plannerStore.plan.remainingCredits = Math.max(
+            0,
+            (plannerStore.plan.totalRequiredCredits || 145) - m.accumulatedCredits
+          );
+        }
+        if (m.cpa !== undefined && m.cpa !== null) {
+          plannerStore.plan.currentCpa = m.cpa;
+        }
+        plannerStore.notify();
+      }
       if (api && typeof plannerStore.fetchPlansAsync === 'function') {
         plannerStore.fetchPlansAsync(api).catch(() => {});
       }

@@ -243,6 +243,10 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
               dataRevision: apiRes.dataRevision || null
             };
           } else {
+            const sessionStudent = api?.getConfig?.()?.sessionStudent || null;
+            const currentCpa = sessionStudent?.cpa !== null && sessionStudent?.cpa !== undefined ? Number(sessionStudent.cpa) : 3.18;
+            const currentCredits = sessionStudent?.accumulatedCredits !== null && sessionStudent?.accumulatedCredits !== undefined ? Number(sessionStudent.accumulatedCredits) : 108;
+
             const totalCredits = coursesToSimulate.reduce((sum, c) => sum + Number(c.credits || 0), 0);
             const totalPoints = coursesToSimulate.reduce(
               (sum, c) => sum + Number(c.credits || 0) * (GRADE_POINTS_MAP[c.expectedGrade] ?? 3.0),
@@ -250,8 +254,6 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
             );
             const expectedGpa = totalCredits > 0 ? Number((totalPoints / totalCredits).toFixed(2)) : 3.0;
 
-            const currentCpa = 3.18;
-            const currentCredits = 108;
             const projectedCpa = Number(
               ((currentCpa * currentCredits + totalPoints) / (currentCredits + totalCredits)).toFixed(2)
             );
@@ -384,10 +386,11 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
               dataRevision: apiRes.dataRevision || null
             };
           } else {
-            const currentCpa = 3.18;
-            const earnedCredits = 108;
-            const totalCredits = 145;
-            const remainingCredits = totalCredits - earnedCredits;
+            const sessionStudent = api?.getConfig?.()?.sessionStudent || null;
+            const currentCpa = sessionStudent?.cpa !== null && sessionStudent?.cpa !== undefined ? Number(sessionStudent.cpa) : 3.18;
+            const earnedCredits = sessionStudent?.accumulatedCredits !== null && sessionStudent?.accumulatedCredits !== undefined ? Number(sessionStudent.accumulatedCredits) : 108;
+            const totalCredits = sessionStudent?.totalCreditsRequired || 145;
+            const remainingCredits = Math.max(1, totalCredits - earnedCredits);
 
             const requiredTotalPoints = targetCpa * totalCredits - currentCpa * earnedCredits;
             const requiredAverageGpa = Number((requiredTotalPoints / remainingCredits).toFixed(2));
@@ -485,6 +488,18 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
     setResult(null);
     setError(null);
     executeSimulation(activeTool);
+  }, [activeTool, executeSimulation]);
+
+  // Lắng nghe sự kiện cập nhật bảng điểm từ TV2 để tính toán lại các chỉ số What-if
+  useEffect(() => {
+    const handleTranscriptUpdated = () => {
+      executeSimulation(activeTool);
+    };
+
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('haui:academic:transcript-updated', handleTranscriptUpdated);
+      return () => window.removeEventListener('haui:academic:transcript-updated', handleTranscriptUpdated);
+    }
   }, [activeTool, executeSimulation]);
 
   // Handlers
