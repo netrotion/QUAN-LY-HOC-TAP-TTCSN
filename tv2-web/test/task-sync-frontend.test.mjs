@@ -172,3 +172,24 @@ test('4. Chiều cao các cột trong biểu đồ biến thiên GPA tỉ lệ t
   }
 });
 
+test('5. Các mục chưa có dữ liệu hiển thị thông báo trạng thái rõ ràng, không bịa đặt thông tin', () => {
+  const dashFile = path.resolve(__dirname, '../src/pages/DashboardPage.jsx');
+  const code = fs.readFileSync(dashFile, 'utf-8');
+
+  // 1. Học phần đang học: có xử lý empty state khi không có môn đang học
+  assert.ok(code.includes('Chưa có dữ liệu học phần đang học'));
+  assert.ok(code.includes('inProgressCoursesList.length === 0'));
+
+  // 2. Lộ trình học kỳ kế tiếp: có xử lý empty state khi chưa có kế hoạch
+  assert.ok(code.includes('Chưa có lộ trình học kỳ kế tiếp'));
+
+  // 3. Môn nợ tiên quyết: có xử lý khi chưa có bảng điểm
+  assert.ok(code.includes('Chưa có dữ liệu bảng điểm'));
+
+  // 4. Kế hoạch học tập gần nhất: có xử lý khi chưa có kế hoạch đã lưu
+  assert.ok(code.includes('Chưa có kế hoạch đã lưu'));
+
+  // 5. Kiểm toán tốt nghiệp: có xử lý khi chưa có dữ liệu kiểm toán
+  assert.ok(code.includes('Chưa có dữ liệu kiểm toán'));
+});
+

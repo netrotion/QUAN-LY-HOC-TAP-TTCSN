@@ -10,6 +10,7 @@ import {
   subscribeAcademicStore
 } from '../services/academicStore.js';
 import { calculateSemesterGpaTrend } from '../services/mockAcademicService.js';
+import { plannerStore } from '@haui/planner-ui';
 
 /**
  * Mẫu dữ liệu Lộ trình đề xuất học kỳ kế tiếp (18 TC — tuân thủ BR-03: 10–24 TC)
@@ -83,6 +84,8 @@ export function DashboardPage({ mountedRouteSummary }) {
 
   const [academicStatus, setAcademicStatus] = useState(null);
   const [transcriptData, setTranscriptData] = useState(null);
+  const [auditData, setAuditData] = useState(null);
+  const [plannerState, setPlannerState] = useState(() => plannerStore.getState());
   const [bootstrapInfo, setBootstrapInfo] = useState(null);
   const [healthInfo, setHealthInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -102,16 +105,18 @@ export function DashboardPage({ mountedRouteSummary }) {
     setLoading(true);
     setError(null);
     try {
-      const [statusRes, bootRes, healthRes, transcriptRes] = await Promise.all([
+      const [statusRes, bootRes, healthRes, transcriptRes, auditRes] = await Promise.all([
         api.academic.getStatus(),
         api.system.getBootstrap(),
         api.system.getHealth(),
-        api.academic.getTranscript().catch(() => null)
+        api.academic.getTranscript().catch(() => null),
+        api.audit.getGraduationAudit().catch(() => null)
       ]);
       setAcademicStatus(statusRes);
       setBootstrapInfo(bootRes);
       setHealthInfo(healthRes);
       setTranscriptData(transcriptRes);
+      setAuditData(auditRes);
     } catch (err) {
       setError(err);
     } finally {
@@ -127,6 +132,9 @@ export function DashboardPage({ mountedRouteSummary }) {
     const unsubApi = api.subscribe(() => {
       loadDashboardData();
     });
+    const unsubPlanner = plannerStore.subscribe((newState) => {
+      setPlannerState(newState);
+    });
 
     const handleTranscriptUpdated = () => {
       loadDashboardData();
@@ -139,6 +147,7 @@ export function DashboardPage({ mountedRouteSummary }) {
     return () => {
       unsubStore();
       unsubApi();
+      unsubPlanner();
       if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
         window.removeEventListener('haui:academic:transcript-updated', handleTranscriptUpdated);
       }
@@ -244,6 +253,75 @@ export function DashboardPage({ mountedRouteSummary }) {
       [];
     return rawAttempts.filter((a) => a.letterGrade === 'F' || a.status === 'FAILED');
   }, [academicStatus, transcriptData]);
+
+  const hasTranscript = Boolean(
+    studentSession?.hasTranscript !== false &&
+    academicStatus &&
+    academicStatus.cpa !== null &&
+    ((academicStatus.accumulatedCredits !== null && academicStatus.accumulatedCredits > 0) ||
+      (transcriptData?.attempts && transcriptData.attempts.length > 0))
+  );
+
+  const inProgressCoursesList = useMemo(() => {
+    if (!hasTranscript) return [];
+    if (academicStatus?.inProgressCourses && Array.isArray(academicStatus.inProgressCourses)) {
+      return academicStatus.inProgressCourses;
+    }
+    const rawAttempts =
+      transcriptData?.attempts ||
+      transcriptData?.records ||
+      academicStatus?.attempts ||
+      getAcademicSnapshot().transcriptRecords ||
+      [];
+    return rawAttempts.filter(
+      (a) => a.status === 'IN_PROGRESS' || (a.letterGrade === null && (a.score10 === null || a.score10 === undefined))
+    );
+  }, [hasTranscript, academicStatus, transcriptData]);
+
+  const nextSemesterPlan = useMemo(() => {
+    if (!hasTranscript) return null;
+    const sem0 = plannerState.plan?.semesters?.[0];
+    if (sem0 && Array.isArray(sem0.courses) && sem0.courses.length > 0) {
+      return {
+        semesterName: sem0.semesterName || sem0.semesterCode || 'Học kỳ 1 (Năm học kế tiếp)',
+        totalCredits: sem0.totalCredits || sem0.courses.reduce((sum, c) => sum + (Number(c.credits) || 0), 0),
+        workloadAssessment: sem0.workloadAssessment || 'Cân bằng tải chuẩn HaUI (18 Tín chỉ tối đa)',
+        courses: sem0.courses
+      };
+    }
+    return null;
+  }, [hasTranscript, plannerState]);
+
+  const activePlanEntry = useMemo(() => {
+    if (!hasTranscript) return null;
+    const history = plannerState.history || [];
+    return (
+      history.find((h) => h.status === 'ACTIVE') ||
+      (plannerState.plan?.status === 'ACTIVE' ? plannerState.plan : null) ||
+      history[0] ||
+      null
+    );
+  }, [hasTranscript, plannerState]);
+
+  const trainingScore = hasTranscript
+    ? (auditData?.trainingScore ?? academicStatus?.trainingScore ?? 84)
+    : null;
+
+  const trainingClassification = hasTranscript
+    ? (auditData?.trainingClassification ?? (trainingScore >= 80 ? 'Loại Tốt' : trainingScore >= 65 ? 'Loại Khá' : 'Trung bình'))
+    : 'Chưa có dữ liệu';
+
+  const completedChecklistCount = hasTranscript && auditData?.checklist
+    ? auditData.checklist.filter((c) => c.completed).length
+    : null;
+
+  const totalChecklistCount = hasTranscript && auditData?.checklist
+    ? auditData.checklist.length
+    : null;
+
+  const auditPercent = hasTranscript && auditData?.completedPercentage !== undefined
+    ? auditData.completedPercentage
+    : null;
 
   // Render Skeleton Layout khi xem trạng thái 'loading'
   if (componentState === 'loading' || (loading && componentState === 'loaded' && !academicStatus)) {
@@ -653,23 +731,35 @@ export function DashboardPage({ mountedRouteSummary }) {
               </span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
                 <span style={{ fontSize: '30px', fontWeight: 600, color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>
-                  86
+                  {trainingScore !== null ? trainingScore : '—'}
                 </span>
-                <span style={{ fontSize: '14px', color: 'var(--color-mid-gray)' }}>/ 100</span>
+                <span style={{ fontSize: '14px', color: 'var(--color-mid-gray)' }}>
+                  {trainingScore !== null ? '/ 100' : 'Chưa có'}
+                </span>
               </div>
             </div>
             <span className="haui-stat-trend">
-              <span style={{ width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
-              Loại Tốt
+              {trainingScore !== null ? (
+                <>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
+                  {trainingClassification}
+                </>
+              ) : (
+                'Chưa có dữ liệu'
+              )}
             </span>
           </div>
           <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-              <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Đạt điều kiện tốt nghiệp</span>
-              <span style={{ color: 'var(--color-mid-gray)' }}>Kỳ 6: 88 điểm</span>
+              <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>
+                {trainingScore !== null ? 'Đạt điều kiện tốt nghiệp' : 'Chưa có điểm rèn luyện'}
+              </span>
+              <span style={{ color: 'var(--color-mid-gray)' }}>
+                {trainingScore !== null ? `Mức điểm: ${trainingScore}/100` : 'Cần nạp bảng điểm'}
+              </span>
             </div>
             <div className="haui-progress-bar-minimal">
-              <div className="haui-progress-bar-fill" style={{ width: '86%' }} />
+              <div className="haui-progress-bar-fill" style={{ width: trainingScore !== null ? `${trainingScore}%` : '0%' }} />
             </div>
           </div>
         </div>
@@ -683,22 +773,28 @@ export function DashboardPage({ mountedRouteSummary }) {
               </span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
                 <span style={{ fontSize: '30px', fontWeight: 600, color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>
-                  4
+                  {completedChecklistCount !== null ? completedChecklistCount : '—'}
                 </span>
-                <span style={{ fontSize: '14px', color: 'var(--color-mid-gray)' }}>/ 6 điều kiện</span>
+                <span style={{ fontSize: '14px', color: 'var(--color-mid-gray)' }}>
+                  {totalChecklistCount !== null ? `/ ${totalChecklistCount} điều kiện` : 'Chưa có'}
+                </span>
               </div>
             </div>
             <span className="haui-stat-trend">
-              66.7%
+              {auditPercent !== null ? `${auditPercent}%` : 'Chưa có dữ liệu'}
             </span>
           </div>
           <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-              <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>B1 VSTEP &bull; IC3: Đạt</span>
-              <span style={{ color: 'var(--color-mid-gray)' }}>Khóa luận: Chờ</span>
+              <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>
+                {auditPercent !== null ? `${auditPercent}% tiêu chuẩn đạt` : 'Chưa có dữ liệu kiểm toán'}
+              </span>
+              <span style={{ color: 'var(--color-mid-gray)' }}>
+                {auditPercent !== null ? `${completedChecklistCount}/${totalChecklistCount} tiêu chí` : 'Cần nạp bảng điểm'}
+              </span>
             </div>
             <div className="haui-progress-bar-minimal">
-              <div className="haui-progress-bar-fill" style={{ width: '66.7%' }} />
+              <div className="haui-progress-bar-fill" style={{ width: auditPercent !== null ? `${auditPercent}%` : '0%' }} />
             </div>
           </div>
         </div>
@@ -888,14 +984,14 @@ export function DashboardPage({ mountedRouteSummary }) {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.01em' }}>
-                Học phần đang học (Kỳ 2 - Năm học 2023 - 2024)
+                Học phần đang theo học
               </h2>
               <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', fontWeight: 500, backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
-                5 môn &bull; 14 TC
+                {inProgressCoursesList.length} môn &bull; {inProgressCoursesList.reduce((sum, c) => sum + (Number(c.credits) || 0), 0)} TC
               </span>
             </div>
             <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
-              Theo dõi tiến độ điểm đánh giá thành phần và điều kiện tiên quyết chuyên ngành
+              Theo dõi tiến độ điểm đánh giá thành phần và học phần đang đăng ký trong học kỳ
             </p>
           </div>
 
@@ -914,164 +1010,68 @@ export function DashboardPage({ mountedRouteSummary }) {
 
         {/* Data Table Container */}
         <div style={{ overflowX: 'auto', width: '100%' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
-            <thead>
-              <tr style={{ color: 'var(--color-mid-gray)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em', backgroundColor: '#fafafa' }}>
-                <th style={{ padding: '12px 16px', borderRadius: '12px 0 0 12px' }}>Mã &amp; Tên học phần</th>
-                <th style={{ padding: '12px 12px' }}>Tín chỉ</th>
-                <th style={{ padding: '12px 16px' }}>Đánh giá quá trình</th>
-                <th style={{ padding: '12px 16px' }}>Trạng thái / Lưu ý</th>
-                <th style={{ padding: '12px 12px', textAlign: 'right', borderRadius: '0 12px 12px 0' }}>Chi tiết</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Row 1 */}
-              <tr style={{ borderBottom: '1px solid var(--color-hairline)' }}>
-                <td style={{ padding: '14px 16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Lập trình Web nâng cao</span>
-                    <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>IT6015 &bull; {studentSession?.faculty || 'HaUI'}</span>
-                  </div>
-                </td>
-                <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>3 TC</td>
-                <td style={{ padding: '14px 16px' }}>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--color-canvas)', padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', color: 'var(--color-ink)' }}>
-                    <span>Quá trình:</span>
-                    <strong>8.5</strong>
-                  </div>
-                </td>
-                <td style={{ padding: '14px 16px' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
-                    Đang học
-                  </span>
-                </td>
-                <td style={{ padding: '14px 12px', textAlign: 'right' }}>
-                  <button type="button" className="haui-sidebar__profile-logout" title="Xem chi tiết môn">
-                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>more_horiz</span>
-                  </button>
-                </td>
-              </tr>
-
-              {/* Row 2 */}
-              <tr style={{ borderBottom: '1px solid var(--color-hairline)' }}>
-                <td style={{ padding: '14px 16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Phân tích &amp; Thiết kế hệ thống</span>
-                    <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>IT6018 &bull; {studentSession?.faculty || 'HaUI'}</span>
-                  </div>
-                </td>
-                <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>3 TC</td>
-                <td style={{ padding: '14px 16px' }}>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--color-canvas)', padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', color: 'var(--color-ink)' }}>
-                    <span>Quá trình:</span>
-                    <strong>8.0</strong>
-                  </div>
-                </td>
-                <td style={{ padding: '14px 16px' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
-                    Đang học
-                  </span>
-                </td>
-                <td style={{ padding: '14px 12px', textAlign: 'right' }}>
-                  <button type="button" className="haui-sidebar__profile-logout" title="Xem chi tiết môn">
-                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>more_horiz</span>
-                  </button>
-                </td>
-              </tr>
-
-              {/* Row 3 */}
-              <tr style={{ borderBottom: '1px solid var(--color-hairline)' }}>
-                <td style={{ padding: '14px 16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Trí tuệ nhân tạo</span>
-                    <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>IT6020 &bull; {studentSession?.faculty || 'HaUI'}</span>
-                  </div>
-                </td>
-                <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>3 TC</td>
-                <td style={{ padding: '14px 16px' }}>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--color-canvas)', padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', color: 'var(--color-ink)' }}>
-                    <span>Quá trình:</span>
-                    <strong>7.5</strong>
-                  </div>
-                </td>
-                <td style={{ padding: '14px 16px' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
-                    Đang học
-                  </span>
-                </td>
-                <td style={{ padding: '14px 12px', textAlign: 'right' }}>
-                  <button type="button" className="haui-sidebar__profile-logout" title="Xem chi tiết môn">
-                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>more_horiz</span>
-                  </button>
-                </td>
-              </tr>
-
-              {/* Row 4 (Alert Prerequisite Row - MATH1002) */}
-              <tr style={{ borderBottom: '1px solid var(--color-hairline)' }}>
-                <td style={{ padding: '14px 16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Toán rời rạc (MATH1002)</span>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '9999px', backgroundColor: 'var(--color-ember)' }} title="Môn nợ tiên quyết cần gỡ gấp" />
-                    </div>
-                    <span style={{ fontSize: '12px', color: 'var(--color-error)' }}>
-                      Môn tiên quyết trực tiếp của IT6001 (Cấu trúc dữ liệu &amp; Giải thuật) &bull; Điểm F
-                    </span>
-                  </div>
-                </td>
-                <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>3 TC</td>
-                <td style={{ padding: '14px 16px' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--color-ember)', fontWeight: 600 }}>Điểm F (0.0)</span>
-                </td>
-                <td style={{ padding: '14px 16px' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ember)', fontWeight: 600 }}>
-                    Nợ tiên quyết
-                  </span>
-                </td>
-                <td style={{ padding: '14px 12px', textAlign: 'right' }}>
-                  <button
-                    type="button"
-                    className="haui-pill-btn-dark"
-                    style={{ fontSize: '11px', padding: '4px 10px' }}
-                    onClick={() => navigate('/planner')}
-                  >
-                    Gỡ nợ kỳ tới
-                  </button>
-                </td>
-              </tr>
-
-              {/* Row 5 */}
-              <tr>
-                <td style={{ padding: '14px 16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Tiếng Anh chuyên ngành CNTT</span>
-                    <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>FL6005 &bull; Bộ môn Ngoại ngữ</span>
-                  </div>
-                </td>
-                <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>2 TC</td>
-                <td style={{ padding: '14px 16px' }}>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--color-canvas)', padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', color: 'var(--color-ink)' }}>
-                    <span>Quá trình:</span>
-                    <strong>9.0</strong>
-                  </div>
-                </td>
-                <td style={{ padding: '14px 16px' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
-                    Đang học
-                  </span>
-                </td>
-                <td style={{ padding: '14px 12px', textAlign: 'right' }}>
-                  <button type="button" className="haui-sidebar__profile-logout" title="Xem chi tiết môn">
-                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>more_horiz</span>
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          {inProgressCoursesList.length === 0 ? (
+            <div style={{ padding: '36px 20px', textAlign: 'center', backgroundColor: 'var(--color-surface-alt)', borderRadius: '16px', border: '1px solid var(--color-hairline)' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '36px', color: 'var(--color-mid-gray)', marginBottom: '8px' }}>school</span>
+              <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-ink)', margin: '0 0 4px' }}>Chưa có dữ liệu học phần đang học</h3>
+              <p style={{ fontSize: '13px', color: 'var(--color-mid-gray)', margin: '0 0 16px', maxWidth: '520px', marginInline: 'auto' }}>
+                Hiện tại chưa ghi nhận học phần nào đang theo học trong học kỳ này. Khi bạn cập nhật bảng điểm từ cổng sv.haui.edu.vn hoặc đăng ký môn học mới, danh sách sẽ tự động hiển thị tại đây.
+              </p>
+              <button type="button" className="haui-pill-btn-paper" onClick={() => navigate('/transcript')}>
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>upload_file</span>
+                <span>Cập nhật bảng điểm</span>
+              </button>
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+              <thead>
+                <tr style={{ color: 'var(--color-mid-gray)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em', backgroundColor: '#fafafa' }}>
+                  <th style={{ padding: '12px 16px', borderRadius: '12px 0 0 12px' }}>Mã &amp; Tên học phần</th>
+                  <th style={{ padding: '12px 12px' }}>Tín chỉ</th>
+                  <th style={{ padding: '12px 16px' }}>Học kỳ</th>
+                  <th style={{ padding: '12px 16px' }}>Đánh giá quá trình</th>
+                  <th style={{ padding: '12px 16px' }}>Trạng thái / Lưu ý</th>
+                  <th style={{ padding: '12px 12px', textAlign: 'right', borderRadius: '0 12px 12px 0' }}>Chi tiết</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inProgressCoursesList.map((course) => (
+                  <tr key={course.courseCode} style={{ borderBottom: '1px solid var(--color-hairline)' }}>
+                    <td style={{ padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{course.courseName || course.courseCode}</span>
+                        <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)', fontFamily: 'var(--font-mono)' }}>{course.courseCode} &bull; {studentSession?.faculty || 'HaUI'}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '14px 12px', color: 'var(--color-ink)', fontWeight: 500 }}>{course.credits} TC</td>
+                    <td style={{ padding: '14px 16px', color: 'var(--color-mid-gray)' }}>{course.semesterCode || 'Kỳ hiện tại'}</td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--color-canvas)', padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', color: 'var(--color-ink)' }}>
+                        <span>Quá trình:</span>
+                        <strong>{course.score10 !== null && course.score10 !== undefined ? course.score10 : 'Đang cập nhật'}</strong>
+                      </div>
+                    </td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
+                        Đang học
+                      </span>
+                    </td>
+                    <td style={{ padding: '14px 12px', textAlign: 'right' }}>
+                      <button
+                        type="button"
+                        className="haui-sidebar__profile-logout"
+                        title="Xem vị trí trên Cây môn học"
+                        onClick={() => navigate('/curriculum')}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>account_tree</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </section>
 
@@ -1087,22 +1087,40 @@ export function DashboardPage({ mountedRouteSummary }) {
                 Lời khuyên từ AI Advisor cho bạn
               </h2>
               <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-mid-gray)' }}>
-                Tối ưu hóa học kỳ
+                {academicStatus?.warnings?.length > 0 ? 'Cảnh báo học vụ' : 'Tối ưu hóa học kỳ'}
               </span>
             </div>
             <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '14px', color: 'var(--color-mid-gray)' }}>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-ink)', marginTop: '2px', flexShrink: 0 }}>check_circle</span>
-                <span>
-                  Bạn đã tích lũy <strong style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{accumulatedCredits} tín chỉ</strong>, hoàn toàn đủ điều kiện theo quy chế HaUI để đăng ký <strong style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Khóa luận tốt nghiệp (10 TC)</strong> vào Học kỳ 1 năm sau nếu hoàn thành toàn bộ 14 tín chỉ trong kỳ hiện tại.
-                </span>
-              </li>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-ember)', marginTop: '2px', flexShrink: 0 }}>info</span>
-                <span>
-                  Lưu ý học phần <strong style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Kiến trúc phần mềm</strong> (dự kiến đăng ký Kỳ 7) yêu cầu môn tiên quyết <strong style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Lập trình hướng đối tượng (IT6002)</strong> của bạn đã đạt điểm B+ (Hợp lệ).
-                </span>
-              </li>
+              {!hasTranscript ? (
+                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-mid-gray)', marginTop: '2px', flexShrink: 0 }}>info</span>
+                  <span>
+                    Chưa có dữ liệu bảng điểm cá nhân: Vui lòng nạp bảng điểm từ sv.haui.edu.vn để AI Advisor phân tích tiến độ, phát hiện môn tiên quyết và đề xuất lộ trình tối ưu cho bạn.
+                  </span>
+                </li>
+              ) : academicStatus?.warnings?.length > 0 ? (
+                academicStatus.warnings.map((w, idx) => (
+                  <li key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-ember, #e7000b)', marginTop: '2px', flexShrink: 0 }}>warning</span>
+                    <span style={{ color: 'var(--color-ink)' }}>{w}</span>
+                  </li>
+                ))
+              ) : (
+                <>
+                  <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#16a34a', marginTop: '2px', flexShrink: 0 }}>check_circle</span>
+                    <span>
+                      Tiến độ học tập bình thường: Bạn đã tích lũy <strong style={{ color: 'var(--color-ink)', fontWeight: 600 }}>{accumulatedCredits} / {totalRequiredCredits} tín chỉ</strong> ({creditPercent}% CTĐT) và không có môn nợ học phần.
+                    </span>
+                  </li>
+                  <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#0284c7', marginTop: '2px', flexShrink: 0 }}>trending_up</span>
+                    <span>
+                      Điểm tích lũy hiện tại đạt <strong style={{ color: 'var(--color-ink)', fontWeight: 600 }}>CPA {cpaValue}</strong>. Hãy duy trì và lập kế hoạch các học kỳ tiếp theo để đạt mục tiêu tốt nghiệp.
+                    </span>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
         </div>
@@ -1116,7 +1134,7 @@ export function DashboardPage({ mountedRouteSummary }) {
             style={{ justifyContent: 'center' }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>alt_route</span>
-            <span>Phân bổ môn Kỳ 7</span>
+            <span>Lập kế hoạch kỳ tới</span>
           </button>
           <button
             type="button"
@@ -1145,7 +1163,23 @@ export function DashboardPage({ mountedRouteSummary }) {
             overflow: 'hidden'
           }}
           headerAction={
-            failedCoursesList.length > 0 ? (
+            !hasTranscript ? (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 12px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas)',
+                  color: 'var(--color-mid-gray)',
+                  fontSize: '12px',
+                  fontWeight: 500
+                }}
+              >
+                Chưa có dữ liệu
+              </span>
+            ) : failedCoursesList.length > 0 ? (
               <span
                 style={{
                   display: 'inline-flex',
@@ -1182,7 +1216,19 @@ export function DashboardPage({ mountedRouteSummary }) {
           }
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {failedCoursesList.length > 0 ? (
+            {!hasTranscript ? (
+              <div style={{ padding: '36px 20px', textAlign: 'center', backgroundColor: 'var(--color-surface-alt)', borderRadius: '16px', border: '1px solid var(--color-hairline)' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '36px', color: 'var(--color-mid-gray)', marginBottom: '8px' }}>info</span>
+                <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-ink)', margin: '0 0 4px' }}>Chưa có dữ liệu bảng điểm</h3>
+                <p style={{ fontSize: '13px', color: 'var(--color-mid-gray)', margin: '0 0 16px', maxWidth: '440px', marginInline: 'auto' }}>
+                  Hồ sơ hiện tại chưa có dữ liệu bảng điểm cá nhân. Vui lòng nạp bảng điểm từ cổng sv.haui.edu.vn để hệ thống rà soát môn nợ và môn tiên quyết.
+                </p>
+                <button type="button" className="haui-pill-btn-paper" onClick={() => navigate('/transcript')}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>upload_file</span>
+                  <span>Nạp bảng điểm ngay</span>
+                </button>
+              </div>
+            ) : failedCoursesList.length > 0 ? (
               failedCoursesList.map((fc) => (
                 <div
                   key={fc.courseCode}
@@ -1196,7 +1242,7 @@ export function DashboardPage({ mountedRouteSummary }) {
                     border: '1px solid #fee2e2'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'gap 8px' }}>
                     <span
                       style={{
                         display: 'inline-flex',
@@ -1246,10 +1292,10 @@ export function DashboardPage({ mountedRouteSummary }) {
           </div>
         </Card>
 
-        {/* Khối Lộ Trình Đề Xuất 18 Tín Chỉ */}
+        {/* Khối Lộ Trình Đề Xuất */}
         <Card
           title="Lộ trình Học kỳ Kế tiếp Đề xuất (Next Semester Plan)"
-          subtitle="Gợi ý tối ưu 18 Tín chỉ (Tuân thủ BR-03: Khung 10 – 24 TC)"
+          subtitle={nextSemesterPlan ? `${nextSemesterPlan.semesterName} (Tuân thủ BR-03: Khung 10 – 24 TC)` : 'Chưa có phương án kế hoạch học tập'}
           variant="default"
           style={{
             borderRadius: '24px',
@@ -1269,71 +1315,85 @@ export function DashboardPage({ mountedRouteSummary }) {
             </button>
           }
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {RECOMMENDED_NEXT_SEMESTER_COURSES.map((course) => {
-              const isMath1002 = course.code === 'MATH1002';
-              return (
-                <div
-                  key={course.code}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '8px 12px',
-                    borderRadius: '12px',
-                    backgroundColor: isMath1002 ? '#fff5f5' : 'var(--color-surface-alt)',
-                    border: isMath1002 ? '1px solid #fecaca' : '1px solid var(--color-hairline)',
-                    fontSize: '13px',
-                    transition: 'all 150ms'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        padding: '2px 8px',
-                        borderRadius: '9999px',
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        fontFamily: 'var(--font-mono)',
-                        backgroundColor: isMath1002 ? '#dc2626' : 'var(--color-canvas)',
-                        color: isMath1002 ? '#ffffff' : 'var(--color-ink)'
-                      }}
-                    >
-                      {course.code}
-                    </span>
-                    <span style={{ fontWeight: 500, color: 'var(--color-ink)' }}>{course.name}</span>
+          {nextSemesterPlan && nextSemesterPlan.courses?.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {nextSemesterPlan.courses.map((course) => {
+                const isFailed = course.courseCode === 'MATH1002' || course.courseType?.includes('Học lại');
+                return (
+                  <div
+                    key={course.courseCode}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 12px',
+                      borderRadius: '12px',
+                      backgroundColor: isFailed ? '#fff5f5' : 'var(--color-surface-alt)',
+                      border: isFailed ? '1px solid #fecaca' : '1px solid var(--color-hairline)',
+                      fontSize: '13px',
+                      transition: 'all 150ms'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          padding: '2px 8px',
+                          borderRadius: '9999px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          fontFamily: 'var(--font-mono)',
+                          backgroundColor: isFailed ? '#dc2626' : 'var(--color-canvas)',
+                          color: isFailed ? '#ffffff' : 'var(--color-ink)'
+                        }}
+                      >
+                        {course.courseCode}
+                      </span>
+                      <span style={{ fontWeight: 500, color: 'var(--color-ink)' }}>{course.courseName || course.name}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+                      <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>{course.courseType || course.type || 'Kế hoạch'}</span>
+                      <strong style={{ fontSize: '12px', color: 'var(--color-ink)' }}>{course.credits} TC</strong>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-                    <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>{course.type}</span>
-                    <strong style={{ fontSize: '12px', color: 'var(--color-ink)' }}>{course.credits} TC</strong>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
 
-            <div
-              style={{
-                marginTop: '4px',
-                padding: '10px 14px',
-                borderRadius: '12px',
-                backgroundColor: 'var(--color-canvas)',
-                border: '1px solid var(--color-hairline)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                fontSize: '13px',
-                fontWeight: 600,
-                color: 'var(--color-ink)'
-              }}
-            >
-              <span>Tổng số tín chỉ đề xuất kỳ 4:</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#16a34a' }}>check_circle</span>
-                <span>18 Tín chỉ (Hợp lệ BR-03: 10 - 24 TC)</span>
-              </span>
+              <div
+                style={{
+                  marginTop: '4px',
+                  padding: '10px 14px',
+                  borderRadius: '12px',
+                  backgroundColor: 'var(--color-canvas)',
+                  border: '1px solid var(--color-hairline)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: 'var(--color-ink)'
+                }}
+              >
+                <span>Tổng số tín chỉ đề xuất kỳ tới:</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#16a34a' }}>check_circle</span>
+                  <span>{nextSemesterPlan.totalCredits} Tín chỉ (Hợp lệ BR-03: 10 - 24 TC)</span>
+                </span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div style={{ padding: '36px 20px', textAlign: 'center', backgroundColor: 'var(--color-surface-alt)', borderRadius: '16px', border: '1px solid var(--color-hairline)' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '36px', color: 'var(--color-mid-gray)', marginBottom: '8px' }}>calendar_month</span>
+              <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-ink)', margin: '0 0 4px' }}>Chưa có lộ trình học kỳ kế tiếp</h3>
+              <p style={{ fontSize: '13px', color: 'var(--color-mid-gray)', margin: '0 0 16px', maxWidth: '440px', marginInline: 'auto' }}>
+                Hệ thống chưa tìm thấy kế hoạch học tập cho học kỳ tới. Nhấn nút bên dưới để tạo phương án kế hoạch học tập tối ưu theo quy chế HaUI (18 Tín chỉ).
+              </p>
+              <button type="button" className="haui-pill-btn-dark" onClick={() => navigate('/planner')}>
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>calendar_add_on</span>
+                <span>Lập kế hoạch kỳ tới ngay</span>
+              </button>
+            </div>
+          )}
         </Card>
       </div>
 
@@ -1365,7 +1425,7 @@ export function DashboardPage({ mountedRouteSummary }) {
               type="button"
               className="haui-pill-btn-dark"
               style={{ fontSize: '12px', padding: '6px 16px' }}
-              onClick={() => navigate('/planner?plan_id=plan-2026-9001')}
+              onClick={() => navigate(`/planner?plan_id=${activePlanEntry?.planId || 'plan-2026-9001'}`)}
               title="Mở kế hoạch học tập cũ đã lưu trên hệ thống"
             >
               <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>folder_open</span>
@@ -1390,17 +1450,30 @@ export function DashboardPage({ mountedRouteSummary }) {
             <div style={{ fontSize: '11px', color: 'var(--color-mid-gray)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               KẾ HOẠCH HỌC TẬP GẦN NHẤT
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-              <strong style={{ fontSize: '18px', fontFamily: 'var(--font-mono)', color: 'var(--color-ink)' }}>
-                plan-2026-9001
-              </strong>
-              <span style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700, backgroundColor: 'var(--color-ink)', color: 'var(--color-paper)' }}>
-                ACTIVE
-              </span>
-            </div>
-            <div style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>
-              Kế hoạch K17 – 18 tín chỉ kỳ tới &bull; Lưu: 2026-10-13
-            </div>
+            {activePlanEntry ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                  <strong style={{ fontSize: '18px', fontFamily: 'var(--font-mono)', color: 'var(--color-ink)' }}>
+                    {activePlanEntry.planId || 'plan-2026-9001'}
+                  </strong>
+                  <span style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700, backgroundColor: activePlanEntry.status === 'ACTIVE' ? 'var(--color-ink)' : '#e0f2fe', color: activePlanEntry.status === 'ACTIVE' ? 'var(--color-paper)' : '#0369a1' }}>
+                    {activePlanEntry.status || 'ACTIVE'}
+                  </span>
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>
+                  {activePlanEntry.name || 'Kế hoạch học tập'} &bull; {activePlanEntry.totalCredits || 18} tín chỉ &bull; {activePlanEntry.updatedAt || 'Vừa xong'}
+                </div>
+              </>
+            ) : (
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-ink)', marginTop: '4px' }}>
+                  Chưa có kế hoạch đã lưu
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--color-mid-gray)', marginTop: '2px' }}>
+                  Bạn chưa lưu bản kế hoạch nào trên hệ thống.
+                </div>
+              </div>
+            )}
           </div>
 
           <div
@@ -1418,16 +1491,37 @@ export function DashboardPage({ mountedRouteSummary }) {
             <div style={{ fontSize: '11px', color: 'var(--color-mid-gray)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               TIẾN ĐỘ KIỂM TOÁN TỐT NGHIỆP
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-              <strong style={{ fontSize: '18px', color: 'var(--color-ink)' }}>82% Hoàn thành</strong>
-              <span style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', fontWeight: 600, backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
-                5/7 Đạt
-              </span>
-            </div>
-            <div style={{ fontSize: '12px', color: 'var(--color-mid-gray)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-ember)' }} />
-              <span>Còn 2 điều kiện cần bù đắp (Tin học MOS &amp; 6 TC tự chọn)</span>
-            </div>
+            {hasTranscript && auditData?.checklist ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                  <strong style={{ fontSize: '18px', color: 'var(--color-ink)' }}>
+                    {auditData.completedPercentage ?? 0}% Hoàn thành
+                  </strong>
+                  <span style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', fontWeight: 600, backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
+                    {auditData.checklist.filter((c) => c.completed).length}/{auditData.checklist.length} Đạt
+                  </span>
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--color-mid-gray)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {auditData.eligibleForGraduation ? (
+                    <span style={{ color: '#16a34a', fontWeight: 600 }}>✓ Đủ điều kiện tốt nghiệp</span>
+                  ) : (
+                    <>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-ember)' }} />
+                      <span>Còn {auditData.checklist.filter((c) => !c.completed).length} điều kiện cần bù đắp</span>
+                    </>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-ink)', marginTop: '4px' }}>
+                  Chưa có dữ liệu kiểm toán
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--color-mid-gray)', marginTop: '2px' }}>
+                  Vui lòng nạp bảng điểm để kích hoạt kiểm toán tốt nghiệp.
+                </div>
+              </div>
+            )}
           </div>
 
           <div

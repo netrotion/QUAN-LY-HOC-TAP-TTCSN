@@ -624,6 +624,8 @@ class MockAcademicServiceState {
       warnings: context.warnings,
       dataRevision: context.dataRevision,
       policyVersion: 'policy-haui-demo-2026@0.0.1-v0',
+      trainingScore: student.studentId === 'std-2026-empty' || !student.hasTranscript ? null : (student.studentId === 'std-2026-001' ? 78 : 84),
+      trainingClassification: student.studentId === 'std-2026-empty' || !student.hasTranscript ? 'Chưa có dữ liệu' : (student.studentId === 'std-2026-001' ? 'Khá' : 'Tốt'),
       semesterTrend: calculateSemesterGpaTrend(student.attempts, context.cpa),
       failedCourses,
       passedCourses,
