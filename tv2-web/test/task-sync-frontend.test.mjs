@@ -143,11 +143,11 @@ test('3. DashboardPage chứa mã nguồn xử lý biểu đồ GPA/CPA tích l�
   const dashFile = path.resolve(__dirname, '../src/pages/DashboardPage.jsx');
   const code = fs.readFileSync(dashFile, 'utf-8');
 
-  // Kiểm tra biểu đồ GPA/CPA tích lũy
+  // Kiểm tra biểu đồ GPA/CPA tích lũy chỉ có 1 đường kẻ duy nhất
   assert.ok(code.includes('Biến thiên GPA & CPA tích lũy qua các học kỳ') || code.includes('Biến thiên GPA &amp; CPA tích lũy qua các học kỳ'));
   assert.ok(code.includes('calculateSemesterGpaTrend'));
   assert.ok(code.includes('CPA tích lũy'));
-  assert.ok(code.includes('GPA học kỳ'));
+  assert.ok(code.includes('1 ĐƯỜNG KẺ DUY NHẤT'));
   assert.ok(code.includes('haui:academic:transcript-updated'));
   assert.ok(code.includes('failedCoursesList'));
 });

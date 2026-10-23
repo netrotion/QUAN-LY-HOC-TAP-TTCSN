@@ -719,14 +719,10 @@ export function DashboardPage({ mountedRouteSummary }) {
                   : 'Tiến độ học tập và biến thiên chỉ số GPA/CPA'}
               </p>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '12px', color: 'var(--color-mid-gray)', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--color-ink)' }} />
                 CPA tích lũy
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ width: '12px', height: '2px', backgroundColor: '#0284c7', borderTop: '2px dashed #0284c7' }} />
-                GPA học kỳ
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: 'var(--color-canvas)' }} />
@@ -759,17 +755,16 @@ export function DashboardPage({ mountedRouteSummary }) {
                 const cpaVal = sem.cumulativeCpa || 0;
                 const gpaVal = sem.semesterGpa || 0;
                 const yCpa = 150 - (Math.min(4.0, Math.max(0, cpaVal)) / 4.0) * 115;
-                const yGpa = 150 - (Math.min(4.0, Math.max(0, gpaVal)) / 4.0) * 115;
                 const barHeight = Math.min(105, Math.max(16, ((sem.semesterCredits || 15) / 24) * 110));
                 const barW = Math.min(36, Math.max(18, availableW / (N * 2)));
                 const barX = x - barW / 2;
                 const barY = 150 - barHeight;
-                return { x, yCpa, yGpa, barX, barY, barW, barHeight, sem };
+                return { x, yCpa, barX, barY, barW, barHeight, sem };
               });
 
+              // Chỉ 1 đường kẻ duy nhất cho CPA tích lũy
               const cpaPathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.yCpa.toFixed(1)}`).join(' ');
               const cpaAreaD = `${cpaPathD} L ${points[points.length - 1].x.toFixed(1)} 155 L ${points[0].x.toFixed(1)} 155 Z`;
-              const gpaPathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.yGpa.toFixed(1)}`).join(' ');
 
               return (
                 <div>
@@ -790,10 +785,6 @@ export function DashboardPage({ mountedRouteSummary }) {
                         </linearGradient>
                       </defs>
 
-                      {/* Chuẩn Giỏi 3.20 Reference line */}
-                      <line x1="20" y1="58" x2="580" y2="58" stroke="#16a34a" strokeDasharray="4 4" strokeWidth="1" opacity="0.6" />
-                      <text x="580" y="52" fill="#16a34a" fontSize="10" textAnchor="end" fontWeight="600">Ngưỡng Giỏi (3.20)</text>
-
                       {/* Credit Volume Bars in Canvas Tone */}
                       {points.map((p, i) => (
                         <rect key={i} fill="var(--color-canvas, #f5f5f5)" height={p.barHeight} rx="5" width={p.barW} x={p.barX} y={p.barY} />
@@ -802,22 +793,14 @@ export function DashboardPage({ mountedRouteSummary }) {
                       {/* CPA Path Area Fill */}
                       {N > 1 && <path d={cpaAreaD} fill="url(#gpaGradient)" />}
 
-                      {/* GPA Semester Polyline (Dashed) */}
-                      {N > 1 && (
-                        <path d={gpaPathD} fill="none" stroke="#0284c7" strokeDasharray="4 3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
-                      )}
-
-                      {/* CPA Cumulative Polyline (Solid) */}
+                      {/* 1 ĐƯỜNG KẺ DUY NHẤT: CPA Cumulative Polyline */}
                       {N > 1 && (
                         <path d={cpaPathD} fill="none" stroke="#0a0a0a" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
                       )}
 
-                      {/* Node Points */}
+                      {/* Node Points trên duy nhất 1 đường kẻ */}
                       {points.map((p, i) => (
-                        <g key={i}>
-                          <circle cx={p.x} cy={p.yGpa} fill="#0284c7" r="3.5" />
-                          <circle cx={p.x} cy={p.yCpa} fill="#0a0a0a" r={i === points.length - 1 ? 5.5 : 4.5} stroke="#ffffff" strokeWidth="2" />
-                        </g>
+                        <circle key={i} cx={p.x} cy={p.yCpa} fill="#0a0a0a" r={i === points.length - 1 ? 5.5 : 4.5} stroke="#ffffff" strokeWidth="2" />
                       ))}
                     </svg>
                   </div>
@@ -828,9 +811,6 @@ export function DashboardPage({ mountedRouteSummary }) {
                       <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <span style={{ color: 'var(--color-ink)', fontWeight: 700 }}>
                           CPA {p.sem.cumulativeCpa > 0 ? p.sem.cumulativeCpa.toFixed(2) : '—'}
-                        </span>
-                        <span style={{ color: '#0284c7', fontSize: '11px', fontWeight: 600 }}>
-                          GPA: {p.sem.semesterGpa > 0 ? p.sem.semesterGpa.toFixed(2) : '—'}
                         </span>
                         <span style={{ color: 'var(--color-mid-gray)', fontSize: '11px' }}>
                           {p.sem.displayLabel} ({p.sem.semesterCredits}TC)
