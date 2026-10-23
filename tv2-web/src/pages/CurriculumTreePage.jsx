@@ -517,6 +517,41 @@ export function CurriculumTreePage() {
         </div>
       </div>
 
+      {/* Thông báo trạng thái trắng khi chưa nạp bảng điểm */}
+      {treeData?.transcriptStatus === 'NONE' && (
+        <div
+          style={{
+            padding: '16px 20px',
+            borderRadius: '16px',
+            backgroundColor: '#fffbeb',
+            border: '1.5px solid #fef3c7',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#d97706' }}>info</span>
+            <div>
+              <strong style={{ fontSize: '14px', color: '#92400e' }}>Chưa có dữ liệu bảng điểm cá nhân</strong>
+              <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#b45309' }}>
+                Cây môn học đang ở trạng thái chưa nạp điểm (UNKNOWN). Toàn bộ các học phần sẽ tự động đổi màu trạng thái (Đã đạt, Đang học, Đủ điều kiện, Khóa) ngay sau khi bạn nạp bảng điểm.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="haui-pill-btn-dark"
+            onClick={() => navigate('/transcript')}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>upload_file</span>
+            <span>Nạp bảng điểm ngay</span>
+          </button>
+        </div>
+      )}
+
       {/* =========================================================================
           SECTION 2: 4 FAST STATS COUNTER BADGES (Live Server Metrics)
           ========================================================================= */}

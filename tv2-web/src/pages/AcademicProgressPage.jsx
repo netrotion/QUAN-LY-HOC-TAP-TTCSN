@@ -425,6 +425,41 @@ export function AcademicProgressPage() {
         </div>
       </div>
 
+      {/* Thông báo trạng thái trắng khi chưa có bảng điểm */}
+      {(!sessionStudent?.hasTranscript || sessionStudent?.id === 'empty') && (
+        <div
+          style={{
+            padding: '16px 20px',
+            borderRadius: '16px',
+            backgroundColor: '#fffbeb',
+            border: '1.5px solid #fef3c7',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#d97706' }}>info</span>
+            <div>
+              <strong style={{ fontSize: '14px', color: '#92400e' }}>Chưa có dữ liệu bảng điểm cá nhân</strong>
+              <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#b45309' }}>
+                Hồ sơ học vụ chưa ghi nhận bảng điểm chính thức. Toàn bộ các tiêu chí đang ở trạng thái chưa hoàn thành hoặc chưa xác định. Vui lòng nạp bảng điểm từ sv.haui.edu.vn để kích hoạt kiểm toán.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="haui-pill-btn-dark"
+            onClick={() => navigate('/transcript')}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>upload_file</span>
+            <span>Nạp bảng điểm ngay</span>
+          </button>
+        </div>
+      )}
+
       {/* =========================================================================
           SECTION 2: THANH CHUYỂN ĐỔI CHẾ ĐỘ BÁO CÁO (TASK 3.9)
           ========================================================================= */}
