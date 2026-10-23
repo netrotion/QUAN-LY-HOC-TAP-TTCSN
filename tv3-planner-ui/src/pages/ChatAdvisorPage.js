@@ -57,20 +57,20 @@ const DEFAULT_PROTOTYPE_MESSAGES = Object.freeze([
         icon: 'menu_book',
         title: 'Nguồn tham khảo & Quy chế minh họa',
         items: [
-          'CTĐT K16 ngành Kỹ thuật Phần mềm (Khoa CNTT - HaUI)',
-          'QĐ Hướng dẫn tính điểm trung bình chung tích lũy 2021'
+          'Chương trình đào tạo chính quy — Đại học Công nghiệp Hà Nội (HaUI)',
+          'QĐ Hướng dẫn tính điểm trung bình chung tích lũy HaUI'
         ],
-        note: 'Lưu ý: Các ngưỡng tính toán trên mang tính chất tham khảo học thuật từ dữ liệu giả lập, vui lòng đối chiếu bảng điểm chính thức tại sv.haui.edu.vn.'
+        note: 'Lưu ý: Các ngưỡng tính toán trên mang tính chất tham khảo học thuật từ dữ liệu hồ sơ sinh viên HaUI, vui lòng đối chiếu bảng điểm chính thức tại sv.haui.edu.vn.'
       }
     ],
     sources: [
       {
-        title: 'Chương trình đào tạo K16 ngành Kỹ thuật phần mềm (Khoa CNTT - HaUI)',
+        title: 'Chương trình đào tạo chính quy — Đại học Công nghiệp Hà Nội (HaUI)',
         section: 'Quy định đào tạo & Quản lý học vụ'
       },
       {
-        title: 'Quy chế đào tạo trình độ đại học theo hệ thống tín chỉ - HaUI',
-        section: 'Quy định tính điểm trung bình chung tích lũy 2021'
+        title: 'Quy chế đào tạo trình độ đại học theo hệ thống tín chỉ — HaUI',
+        section: 'Quy định tính điểm trung bình chung tích lũy'
       }
     ],
     executionTime: '1.1s'
@@ -85,17 +85,17 @@ const DEFAULT_PROTOTYPE_MESSAGES = Object.freeze([
   {
     id: 'proto-msg-4',
     sender: 'assistant',
-    text: 'Thông tin điều kiện học phần Thực tập doanh nghiệp theo CTĐT Khoa CNTT HaUI:',
+    text: 'Thông tin điều kiện học phần Thực tập doanh nghiệp theo Quy chế đào tạo HaUI:',
     timestamp: '14:26',
     warningData: {
       title: 'Cần bổ sung thêm thông tin dữ liệu!',
-      description: "Hệ thống nhận thấy trong hồ sơ của bạn chưa có thông tin đăng ký cơ sở thực tập hoặc xác nhận chuyên ngành hẹp (Kỹ thuật phần mềm hay Hệ thống thông tin). Vui lòng cập nhật mục 'Hồ sơ sinh viên' hoặc tải lên giấy xác nhận thực tập để AI có thể tư vấn lộ trình phân bổ tín chỉ chính xác nhất."
+      description: "Hệ thống nhận thấy trong hồ sơ của bạn chưa có thông tin đăng ký cơ sở thực tập hoặc xác nhận chuyên ngành đào tạo. Vui lòng cập nhật mục 'Hồ sơ sinh viên' hoặc tải lên giấy xác nhận thực tập để AI có thể tư vấn lộ trình phân bổ tín chỉ chính xác nhất."
     },
     checklistData: {
-      title: 'Điều kiện cơ bản theo CTĐT Khoa CNTT HaUI:',
+      title: 'Điều kiện cơ bản theo Quy chế đào tạo HaUI:',
       items: [
         { done: true, text: 'Đã hoàn thành tối thiểu 90 tín chỉ (Hiện có: 108 TC)' },
-        { done: false, text: 'Chưa có xác nhận cơ sở thực tập CNTT' }
+        { done: false, text: 'Chưa có xác nhận cơ sở thực tập doanh nghiệp' }
       ]
     },
     actions: [
@@ -116,7 +116,7 @@ const DEFAULT_PROTOTYPE_MESSAGES = Object.freeze([
     ],
     sources: [
       {
-        title: 'Chương trình đào tạo K16 ngành Kỹ thuật phần mềm (Khoa CNTT - HaUI)',
+        title: 'Quy chế đào tạo & Điều kiện tốt nghiệp — Đại học Công nghiệp Hà Nội (HaUI)',
         section: 'Điều kiện học phần Thực tập doanh nghiệp'
       }
     ]
@@ -198,15 +198,15 @@ export function generateMockChatResponse(queryText, plan = null) {
             icon: 'menu_book',
             title: 'Nguồn tham khảo & Quy chế minh họa',
             items: [
-              'Chương trình đào tạo K16 ngành Kỹ thuật phần mềm (HaUI SICT)',
+              'Chương trình đào tạo chính quy — Đại học Công nghiệp Hà Nội (HaUI)',
               'Quy chế đào tạo tín chỉ Đại học Công nghiệp Hà Nội (HaUI)'
             ],
-            note: 'Lưu ý: Các ngưỡng tính toán trên mang tính chất tham khảo học thuật từ dữ liệu giả lập, vui lòng đối chiếu bảng điểm chính thức tại sv.haui.edu.vn.'
+            note: 'Lưu ý: Các ngưỡng tính toán trên mang tính chất tham khảo học thuật từ dữ liệu hồ sơ sinh viên HaUI, vui lòng đối chiếu bảng điểm chính thức tại sv.haui.edu.vn.'
           }
         ],
         sources: [
           {
-            title: 'Chương trình đào tạo K16 ngành Kỹ thuật phần mềm (HaUI SICT)',
+            title: 'Chương trình đào tạo chính quy — Đại học Công nghiệp Hà Nội (HaUI)',
             section: 'Quy định đào tạo & Quản lý học vụ'
           },
           {
@@ -230,7 +230,7 @@ export function generateMockChatResponse(queryText, plan = null) {
         `• MATH1002 - Toán rời rạc: Hiện bạn đang nợ điểm F môn này. Do MATH1002 là tiên quyết trực tiếp, bạn bắt buộc phải học lại và đạt trước khi hệ thống sv.haui.edu.vn cho phép đăng ký IT6080.`,
       sources: [
         {
-          title: 'Chương trình đào tạo K16 ngành Kỹ thuật phần mềm (HaUI SICT)',
+          title: 'Chương trình đào tạo chính quy — Đại học Công nghiệp Hà Nội (HaUI)',
           section: 'Cây tiên quyết chuyên ngành & Học phần đồ án'
         }
       ],
@@ -259,10 +259,10 @@ export function generateMockChatResponse(queryText, plan = null) {
         description: "Hệ thống nhận thấy trong hồ sơ của bạn chưa có thông tin đăng ký cơ sở thực tập hoặc xác nhận chuyên ngành hẹp. Vui lòng cập nhật mục 'Hồ sơ sinh viên' hoặc tải lên giấy xác nhận thực tập để AI có thể tư vấn lộ trình phân bổ tín chỉ chính xác nhất."
       },
       checklistData: {
-        title: 'Điều kiện cơ bản theo CTĐT Khoa CNTT HaUI:',
+        title: 'Điều kiện cơ bản theo Quy chế đào tạo HaUI:',
         items: [
           { done: true, text: 'Đã hoàn thành tối thiểu 90 tín chỉ (Hiện có: 108 TC)' },
-          { done: false, text: 'Chưa có xác nhận cơ sở thực tập CNTT' }
+          { done: false, text: 'Chưa có xác nhận cơ sở thực tập doanh nghiệp' }
         ]
       },
       actions: [
@@ -283,7 +283,7 @@ export function generateMockChatResponse(queryText, plan = null) {
       ],
       sources: [
         {
-          title: 'Chương trình đào tạo K16 ngành Kỹ thuật phần mềm (HaUI SICT)',
+          title: 'Quy chế đào tạo & Điều kiện tốt nghiệp — Đại học Công nghiệp Hà Nội (HaUI)',
           section: 'Điều kiện học phần Thực tập doanh nghiệp'
         }
       ],
@@ -335,7 +335,7 @@ export function generateMockChatResponse(queryText, plan = null) {
         }
       ];
     } else if (lower.includes('chuẩn đầu ra') || lower.includes('tốt nghiệp')) {
-      answerText = `[AI Advisor]: Căn cứ Điều kiện tốt nghiệp và Chuẩn đầu ra CTĐT K16 HaUI:\n` +
+      answerText = `[AI Advisor]: Căn cứ Điều kiện tốt nghiệp và Chuẩn đầu ra Đại học Công nghiệp Hà Nội (HaUI):\n` +
         `• Tích lũy tối thiểu 145 tín chỉ (bao gồm 100% môn bắt buộc và đủ số tín chỉ tự chọn chuyên ngành).\n` +
         `• Đạt chứng chỉ Chuẩn đầu ra Ngoại ngữ (TOEIC >= 450/550 hoặc VSTEP B1) và Chuẩn Tin học (MOS/IC3).\n` +
         `• Hoàn thành GDQP-AN, GDTC và đạt Điểm rèn luyện tích lũy >= 50 (loại Trung bình trở lên).\n` +
@@ -387,7 +387,7 @@ export function generateMockChatResponse(queryText, plan = null) {
         section: 'Điều 14 - Điều kiện tiên quyết & Giới hạn 10-24 TC (BR-03/BR-04)'
       },
       {
-        title: 'Chương trình đào tạo K16 ngành Kỹ thuật phần mềm (HaUI SICT)',
+        title: 'Chương trình đào tạo chính quy — Đại học Công nghiệp Hà Nội (HaUI)',
         section: 'Cấu trúc khối kiến thức & Phân bổ học kỳ gợi ý'
       }
     ],

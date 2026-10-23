@@ -53,14 +53,14 @@ const GRADE_POINTS_MAP = Object.freeze({
 
 // Danh sách môn mẫu cho Màn 6 (Giả lập điểm kỳ tới)
 const DEFAULT_SIM_COURSES = Object.freeze([
-  { courseCode: 'IT2001', courseName: 'Lập trình hướng đối tượng (Java)', credits: 4, expectedGrade: 'A', note: 'Bắt buộc chuyên ngành' },
-  { courseCode: 'IT6080', courseName: 'Đồ án chuyên ngành KTPM', credits: 3, expectedGrade: 'A', note: 'Bắt buộc • Đồ án tốt nghiệp nền tảng' },
-  { courseCode: 'IT6035', courseName: 'Kiểm thử và đảm bảo CLPM', credits: 3, expectedGrade: 'B+', note: 'Bắt buộc chuyên ngành' },
-  { courseCode: 'IT6042', courseName: 'Kiến trúc phần mềm & Thiết kế mẫu', credits: 3, expectedGrade: 'A', note: 'Bắt buộc cốt lõi KTPM' },
-  { courseCode: 'IT6050', courseName: 'Quản lý dự án CNTT', credits: 3, expectedGrade: 'B+', note: 'Môn cơ sở ngành tự chọn' },
-  { courseCode: 'IT6071', courseName: 'Phát triển ứng dụng di động', credits: 3, expectedGrade: 'B', note: 'Tự chọn định hướng' },
-  { courseCode: 'FL6006', courseName: 'Tiếng Anh chuyên ngành CNTT nâng cao 2', credits: 3, expectedGrade: 'B+', note: 'Điều kiện ngoại ngữ chuẩn đầu ra' },
-  { courseCode: 'MATH1002', courseName: 'Toán rời rạc', credits: 3, expectedGrade: 'B', note: 'Môn nợ tiên quyết cần gỡ' }
+  { courseCode: 'IT2001', courseName: 'Lập trình hướng đối tượng (Java)', credits: 4, expectedGrade: 'A', note: 'Bắt buộc cơ sở ngành' },
+  { courseCode: 'IT6080', courseName: 'Đồ án chuyên ngành', credits: 3, expectedGrade: 'A', note: 'Bắt buộc • Đồ án tốt nghiệp nền tảng' },
+  { courseCode: 'IT6035', courseName: 'Kiểm thử và đảm bảo chất lượng', credits: 3, expectedGrade: 'B+', note: 'Bắt buộc chuyên ngành' },
+  { courseCode: 'IT6042', courseName: 'Kiến trúc & Thiết kế hệ thống', credits: 3, expectedGrade: 'A', note: 'Bắt buộc cốt lõi chuyên ngành' },
+  { courseCode: 'IT6050', courseName: 'Quản lý dự án chuyên ngành', credits: 3, expectedGrade: 'B+', note: 'Môn cơ sở ngành tự chọn' },
+  { courseCode: 'IT6071', courseName: 'Phát triển ứng dụng chuyên ngành', credits: 3, expectedGrade: 'B', note: 'Tự chọn định hướng' },
+  { courseCode: 'FL6006', courseName: 'Tiếng Anh chuyên ngành nâng cao 2', credits: 3, expectedGrade: 'B+', note: 'Điều kiện ngoại ngữ chuẩn đầu ra' },
+  { courseCode: 'MATH1002', courseName: 'Toán rời rạc / Toán chuyên ngành', credits: 3, expectedGrade: 'B', note: 'Môn nợ tiên quyết cần gỡ' }
 ]);
 
 // Danh sách môn điểm thấp có thể học cải thiện cho Màn 7 (ROI Optimizer - BR-06)
@@ -422,14 +422,14 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
               courseRequirements: [
                 {
                   courseCode: 'IT6080',
-                  courseName: 'Đồ án chuyên ngành KTPM',
+                  courseName: 'Đồ án chuyên ngành',
                   credits: 3,
                   requiredGrade: requiredAverageGpa >= 3.3 ? 'A (4.0)' : 'B+ (3.5)',
                   rationale: 'Học phần then chốt quyết định ngưỡng CPA Giỏi'
                 },
                 {
                   courseCode: 'IT6035',
-                  courseName: 'Kiểm thử & đảm bảo CLPM',
+                  courseName: 'Kiểm thử & Đảm bảo chất lượng',
                   credits: 3,
                   requiredGrade: requiredAverageGpa >= 3.3 ? 'B+ (3.5)' : 'B (3.0)',
                   rationale: 'Duy trì chuẩn GPA trung bình các kỳ còn lại'

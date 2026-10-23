@@ -2,16 +2,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { plannerStore } from '../services/plannerStore.js';
 
 /**
- * Mẫu hồ sơ sinh viên K16 chuẩn (HaUI SICT) phục vụ khám phá và kiểm thử
+ * Mẫu hồ sơ sinh viên chuẩn HaUI phục vụ khám phá và kiểm thử
  */
 export const SAMPLE_K16_PROFILE = Object.freeze({
   studentId: '2020601234',
   fullName: 'Nguyễn Văn An',
   studentCode: '2020601234',
-  majorName: 'Kỹ thuật phần mềm (Khoa CNTT)',
+  majorName: 'Kỹ thuật phần mềm (ĐH chính quy)',
   majorCode: '7480103',
   cohort: 'Khóa 16 (2020 - 2024)',
-  faculty: 'Trường Công nghệ Thông tin & Truyền thông (SICT - HaUI)',
+  faculty: 'Trường Đại học Công nghiệp Hà Nội (HaUI)',
   advisorClass: 'KTPM01-K16',
   cpa: 3.18,
   gpa: 3.32,
@@ -145,10 +145,10 @@ export function StudentProfilePage({
           studentId: academicStatus?.studentId || sessionStudent?.studentId || '2020601234',
           fullName: sessionStudent?.fullName || 'Nguyễn Văn An',
           studentCode: sessionStudent?.studentCode || '2020601234',
-          majorName: sessionStudent?.majorName || 'Kỹ thuật phần mềm (Khoa CNTT)',
+          majorName: sessionStudent?.majorName || 'Chương trình đào tạo Đại học chính quy',
           majorCode: sessionStudent?.majorCode || '7480103',
-          cohort: sessionStudent?.cohort || 'Khóa 16 (2020 - 2024)',
-          faculty: sessionStudent?.faculty || 'Trường Công nghệ Thông tin & Truyền thông (SICT - HaUI)',
+          cohort: sessionStudent?.cohort || 'Hệ Đại học chính quy',
+          faculty: sessionStudent?.faculty || 'Trường Đại học Công nghiệp Hà Nội (HaUI)',
           advisorClass: sessionStudent?.advisorClass || 'KTPM01-K16',
           cpa: academicStatus?.cpa ?? 3.18,
           gpa: academicStatus?.gpa ?? 3.32,
@@ -681,7 +681,7 @@ export function StudentProfilePage({
                 'div',
                 { style: { display: 'flex', flexDirection: 'column', minWidth: 0 } },
                 React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Khoa / Viện'),
-                React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, profileData.faculty || 'Khoa Công nghệ thông tin')
+                React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, profileData.faculty || 'Trường Đại học Công nghiệp Hà Nội (HaUI)')
               )
             ),
             // Item 2: Email trường
@@ -1158,7 +1158,7 @@ export function StudentProfilePage({
                 'div',
                 null,
                 React.createElement('h3', { style: { margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--color-ink, #0a0a0a)' } }, 'Thông tin chương trình đào tạo & Ngành học'),
-                React.createElement('span', { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } }, 'Cấu trúc quy chuẩn của Khóa 16 - Trường Đại học Công nghiệp Hà Nội')
+                React.createElement('span', { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } }, 'Cấu trúc quy chuẩn CTĐT — Trường Đại học Công nghiệp Hà Nội (HaUI)')
               )
             ),
             React.createElement(
@@ -1213,10 +1213,10 @@ export function StudentProfilePage({
             React.createElement(
               'div',
               { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
-              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Khoa / Viện đào tạo'),
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Khoa / Viện / Trường thành viên'),
               React.createElement('input', {
                 readOnly: true,
-                value: profileData.faculty || 'Khoa Công nghệ Thông tin',
+                value: profileData.faculty || 'Trường Đại học Công nghiệp Hà Nội (HaUI)',
                 style: {
                   width: '100%',
                   padding: '8px 16px',
@@ -1258,7 +1258,7 @@ export function StudentProfilePage({
               React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Khóa học'),
               React.createElement('input', {
                 readOnly: true,
-                value: profileData.cohort || 'Khóa 16 (Niên khóa 2020 - 2024 / 2025)',
+                value: profileData.cohort || 'Đại học chính quy HaUI',
                 style: {
                   width: '100%',
                   padding: '8px 16px',
@@ -1297,7 +1297,7 @@ export function StudentProfilePage({
             React.createElement(
               'div',
               { style: { display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: '1 / -1' } },
-              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Chuyên ngành định hướng'),
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Định hướng chuyên sâu / Chuyên ngành hẹp'),
               React.createElement(
                 'select',
                 {
@@ -1314,11 +1314,12 @@ export function StudentProfilePage({
                     cursor: 'pointer'
                   }
                 },
-                React.createElement('option', { value: 'ktpm-httt' }, 'Kỹ thuật phần mềm & Hệ thống thông tin (SE & IS Track)'),
-                React.createElement('option', { value: 'khmt-ai' }, 'Khoa học máy tính & Trí tuệ nhân tạo (CS & AI Track)'),
-                React.createElement('option', { value: 'mmt-attt' }, 'Mạng máy tính & An toàn không gian số (Network & Security)')
+                React.createElement('option', { value: 'ktpm-httt' }, 'Khối Kỹ thuật & Công nghệ (CNTT, Phần mềm, Điện, Điện tử, Cơ khí, Tự động hóa)'),
+                React.createElement('option', { value: 'kinh-te' }, 'Khối Kinh tế & Quản lý (Kế toán, QTKD, Tài chính ngân hàng, Logistics, Thương mại điện tử)'),
+                React.createElement('option', { value: 'ngon-ngu-dulich' }, 'Khối Ngôn ngữ & Du lịch (Ngôn ngữ Anh, Trung, Hàn, Nhật, Quản trị khách sạn)'),
+                React.createElement('option', { value: 'hoa-may-thietke' }, 'Khối Hóa chất, May mặc & Thiết kế (Công nghệ Hóa, Thực phẩm, Công nghệ May & Thời trang)')
               ),
-              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Định hướng này quyết định các nhóm học phần tự chọn khuyến nghị trên Cây môn học và AI Advisor')
+              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Hệ thống hỗ trợ sinh viên tất cả các ngành của HaUI lập kế hoạch và phân bổ môn tự chọn')
             ),
 
             // Chương trình đào tạo (CTĐT)
@@ -1362,7 +1363,7 @@ export function StudentProfilePage({
                   boxSizing: 'border-box'
                 }
               }),
-              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Liên hệ đổi cố vấn qua VP Khoa CNTT (Tầng 5 - A1)')
+              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Liên hệ đổi cố vấn qua Văn phòng Khoa/Viện quản lý sinh viên (Nhà A1)')
             )
           )
         ),

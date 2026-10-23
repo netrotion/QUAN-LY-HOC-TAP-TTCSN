@@ -485,7 +485,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
                 border: '1px solid var(--color-hairline, #e5e5e5)'
               }
             },
-            'Khóa 16 · CNTT/KTPM'
+            plan.majorName || 'Hệ đào tạo chính quy · HaUI'
           )
         ),
         React.createElement(
@@ -1292,7 +1292,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
           isOpen: isAddCourseModalOpen,
           onClose: () => setIsAddCourseModalOpen(false),
           title: `Thêm môn học vào ${selectedSemesterForAdd}`,
-          subtitle: 'Chọn học phần trong danh mục CTĐT KTPM/CNTT để bổ sung vào kế hoạch.',
+          subtitle: 'Chọn học phần trong danh mục CTĐT Trường Đại học Công nghiệp Hà Nội để bổ sung vào kế hoạch.',
           size: 'md',
           footer: React.createElement(
             'div',

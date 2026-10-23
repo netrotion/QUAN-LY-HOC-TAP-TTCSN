@@ -19,23 +19,23 @@ export function CurriculumTreeModal({ isOpen, onClose, ui }) {
 
   if (!isOpen) return null;
 
-  // Chuỗi quan hệ tiên quyết cốt lõi ngành CNTT / KTPM HaUI
+  // Chuỗi quan hệ tiên quyết cốt lõi theo khung CTĐT HaUI
   const prerequisiteChains = [
     {
-      chainName: 'Chuỗi 1: Cấu trúc dữ liệu & Thuật toán',
+      chainName: 'Chuỗi 1: Khối Toán & Giải thuật cơ sở',
       steps: [
-        { code: 'MATH1002', name: 'Toán rời rạc (3 TC)', status: 'FAILED', note: 'Nợ môn F - Nút thắt cần gỡ ngay' },
+        { code: 'MATH1002', name: 'Toán rời rạc / Toán cơ sở (3 TC)', status: 'FAILED', note: 'Nợ môn F - Nút thắt cần gỡ ngay' },
         { code: 'IT6001', name: 'Cấu trúc dữ liệu & GT (4 TC)', status: 'BLOCKED', note: 'Chờ tiên quyết MATH1002' },
         { code: 'IT6005', name: 'PT & Thiết kế thuật toán (3 TC)', status: 'LOCKED', note: 'Chờ hoàn thành IT6001' }
       ]
     },
     {
-      chainName: 'Chuỗi 2: Kỹ thuật phần mềm & Khóa luận tốt nghiệp',
+      chainName: 'Chuỗi 2: Khối Chuyên ngành & Đồ án tốt nghiệp',
       steps: [
         { code: 'IT2001', name: 'Lập trình HĐT Java (4 TC)', status: 'PASSED', note: 'Đã hoàn thành (Điểm D+ - Cần cải thiện)' },
         { code: 'IT3005', name: 'Công nghệ phần mềm (3 TC)', status: 'PASSED', note: 'Đã hoàn thành (Điểm B)' },
-        { code: 'IT6080', name: 'Đồ án chuyên ngành KTPM (4 TC)', status: 'PLANNED', note: 'Dự kiến đăng ký Kỳ 8' },
-        { code: 'IT6090', name: 'Khóa luận tốt nghiệp (6 TC)', status: 'LOCKED', note: 'Cần hoàn thành Đồ án & ≥ 115 TC' }
+        { code: 'IT6080', name: 'Đồ án chuyên ngành (4 TC)', status: 'PLANNED', note: 'Dự kiến đăng ký Kỳ 8' },
+        { code: 'IT6090', name: 'Đồ án / Khóa luận tốt nghiệp (6 TC)', status: 'LOCKED', note: 'Cần hoàn thành Đồ án & ≥ 115 TC' }
       ]
     },
     {

@@ -17,7 +17,7 @@ export const PLAN_STATUSES = Object.freeze({
 // Dữ liệu mẫu khởi tạo cho kế hoạch nhiều kỳ (Kỳ 7, Kỳ 8, Kỳ hè)
 export const INITIAL_MULTI_SEMESTER_PLAN = Object.freeze({
   planId: 'plan-haui-2026-v2.4',
-  planName: 'Kế hoạch học tập cá nhân KTPM/CNTT (Khóa 16)',
+  planName: 'Kế hoạch học tập cá nhân (Đại học Công nghiệp Hà Nội)',
   version: 'v2.4',
   status: PLAN_STATUSES.DRAFT,
   targetCpa: 3.20,
@@ -244,7 +244,7 @@ export const INITIAL_PLAN_HISTORY = Object.freeze([
   {
     planId: 'plan-haui-2026-v2.4',
     version: 'v2.4',
-    name: 'Kế hoạch học tập tối ưu KTPM K16 (Bản nháp mới)',
+    name: 'Kế hoạch học tập đề xuất (Bản nháp mới)',
     status: PLAN_STATUSES.DRAFT,
     updatedAt: '10 phút trước',
     totalSemesters: 3,
@@ -257,7 +257,7 @@ export const INITIAL_PLAN_HISTORY = Object.freeze([
   {
     planId: 'plan-haui-2026-v2.3',
     version: 'v2.3',
-    name: 'Lộ trình chuẩn 4 năm K16 (Đang theo dõi chính thức)',
+    name: 'Lộ trình đào tạo chuẩn 4 năm (Đang theo dõi chính thức)',
     status: PLAN_STATUSES.ACTIVE,
     updatedAt: '2 ngày trước',
     totalSemesters: 2,
