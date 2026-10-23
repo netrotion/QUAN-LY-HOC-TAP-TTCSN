@@ -35,6 +35,10 @@ services:
       OCR_ENGINE: ${OCR_ENGINE:-disabled}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
       ACADEMIC_MOCK_TOOLS: ${ACADEMIC_MOCK_TOOLS:-false}
+      AI_MODE: ${AI_MODE:-live}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
+      AI_CHAT_TIMEOUT: ${AI_CHAT_TIMEOUT:-45s}
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
     depends_on:

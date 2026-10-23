@@ -3,9 +3,9 @@
 openapi: "3.0.3"
 info:
   title: "HaUI Advisor API"
-  version: "1.4.0"
+  version: "1.5.0"
   description: |
-    contracts-v1 — hợp đồng chốt sau review prototype (Task 2.3) làm đầu vào Phase 3. Bản 1.1.0 bổ sung tài khoản, hồ sơ, CTĐT, bảng điểm, nhập bảng điểm và chứng chỉ (Task 3.2); 1.2.0 lưu kế hoạch/hội thoại trên DB và trạng thái sẵn sàng của công cụ học vụ (Task 3.7); 1.3.0 nối trạng thái học vụ, điều kiện học phần, cây CTĐT và rà soát tốt nghiệp với AcademicFacade thật (Task 4.1); 1.4.0 nối sinh và thẩm định kế hoạch với planner tool thật trên hồ sơ DB, thẩm định lại khi hồ sơ/quy chế đổi (Task 4.2b).
+    contracts-v1 — hợp đồng chốt sau review prototype (Task 2.3) làm đầu vào Phase 3. Bản 1.1.0 bổ sung tài khoản, hồ sơ, CTĐT, bảng điểm, nhập bảng điểm và chứng chỉ (Task 3.2); 1.2.0 lưu kế hoạch/hội thoại trên DB và trạng thái sẵn sàng của công cụ học vụ (Task 3.7); 1.3.0 nối trạng thái học vụ, điều kiện học phần, cây CTĐT và rà soát tốt nghiệp với AcademicFacade thật (Task 4.1); 1.4.0 nối sinh và thẩm định kế hoạch với planner tool thật trên hồ sơ DB, thẩm định lại khi hồ sơ/quy chế đổi (Task 4.2b); 1.5.0 nối What-if, xếp hạng học cải thiện, mục tiêu ngược, đối chiếu kế hoạch và Chat (Task 4.3b).
 
     Quy tắc chung:
     - Xác thực: session cookie (JSESSIONID) + CSRF (cookie XSRF-TOKEN, header X-XSRF-TOKEN) cho mọi request ghi, kể cả login. Chỉ vai trò STUDENT. Chưa đăng nhập → 401 UNAUTHENTICATED; thiếu CSRF/sai vai trò → 403 ACCESS_DENIED.
@@ -17,7 +17,8 @@ info:
     - Vòng đời kế hoạch: lưu nháp luôn DRAFT và không mang kết quả thẩm định (kể cả nội dung vừa qua kiểm tra nhanh); validate bản đã lưu hợp lệ → VALIDATED; activate chỉ nhận VALIDATED (thẩm định lại, lỗi → 422) và lưu trữ bản ACTIVE cũ trong cùng giao dịch; sửa ACTIVE tạo DRAFT kế thừa.
     - Sinh và thẩm định kế hoạch chạy planner tool của AcademicFacade trên hồ sơ server nạp từ DB (không dùng hồ sơ mẫu); kết quả kèm dataRevision và policyVersion đã dùng. Khi dataRevision tăng (xác nhận bảng điểm, khai báo chứng chỉ, đổi CTĐT) hoặc quy chế đổi, kế hoạch VALIDATED/ACTIVE được thẩm định lại: VALIDATED vi phạm về DRAFT, ACTIVE giữ ACTIVE kèm cảnh báo; chưa có công cụ thẩm định thật thì VALIDATED về DRAFT.
     - Công cụ chưa thật: AcademicFacade chưa khai báo VALIDATE_STUDY_PLAN trong readyCapabilities() thì validate trả 503 TOOL_NOT_READY (dev/test có thể bật thẩm định thử validationMode=MOCK) và không kế hoạch nào lên VALIDATED/ACTIVE. Kích hoạt kiểm tra lại revision hồ sơ (dataRevision), quy chế (policyVersion) và kế hoạch (planVersion) tại lúc thẩm định.
-    - Số liệu dự kiến (projectedCpa, expectedGpa, targetGrade, phương án đề xuất) phải hiển thị nhãn "Dự kiến"; xem trước không ghi dữ liệu.
+    - Số liệu dự kiến (projectedCpa, expectedGpa, targetGrade, phương án đề xuất) phải hiển thị nhãn "Dự kiến"; xem trước không ghi dữ liệu. What-if, xếp hạng học cải thiện, mục tiêu ngược và đối chiếu chỉ đọc, kèm dataRevision và policyVersion đã dùng.
+    - Chat: AdvisorFacade trả lời trên công cụ học vụ thật; trợ lý không trả lời được (chưa cấu hình, quá hạn, quá tải, nhà cung cấp mô hình lỗi) → 503 AI_UNAVAILABLE với retryable=true và header Retry-After, không có câu trả lời thay thế, không lưu lượt đó. Thiếu AI không ảnh hưởng các API khác.
     - Một dữ liệu chỉ có một tên trường: xem glossary-v1.json. Mọi thay đổi sau mốc contracts-v1 phải qua PR của TV5 kèm kiểm tra phía sử dụng.
 
     x-implementation-status: trạng thái runtime hiện tại của endpoint (IMPLEMENTED, NOT_IMPLEMENTED → 501); contract không đổi theo trạng thái này.
@@ -509,9 +510,17 @@ paths:
                   status:
                     type: string
                     example: UP
+                  service:
+                    type: string
+                  advisor:
+                    type: string
+                    description: "Sẵn sàng của trợ lý AI: READY | DEGRADED | NOT_CONFIGURED | MOCK. Không ảnh hưởng status của ứng dụng (thiếu AI không chặn hồ sơ/kế hoạch/What-if)."
+                    example: READY
                   timestamp:
                     type: string
                     format: date-time
+                  note:
+                    type: string
   /academic/status:
     get:
       tags: [Academic]
@@ -804,9 +813,10 @@ paths:
     post:
       tags: [Planner]
       summary: "Đối chiếu kết quả học kỳ với kế hoạch ACTIVE (US-13)"
+      description: "Bộ đối chiếu của AcademicFacade so bảng điểm đã xác nhận của học kỳ với kế hoạch ACTIVE đã lưu của sinh viên. Chỉ đọc. Kế hoạch không phải ACTIVE → 409 PLAN_NOT_ACTIVE; planVersion (nếu gửi) khác bản lưu → 409 PLAN_VERSION_CONFLICT."
       operationId: reconcileStudyPlan
       x-facade-method: AcademicFacade#reconcileStudyPlan
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       requestBody:
         required: true
         content:
@@ -830,15 +840,15 @@ paths:
           $ref: "#/components/responses/NotFound"
         '409':
           $ref: "#/components/responses/Conflict"
-        '501':
-          $ref: "#/components/responses/NotImplemented"
+        '503':
+          $ref: "#/components/responses/ServiceUnavailable"
   /simulation/grades:
     post:
       tags: [Simulation]
       summary: "What-if: giả lập điểm kỳ tới"
       operationId: simulateGrades
       x-facade-method: AcademicFacade#simulateGrades
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       requestBody:
         required: true
         content:
@@ -860,15 +870,15 @@ paths:
           $ref: "#/components/responses/Forbidden"
         '409':
           $ref: "#/components/responses/Conflict"
-        '501':
-          $ref: "#/components/responses/NotImplemented"
+        '503':
+          $ref: "#/components/responses/ServiceUnavailable"
   /simulation/retake-ranking:
     post:
       tags: [Simulation]
       summary: "Xếp hạng môn học lại/cải thiện theo hiệu quả CPA"
       operationId: rankRetakeCourses
       x-facade-method: AcademicFacade#rankRetakeCourses
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       requestBody:
         required: true
         content:
@@ -890,15 +900,15 @@ paths:
           $ref: "#/components/responses/Forbidden"
         '409':
           $ref: "#/components/responses/Conflict"
-        '501':
-          $ref: "#/components/responses/NotImplemented"
+        '503':
+          $ref: "#/components/responses/ServiceUnavailable"
   /simulation/target-grades:
     post:
       tags: [Simulation]
       summary: "Tính ngược điểm cần đạt cho CPA mục tiêu"
       operationId: calculateTargetGrades
       x-facade-method: AcademicFacade#calculateTargetGrades
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       requestBody:
         required: true
         content:
@@ -920,8 +930,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         '409':
           $ref: "#/components/responses/Conflict"
-        '501':
-          $ref: "#/components/responses/NotImplemented"
+        '503':
+          $ref: "#/components/responses/ServiceUnavailable"
   /audit/graduation:
     get:
       tags: [Audit]
@@ -989,9 +999,10 @@ paths:
     post:
       tags: [Advisor]
       summary: "Hỏi trợ lý học vụ"
+      description: "AdvisorFacade (module AI) trả lời trên công cụ học vụ thật và hồ sơ của sinh viên đang đăng nhập. Lượt chỉ được lưu vào hội thoại khi có câu trả lời thật. Trợ lý chưa cấu hình, quá hạn, quá tải hoặc nhà cung cấp mô hình lỗi → 503 AI_UNAVAILABLE (retryable, header Retry-After), không có câu trả lời thay thế và không lưu gì. Mã hội thoại của sinh viên khác → 404; hội thoại vừa được lượt khác ghi → 409 CONVERSATION_BUSY (retryable)."
       operationId: chatAdvisor
       x-facade-method: AdvisorFacade#chat
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       requestBody:
         required: true
         content:
@@ -1011,8 +1022,12 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
-        '501':
-          $ref: "#/components/responses/NotImplemented"
+        '404':
+          $ref: "#/components/responses/NotFound"
+        '409':
+          $ref: "#/components/responses/Conflict"
+        '503':
+          $ref: "#/components/responses/ServiceUnavailable"
 components:
   responses:
     BadRequest:
@@ -1052,7 +1067,12 @@ components:
           schema:
             $ref: "#/components/schemas/ApiErrorResponse"
     ServiceUnavailable:
-      description: "TOOL_NOT_READY: công cụ học vụ cần cho thao tác chưa là công cụ thật (stub NOT_READY), thử lại sau"
+      description: "TOOL_NOT_READY: công cụ học vụ cần cho thao tác chưa là công cụ thật (stub NOT_READY), thử lại sau; AI_UNAVAILABLE: trợ lý AI không trả lời được lượt này (retryable=true, header Retry-After)"
+      headers:
+        Retry-After:
+          description: "Số giây nên chờ trước khi gửi lại (có khi lỗi tạm thời, ví dụ AI_UNAVAILABLE)."
+          schema:
+            type: integer
       content:
         application/json:
           schema:
@@ -1064,7 +1084,7 @@ components:
           schema:
             $ref: "#/components/schemas/ApiErrorResponse"
     Conflict:
-      description: "DATA_REVISION_STALE | PLAN_VERSION_CONFLICT | PLAN_NOT_EDITABLE | ACCOUNT_ALREADY_EXISTS | IMPORT_SESSION_CLOSED | IMPORT_VERSION_CONFLICT"
+      description: "DATA_REVISION_STALE | PLAN_VERSION_CONFLICT | PLAN_NOT_EDITABLE | PLAN_NOT_ACTIVE | ACCOUNT_ALREADY_EXISTS | IMPORT_SESSION_CLOSED | IMPORT_VERSION_CONFLICT | CONVERSATION_BUSY (retryable)"
       content:
         application/json:
           schema:
@@ -1111,7 +1131,7 @@ components:
               description: "Module học vụ (TV4)."
             advisor:
               type: string
-              description: "Module AI (TV1)."
+              description: "Trợ lý AI (module TV1): READY | DEGRADED (vừa có lượt lỗi, vẫn nhận câu hỏi) | NOT_CONFIGURED (Chat trả 503 AI_UNAVAILABLE) | MOCK (chỉ dev/test)."
             persistence:
               type: string
               description: "Lưu trữ dữ liệu (TV5)."
@@ -1129,7 +1149,7 @@ components:
             $ref: "#/components/schemas/AcademicToolReadinessItem"
     ApiErrorCode:
       type: string
-      description: "Mã lỗi nghiệp vụ. 400 VALIDATION_ERROR, CURRICULUM_NOT_FOUND; 401 UNAUTHENTICATED, INVALID_CREDENTIALS; 403 ACCESS_DENIED; 404 PLAN_NOT_FOUND, IMPORT_SESSION_NOT_FOUND, REQUIREMENT_NOT_FOUND; 409 DATA_REVISION_STALE, PLAN_VERSION_CONFLICT, PLAN_NOT_EDITABLE, ACCOUNT_ALREADY_EXISTS, IMPORT_SESSION_CLOSED, IMPORT_VERSION_CONFLICT; 413 UPLOAD_TOO_LARGE; 415 UNSUPPORTED_FILE_TYPE; 422 PLAN_NOT_VALIDATED, PLAN_VALIDATION_FAILED, IMPORT_HAS_BLOCKING_ISSUES; 429 IMPORT_LIMIT_REACHED; 501 NOT_IMPLEMENTED; 503 TOOL_NOT_READY; 404 CONVERSATION_NOT_FOUND."
+      description: "Mã lỗi nghiệp vụ. 400 VALIDATION_ERROR, CURRICULUM_NOT_FOUND; 401 UNAUTHENTICATED, INVALID_CREDENTIALS; 403 ACCESS_DENIED; 404 PLAN_NOT_FOUND, IMPORT_SESSION_NOT_FOUND, REQUIREMENT_NOT_FOUND; 409 DATA_REVISION_STALE, PLAN_VERSION_CONFLICT, PLAN_NOT_EDITABLE, ACCOUNT_ALREADY_EXISTS, IMPORT_SESSION_CLOSED, IMPORT_VERSION_CONFLICT; 413 UPLOAD_TOO_LARGE; 415 UNSUPPORTED_FILE_TYPE; 422 PLAN_NOT_VALIDATED, PLAN_VALIDATION_FAILED, IMPORT_HAS_BLOCKING_ISSUES; 429 IMPORT_LIMIT_REACHED; 501 NOT_IMPLEMENTED; 503 TOOL_NOT_READY; 404 CONVERSATION_NOT_FOUND; 503 AI_UNAVAILABLE; 409 CONVERSATION_BUSY, PLAN_NOT_ACTIVE."
       enum:
         - VALIDATION_ERROR
         - PLAN_NOT_FOUND
@@ -1154,6 +1174,9 @@ components:
         - UNSUPPORTED_FILE_TYPE
         - TOOL_NOT_READY
         - CONVERSATION_NOT_FOUND
+        - AI_UNAVAILABLE
+        - CONVERSATION_BUSY
+        - PLAN_NOT_ACTIVE
     ApiErrorResponse:
       type: object
       description: "Body lỗi chung cho mọi response 4xx/5xx nghiệp vụ."
@@ -1173,9 +1196,13 @@ components:
           format: date-time
         details:
           type: array
-          description: "Chi tiết bổ sung; với PLAN_VALIDATION_FAILED là danh sách vi phạm."
+          description: "Chi tiết bổ sung; với PLAN_VALIDATION_FAILED là danh sách vi phạm; với AI_UNAVAILABLE là lý do (reason: NOT_CONFIGURED | TIMEOUT | PROVIDER_ERROR | BUSY | ERROR | PERSISTENCE)."
           items:
             type: string
+          nullable: true
+        retryable:
+          type: boolean
+          description: "true: lỗi tạm thời, gửi lại cùng yêu cầu được sau số giây ở header Retry-After (AI_UNAVAILABLE, CONVERSATION_BUSY). Không có trường này nghĩa là không xác định."
           nullable: true
     AcademicRiskLevel:
       type: string
@@ -1983,6 +2010,11 @@ components:
           description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
           example: REV-2024604757-001
           nullable: true
+        policyVersion:
+          type: string
+          description: "Phiên bản quy chế (policyId@version) AcademicFacade đã áp dụng."
+          example: policy-haui-demo-2026@0.0.1-v0
+          nullable: true
     SimulatedCourseGrade:
       type: object
       description: "Một môn với điểm giả định."
@@ -2025,7 +2057,7 @@ components:
           nullable: true
     SimulateGradesResponse:
       type: object
-      description: "Kết quả giả lập (dự kiến)."
+      description: "Kết quả giả lập (dự kiến), không ghi bảng điểm hay kế hoạch. Chưa có bảng điểm/không xác định được CPA hiện tại thì currentCpa, projectedCpa, cpaDelta là null (không gán 0)."
       required: [currentCpa, expectedGpa, projectedCpa, cpaDelta]
       properties:
         studentId:
@@ -2035,19 +2067,28 @@ components:
         currentCpa:
           type: number
           description: "CPA hiện tại."
+          nullable: true
         expectedGpa:
           type: number
           description: "GPA kỳ giả lập (dự kiến)."
+          nullable: true
         projectedCpa:
           type: number
           description: "CPA sau kỳ giả lập (dự kiến)."
+          nullable: true
         cpaDelta:
           type: number
           description: "projectedCpa - currentCpa."
+          nullable: true
         dataRevision:
           type: string
           description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
           example: REV-2024604757-001
+          nullable: true
+        policyVersion:
+          type: string
+          description: "Phiên bản quy chế (policyId@version) AcademicFacade đã áp dụng."
+          example: policy-haui-demo-2026@0.0.1-v0
           nullable: true
     RankRetakeCoursesRequest:
       type: object
@@ -2130,6 +2171,11 @@ components:
           description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
           example: REV-2024604757-001
           nullable: true
+        policyVersion:
+          type: string
+          description: "Phiên bản quy chế (policyId@version) AcademicFacade đã áp dụng."
+          example: policy-haui-demo-2026@0.0.1-v0
+          nullable: true
     CalculateTargetGradesRequest:
       type: object
       description: "Tính ngược điểm cần đạt cho CPA mục tiêu."
@@ -2185,7 +2231,7 @@ components:
           nullable: true
     CalculateTargetGradesResponse:
       type: object
-      description: "Kết quả tính ngược (dự kiến)."
+      description: "Kết quả tính ngược (dự kiến). Thiếu dữ liệu hoặc không còn tín chỉ để học thì currentCpa/requiredAverageGpa có thể null, lý do ở warnings."
       required: [currentCpa, targetCpa, requiredAverageGpa]
       properties:
         studentId:
@@ -2195,9 +2241,11 @@ components:
         currentCpa:
           type: number
           description: "CPA hiện tại."
+          nullable: true
         targetCpa:
           type: number
           description: "CPA mục tiêu."
+          nullable: true
         remainingCredits:
           type: integer
           format: int32
@@ -2206,6 +2254,7 @@ components:
         requiredAverageGpa:
           type: number
           description: "GPA trung bình cần đạt cho phần còn lại."
+          nullable: true
         courseRequirements:
           type: array
           description: "Điểm cần đạt từng môn."
@@ -2222,6 +2271,11 @@ components:
           type: string
           description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
           example: REV-2024604757-001
+          nullable: true
+        policyVersion:
+          type: string
+          description: "Phiên bản quy chế (policyId@version) AcademicFacade đã áp dụng."
+          example: policy-haui-demo-2026@0.0.1-v0
           nullable: true
     GraduationAuditRequest:
       type: object

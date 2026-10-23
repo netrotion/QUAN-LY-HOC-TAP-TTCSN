@@ -12,6 +12,7 @@ public class ReconcileStudyPlanResponse implements Serializable {
     private List<String> adjustmentsRecommended;
     private Integer planVersion;
     private String dataRevision;
+    private String policyVersion;
 
     public ReconcileStudyPlanResponse() {
     }
@@ -91,5 +92,13 @@ public class ReconcileStudyPlanResponse implements Serializable {
 
     public void setDataRevision(String dataRevision) {
         this.dataRevision = dataRevision;
+    }
+
+    public String getPolicyVersion() {
+        return policyVersion;
+    }
+
+    public void setPolicyVersion(String policyVersion) {
+        this.policyVersion = policyVersion;
     }
 }

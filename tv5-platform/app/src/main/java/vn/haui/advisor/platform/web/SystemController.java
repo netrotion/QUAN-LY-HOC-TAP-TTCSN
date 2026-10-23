@@ -8,6 +8,7 @@ import vn.haui.advisor.contracts.ContractVersion;
 import vn.haui.advisor.contracts.dto.AcademicToolReadinessItem;
 import vn.haui.advisor.contracts.dto.AcademicToolStatus;
 import vn.haui.advisor.platform.academic.AcademicToolGate;
+import vn.haui.advisor.platform.advisor.AdvisorReadiness;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -19,9 +20,11 @@ import java.util.Map;
 public class SystemController {
 
     private final AcademicToolGate academicTools;
+    private final AdvisorReadiness advisorReadiness;
 
-    public SystemController(AcademicToolGate academicTools) {
+    public SystemController(AcademicToolGate academicTools, AdvisorReadiness advisorReadiness) {
         this.academicTools = academicTools;
+        this.advisorReadiness = advisorReadiness;
     }
 
     @GetMapping("/bootstrap")
@@ -35,15 +38,17 @@ public class SystemController {
         modules.put("contracts", "READY");
         List<AcademicToolReadinessItem> tools = academicTools.readiness();
         boolean anyReady = tools.stream().anyMatch(t -> t.getStatus() == AcademicToolStatus.READY);
-        modules.put("academic", anyReady ? "PARTIAL" : "NOT_IMPLEMENTED");
-        modules.put("advisor", "NOT_IMPLEMENTED");
+        boolean allReady = tools.stream().allMatch(t -> t.getStatus() == AcademicToolStatus.READY);
+        modules.put("academic", allReady ? "READY" : anyReady ? "PARTIAL" : "NOT_IMPLEMENTED");
+        // READY | DEGRADED | NOT_CONFIGURED | MOCK — thiếu AI chỉ ảnh hưởng Chat
+        modules.put("advisor", advisorReadiness.status().name());
         modules.put("persistence", "READY");
         response.put("modules", modules);
 
         response.put("message", "HaUI Advisor đang chạy contracts-v1. Tài khoản, hồ sơ, CTĐT, bảng điểm, kế hoạch và hội thoại lưu trong DB; "
-                + "trạng thái học vụ, điều kiện học phần, cây CTĐT, rà soát tốt nghiệp, sinh và thẩm định kế hoạch tính bởi "
-                + "AcademicFacade trên hồ sơ DB. "
-                + "Công cụ học vụ chưa thật trả 503 TOOL_NOT_READY (xem academicTools), endpoint chưa nối trả 501.");
+                + "công cụ học vụ (trạng thái, điều kiện, cây CTĐT, rà soát, kế hoạch, What-if, đối chiếu) tính bởi AcademicFacade "
+                + "trên hồ sơ DB; Chat chạy AdvisorFacade. Công cụ học vụ chưa thật trả 503 TOOL_NOT_READY (xem academicTools); "
+                + "trợ lý AI không trả lời được trả 503 AI_UNAVAILABLE (xem modules.advisor).");
         response.put("academicTools", tools);
         response.put("timestamp", Instant.now().toString());
 
@@ -55,6 +60,8 @@ public class SystemController {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", "UP");
         response.put("service", "haui-platform-app");
+        // Trợ lý AI báo riêng, không ảnh hưởng status của ứng dụng
+        response.put("advisor", advisorReadiness.status().name());
         response.put("timestamp", Instant.now().toString());
         response.put("note", "Trạng thái UP chỉ chứng minh tiến trình Spring Boot đang hoạt động, không chứng minh các chức năng nghiệp vụ học vụ đã đạt.");
 

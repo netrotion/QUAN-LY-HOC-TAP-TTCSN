@@ -12,6 +12,7 @@ public class SimulateGradesResponse implements Serializable {
     private BigDecimal projectedCpa;
     private BigDecimal cpaDelta;
     private String dataRevision;
+    private String policyVersion;
 
     public SimulateGradesResponse() {
     }
@@ -105,5 +106,13 @@ public class SimulateGradesResponse implements Serializable {
     @JsonIgnore
     public BigDecimal getCpaDifference() {
         return getCpaDelta();
+    }
+
+    public String getPolicyVersion() {
+        return policyVersion;
+    }
+
+    public void setPolicyVersion(String policyVersion) {
+        this.policyVersion = policyVersion;
     }
 }

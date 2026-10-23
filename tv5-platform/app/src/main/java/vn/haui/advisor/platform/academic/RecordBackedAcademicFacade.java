@@ -1,10 +1,13 @@
 package vn.haui.advisor.platform.academic;
 
+import vn.haui.advisor.academic.engine.PlanReconciler;
 import vn.haui.advisor.academic.model.StudentProfileFixture;
 import vn.haui.advisor.academic.service.DefaultAcademicFacade;
 import vn.haui.advisor.contracts.dto.*;
 import vn.haui.advisor.platform.transcript.DbStudentAcademicRecordProvider;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -13,10 +16,11 @@ import java.util.regex.Pattern;
 /**
  * AcademicFacade của runtime: engine học vụ TV4 (DefaultAcademicFacade) trên hồ sơ DB.
  *
- * Trạng thái, điều kiện học phần và rà soát tốt nghiệp đọc hồ sơ qua StudentAcademicRecordProvider (Task 4.1). Planner tool
- * của TV4 (generateStudyPlan, validateStudyPlan) lại đọc hồ sơ dạng StudentProfileFixture và khi không có thì lấy hồ sơ mẫu
- * của TV4 theo mã sinh viên. Lớp này cấp cho hai hàm đó đúng hồ sơ DB của sinh viên (Task 4.2b): bảng điểm đã xác nhận cùng
- * CPA, tín chỉ tích lũy và mức cảnh báo do chính engine tính từ bảng điểm đó. Không có nhánh hồ sơ mẫu.
+ * Trạng thái, điều kiện học phần và rà soát tốt nghiệp đọc hồ sơ qua StudentAcademicRecordProvider (Task 4.1). Các công cụ
+ * còn lại của TV4 (sinh/thẩm định kế hoạch, mô phỏng điểm, xếp hạng học cải thiện, tính điểm mục tiêu, đối chiếu kế hoạch)
+ * lại đọc hồ sơ dạng StudentProfileFixture và khi không có thì lấy hồ sơ mẫu của TV4 theo mã sinh viên. Lớp này cấp cho
+ * các hàm đó đúng hồ sơ DB của sinh viên (Task 4.2b, 4.3b): bảng điểm đã xác nhận cùng CPA, tín chỉ tích lũy và mức cảnh
+ * báo do chính engine tính từ bảng điểm đó; đối chiếu chạy trên kế hoạch đã lưu của sinh viên. Không có nhánh dữ liệu mẫu.
  */
 public class RecordBackedAcademicFacade extends DefaultAcademicFacade {
 
@@ -24,30 +28,71 @@ public class RecordBackedAcademicFacade extends DefaultAcademicFacade {
 
     private final DbStudentAcademicRecordProvider records;
     private final AcademicEngineSources sources;
+    private final StoredPlanSource plans;
 
-    public RecordBackedAcademicFacade(DbStudentAcademicRecordProvider records, AcademicEngineSources sources) {
+    public RecordBackedAcademicFacade(DbStudentAcademicRecordProvider records, AcademicEngineSources sources,
+                                      StoredPlanSource plans) {
         super(records, sources.policy(), sources.curriculum(), Map.of());
         this.records = records;
         this.sources = sources;
+        this.plans = plans;
     }
 
     @Override
     public GenerateStudyPlanResponse generateStudyPlan(GenerateStudyPlanRequest request) {
-        return withPlanner(request == null ? null : request.getStudentId(), planner -> planner.generateStudyPlan(request));
+        return withEngine(request == null ? null : request.getStudentId(), engine -> engine.generateStudyPlan(request));
     }
 
     @Override
     public ValidateStudyPlanResponse validateStudyPlan(ValidateStudyPlanRequest request) {
-        return withPlanner(request == null ? null : request.getStudentId(), planner -> planner.validateStudyPlan(request));
+        return withEngine(request == null ? null : request.getStudentId(), engine -> engine.validateStudyPlan(request));
+    }
+
+    @Override
+    public SimulateGradesResponse simulateGrades(SimulateGradesRequest request) {
+        return withEngine(request == null ? null : request.getStudentId(), engine -> engine.simulateGrades(request));
+    }
+
+    @Override
+    public RankRetakeCoursesResponse rankRetakeCourses(RankRetakeCoursesRequest request) {
+        return withEngine(request == null ? null : request.getStudentId(), engine -> engine.rankRetakeCourses(request));
+    }
+
+    @Override
+    public CalculateTargetGradesResponse calculateTargetGrades(CalculateTargetGradesRequest request) {
+        return withEngine(request == null ? null : request.getStudentId(), engine -> engine.calculateTargetGrades(request));
     }
 
     /**
-     * Chạy planner tool TV4 với đúng một hồ sơ: hồ sơ DB của sinh viên (bản platform đã ghim cho lượt gọi nếu có), cùng
-     * quy chế và CTĐT với facade. CTĐT của sinh viên khác CTĐT engine thì dừng, không lập kế hoạch trên CTĐT sai.
+     * Đối chiếu trên kế hoạch đã lưu của chính sinh viên. Bộ đối chiếu TV4 có sẵn vài kế hoạch mẫu theo mã; kế hoạch không
+     * thuộc sinh viên thì dừng thay vì để engine dùng kế hoạch mẫu trùng mã.
      */
-    private <T> T withPlanner(String studentId, Function<DefaultAcademicFacade, T> call) {
+    @Override
+    public ReconcileStudyPlanResponse reconcileStudyPlan(ReconcileStudyPlanRequest request) {
+        String studentId = request == null ? null : request.getStudentId();
+        String planId = request == null ? null : request.getPlanId();
+        List<PlannedSemesterItem> semesters = plans.semesters(studentId, planId)
+                .orElseThrow(() -> new IllegalArgumentException("Không có kế hoạch " + planId + " của sinh viên đang xử lý"));
+        return withProfile(studentId, profile -> {
+            PlanReconciler reconciler = new PlanReconciler(sources.policy(), sources.curriculum(), Map.of(studentId, profile));
+            reconciler.registerPlan(new PlanReconciler.PlanDefinition(planId, studentId, coursesBySemester(semesters)));
+            return reconciler.reconcileStudyPlan(request);
+        });
+    }
+
+    /** Engine TV4 với đúng một hồ sơ (hồ sơ DB của sinh viên), cùng quy chế và CTĐT với facade. */
+    private <T> T withEngine(String studentId, Function<DefaultAcademicFacade, T> call) {
+        return withProfile(studentId, profile -> call.apply(new DefaultAcademicFacade(records, sources.policy(),
+                sources.curriculum(), Map.of(studentId, profile))));
+    }
+
+    /**
+     * Hồ sơ đầu vào cho công cụ TV4: hồ sơ DB của sinh viên (bản platform đã ghim cho lượt gọi nếu có). CTĐT của sinh viên
+     * khác CTĐT engine thì dừng, không tính trên CTĐT sai.
+     */
+    private <T> T withProfile(String studentId, Function<StudentProfileFixture, T> call) {
         if (studentId == null || studentId.isBlank()) {
-            throw new IllegalArgumentException("Planner tool cần studentId của sinh viên đang xử lý");
+            throw new IllegalArgumentException("Công cụ học vụ cần studentId của sinh viên đang xử lý");
         }
         StudentAcademicRecord record = records.getAcademicRecord(studentId);
         if (!sources.curriculumId().equals(record.getCurriculumId())) {
@@ -55,10 +100,22 @@ public class RecordBackedAcademicFacade extends DefaultAcademicFacade {
         }
         return records.withRecord(record, () -> {
             AcademicStatusResponse status = getAcademicStatus(new AcademicStatusRequest(studentId, record.getDataRevision()));
-            DefaultAcademicFacade planner = new DefaultAcademicFacade(records, sources.policy(), sources.curriculum(),
-                    Map.of(studentId, planningProfile(record, status)));
-            return call.apply(planner);
+            return call.apply(planningProfile(record, status));
         });
+    }
+
+    /** Học phần theo học kỳ của kế hoạch đã lưu, theo dạng bộ đối chiếu TV4 nhận (gộp các học kỳ trùng mã). */
+    static Map<String, List<PlanReconciler.PlannedCourseItem>> coursesBySemester(List<PlannedSemesterItem> semesters) {
+        Map<String, List<PlanReconciler.PlannedCourseItem>> result = new LinkedHashMap<>();
+        for (PlannedSemesterItem semester : semesters) {
+            List<PlanReconciler.PlannedCourseItem> courses = result.computeIfAbsent(semester.getSemesterCode(),
+                    code -> new ArrayList<>());
+            for (PlannedCourseItem course : semester.getCourses()) {
+                courses.add(new PlanReconciler.PlannedCourseItem(course.getCourseCode(), course.getCourseName(),
+                        course.getCredits(), course.getTargetGrade(), course.getCourseType(), course.getRationale()));
+            }
+        }
+        return result;
     }
 
     /**

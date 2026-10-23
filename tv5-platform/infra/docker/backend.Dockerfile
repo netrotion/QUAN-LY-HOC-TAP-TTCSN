@@ -27,6 +27,9 @@ RUN useradd -m -u 1001 appuser
 USER appuser
 
 COPY --from=builder /workspace/tv5-platform/app/target/haui-platform-app-0.0.1-SNAPSHOT.jar app.jar
+# Tài liệu quy chế cho RAG của trợ lý AI (haui.advisor.rag-documents-root)
+COPY data-source/documents data-source/documents
+ENV RAG_DOCUMENTS_ROOT=/app
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

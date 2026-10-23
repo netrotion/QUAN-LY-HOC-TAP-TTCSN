@@ -1,6 +1,6 @@
 {
   "milestone": "contracts-v1",
-  "contractVersion": "1.4.0",
+  "contractVersion": "1.5.0",
   "owner": "TV5",
   "rule": "Một dữ liệu chỉ có một tên trường; cùng tên trường thì cùng kiểu JSON ở mọi schema. Thêm trường mới phải đăng ký ở đây trong cùng PR.",
   "fields": {
@@ -667,6 +667,10 @@
     "warnings": {
       "type": "array<string>",
       "meaning": "Cảnh báo không chặn thao tác"
+    },
+    "retryable": {
+      "type": "boolean",
+      "meaning": "Lỗi tạm thời: gửi lại cùng yêu cầu được sau số giây ở header Retry-After"
     }
   },
   "retired": {

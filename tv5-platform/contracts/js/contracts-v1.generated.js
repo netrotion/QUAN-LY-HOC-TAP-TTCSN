@@ -1,5 +1,5 @@
 // GENERATED — KHÔNG SỬA TAY. Sinh bởi `npm run contracts:build` từ tv5-platform/contracts (openapi-v1.yaml, examples/*.json, enum Java).
-export const CONTRACT_VERSION = "1.4.0";
+export const CONTRACT_VERSION = "1.5.0";
 export const CONTRACT_MILESTONE = "contracts-v1";
 export const API_BASE_PATH = '/api/v1';
 export const DEMO_STUDENT = Object.freeze({
@@ -37,7 +37,10 @@ export const ENUMS = Object.freeze({
     "UPLOAD_TOO_LARGE",
     "UNSUPPORTED_FILE_TYPE",
     "TOOL_NOT_READY",
-    "CONVERSATION_NOT_FOUND"
+    "CONVERSATION_NOT_FOUND",
+    "AI_UNAVAILABLE",
+    "CONVERSATION_BUSY",
+    "PLAN_NOT_ACTIVE"
   ],
   "AcademicRiskLevel": [
     "NORMAL",
@@ -2869,7 +2872,8 @@ export const FIXTURES = Object.freeze({
         "Xếp học lại IT6095 - Tối ưu hóa vào học kỳ 2026_2 hoặc kỳ hè 2026_SUMMER"
       ],
       "planVersion": 2,
-      "dataRevision": "REV-2024604757-002"
+      "dataRevision": "REV-2024604757-002",
+      "policyVersion": "policy-haui-demo-2026@0.0.1-v0"
     },
     "consumers": [
       "TV3",
@@ -2908,7 +2912,8 @@ export const FIXTURES = Object.freeze({
       "expectedGpa": 3.75,
       "projectedCpa": 3.23,
       "cpaDelta": 0.05,
-      "dataRevision": "REV-2024604757-001"
+      "dataRevision": "REV-2024604757-001",
+      "policyVersion": "policy-haui-demo-2026@0.0.1-v0"
     },
     "consumers": [
       "TV3",
@@ -2957,7 +2962,8 @@ export const FIXTURES = Object.freeze({
           "rationale": "Môn 2 tín chỉ điểm D+, cải thiện lên A"
         }
       ],
-      "dataRevision": "REV-2024604757-001"
+      "dataRevision": "REV-2024604757-001",
+      "policyVersion": "policy-haui-demo-2026@0.0.1-v0"
     },
     "consumers": [
       "TV3",
@@ -2998,7 +3004,8 @@ export const FIXTURES = Object.freeze({
       "warnings": [
         "Mục tiêu yêu cầu GPA trung bình các kỳ còn lại >= 3.55 (mức thử thách)"
       ],
-      "dataRevision": "REV-2024604757-001"
+      "dataRevision": "REV-2024604757-001",
+      "policyVersion": "policy-haui-demo-2026@0.0.1-v0"
     },
     "consumers": [
       "TV3",
@@ -3242,27 +3249,32 @@ export const FIXTURES = Object.freeze({
       "TV1"
     ]
   },
-  "not-implemented": {
-    "operationId": "reconcileStudyPlan",
+  "chat-ai-unavailable": {
+    "operationId": "chatAdvisor",
     "method": "POST",
-    "path": "/planner/reconcile",
-    "httpStatus": 501,
+    "path": "/advisor/chat",
+    "httpStatus": 503,
     "pathParams": null,
-    "requestSchema": null,
-    "request": null,
+    "requestSchema": "ChatRequest",
+    "request": {
+      "conversationId": "6f1c2b9e-1d4a-4c55-9a51-2b7f0e8c4d21",
+      "message": "Kỳ tới em nên học những môn nào để vẫn tốt nghiệp đúng hạn?",
+      "clientTimestamp": "2026-10-13T07:55:00Z"
+    },
     "responseSchema": "ApiErrorResponse",
     "response": {
-      "code": "NOT_IMPLEMENTED",
-      "message": "Chức năng chưa được nối ở runtime hiện tại.",
-      "requestId": "req-2026-10-13-0005",
-      "timestamp": "2026-10-13T08:15:00Z",
+      "code": "AI_UNAVAILABLE",
+      "message": "Dịch vụ mô hình AI đang gián đoạn nên chưa có câu trả lời. Vui lòng gửi lại sau ít phút.",
+      "requestId": "req-2026-10-23-0001",
+      "timestamp": "2026-10-23T09:00:00Z",
       "details": [
-        "operationId: reconcileStudyPlan"
-      ]
+        "reason: PROVIDER_ERROR"
+      ],
+      "retryable": true
     },
     "consumers": [
-      "TV2",
-      "TV3"
+      "TV3",
+      "TV2"
     ]
   },
   "validate-study-plan-mock": {

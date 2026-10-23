@@ -60,7 +60,9 @@ class AcademicToolGateTest {
         assertThat(gate.status(AcademicCapability.VALIDATE_STUDY_PLAN)).isEqualTo(AcademicToolStatus.READY);
         assertThat(gate.status(AcademicCapability.GET_ACADEMIC_STATUS)).isEqualTo(AcademicToolStatus.READY);
         assertThat(gate.status(AcademicCapability.GENERATE_STUDY_PLAN)).isEqualTo(AcademicToolStatus.READY);
-        assertThat(gate.status(AcademicCapability.SIMULATE_GRADES)).as("chưa nối endpoint").isEqualTo(AcademicToolStatus.NOT_READY);
+        assertThat(gate.status(AcademicCapability.SIMULATE_GRADES)).isEqualTo(AcademicToolStatus.READY);
+        assertThat(gate.status(AcademicCapability.RECONCILE_STUDY_PLAN)).as("đã nối nhưng facade chưa khai báo")
+                .isEqualTo(AcademicToolStatus.NOT_READY);
         assertThat(gate.readiness()).hasSize(AcademicCapability.values().length);
     }
 
@@ -69,9 +71,7 @@ class AcademicToolGateTest {
     void academicResultsHaveNoMockFallback() {
         AcademicToolGate gate = new AcademicToolGate(facade(Set.of()), environment("test"), true);
         assertThat(gate.status(AcademicCapability.VALIDATE_STUDY_PLAN)).isEqualTo(AcademicToolStatus.MOCK);
-        for (AcademicCapability capability : EnumSet.of(AcademicCapability.GET_ACADEMIC_STATUS,
-                AcademicCapability.CHECK_COURSE_ELIGIBILITY, AcademicCapability.RUN_GRADUATION_AUDIT,
-                AcademicCapability.GENERATE_STUDY_PLAN)) {
+        for (AcademicCapability capability : EnumSet.complementOf(EnumSet.of(AcademicCapability.VALIDATE_STUDY_PLAN))) {
             assertThat(gate.status(capability)).isEqualTo(AcademicToolStatus.NOT_READY);
             assertThatThrownBy(() -> gate.requireReal(capability)).isInstanceOfSatisfying(ApiException.class, ex -> {
                 assertThat(ex.getCode()).isEqualTo(ApiErrorCode.TOOL_NOT_READY);

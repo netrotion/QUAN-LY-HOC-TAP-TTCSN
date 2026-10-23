@@ -2,7 +2,6 @@ package vn.haui.advisor.platform.planner;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,14 +23,13 @@ import vn.haui.advisor.platform.support.AcademicToolsTestConfig;
 import vn.haui.advisor.platform.support.AcademicToolsTestConfig.ControllableAcademicFacade;
 import vn.haui.advisor.platform.support.AcademicToolsTestConfig.MutablePolicyVersion;
 import vn.haui.advisor.platform.support.StudentApi;
+import vn.haui.advisor.platform.support.StudentRecords;
 import vn.haui.advisor.platform.support.TestAccounts;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -306,6 +304,43 @@ class PlannerApiLiveTest {
     }
 
     @Test
+    @DisplayName("Cập nhật hồ sơ học vụ (khai báo chứng chỉ) → kế hoạch đang theo dõi được kiểm tra lại; sửa thông tin cá nhân thì không")
+    void profileUpdateMarksPlansForRecheck() throws Exception {
+        String sv = "sv-live-profile";
+        String rev1 = accounts.ensure(sv);
+        String validatedPlan = savePlan(sv, rev1, List.of(semester("2026_1", 15)));
+        String activePlan = savePlan(sv, rev1, List.of(semester("2026_1", 15)));
+        validate(sv, validatedPlan, 1, 200);
+        validate(sv, activePlan, 1, 200);
+        api().call(post(plan(activePlan) + "/activate"), sv, 200, "ActivateStudyPlanResponse", new ActivateStudyPlanRequest(1, rev1));
+
+        // Thông tin cá nhân không phải dữ liệu học vụ: không đổi dataRevision, không cần kiểm tra lại
+        api().call(put("/api/v1/students/me"), sv, 200, "StudentProfileResponse",
+                new UpdateStudentProfileRequest("Sinh viên đổi tên", null, null, null, null, rev1));
+        assertThat(accounts.revision(sv)).isEqualTo(rev1);
+
+        JsonNode declared = api().call(put("/api/v1/academic/certificates/IT_SKILLS"), sv, 200, "CertificateStatusItem",
+                new DeclareCertificateRequest(CertificateStatus.ACHIEVED, "MOS Excel", "2026-09-20", rev1));
+        assertThat(declared.get("status").asText()).isEqualTo("ACHIEVED");
+        String rev2 = accounts.revision(sv);
+        assertThat(rev2).isNotEqualTo(rev1);
+        for (String planId : List.of(validatedPlan, activePlan)) {
+            JsonNode detail = api().call(get(plan(planId)), sv, 200, "StudyPlanDetailResponse");
+            assertThat(detail.get("dataRevision").asText()).isEqualTo(rev2);
+            assertThat(detail.get("warnings").toString())
+                    .contains("Đã tự kiểm tra lại vì dữ liệu học vụ đã thay đổi (" + rev1 + " → " + rev2 + ")");
+        }
+
+        // Chưa có công cụ thẩm định thật lúc hồ sơ đổi: VALIDATED hết hiệu lực, ACTIVE kèm cảnh báo cần kiểm tra lại
+        academicFacade.setReady(false);
+        api().call(put("/api/v1/academic/certificates/IT_SKILLS"), sv, 200, "CertificateStatusItem",
+                new DeclareCertificateRequest(CertificateStatus.NOT_ACHIEVED, null, null, rev2));
+        assertThat(api().call(get(plan(validatedPlan)), sv, 200, "StudyPlanDetailResponse").get("status").asText()).isEqualTo("DRAFT");
+        assertThat(api().call(get(plan(activePlan)), sv, 200, "StudyPlanDetailResponse").get("warnings").toString())
+                .contains("chưa được kiểm tra lại trên dữ liệu mới");
+    }
+
+    @Test
     @DisplayName("Quy chế đổi: kế hoạch được thẩm định lại khi đọc; vi phạm quy chế mới thì VALIDATED về DRAFT")
     void policyChangeRevalidatesOnRead() throws Exception {
         String sv = "sv-live-policy";
@@ -355,32 +390,11 @@ class PlannerApiLiveTest {
 
     /** Hồ sơ đầu vào planner tool dựng độc lập từ API: bảng điểm đã xác nhận + trạng thái học vụ facade tính. */
     private StudentProfileFixture profileFromApi(String sv) throws Exception {
-        JsonNode transcript = api().call(get("/api/v1/academic/transcript"), sv, 200, "TranscriptResponse");
-        JsonNode status = api().call(get("/api/v1/academic/status"), sv, 200, "AcademicStatusResponse");
-        StudentProfileFixture profile = new StudentProfileFixture();
-        profile.setStudentId(sv);
-        profile.setDataRevision(status.get("dataRevision").asText());
-        profile.setCpa(status.get("cpa").isNull() ? null : status.get("cpa").decimalValue());
-        profile.setAccumulatedCredits(status.get("accumulatedCredits").isNull() ? null : status.get("accumulatedCredits").asDouble());
-        profile.setRiskLevel(AcademicRiskLevel.valueOf(status.get("riskLevel").asText()));
-        List<StudentProfileFixture.CourseAttempt> attempts = new ArrayList<>();
-        Set<String> mainSemesters = new HashSet<>();
-        for (JsonNode item : transcript.get("attempts")) {
-            StudentProfileFixture.CourseAttempt attempt = new StudentProfileFixture.CourseAttempt();
-            attempt.setCourseCode(item.get("courseCode").asText());
-            attempt.setCourseName(text(item, "courseName"));
-            attempt.setCredits(item.get("credits").asDouble());
-            attempt.setSemesterCode(item.get("semesterCode").asText());
-            attempt.setLetterGrade(text(item, "letterGrade"));
-            attempt.setScore10(item.path("score10").isNumber() ? item.get("score10").asDouble() : null);
-            attempts.add(attempt);
-            if (attempt.getSemesterCode().matches("^[0-9]{4}_(1|2)$")) {
-                mainSemesters.add(attempt.getSemesterCode());
-            }
-        }
-        profile.setCourseAttempts(attempts);
-        profile.setCurrentSemester(mainSemesters.isEmpty() ? null : mainSemesters.size());
-        return profile;
+        return records().profileFromApi(sv);
+    }
+
+    private StudentRecords records() {
+        return new StudentRecords(api(), objectMapper);
     }
 
     /** Sinh viên sửa phương án: bỏ học phần cuối của học kỳ đầu (vẫn trên sàn 10 TC), giữ phần còn lại. */
@@ -402,22 +416,11 @@ class PlannerApiLiveTest {
     }
 
     private String confirmManualImport(String sv, String revision, ObjectNode... rows) throws Exception {
-        JsonNode session = api().call(post("/api/v1/academic/transcript/imports/manual"), sv, 200, "TranscriptImportResponse");
-        String id = session.get("importSessionId").asText();
-        ObjectNode update = objectMapper.createObjectNode().put("sessionVersion", session.get("sessionVersion").asInt());
-        ArrayNode list = update.putArray("rows");
-        for (ObjectNode row : rows) {
-            list.add(row);
-        }
-        String imports = "/api/v1/academic/transcript/imports/" + id;
-        JsonNode reviewed = api().call(put(imports + "/rows"), sv, 200, "TranscriptImportResponse", update);
-        return api().call(post(imports + "/confirm"), sv, 200, "TranscriptResponse",
-                new ConfirmTranscriptImportRequest(reviewed.get("sessionVersion").asInt(), revision)).get("dataRevision").asText();
+        return records().confirmManualImport(sv, revision, rows);
     }
 
     private ObjectNode row(String courseCode, String semesterCode, double score10, String letterGrade) {
-        return objectMapper.createObjectNode().put("courseCode", courseCode).put("semesterCode", semesterCode)
-                .put("score10", score10).put("letterGrade", letterGrade);
+        return records().row(courseCode, semesterCode, score10, letterGrade);
     }
 
     private String savePlan(String sv, String revision, List<PlannedSemesterItem> semesters) throws Exception {
@@ -432,7 +435,7 @@ class PlannerApiLiveTest {
     }
 
     private JsonNode json(Object value) throws Exception {
-        return objectMapper.readTree(objectMapper.writeValueAsString(value));
+        return records().json(value);
     }
 
     private int rows(String sql, String id) {
@@ -442,10 +445,6 @@ class PlannerApiLiveTest {
     private String column(String column, String planId) {
         return jdbc.sql("SELECT " + column + " FROM study_plans WHERE plan_id = :id").param("id", planId)
                 .query((rs, n) -> rs.getString(1)).single();
-    }
-
-    private static String text(JsonNode node, String field) {
-        return node.path(field).isTextual() ? node.get(field).asText() : null;
     }
 
     private static String plan(String planId) {

@@ -4,5 +4,6 @@
   "expectedGpa": 3.75,
   "projectedCpa": 3.23,
   "cpaDelta": 0.05,
-  "dataRevision": "REV-2024604757-001"
+  "dataRevision": "REV-2024604757-001",
+  "policyVersion": "policy-haui-demo-2026@0.0.1-v0"
 }

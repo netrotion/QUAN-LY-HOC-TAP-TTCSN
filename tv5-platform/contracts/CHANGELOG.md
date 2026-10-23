@@ -3,6 +3,33 @@
 Mọi thay đổi hợp đồng sau mốc `contracts-v1` phải có mục ở đây, trong cùng PR của TV5 với thay đổi.
 Quy trình: [docs/task-2.4-contracts-v1.md §6](../docs/task-2.4-contracts-v1.md).
 
+## [1.5.0] — 2026-10-23 — What-if, đối chiếu kế hoạch và Chat (Task 4.3b)
+
+Nối nốt các operation còn 501: What-if, xếp hạng học cải thiện (ROI), mục tiêu ngược, đối chiếu kế hoạch và Chat. Không còn
+operation nào trả 501. Không đổi tên hay xóa trường nào của 1.4.0.
+
+### Thêm
+- Mã lỗi `AI_UNAVAILABLE` (503: trợ lý AI chưa cấu hình, quá hạn, quá tải hoặc nhà cung cấp mô hình lỗi; `details` có `reason: …`),
+  `CONVERSATION_BUSY` (409: hội thoại vừa được lượt khác ghi), `PLAN_NOT_ACTIVE` (409: đối chiếu kế hoạch không phải ACTIVE).
+- `ApiErrorResponse.retryable` (chỉ có khi `true`): lỗi tạm thời, gửi lại được sau số giây ở header `Retry-After`
+  (khai báo trong response chung 503).
+- `policyVersion` trên `SimulateGradesResponse`, `RankRetakeCoursesResponse`, `CalculateTargetGradesResponse`, `ReconcileStudyPlanResponse`.
+- Fixture `chat-ai-unavailable` (`error-ai-unavailable.sample.json`); 4 file mẫu What-if/đối chiếu có `policyVersion`; glossary thêm `retryable`.
+- `/system/health` có `advisor`; `BootstrapInfoResponse.modules.advisor` = `READY | DEGRADED | NOT_CONFIGURED | MOCK`.
+
+### Thay đổi hành vi
+- `simulateGrades`, `rankRetakeCourses`, `calculateTargetGrades`, `reconcileStudyPlan`, `chatAdvisor`: `IMPLEMENTED`; response 501 thay bằng
+  503 (`TOOL_NOT_READY` cho công cụ học vụ, `AI_UNAVAILABLE` cho Chat). Chat thêm 404 (mã hội thoại của sinh viên khác) và 409.
+- What-if/ROI/mục tiêu ngược/đối chiếu chỉ đọc, tính trên hồ sơ server nạp; `dataRevision` client gửi khác bản hiện hành → 409.
+- `SimulateGradesResponse.currentCpa/expectedGpa/projectedCpa/cpaDelta`, `CalculateTargetGradesResponse.currentCpa/targetCpa/requiredAverageGpa`
+  được khai báo `nullable` cho đúng kết quả engine khi thiếu dữ liệu (không gán 0).
+- Bỏ fixture `not-implemented` và `error-not-implemented.sample.json` (không còn operation 501); mã `NOT_IMPLEMENTED` giữ trong enum.
+
+### Việc cho owner khác
+- TV3 (4.4a): nối What-if/ROI/mục tiêu ngược/đối chiếu và Chat; với 503 `AI_UNAVAILABLE` hiện thông báo + nút gửi lại (giữ nội dung đã gõ),
+  tôn trọng `Retry-After`; 409 `CONVERSATION_BUSY` thì tải lại hội thoại rồi gửi lại; không hiển thị câu trả lời nào khi lỗi.
+- TV1: chi tiết ở `tv5-platform/docs/task-4.3b-whatif-reconcile-chat.md` §5.
+
 ## [1.4.0] — 2026-10-23 — sinh và thẩm định kế hoạch trên planner tool thật (Task 4.2b)
 
 Sinh phương án và thẩm định kế hoạch chạy planner tool của AcademicFacade trên hồ sơ server nạp từ DB; kế hoạch đang theo dõi

@@ -10,6 +10,7 @@ import vn.haui.advisor.platform.curriculum.CurriculumRepository;
 import vn.haui.advisor.platform.error.ApiException;
 import vn.haui.advisor.platform.transcript.DbStudentAcademicRecordProvider;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -22,7 +23,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 /**
- * API học vụ trên AcademicFacade thật (Task 4.1): trạng thái học vụ, điều kiện học phần, cây CTĐT, rà soát tốt nghiệp.
+ * API học vụ trên AcademicFacade thật (Task 4.1): trạng thái học vụ, điều kiện học phần, cây CTĐT, rà soát tốt nghiệp;
+ * What-if (Task 4.3b): giả lập điểm, xếp hạng học cải thiện theo ROI, tính điểm mục tiêu ngược — chỉ xem thử, không ghi gì.
  *
  * - Danh tính chỉ lấy từ TrustedStudentContext (phiên đăng nhập); studentId client gửi bị bỏ qua.
  * - Hồ sơ học vụ do server nạp từ DB một lần mỗi yêu cầu và gắn cho facade trong lúc gọi; kết quả trả kèm dataRevision của
@@ -36,6 +38,10 @@ public class AcademicApiService {
     private static final Logger log = LoggerFactory.getLogger(AcademicApiService.class);
     private static final AtomicBoolean NON_DATE_DEADLINE_LOGGED = new AtomicBoolean();
     private static final int MAX_COURSE_CODE = 50;
+    private static final int MAX_CREDITS = 30;
+    private static final int MAX_SIMULATED_COURSES = 30;
+    private static final int MAX_SUGGESTIONS = 50;
+    private static final BigDecimal MAX_POINTS = new BigDecimal("4");
     private static final Pattern SEMESTER = Pattern.compile("^[0-9]{4}_(1|2|SUMMER)$");
 
     private final AcademicFacade academicFacade;
@@ -123,6 +129,52 @@ public class AcademicApiService {
         return result;
     }
 
+    /** What-if: giả lập điểm các môn kỳ tới trên hồ sơ hiện tại; chỉ xem thử, không ghi bảng điểm hay kế hoạch. */
+    public SimulateGradesResponse simulate(TrustedStudentContext context, SimulateGradesRequest request) {
+        List<SimulatedCourseGrade> courses = checkSimulatedCourses(request == null ? null : request.getCourses());
+        StudentAcademicRecord record = load(context, AcademicCapability.SIMULATE_GRADES);
+        requireFresh(record, request.getDataRevision());
+        SimulateGradesResponse result = records.withRecord(record, () -> academicFacade.simulateGrades(
+                new SimulateGradesRequest(record.getStudentId(), courses, record.getDataRevision())));
+        requireMatch(record, result.getStudentId(), result.getDataRevision());
+        result.setPolicyVersion(policy.currentPolicyVersion());
+        return result;
+    }
+
+    /** Xếp hạng môn nên học cải thiện theo mức CPA tăng thêm trên mỗi tín chỉ (ROI); chỉ xem thử. */
+    public RankRetakeCoursesResponse rankRetakes(TrustedStudentContext context, RankRetakeCoursesRequest request) {
+        Integer maxSuggestions = request == null ? null : request.getMaxSuggestions();
+        if (maxSuggestions != null && (maxSuggestions < 1 || maxSuggestions > MAX_SUGGESTIONS)) {
+            throw ApiException.badRequest("maxSuggestions trong khoảng 1–" + MAX_SUGGESTIONS + ".");
+        }
+        StudentAcademicRecord record = load(context, AcademicCapability.RANK_RETAKE_COURSES);
+        requireFresh(record, request == null ? null : request.getDataRevision());
+        RankRetakeCoursesResponse result = records.withRecord(record, () -> academicFacade.rankRetakeCourses(
+                new RankRetakeCoursesRequest(record.getStudentId(), maxSuggestions, record.getDataRevision())));
+        requireMatch(record, result.getStudentId(), result.getDataRevision());
+        result.setPolicyVersion(policy.currentPolicyVersion());
+        return result;
+    }
+
+    /** Mục tiêu ngược: điểm trung bình và điểm từng môn cần đạt cho CPA mục tiêu (dự kiến); chỉ xem thử. */
+    public CalculateTargetGradesResponse targetGrades(TrustedStudentContext context, CalculateTargetGradesRequest request) {
+        BigDecimal targetCpa = request == null ? null : request.getTargetCpa();
+        if (targetCpa == null || targetCpa.compareTo(BigDecimal.ZERO) < 0 || targetCpa.compareTo(MAX_POINTS) > 0) {
+            throw ApiException.badRequest("targetCpa là bắt buộc, trong khoảng 0–4.");
+        }
+        String targetSemester = trim(request.getTargetGraduationSemester());
+        if (targetSemester != null && !SEMESTER.matcher(targetSemester).matches()) {
+            throw ApiException.badRequest("targetGraduationSemester theo dạng yyyy_1, yyyy_2 hoặc yyyy_SUMMER.");
+        }
+        StudentAcademicRecord record = load(context, AcademicCapability.CALCULATE_TARGET_GRADES);
+        requireFresh(record, request.getDataRevision());
+        CalculateTargetGradesResponse result = records.withRecord(record, () -> academicFacade.calculateTargetGrades(
+                new CalculateTargetGradesRequest(record.getStudentId(), targetCpa, targetSemester, record.getDataRevision())));
+        requireMatch(record, result.getStudentId(), result.getDataRevision());
+        result.setPolicyVersion(policy.currentPolicyVersion());
+        return result;
+    }
+
     /**
      * Hợp đồng: deadline là ngày yyyy-MM-dd hoặc null. Engine TV4 hiện ghi chữ (vd. "Trước kỳ tốt nghiệp") vào trường này;
      * platform bỏ giá trị không phải ngày thay vì trả JSON sai hợp đồng (việc cần làm vẫn nằm ở actionDescription).
@@ -172,6 +224,45 @@ public class AcademicApiService {
                     + " của sinh viên nên chưa thể tính kết quả.");
         }
         return record;
+    }
+
+    private static void requireFresh(StudentAcademicRecord record, String clientRevision) {
+        String revision = trim(clientRevision);
+        if (revision != null && !revision.equals(record.getDataRevision())) {
+            throw ApiException.staleRevision(record.getDataRevision(), revision);
+        }
+    }
+
+    private static List<SimulatedCourseGrade> checkSimulatedCourses(List<SimulatedCourseGrade> courses) {
+        if (courses == null || courses.isEmpty()) {
+            throw ApiException.badRequest("courses là bắt buộc: chọn ít nhất một học phần để giả lập điểm.");
+        }
+        if (courses.size() > MAX_SIMULATED_COURSES) {
+            throw ApiException.badRequest("Giả lập tối đa " + MAX_SIMULATED_COURSES + " học phần mỗi lần.");
+        }
+        List<SimulatedCourseGrade> result = new ArrayList<>();
+        for (SimulatedCourseGrade course : courses) {
+            String code = trim(course == null ? null : course.getCourseCode());
+            if (code == null || code.length() > MAX_COURSE_CODE) {
+                throw ApiException.badRequest("Mỗi học phần giả lập cần courseCode (tối đa " + MAX_COURSE_CODE + " ký tự).");
+            }
+            if (course.getCredits() == null || course.getCredits() < 1 || course.getCredits() > MAX_CREDITS) {
+                throw ApiException.badRequest("Số tín chỉ của " + code + " phải trong khoảng 1–" + MAX_CREDITS + ".");
+            }
+            String grade = trim(course.getExpectedGrade());
+            BigDecimal points = course.getExpectedGradePoints();
+            if (grade == null && points == null) {
+                throw ApiException.badRequest("Cần expectedGrade hoặc expectedGradePoints cho " + code + ".");
+            }
+            if (grade != null && grade.length() > 5) {
+                throw ApiException.badRequest("expectedGrade tối đa 5 ký tự.");
+            }
+            if (points != null && (points.compareTo(BigDecimal.ZERO) < 0 || points.compareTo(MAX_POINTS) > 0)) {
+                throw ApiException.badRequest("expectedGradePoints trong khoảng 0–4.");
+            }
+            result.add(new SimulatedCourseGrade(code, course.getCredits(), grade, points));
+        }
+        return result;
     }
 
     private CourseEligibilityResponse checkEligibility(StudentAcademicRecord record, String courseCode, String targetSemester) {

@@ -10,6 +10,7 @@ import vn.haui.advisor.contracts.dto.ValidateStudyPlanResponse;
 import vn.haui.advisor.platform.academic.AcademicEngineSources;
 import vn.haui.advisor.platform.academic.PolicyVersionSource;
 import vn.haui.advisor.platform.academic.RecordBackedAcademicFacade;
+import vn.haui.advisor.platform.academic.StoredPlanSource;
 import vn.haui.advisor.platform.transcript.DbStudentAcademicRecordProvider;
 
 import java.util.ArrayList;
@@ -32,8 +33,8 @@ public class AcademicToolsTestConfig {
     @Bean
     @Primary
     public ControllableAcademicFacade controllableAcademicFacade(DbStudentAcademicRecordProvider records,
-                                                                 AcademicEngineSources sources) {
-        return new ControllableAcademicFacade(records, sources);
+                                                                 AcademicEngineSources sources, StoredPlanSource storedPlans) {
+        return new ControllableAcademicFacade(records, sources, storedPlans);
     }
 
     @Bean
@@ -52,8 +53,9 @@ public class AcademicToolsTestConfig {
         private volatile boolean ready = true;
         private volatile List<String> forcedViolations = List.of();
 
-        public ControllableAcademicFacade(DbStudentAcademicRecordProvider records, AcademicEngineSources sources) {
-            super(records, sources);
+        public ControllableAcademicFacade(DbStudentAcademicRecordProvider records, AcademicEngineSources sources,
+                                          StoredPlanSource storedPlans) {
+            super(records, sources, storedPlans);
         }
 
         @Override

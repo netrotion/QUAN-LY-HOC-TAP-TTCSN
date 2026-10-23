@@ -122,14 +122,46 @@ class HttpContractConformanceTest {
     }
 
     @Test
-    @DisplayName("Operation chưa nối trả 501 NOT_IMPLEMENTED đúng schema thay vì 404")
-    void notImplementedOperationsMatchSchema() throws Exception {
-        for (String path : List.of("/api/v1/planner/reconcile",
-                "/api/v1/simulation/grades", "/api/v1/simulation/retake-ranking", "/api/v1/simulation/target-grades",
-                "/api/v1/advisor/chat")) {
-            JsonNode error = expect(post(path), objectMapper.createObjectNode(), 501, "ApiErrorResponse");
-            assertThat(error.get("code").asText()).isEqualTo("NOT_IMPLEMENTED");
+    @DisplayName("Contracts 1.5: What-if/ROI/mục tiêu ngược/đối chiếu/Chat dùng request fixture, trả đúng schema; không còn 501")
+    void whatIfReconcileAndChatMatchSchema() throws Exception {
+        String revision = expect(get("/api/v1/academic/status"), null, 200, "AcademicStatusResponse").get("dataRevision").asText();
+        for (List<String> operation : List.of(
+                List.of("simulate-grades-request.sample.json", "/api/v1/simulation/grades", "SimulateGradesResponse"),
+                List.of("rank-retake-request.sample.json", "/api/v1/simulation/retake-ranking", "RankRetakeCoursesResponse"),
+                List.of("calculate-target-grades-request.sample.json", "/api/v1/simulation/target-grades", "CalculateTargetGradesResponse"))) {
+            ObjectNode body = (ObjectNode) ContractTestSupport.readExample(operation.get(0));
+            body.put("dataRevision", revision);
+            JsonNode result = expect(post(operation.get(1)), body, 200, operation.get(2));
+            assertThat(result.get("studentId").asText()).isEqualTo("2024604757");
+            assertThat(result.get("policyVersion").isTextual()).as(operation.get(1)).isTrue();
         }
+
+        // Đối chiếu cần kế hoạch ACTIVE của sinh viên demo: lưu, thẩm định, kích hoạt bằng request fixture
+        ObjectNode save = (ObjectNode) ContractTestSupport.readExample("study-plan-save-request.sample.json");
+        save.putNull("planId");
+        save.putNull("planVersion");
+        save.put("dataRevision", revision);
+        String planId = expect(post("/api/v1/planner/plans"), save, 200, "SaveStudyPlanResponse").get("planId").asText();
+        expect(post("/api/v1/planner/validate"), objectMapper.createObjectNode().put("planId", planId).put("planVersion", 1), 200,
+                "ValidateStudyPlanResponse");
+        expect(post("/api/v1/planner/plans/" + planId + "/activate"),
+                objectMapper.createObjectNode().put("planVersion", 1).put("dataRevision", revision), 200, "ActivateStudyPlanResponse");
+        ObjectNode reconcile = (ObjectNode) ContractTestSupport.readExample("reconcile-study-plan-request.sample.json");
+        reconcile.put("planId", planId).put("planVersion", 1).put("dataRevision", revision);
+        assertThat(expect(post("/api/v1/planner/reconcile"), reconcile, 200, "ReconcileStudyPlanResponse").get("planId").asText())
+                .isEqualTo(planId);
+        reconcile.put("planVersion", 9);
+        expect(post("/api/v1/planner/reconcile"), reconcile, 409, "ApiErrorResponse");
+
+        // Test không có khóa AI: Chat trả đúng mẫu chat-ai-unavailable (503, retryable)
+        MvcResult chat = mockMvc.perform(post("/api/v1/advisor/chat").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(ContractTestSupport.readExample("chat-request.sample.json")))).andReturn();
+        assertThat(chat.getResponse().getStatus()).isEqualTo(503);
+        assertThat(chat.getResponse().getHeader("Retry-After")).isNotBlank();
+        JsonNode unavailable = objectMapper.readTree(chat.getResponse().getContentAsString());
+        assertThat(validator.validate(unavailable, "ApiErrorResponse")).isEmpty();
+        assertThat(unavailable.get("code").asText()).isEqualTo("AI_UNAVAILABLE");
+        assertThat(unavailable.get("retryable").asBoolean()).isTrue();
     }
 
     @Test

@@ -1,0 +1,10 @@
+{
+  "code": "AI_UNAVAILABLE",
+  "message": "Dịch vụ mô hình AI đang gián đoạn nên chưa có câu trả lời. Vui lòng gửi lại sau ít phút.",
+  "requestId": "req-2026-10-23-0001",
+  "timestamp": "2026-10-23T09:00:00Z",
+  "details": [
+    "reason: PROVIDER_ERROR"
+  ],
+  "retryable": true
+}

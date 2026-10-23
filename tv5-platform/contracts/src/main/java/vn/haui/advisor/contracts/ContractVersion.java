@@ -7,7 +7,7 @@ package vn.haui.advisor.contracts;
 public final class ContractVersion {
 
     public static final String MILESTONE = "contracts-v1";
-    public static final String CURRENT = "1.4.0";
+    public static final String CURRENT = "1.5.0";
 
     private ContractVersion() {
     }

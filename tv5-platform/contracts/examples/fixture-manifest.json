@@ -1,7 +1,7 @@
 {
   "manifestType": "CONTRACT_FIXTURES",
   "milestone": "contracts-v1",
-  "contractVersion": "1.4.0",
+  "contractVersion": "1.5.0",
   "openapi": "../openapi/openapi-v1.yaml",
   "purpose": "Ví dụ chuẩn của contracts-v1: mock FE (TV2/TV3), fake provider cho AI (TV1), input AcademicFacade cho TV4. Mọi fixture qua contract test (OpenAPI + DTO round-trip). Dữ liệu là sinh viên demo 2024604757 theo fixture TV4, không phải dữ liệu học vụ thật.",
   "demoStudent": {
@@ -728,16 +728,18 @@
       ]
     },
     {
-      "id": "not-implemented",
-      "operationId": "reconcileStudyPlan",
+      "id": "chat-ai-unavailable",
+      "operationId": "chatAdvisor",
       "method": "POST",
-      "path": "/planner/reconcile",
-      "httpStatus": 501,
-      "responseSample": "error-not-implemented.sample.json",
+      "path": "/advisor/chat",
+      "httpStatus": 503,
+      "requestSample": "chat-request.sample.json",
+      "requestSchema": "ChatRequest",
+      "responseSample": "error-ai-unavailable.sample.json",
       "responseSchema": "ApiErrorResponse",
       "consumers": [
-        "TV2",
-        "TV3"
+        "TV3",
+        "TV2"
       ]
     },
     {

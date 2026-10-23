@@ -15,6 +15,7 @@ public class CalculateTargetGradesResponse implements Serializable {
     private List<TargetCourseGradeRequirement> courseRequirements;
     private List<String> warnings;
     private String dataRevision;
+    private String policyVersion;
 
     public CalculateTargetGradesResponse() {
     }
@@ -106,5 +107,13 @@ public class CalculateTargetGradesResponse implements Serializable {
     @JsonIgnore
     public List<String> getFeasibilityWarnings() {
         return getWarnings();
+    }
+
+    public String getPolicyVersion() {
+        return policyVersion;
+    }
+
+    public void setPolicyVersion(String policyVersion) {
+        this.policyVersion = policyVersion;
     }
 }

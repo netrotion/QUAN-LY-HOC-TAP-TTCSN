@@ -164,7 +164,7 @@ class ContractsSerializationTest {
                 "error-plan-version-conflict.sample.json", ApiErrorCode.PLAN_VERSION_CONFLICT,
                 "error-plan-not-validated.sample.json", ApiErrorCode.PLAN_NOT_VALIDATED,
                 "error-plan-validation-failed.sample.json", ApiErrorCode.PLAN_VALIDATION_FAILED,
-                "error-not-implemented.sample.json", ApiErrorCode.NOT_IMPLEMENTED);
+                "error-ai-unavailable.sample.json", ApiErrorCode.AI_UNAVAILABLE);
         for (Map.Entry<String, ApiErrorCode> entry : expected.entrySet()) {
             ApiErrorResponse error = read(entry.getKey(), ApiErrorResponse.class);
             assertThat(error.getCode()).as(entry.getKey()).isEqualTo(entry.getValue());

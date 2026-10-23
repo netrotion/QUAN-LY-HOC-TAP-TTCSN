@@ -49,5 +49,11 @@ public enum ApiErrorCode {
     /** 503: công cụ học vụ cần cho thao tác chưa là công cụ thật (stub NOT_READY); thử lại sau khi được nối. */
     TOOL_NOT_READY,
     /** 404: không có hội thoại thuộc sinh viên đang đăng nhập. */
-    CONVERSATION_NOT_FOUND
+    CONVERSATION_NOT_FOUND,
+    /** 503: trợ lý AI chưa cấu hình, quá hạn hoặc nhà cung cấp mô hình lỗi; không có câu trả lời thay thế, thử lại được. */
+    AI_UNAVAILABLE,
+    /** 409: hội thoại vừa được cập nhật bởi một lượt chat khác; lượt này không được lưu, gửi lại sau. */
+    CONVERSATION_BUSY,
+    /** 409: thao tác chỉ áp dụng cho kế hoạch đang theo dõi (ACTIVE), ví dụ đối chiếu kết quả học kỳ. */
+    PLAN_NOT_ACTIVE
 }

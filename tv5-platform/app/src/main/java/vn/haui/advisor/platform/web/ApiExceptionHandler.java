@@ -1,5 +1,6 @@
 package vn.haui.advisor.platform.web;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -27,8 +28,14 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ApiErrorResponse> handleApiException(ApiException ex) {
-        return ResponseEntity.status(ex.getStatus())
-                .body(new ApiErrorResponse(ex.getCode(), ex.getMessage(), newRequestId(), ex.getDetails()));
+        ApiErrorResponse body = new ApiErrorResponse(ex.getCode(), ex.getMessage(), newRequestId(), ex.getDetails());
+        ResponseEntity.BodyBuilder response = ResponseEntity.status(ex.getStatus());
+        if (ex.getRetryAfterSeconds() != null) {
+            // Lỗi tạm thời: client gửi lại cùng yêu cầu được, sau Retry-After giây
+            body.setRetryable(true);
+            response.header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfterSeconds()));
+        }
+        return response.body(body);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

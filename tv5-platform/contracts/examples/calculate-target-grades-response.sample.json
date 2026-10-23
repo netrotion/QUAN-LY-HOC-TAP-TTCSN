@@ -17,5 +17,6 @@
   "warnings": [
     "Mục tiêu yêu cầu GPA trung bình các kỳ còn lại >= 3.55 (mức thử thách)"
   ],
-  "dataRevision": "REV-2024604757-001"
+  "dataRevision": "REV-2024604757-001",
+  "policyVersion": "policy-haui-demo-2026@0.0.1-v0"
 }

@@ -69,6 +69,12 @@ public class StudyPlanController {
         return studyPlanService.generate(studentContextProvider.getAuthenticatedContext(), request);
     }
 
+    /** Đối chiếu kết quả một học kỳ với kế hoạch ACTIVE; chỉ đọc. studentId trong body bị bỏ qua. */
+    @PostMapping("/reconcile")
+    public ReconcileStudyPlanResponse reconcileStudyPlan(@RequestBody ReconcileStudyPlanRequest request) {
+        return studyPlanService.reconcile(studentContextProvider.getAuthenticatedContext(), request);
+    }
+
     /**
      * Thẩm định bằng AcademicFacade. studentId trong body (nếu client gửi) bị bỏ qua.
      */

@@ -294,6 +294,50 @@ public class StudyPlanService {
         return outcome.response();
     }
 
+    /**
+     * Đối chiếu kết quả một học kỳ (bảng điểm đã xác nhận) với kế hoạch ACTIVE (US-13) bằng bộ đối chiếu của engine trên
+     * hồ sơ server nạp. Chỉ đọc: không đổi kế hoạch hay bảng điểm. Bảng điểm đổi thì kế hoạch được thẩm định lại riêng
+     * ({@link #revalidate}); sinh viên điều chỉnh kế hoạch qua bản nháp kế thừa.
+     */
+    public ReconcileStudyPlanResponse reconcile(TrustedStudentContext context, ReconcileStudyPlanRequest request) {
+        if (request == null || isBlank(request.getPlanId()) || isBlank(request.getCompletedSemester())) {
+            throw ApiException.badRequest("planId và completedSemester là bắt buộc khi đối chiếu kế hoạch.");
+        }
+        String semester = request.getCompletedSemester().trim();
+        if (!SEMESTER.matcher(semester).matches()) {
+            throw ApiException.badRequest("completedSemester theo dạng yyyy_1, yyyy_2 hoặc yyyy_SUMMER.");
+        }
+        String studentId = context.getStudentId();
+        PlanRow plan = find(studentId, request.getPlanId().trim());
+        if (request.getPlanVersion() != null && request.getPlanVersion() != plan.version) {
+            throw ApiException.versionConflict(plan.version, request.getPlanVersion());
+        }
+        if (plan.status != StudyPlanStatus.ACTIVE) {
+            throw new ApiException(HttpStatus.CONFLICT, ApiErrorCode.PLAN_NOT_ACTIVE,
+                    "Chỉ đối chiếu được kế hoạch đang theo dõi (ACTIVE). Hãy kích hoạt kế hoạch trước.",
+                    List.of("Trạng thái hiện tại: " + plan.status));
+        }
+        tools.requireReal(AcademicCapability.RECONCILE_STUDY_PLAN);
+        StudentAcademicRecord record = loadRecord(studentId, AcademicCapability.RECONCILE_STUDY_PLAN);
+        if (isStale(record.getDataRevision(), request.getDataRevision())) {
+            throw ApiException.staleRevision(record.getDataRevision(), request.getDataRevision());
+        }
+
+        ReconcileStudyPlanResponse result = records.withRecord(record, () -> academicFacade.reconcileStudyPlan(
+                new ReconcileStudyPlanRequest(plan.planId, studentId, semester, plan.version, record.getDataRevision())));
+        if (!plan.planId.equals(result.getPlanId()) || !studentId.equals(result.getStudentId())
+                || !record.getDataRevision().equals(result.getDataRevision())) {
+            throw new IllegalStateException("Bộ đối chiếu trả kết quả không khớp kế hoạch/hồ sơ đã nạp (" + plan.planId + ", "
+                    + record.getDataRevision() + ")");
+        }
+        result.setPlanVersion(plan.version);
+        result.setCompletedCourses(copy(result.getCompletedCourses()));
+        result.setMissedOrFailedCourses(copy(result.getMissedOrFailedCourses()));
+        result.setAdjustmentsRecommended(copy(result.getAdjustmentsRecommended()));
+        result.setPolicyVersion(policy.currentPolicyVersion());
+        return result;
+    }
+
     public StudyPlanDetailResponse restore(TrustedStudentContext context, String planId, RestoreStudyPlanRequest request) {
         String requestedName = request != null ? request.getPlanName() : null;
         if (!isBlank(requestedName)) {

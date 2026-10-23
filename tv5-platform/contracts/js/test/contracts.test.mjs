@@ -14,7 +14,7 @@ import {
 
 test('phát hành đúng mốc contracts-v1', () => {
   assert.equal(CONTRACT_MILESTONE, 'contracts-v1');
-  assert.equal(CONTRACT_VERSION, '1.4.0');
+  assert.equal(CONTRACT_VERSION, '1.5.0');
   assert.equal(DEMO_STUDENT.studentId, '2024604757');
 });
 
@@ -75,6 +75,20 @@ test('planner (1.4.0): phương án sinh ra là DRAFT kèm dataRevision/policyVe
   assert.ok(proposal.response.dataRevision);
   assert.ok(proposal.response.policyVersion);
   assert.equal(findFixture('POST', '/planner/generate', { httpStatus: 501 }), null);
-  assert.equal(getFixture('not-implemented').operationId, 'reconcileStudyPlan');
   assert.ok(getFixture('get-study-plan').response.policyVersion, 'chi tiết kế hoạch đã thẩm định ghi quy chế đã dùng');
+});
+
+test('What-if, đối chiếu và Chat (1.5.0): kết quả kèm policyVersion; AI không trả lời được là lỗi thử lại được', () => {
+  for (const [method, path] of [['POST', '/simulation/grades'], ['POST', '/simulation/retake-ranking'],
+    ['POST', '/simulation/target-grades'], ['POST', '/planner/reconcile']]) {
+    const fixture = findFixture(method, path);
+    assert.ok(fixture.response.dataRevision, `${path}: thiếu dataRevision`);
+    assert.ok(fixture.response.policyVersion, `${path}: thiếu policyVersion`);
+  }
+  const unavailable = findFixture('POST', '/advisor/chat', { httpStatus: 503 });
+  assert.equal(unavailable.response.code, 'AI_UNAVAILABLE');
+  assert.equal(unavailable.response.retryable, true);
+  assert.ok(ENUMS.ApiErrorCode.includes('CONVERSATION_BUSY'));
+  assert.ok(ENUMS.ApiErrorCode.includes('PLAN_NOT_ACTIVE'));
+  assert.ok(Object.values(FIXTURES).every((f) => f.httpStatus !== 501), 'không còn operation trả 501');
 });

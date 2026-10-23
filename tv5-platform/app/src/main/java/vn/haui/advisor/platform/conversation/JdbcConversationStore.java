@@ -55,37 +55,78 @@ public class JdbcConversationStore implements ConversationStore {
     @Override
     public void saveConversation(ConversationRecord record) {
         check(record);
+        transaction.executeWithoutResult(status -> write(record, lockRow(record.getConversationId())));
+    }
+
+    /**
+     * Ghi một lượt chat nếu hội thoại vẫn như lúc module AI đọc để nối thêm lượt này: chưa có (expectedUpdatedAt null) hoặc
+     * updated_at còn bằng expectedUpdatedAt. Trả false khi một lượt khác đã ghi xen vào (không ghi gì, không mất tin nhắn).
+     *
+     * @throws IllegalArgumentException khi conversationId thuộc sinh viên khác
+     */
+    public boolean saveIfUnchanged(ConversationRecord record, String expectedUpdatedAt) {
+        check(record);
+        return Boolean.TRUE.equals(transaction.execute(status -> {
+            Optional<StoredRow> current = lockRow(record.getConversationId());
+            boolean unchanged = expectedUpdatedAt == null
+                    ? current.isEmpty()
+                    : current.isPresent() && current.get().updatedAt() != null
+                    && current.get().updatedAt().equals(parse(expectedUpdatedAt, null));
+            if (current.isPresent() && !current.get().studentId().equals(record.getStudentId())) {
+                throw new IllegalArgumentException("conversationId đã thuộc sinh viên khác");
+            }
+            if (!unchanged) {
+                return false;
+            }
+            write(record, current);
+            return true;
+        }));
+    }
+
+    /** Chủ của hội thoại (bất kể sinh viên nào), để từ chối sớm khi mã hội thoại đã thuộc người khác. */
+    public Optional<String> ownerOf(String conversationId) {
+        return jdbc.sql("SELECT student_id FROM conversations WHERE conversation_id = :id")
+                .param("id", conversationId)
+                .query(String.class).optional();
+    }
+
+    private record StoredRow(String studentId, Instant updatedAt) {
+    }
+
+    private Optional<StoredRow> lockRow(String conversationId) {
+        return jdbc.sql("SELECT student_id, updated_at FROM conversations WHERE conversation_id = :id FOR UPDATE")
+                .param("id", conversationId)
+                .query((rs, n) -> new StoredRow(rs.getString("student_id"), instant(rs, "updated_at")))
+                .optional();
+    }
+
+    /** Ghi trong giao dịch đã khóa dòng hội thoại (nếu có). */
+    private void write(ConversationRecord record, Optional<StoredRow> current) {
         Instant now = Instant.now();
         String title = record.getTitle() == null || record.getTitle().isBlank()
                 ? DEFAULT_TITLE : truncate(record.getTitle().trim(), MAX_TITLE);
-
-        transaction.executeWithoutResult(status -> {
-            Optional<String> owner = jdbc.sql("SELECT student_id FROM conversations WHERE conversation_id = :id FOR UPDATE")
-                    .param("id", record.getConversationId())
-                    .query(String.class).optional();
-            if (owner.isPresent() && !owner.get().equals(record.getStudentId())) {
-                throw new IllegalArgumentException("conversationId đã thuộc sinh viên khác");
-            }
-            if (owner.isPresent()) {
-                jdbc.sql("""
-                                UPDATE conversations SET title = :title, messages_json = :messages, updated_at = :now
-                                WHERE conversation_id = :id AND student_id = :studentId
-                                """)
-                        .param("title", title).param("messages", record.getMessagesJson()).param("now", ts(now))
-                        .param("id", record.getConversationId()).param("studentId", record.getStudentId())
-                        .update();
-            } else {
-                Instant createdAt = parse(record.getCreatedAt(), now);
-                jdbc.sql("""
-                                INSERT INTO conversations (conversation_id, student_id, title, messages_json, created_at, updated_at)
-                                VALUES (:id, :studentId, :title, :messages, :createdAt, :now)
-                                """)
-                        .param("id", record.getConversationId()).param("studentId", record.getStudentId())
-                        .param("title", title).param("messages", record.getMessagesJson())
-                        .param("createdAt", ts(createdAt)).param("now", ts(now))
-                        .update();
-            }
-        });
+        if (current.isPresent() && !current.get().studentId().equals(record.getStudentId())) {
+            throw new IllegalArgumentException("conversationId đã thuộc sinh viên khác");
+        }
+        if (current.isPresent()) {
+            jdbc.sql("""
+                            UPDATE conversations SET title = :title, messages_json = :messages, updated_at = :now
+                            WHERE conversation_id = :id AND student_id = :studentId
+                            """)
+                    .param("title", title).param("messages", record.getMessagesJson()).param("now", ts(now))
+                    .param("id", record.getConversationId()).param("studentId", record.getStudentId())
+                    .update();
+        } else {
+            Instant createdAt = parse(record.getCreatedAt(), now);
+            jdbc.sql("""
+                            INSERT INTO conversations (conversation_id, student_id, title, messages_json, created_at, updated_at)
+                            VALUES (:id, :studentId, :title, :messages, :createdAt, :now)
+                            """)
+                    .param("id", record.getConversationId()).param("studentId", record.getStudentId())
+                    .param("title", title).param("messages", record.getMessagesJson())
+                    .param("createdAt", ts(createdAt)).param("now", ts(now))
+                    .update();
+        }
     }
 
     @Override
@@ -142,7 +183,12 @@ public class JdbcConversationStore implements ConversationStore {
     }
 
     private static String text(ResultSet rs, String column) throws SQLException {
+        Instant value = instant(rs, column);
+        return value == null ? null : value.toString();
+    }
+
+    private static Instant instant(ResultSet rs, String column) throws SQLException {
         OffsetDateTime value = rs.getObject(column, OffsetDateTime.class);
-        return value == null ? null : value.toInstant().toString();
+        return value == null ? null : value.toInstant();
     }
 }

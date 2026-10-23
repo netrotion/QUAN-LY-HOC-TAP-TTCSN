@@ -13,12 +13,19 @@ public class ApiException extends RuntimeException {
     private final HttpStatus status;
     private final ApiErrorCode code;
     private final List<String> details;
+    /** Số giây nên chờ trước khi gửi lại; có giá trị nghĩa là lỗi tạm thời, gửi lại được (header Retry-After). */
+    private final Integer retryAfterSeconds;
 
     public ApiException(HttpStatus status, ApiErrorCode code, String message, List<String> details) {
+        this(status, code, message, details, null);
+    }
+
+    public ApiException(HttpStatus status, ApiErrorCode code, String message, List<String> details, Integer retryAfterSeconds) {
         super(message);
         this.status = status;
         this.code = code;
         this.details = details;
+        this.retryAfterSeconds = retryAfterSeconds;
     }
 
     public static ApiException notFound(String planId) {
@@ -98,6 +105,18 @@ public class ApiException extends RuntimeException {
                 "Không tìm thấy hội thoại.", List.of("conversationId: " + conversationId));
     }
 
+    /** Trợ lý AI không trả lời được lượt này; không có câu trả lời thay thế, client gửi lại sau retryAfterSeconds. */
+    public static ApiException aiUnavailable(String reason, String message, int retryAfterSeconds) {
+        return new ApiException(HttpStatus.SERVICE_UNAVAILABLE, ApiErrorCode.AI_UNAVAILABLE, message,
+                List.of("reason: " + reason), retryAfterSeconds);
+    }
+
+    public static ApiException conversationBusy(String conversationId, int retryAfterSeconds) {
+        return new ApiException(HttpStatus.CONFLICT, ApiErrorCode.CONVERSATION_BUSY,
+                "Hội thoại vừa được cập nhật ở một lượt khác nên câu trả lời này chưa được lưu. Vui lòng tải lại hội thoại và gửi lại.",
+                List.of("conversationId: " + conversationId), retryAfterSeconds);
+    }
+
     public HttpStatus getStatus() {
         return status;
     }
@@ -108,5 +127,9 @@ public class ApiException extends RuntimeException {
 
     public List<String> getDetails() {
         return details;
+    }
+
+    public Integer getRetryAfterSeconds() {
+        return retryAfterSeconds;
     }
 }

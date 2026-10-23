@@ -7,6 +7,8 @@ import org.springframework.core.io.ResourceLoader;
 import vn.haui.advisor.contracts.ports.AcademicFacade;
 import vn.haui.advisor.platform.academic.AcademicEngineSources;
 import vn.haui.advisor.platform.academic.RecordBackedAcademicFacade;
+import vn.haui.advisor.platform.academic.StoredPlanSource;
+import vn.haui.advisor.platform.planner.StudyPlanRepository;
 import vn.haui.advisor.platform.transcript.DbStudentAcademicRecordProvider;
 import vn.haui.advisor.platform.transcript.importing.DisabledOcrEngine;
 import vn.haui.advisor.platform.transcript.importing.OcrEngine;
@@ -31,8 +33,15 @@ public class PlatformModulesConfig {
      * sinh và thẩm định kế hoạch (planner tool nhận hồ sơ DB của đúng sinh viên đó).
      */
     @Bean
-    public AcademicFacade academicFacade(DbStudentAcademicRecordProvider records, AcademicEngineSources sources) {
-        return new RecordBackedAcademicFacade(records, sources);
+    public AcademicFacade academicFacade(DbStudentAcademicRecordProvider records, AcademicEngineSources sources,
+                                         StoredPlanSource storedPlans) {
+        return new RecordBackedAcademicFacade(records, sources, storedPlans);
+    }
+
+    /** Kế hoạch đã lưu của sinh viên cho bộ đối chiếu của engine (chỉ kế hoạch thuộc đúng sinh viên đó). */
+    @Bean
+    public StoredPlanSource storedPlanSource(StudyPlanRepository plans) {
+        return (studentId, planId) -> plans.find(studentId, planId).map(plan -> plans.loadSemesters(plan.planId));
     }
 
     /** OCR cho ảnh/PDF scan: tắt mặc định (chuyển nhập tay); bật bằng haui.import.ocr.engine=tesseract. */

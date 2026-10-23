@@ -82,6 +82,7 @@ public class SecurityConfig {
                     "/api/v1/system/bootstrap",
                     "/api/v1/system/health",
                     "/actuator/health",
+                    "/actuator/health/advisor",
                     "/api/v1/auth/csrf",
                     "/api/v1/auth/session"
                 ).permitAll()

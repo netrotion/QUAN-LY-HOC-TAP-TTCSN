@@ -7,6 +7,7 @@ public class RankRetakeCoursesResponse implements Serializable {
     private String studentId;
     private List<RetakeCourseRecommendation> recommendations;
     private String dataRevision;
+    private String policyVersion;
 
     public RankRetakeCoursesResponse() {
     }
@@ -39,5 +40,13 @@ public class RankRetakeCoursesResponse implements Serializable {
 
     public void setDataRevision(String dataRevision) {
         this.dataRevision = dataRevision;
+    }
+
+    public String getPolicyVersion() {
+        return policyVersion;
+    }
+
+    public void setPolicyVersion(String policyVersion) {
+        this.policyVersion = policyVersion;
     }
 }

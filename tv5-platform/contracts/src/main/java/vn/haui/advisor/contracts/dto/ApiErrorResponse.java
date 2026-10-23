@@ -1,5 +1,7 @@
 package vn.haui.advisor.contracts.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.List;
@@ -10,6 +12,9 @@ public class ApiErrorResponse implements Serializable {
     private String requestId;
     private Instant timestamp;
     private List<String> details;
+    /** true: lỗi tạm thời, gửi lại cùng yêu cầu được (kèm header Retry-After); không có trường này khi không xác định. */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Boolean retryable;
 
     public ApiErrorResponse() {
         this.timestamp = Instant.now();
@@ -61,5 +66,13 @@ public class ApiErrorResponse implements Serializable {
 
     public void setDetails(List<String> details) {
         this.details = details;
+    }
+
+    public Boolean getRetryable() {
+        return retryable;
+    }
+
+    public void setRetryable(Boolean retryable) {
+        this.retryable = retryable;
     }
 }
