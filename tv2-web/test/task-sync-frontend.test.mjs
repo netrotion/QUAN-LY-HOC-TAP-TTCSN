@@ -152,3 +152,23 @@ test('3. DashboardPage chứa mã nguồn xử lý biểu đồ GPA/CPA tích l�
   assert.ok(code.includes('failedCoursesList'));
 });
 
+test('4. Chiều cao các cột trong biểu đồ biến thiên GPA tỉ lệ thuận với điểm GPA, GPA thấp hơn không thể cao hơn', () => {
+  const dashFile = path.resolve(__dirname, '../src/pages/DashboardPage.jsx');
+  const code = fs.readFileSync(dashFile, 'utf-8');
+
+  // Đảm bảo chiều cao barHeight được tính theo displayGpa / cpaVal thay vì semesterCredits
+  assert.ok(code.includes('displayGpa'));
+  assert.ok(code.includes('barHeight = Math.max(8, (Math.min(4.0, Math.max(0, displayGpa)) / 4.0) * 115)'));
+
+  // Kiểm tra trực tiếp các mốc điểm GPA tăng dần: cột điểm thấp hơn luôn phải thấp hơn cột điểm cao hơn
+  const gpaSamples = [1.85, 2.50, 3.20, 3.65];
+  const heights = gpaSamples.map((gpa) => Math.max(8, (Math.min(4.0, Math.max(0, gpa)) / 4.0) * 115));
+
+  for (let i = 0; i < heights.length - 1; i++) {
+    assert.ok(
+      heights[i] < heights[i + 1],
+      `Cột điểm ${gpaSamples[i]} (${heights[i]}px) phải thấp hơn cột điểm ${gpaSamples[i + 1]} (${heights[i + 1]}px)`
+    );
+  }
+});
+

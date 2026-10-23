@@ -726,7 +726,7 @@ export function DashboardPage({ mountedRouteSummary }) {
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: 'var(--color-canvas)' }} />
-                Tín chỉ
+                Cột mức điểm GPA
               </span>
             </div>
           </div>
@@ -754,8 +754,10 @@ export function DashboardPage({ mountedRouteSummary }) {
                 const x = N > 1 ? padX + (idx / (N - 1)) * availableW : 300;
                 const cpaVal = sem.cumulativeCpa || 0;
                 const gpaVal = sem.semesterGpa || 0;
+                const displayGpa = cpaVal > 0 ? cpaVal : (gpaVal > 0 ? gpaVal : 0);
                 const yCpa = 150 - (Math.min(4.0, Math.max(0, cpaVal)) / 4.0) * 115;
-                const barHeight = Math.min(105, Math.max(16, ((sem.semesterCredits || 15) / 24) * 110));
+                // Chiều cao cột tỉ lệ thuận trực tiếp với GPA (GPA cao thì cột cao, GPA thấp hơn thì cột thấp hơn)
+                const barHeight = Math.max(8, (Math.min(4.0, Math.max(0, displayGpa)) / 4.0) * 115);
                 const barW = Math.min(36, Math.max(18, availableW / (N * 2)));
                 const barX = x - barW / 2;
                 const barY = 150 - barHeight;
