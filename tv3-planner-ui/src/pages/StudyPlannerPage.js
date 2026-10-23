@@ -1300,7 +1300,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
           isOpen: isAddCourseModalOpen,
           onClose: () => setIsAddCourseModalOpen(false),
           title: `Thêm môn học vào ${selectedSemesterForAdd}`,
-          subtitle: 'Chọn học phần trong danh mục CTĐT Trường Đại học Công nghiệp Hà Nội để bổ sung vào kế hoạch.',
+          subtitle: 'Chọn học phần trong danh mục CTĐT Đại học Công nghiệp Hà Nội để bổ sung vào kế hoạch.',
           size: 'md',
           footer: React.createElement(
             'div',

@@ -11,7 +11,7 @@ export const SAMPLE_K16_PROFILE = Object.freeze({
   majorName: 'Kỹ thuật phần mềm (ĐH chính quy)',
   majorCode: '7480103',
   cohort: 'Khóa 16 (2020 - 2024)',
-  faculty: 'Trường Đại học Công nghiệp Hà Nội (HaUI)',
+  faculty: 'Đại học Công nghiệp Hà Nội (HaUI)',
   advisorClass: 'KTPM01-K16',
   cpa: 3.18,
   gpa: 3.32,
@@ -20,6 +20,17 @@ export const SAMPLE_K16_PROFILE = Object.freeze({
   riskLevel: 'SAFE',
   warningMessages: ['Cần hoàn thành môn Toán rời rạc (MATH1002 - Điểm F) trước khi đăng ký đồ án tốt nghiệp.']
 });
+
+/**
+ * Danh sách 5 Trường thuộc Đại học Công nghiệp Hà Nội (HaUI)
+ */
+export const HAUI_MEMBER_SCHOOLS = Object.freeze([
+  'Trường Ngoại ngữ - Du lịch',
+  'Trường Công nghệ thông tin và Truyền thông',
+  'Trường Điện - Điện tử',
+  'Trường Kinh tế',
+  'Trường Cơ khí - Ô tô'
+]);
 
 /**
  * Màn hình Hồ sơ Sinh viên & Tùy chọn Học tập cá nhân (Student Profile) — TV3
@@ -74,6 +85,9 @@ export function StudentProfilePage({
   const [phoneInput, setPhoneInput] = useState('0987 654 321');
   const [addressInput, setAddressInput] = useState('Bắc Ninh, Việt Nam');
   const [advisorClassInput, setAdvisorClassInput] = useState('');
+  const [facultyInput, setFacultyInput] = useState(() => HAUI_MEMBER_SCHOOLS[1]);
+  const [majorNameInput, setMajorNameInput] = useState('Kỹ thuật phần mềm');
+  const [cohortInput, setCohortInput] = useState('Khóa 17 (2022 - 2026)');
   const [trackDirectionInput, setTrackDirectionInput] = useState('ktpm-httt');
 
   // Tùy chọn mục tiêu cá nhân
@@ -123,6 +137,14 @@ export function StudentProfilePage({
     if (profileData) {
       setFullNameInput(profileData.fullName || '');
       setAdvisorClassInput(profileData.advisorClass || '');
+      setFacultyInput(profileData.faculty || HAUI_MEMBER_SCHOOLS[1]);
+      setMajorNameInput(profileData.majorName || 'Kỹ thuật phần mềm');
+      setCohortInput(profileData.cohort || 'Khóa 17 (2022 - 2026)');
+      if (profileData.personalEmail) setPersonalEmailInput(profileData.personalEmail);
+      if (profileData.phone) setPhoneInput(profileData.phone);
+      if (profileData.address) setAddressInput(profileData.address);
+      if (profileData.gender) setGenderInput(profileData.gender);
+      if (profileData.dob) setDobInput(profileData.dob);
     }
   }, [profileData]);
 
@@ -203,23 +225,66 @@ export function StudentProfilePage({
 
   // Lưu tùy chọn mục tiêu cá nhân & hồ sơ
   const handleSavePreferences = useCallback(() => {
-    if (profileData) {
-      setProfileData({
-        ...profileData,
+    const updated = {
+      ...(profileData || {}),
+      fullName: fullNameInput,
+      gender: genderInput,
+      dob: dobInput,
+      personalEmail: personalEmailInput,
+      phone: phoneInput,
+      address: addressInput,
+      advisorClass: advisorClassInput,
+      faculty: facultyInput,
+      majorName: majorNameInput,
+      cohort: cohortInput,
+      targetCpa,
+      graduationPace,
+      specialization,
+      trackDirection: trackDirectionInput
+    };
+
+    setProfileData(updated);
+
+    if (api && typeof api.setSessionStudent === 'function') {
+      api.setSessionStudent({
         fullName: fullNameInput,
-        advisorClass: advisorClassInput
+        advisorClass: advisorClassInput,
+        faculty: facultyInput,
+        majorName: majorNameInput,
+        cohort: cohortInput
       });
     }
-    showToast(`Đã lưu thành công thông tin hồ sơ và mục tiêu CPA: ${targetCpa}!`);
-  }, [profileData, fullNameInput, advisorClassInput, targetCpa, showToast]);
+
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+      try {
+        window.dispatchEvent(
+          new CustomEvent('haui:student:profile-updated', {
+            detail: updated
+          })
+        );
+      } catch {
+        // Ignored
+      }
+    }
+
+    showToast(`Đã lưu thành công thông tin hồ sơ và mục tiêu học tập!`);
+  }, [profileData, fullNameInput, genderInput, dobInput, personalEmailInput, phoneInput, addressInput, advisorClassInput, facultyInput, majorNameInput, cohortInput, targetCpa, graduationPace, specialization, trackDirectionInput, api, showToast]);
 
   // Hủy thay đổi form
   const handleCancelChanges = useCallback(() => {
     if (profileData) {
       setFullNameInput(profileData.fullName || '');
       setAdvisorClassInput(profileData.advisorClass || '');
+      setFacultyInput(profileData.faculty || HAUI_MEMBER_SCHOOLS[1]);
+      setMajorNameInput(profileData.majorName || 'Kỹ thuật phần mềm');
+      setCohortInput(profileData.cohort || 'Khóa 17 (2022 - 2026)');
+      if (profileData.personalEmail) setPersonalEmailInput(profileData.personalEmail);
+      if (profileData.phone) setPhoneInput(profileData.phone);
+      if (profileData.address) setAddressInput(profileData.address);
+      if (profileData.gender) setGenderInput(profileData.gender);
+      if (profileData.dob) setDobInput(profileData.dob);
     }
-    showToast('Đã hủy các thay đổi chưa lưu.');
+    showToast('Đã hoàn tác các thay đổi chưa lưu.');
   }, [profileData, showToast]);
 
   // Trích xuất chữ cái đại diện Avatar (ví dụ: Nguyễn Văn An -> NA)
@@ -346,7 +411,7 @@ export function StudentProfilePage({
               margin: '6px 0 0'
             }
           },
-          'Quản lý và cập nhật thông tin cá nhân, định hướng ngành và chương trình đào tạo tại Trường Đại học Công nghiệp Hà Nội.'
+          'Quản lý và cập nhật thông tin cá nhân, định hướng ngành và chương trình đào tạo tại Đại học Công nghiệp Hà Nội.'
         )
       )
     )
@@ -1158,7 +1223,7 @@ export function StudentProfilePage({
                 'div',
                 null,
                 React.createElement('h3', { style: { margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--color-ink, #0a0a0a)' } }, 'Thông tin chương trình đào tạo & Ngành học'),
-                React.createElement('span', { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } }, 'Cấu trúc quy chuẩn CTĐT — Trường Đại học Công nghiệp Hà Nội (HaUI)')
+                React.createElement('span', { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } }, 'Cấu trúc quy chuẩn CTĐT — Đại học Công nghiệp Hà Nội (HaUI)')
               )
             ),
             React.createElement(
@@ -1193,7 +1258,7 @@ export function StudentProfilePage({
                 { style: { position: 'relative' } },
                 React.createElement('input', {
                   readOnly: true,
-                  value: 'Trường Đại học Công nghiệp Hà Nội - Cơ sở 1 (Nhổn, Bắc Từ Liêm, Hà Nội)',
+                  value: 'Đại học Công nghiệp Hà Nội - Cơ sở 1 (Nhổn, Bắc Từ Liêm, Hà Nội)',
                   style: {
                     width: '100%',
                     padding: '8px 16px',
@@ -1209,43 +1274,49 @@ export function StudentProfilePage({
               )
             ),
 
-            // Khoa / Viện đào tạo
+            // Trường thuộc HaUI / Khoa đào tạo
             React.createElement(
               'div',
               { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
-              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Khoa / Viện / Trường thành viên'),
-              React.createElement('input', {
-                readOnly: true,
-                value: profileData.faculty || 'Trường Đại học Công nghiệp Hà Nội (HaUI)',
-                style: {
-                  width: '100%',
-                  padding: '8px 16px',
-                  borderRadius: '9999px',
-                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
-                  border: '1px solid var(--color-hairline, #e5e5e5)',
-                  color: 'var(--color-mid-gray, #737373)',
-                  cursor: 'not-allowed',
-                  boxSizing: 'border-box'
-                }
-              })
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Trường thuộc HaUI / Khoa đào tạo'),
+              React.createElement(
+                'select',
+                {
+                  value: facultyInput,
+                  onChange: (e) => setFacultyInput(e.target.value),
+                  style: {
+                    width: '100%',
+                    padding: '8px 16px',
+                    borderRadius: '9999px',
+                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                    border: '1px solid var(--color-hairline, #e5e5e5)',
+                    color: 'var(--color-ink, #0a0a0a)',
+                    boxSizing: 'border-box',
+                    cursor: 'pointer'
+                  }
+                },
+                HAUI_MEMBER_SCHOOLS.map((school) =>
+                  React.createElement('option', { key: school, value: school }, school)
+                )
+              )
             ),
 
-            // Ngành đào tạo & Mã ngành
+            // Ngành đào tạo
             React.createElement(
               'div',
               { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
-              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Ngành đào tạo & Mã ngành'),
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Ngành đào tạo'),
               React.createElement('input', {
-                readOnly: true,
-                value: `${profileData.majorName} (Mã ngành: ${profileData.majorCode})`,
+                type: 'text',
+                value: majorNameInput,
+                onChange: (e) => setMajorNameInput(e.target.value),
                 style: {
                   width: '100%',
                   padding: '8px 16px',
                   borderRadius: '9999px',
                   backgroundColor: 'var(--color-canvas, #f5f5f5)',
                   border: '1px solid var(--color-hairline, #e5e5e5)',
-                  color: 'var(--color-mid-gray, #737373)',
-                  cursor: 'not-allowed',
+                  color: 'var(--color-ink, #0a0a0a)',
                   boxSizing: 'border-box'
                 }
               })
@@ -1257,16 +1328,16 @@ export function StudentProfilePage({
               { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
               React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Khóa học'),
               React.createElement('input', {
-                readOnly: true,
-                value: profileData.cohort || 'Đại học chính quy HaUI',
+                type: 'text',
+                value: cohortInput,
+                onChange: (e) => setCohortInput(e.target.value),
                 style: {
                   width: '100%',
                   padding: '8px 16px',
                   borderRadius: '9999px',
                   backgroundColor: 'var(--color-canvas, #f5f5f5)',
                   border: '1px solid var(--color-hairline, #e5e5e5)',
-                  color: 'var(--color-mid-gray, #737373)',
-                  cursor: 'not-allowed',
+                  color: 'var(--color-ink, #0a0a0a)',
                   boxSizing: 'border-box'
                 }
               })
