@@ -13,11 +13,6 @@ import vn.haui.advisor.platform.error.ApiException;
 @RequestMapping("/api/v1")
 public class NotImplementedController {
 
-    @PostMapping("/planner/generate")
-    public void generateStudyPlan() {
-        throw ApiException.notImplemented("generateStudyPlan");
-    }
-
     @PostMapping("/planner/reconcile")
     public void reconcileStudyPlan() {
         throw ApiException.notImplemented("reconcileStudyPlan");

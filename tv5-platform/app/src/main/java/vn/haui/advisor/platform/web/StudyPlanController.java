@@ -62,6 +62,14 @@ public class StudyPlanController {
     }
 
     /**
+     * Sinh phương án xem trước bằng planner tool trên hồ sơ server nạp; không lưu. studentId trong body bị bỏ qua.
+     */
+    @PostMapping("/generate")
+    public GenerateStudyPlanResponse generateStudyPlan(@RequestBody GenerateStudyPlanRequest request) {
+        return studyPlanService.generate(studentContextProvider.getAuthenticatedContext(), request);
+    }
+
+    /**
      * Thẩm định bằng AcademicFacade. studentId trong body (nếu client gửi) bị bỏ qua.
      */
     @PostMapping("/validate")

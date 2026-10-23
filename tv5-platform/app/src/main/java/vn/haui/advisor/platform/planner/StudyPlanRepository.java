@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,8 +37,14 @@ public class StudyPlanRepository {
             p.plan_id, p.student_id, p.plan_name, p.status, p.version, p.source_plan_id, p.data_revision, p.target_cpa,
             p.target_graduation_semester, p.max_credits_per_semester, p.projected_cpa, p.warnings_json, p.created_at,
             p.updated_at, p.activated_at, p.validated_at, p.validated_plan_version, p.validated_data_revision,
-            p.validated_policy_version,
+            p.validated_policy_version, p.checked_data_revision, p.checked_policy_version,
             (SELECT COALESCE(SUM(s.planned_credits), 0) FROM plan_semesters s WHERE s.plan_id = p.plan_id) AS total_credits
+            """;
+    /** Lần thẩm định gần nhất không dựa trên hồ sơ (:revision) hoặc quy chế (:policy) hiện hành. */
+    private static final String OUTDATED = """
+            p.status IN (:statuses)
+              AND (p.checked_data_revision IS NULL OR p.checked_data_revision <> :revision
+                   OR p.checked_policy_version IS NULL OR p.checked_policy_version <> :policy)
             """;
 
     private final JdbcClient jdbc;
@@ -69,11 +76,22 @@ public class StudyPlanRepository {
         public Integer validatedPlanVersion;
         public String validatedDataRevision;
         public String validatedPolicyVersion;
+        public String checkedDataRevision;
+        public String checkedPolicyVersion;
         public int totalCredits;
     }
 
     /** Khóa hồ sơ sinh viên của giao dịch: tuần tự hóa mọi thao tác ghi kế hoạch của cùng sinh viên. */
     public record StudentLock(String dataRevision, int planSequence) {
+    }
+
+    /**
+     * Kết quả một lần thẩm định thật trên nội dung hiện tại của kế hoạch (planVersion), hồ sơ (dataRevision) và quy chế
+     * (policyVersion). Đạt: validated_* ghi lần này. Không đạt: validated_* về NULL. Kế hoạch còn được theo dõi
+     * (VALIDATED, ACTIVE) ghi checked_* để chỉ kiểm tra lại khi hồ sơ hoặc quy chế đổi tiếp; DRAFT thì không.
+     */
+    public record Check(StudyPlanStatus status, boolean valid, List<String> warnings, Instant checkedAt, int planVersion,
+                        String dataRevision, String policyVersion) {
     }
 
     public Optional<StudentLock> lockStudent(String studentId) {
@@ -106,6 +124,31 @@ public class StudyPlanRepository {
                 .list();
     }
 
+    /**
+     * Kế hoạch có trạng thái trong {@code statuses} mà lần thẩm định gần nhất dựa trên hồ sơ hoặc quy chế khác bản hiện hành
+     * (hoặc chưa ghi lần nào).
+     */
+    public List<PlanRow> findOutdatedChecks(String studentId, String dataRevision, String policyVersion,
+                                            Collection<StudyPlanStatus> statuses) {
+        if (statuses.isEmpty()) {
+            return List.of();
+        }
+        return jdbc.sql("SELECT " + COLUMNS + " FROM study_plans p WHERE p.student_id = :studentId AND " + OUTDATED + " ORDER BY p.plan_id")
+                .params(outdatedParams(studentId, dataRevision, policyVersion, statuses))
+                .query(this::map)
+                .list();
+    }
+
+    public int countOutdatedChecks(String studentId, String dataRevision, String policyVersion,
+                                   Collection<StudyPlanStatus> statuses) {
+        if (statuses.isEmpty()) {
+            return 0;
+        }
+        return jdbc.sql("SELECT count(*) FROM study_plans p WHERE p.student_id = :studentId AND " + OUTDATED)
+                .params(outdatedParams(studentId, dataRevision, policyVersion, statuses))
+                .query(Integer.class).single();
+    }
+
     public int count(String studentId) {
         return jdbc.sql("SELECT count(*) FROM study_plans WHERE student_id = :studentId")
                 .param("studentId", studentId)
@@ -136,7 +179,8 @@ public class StudyPlanRepository {
                                data_revision = :dataRevision, target_cpa = :targetCpa, target_graduation_semester = :targetSemester,
                                max_credits_per_semester = :maxCredits, projected_cpa = :projectedCpa, warnings_json = :warnings,
                                updated_at = :updatedAt, validated_at = NULL, validated_plan_version = NULL,
-                               validated_data_revision = NULL, validated_policy_version = NULL
+                               validated_data_revision = NULL, validated_policy_version = NULL,
+                               checked_data_revision = NULL, checked_policy_version = NULL
                         WHERE plan_id = :planId AND student_id = :studentId AND version = :expectedVersion
                           AND status IN ('DRAFT', 'VALIDATED')
                         """)
@@ -146,18 +190,28 @@ public class StudyPlanRepository {
                 .update() == 1;
     }
 
-    /** Kết quả thẩm định thật: VALIDATED kèm revision hồ sơ/quy chế/kế hoạch đã dùng, hoặc DRAFT khi vi phạm. */
-    public void recordValidation(String studentId, String planId, StudyPlanStatus status, List<String> warnings,
-                                 Instant validatedAt, Integer planVersion, String dataRevision, String policyVersion) {
+    /**
+     * Ghi một lần thẩm định thật (xem {@link Check}). Đạt thì dataRevision của kế hoạch là hồ sơ của lần thẩm định này;
+     * không đổi trạng thái ACTIVE (bản đang theo dõi vi phạm vẫn ACTIVE, kèm cảnh báo).
+     */
+    public void recordCheck(PlanRow plan, Check check) {
+        boolean tracked = check.status() != StudyPlanStatus.DRAFT;
         jdbc.sql("""
-                        UPDATE study_plans SET status = :status, warnings_json = :warnings, validated_at = :validatedAt,
-                               validated_plan_version = :planVersion, validated_data_revision = :dataRevision,
-                               validated_policy_version = :policyVersion
-                        WHERE plan_id = :planId AND student_id = :studentId
+                        UPDATE study_plans SET status = :status, warnings_json = :warnings, data_revision = :planRevision,
+                               validated_at = :validatedAt, validated_plan_version = :planVersion,
+                               validated_data_revision = :validatedRevision, validated_policy_version = :validatedPolicy,
+                               checked_data_revision = :checkedRevision, checked_policy_version = :checkedPolicy
+                        WHERE plan_id = :planId AND student_id = :studentId AND version = :version
                         """)
-                .param("status", status.name()).param("warnings", write(warnings)).param("validatedAt", ts(validatedAt))
-                .param("planVersion", planVersion).param("dataRevision", dataRevision).param("policyVersion", policyVersion)
-                .param("planId", planId).param("studentId", studentId)
+                .param("status", check.status().name()).param("warnings", write(check.warnings()))
+                .param("planRevision", check.valid() ? check.dataRevision() : plan.dataRevision)
+                .param("validatedAt", check.valid() ? ts(check.checkedAt()) : null)
+                .param("planVersion", check.valid() ? check.planVersion() : null)
+                .param("validatedRevision", check.valid() ? check.dataRevision() : null)
+                .param("validatedPolicy", check.valid() ? check.policyVersion() : null)
+                .param("checkedRevision", tracked ? check.dataRevision() : null)
+                .param("checkedPolicy", tracked ? check.policyVersion() : null)
+                .param("planId", plan.planId).param("studentId", plan.studentId).param("version", check.planVersion())
                 .update();
     }
 
@@ -183,7 +237,8 @@ public class StudyPlanRepository {
                         UPDATE study_plans SET status = 'ACTIVE', active_student_id = student_id, activated_at = :now,
                                updated_at = :now, data_revision = :dataRevision, warnings_json = :warnings, validated_at = :now,
                                validated_plan_version = :planVersion, validated_data_revision = :dataRevision,
-                               validated_policy_version = :policyVersion
+                               validated_policy_version = :policyVersion, checked_data_revision = :dataRevision,
+                               checked_policy_version = :policyVersion
                         WHERE plan_id = :planId AND student_id = :studentId
                         """)
                 .param("now", ts(now)).param("dataRevision", dataRevision).param("warnings", write(warnings))
@@ -331,8 +386,20 @@ public class StudyPlanRepository {
         plan.validatedPlanVersion = rs.wasNull() ? null : validatedVersion;
         plan.validatedDataRevision = rs.getString("validated_data_revision");
         plan.validatedPolicyVersion = rs.getString("validated_policy_version");
+        plan.checkedDataRevision = rs.getString("checked_data_revision");
+        plan.checkedPolicyVersion = rs.getString("checked_policy_version");
         plan.totalCredits = rs.getInt("total_credits");
         return plan;
+    }
+
+    private static Map<String, Object> outdatedParams(String studentId, String dataRevision, String policyVersion,
+                                                      Collection<StudyPlanStatus> statuses) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("studentId", studentId);
+        params.put("statuses", statuses.stream().map(Enum::name).toList());
+        params.put("revision", dataRevision);
+        params.put("policy", policyVersion);
+        return params;
     }
 
     private String write(List<String> values) {

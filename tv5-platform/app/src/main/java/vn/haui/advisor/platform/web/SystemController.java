@@ -41,7 +41,8 @@ public class SystemController {
         response.put("modules", modules);
 
         response.put("message", "HaUI Advisor đang chạy contracts-v1. Tài khoản, hồ sơ, CTĐT, bảng điểm, kế hoạch và hội thoại lưu trong DB; "
-                + "trạng thái học vụ, điều kiện học phần, cây CTĐT và rà soát tốt nghiệp tính bởi AcademicFacade trên hồ sơ DB. "
+                + "trạng thái học vụ, điều kiện học phần, cây CTĐT, rà soát tốt nghiệp, sinh và thẩm định kế hoạch tính bởi "
+                + "AcademicFacade trên hồ sơ DB. "
                 + "Công cụ học vụ chưa thật trả 503 TOOL_NOT_READY (xem academicTools), endpoint chưa nối trả 501.");
         response.put("academicTools", tools);
         response.put("timestamp", Instant.now().toString());

@@ -67,7 +67,8 @@ class AcademicApiIntegrationTest {
     @Test
     @DisplayName("Runtime nối công cụ thật: DefaultAcademicFacade của TV4 + StudentContextProvider/RecordProvider trên DB, không bean giả")
     void liveBindingsOnly() {
-        assertThat(academicFacade).isExactlyInstanceOf(DefaultAcademicFacade.class);
+        // Task 4.2b: engine TV4 trên hồ sơ DB, planner tool nhận hồ sơ DB của đúng sinh viên (RecordBackedAcademicFacade)
+        assertThat(academicFacade).isExactlyInstanceOf(RecordBackedAcademicFacade.class).isInstanceOf(DefaultAcademicFacade.class);
         assertThat(context.getBean(StudentContextProvider.class)).isInstanceOf(DbStudentContextProvider.class);
         assertThat(context.getBean(StudentAcademicRecordProvider.class)).isInstanceOf(DbStudentAcademicRecordProvider.class);
         assertThat(context.getBean(PolicyVersionSource.class).currentPolicyVersion()).isEqualTo(POLICY);

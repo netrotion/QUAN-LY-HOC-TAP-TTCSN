@@ -3,9 +3,9 @@
 openapi: "3.0.3"
 info:
   title: "HaUI Advisor API"
-  version: "1.3.0"
+  version: "1.4.0"
   description: |
-    contracts-v1 — hợp đồng chốt sau review prototype (Task 2.3) làm đầu vào Phase 3. Bản 1.1.0 bổ sung tài khoản, hồ sơ, CTĐT, bảng điểm, nhập bảng điểm và chứng chỉ (Task 3.2); 1.2.0 lưu kế hoạch/hội thoại trên DB và trạng thái sẵn sàng của công cụ học vụ (Task 3.7); 1.3.0 nối trạng thái học vụ, điều kiện học phần, cây CTĐT và rà soát tốt nghiệp với AcademicFacade thật (Task 4.1).
+    contracts-v1 — hợp đồng chốt sau review prototype (Task 2.3) làm đầu vào Phase 3. Bản 1.1.0 bổ sung tài khoản, hồ sơ, CTĐT, bảng điểm, nhập bảng điểm và chứng chỉ (Task 3.2); 1.2.0 lưu kế hoạch/hội thoại trên DB và trạng thái sẵn sàng của công cụ học vụ (Task 3.7); 1.3.0 nối trạng thái học vụ, điều kiện học phần, cây CTĐT và rà soát tốt nghiệp với AcademicFacade thật (Task 4.1); 1.4.0 nối sinh và thẩm định kế hoạch với planner tool thật trên hồ sơ DB, thẩm định lại khi hồ sơ/quy chế đổi (Task 4.2b).
 
     Quy tắc chung:
     - Xác thực: session cookie (JSESSIONID) + CSRF (cookie XSRF-TOKEN, header X-XSRF-TOKEN) cho mọi request ghi, kể cả login. Chỉ vai trò STUDENT. Chưa đăng nhập → 401 UNAUTHENTICATED; thiếu CSRF/sai vai trò → 403 ACCESS_DENIED.
@@ -14,7 +14,8 @@ info:
     - dataRevision: token phiên bản dữ liệu học vụ; thao tác ghi gửi lại nguyên văn, cũ → 409 DATA_REVISION_STALE.
     - Kết quả học vụ (trạng thái, điều kiện học phần, cây CTĐT, rà soát tốt nghiệp) do AcademicFacade tính trên hồ sơ server nạp từ DB và trả kèm dataRevision (phiên bản hồ sơ đã dùng) và policyVersion (quy chế đã áp dụng, policyId@version). Công cụ chưa khai báo trong readyCapabilities() → 503 TOOL_NOT_READY, không có kết quả thay thế.
     - planVersion: phiên bản nội dung kế hoạch (optimistic lock), chỉ tăng khi lưu nội dung; lệch → 409 PLAN_VERSION_CONFLICT.
-    - Vòng đời kế hoạch: lưu nháp luôn DRAFT; validate hợp lệ → VALIDATED; activate chỉ nhận VALIDATED (thẩm định lại, lỗi → 422) và lưu trữ bản ACTIVE cũ trong cùng giao dịch; sửa ACTIVE tạo DRAFT kế thừa.
+    - Vòng đời kế hoạch: lưu nháp luôn DRAFT và không mang kết quả thẩm định (kể cả nội dung vừa qua kiểm tra nhanh); validate bản đã lưu hợp lệ → VALIDATED; activate chỉ nhận VALIDATED (thẩm định lại, lỗi → 422) và lưu trữ bản ACTIVE cũ trong cùng giao dịch; sửa ACTIVE tạo DRAFT kế thừa.
+    - Sinh và thẩm định kế hoạch chạy planner tool của AcademicFacade trên hồ sơ server nạp từ DB (không dùng hồ sơ mẫu); kết quả kèm dataRevision và policyVersion đã dùng. Khi dataRevision tăng (xác nhận bảng điểm, khai báo chứng chỉ, đổi CTĐT) hoặc quy chế đổi, kế hoạch VALIDATED/ACTIVE được thẩm định lại: VALIDATED vi phạm về DRAFT, ACTIVE giữ ACTIVE kèm cảnh báo; chưa có công cụ thẩm định thật thì VALIDATED về DRAFT.
     - Công cụ chưa thật: AcademicFacade chưa khai báo VALIDATE_STUDY_PLAN trong readyCapabilities() thì validate trả 503 TOOL_NOT_READY (dev/test có thể bật thẩm định thử validationMode=MOCK) và không kế hoạch nào lên VALIDATED/ACTIVE. Kích hoạt kiểm tra lại revision hồ sơ (dataRevision), quy chế (policyVersion) và kế hoạch (planVersion) tại lúc thẩm định.
     - Số liệu dự kiến (projectedCpa, expectedGpa, targetGrade, phương án đề xuất) phải hiển thị nhãn "Dự kiến"; xem trước không ghi dữ liệu.
     - Một dữ liệu chỉ có một tên trường: xem glossary-v1.json. Mọi thay đổi sau mốc contracts-v1 phải qua PR của TV5 kèm kiểm tra phía sử dụng.
@@ -565,9 +566,10 @@ paths:
     post:
       tags: [Planner]
       summary: "Sinh phương án lộ trình để xem trước (không lưu)"
+      description: "Planner tool của AcademicFacade chạy trên hồ sơ server nạp từ DB (bảng điểm đã xác nhận); không ghi dữ liệu. Phương án luôn DRAFT, chưa thẩm định: lưu bằng POST /planner/plans rồi validate trước khi kích hoạt."
       operationId: generateStudyPlan
       x-facade-method: AcademicFacade#generateStudyPlan
-      x-implementation-status: NOT_IMPLEMENTED
+      x-implementation-status: IMPLEMENTED
       requestBody:
         required: true
         content:
@@ -589,8 +591,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         '409':
           $ref: "#/components/responses/Conflict"
-        '501':
-          $ref: "#/components/responses/NotImplemented"
+        '503':
+          $ref: "#/components/responses/ServiceUnavailable"
   /planner/validate:
     post:
       tags: [Planner]
@@ -1514,7 +1516,7 @@ components:
           nullable: true
     GenerateStudyPlanResponse:
       type: object
-      description: "Phương án lộ trình đề xuất, chưa lưu (status luôn DRAFT, không có planId/planVersion). Lưu bằng POST /planner/plans."
+      description: "Phương án lộ trình đề xuất, chưa lưu và chưa thẩm định (status luôn DRAFT, không có planId/planVersion). Lưu bằng POST /planner/plans."
       required: [proposalId, status, semesters]
       properties:
         proposalId:
@@ -1565,9 +1567,14 @@ components:
           description: "Token phiên bản dữ liệu học vụ (StudentDataVersion.dataRevision). Gửi lại nguyên văn; khác bản hiện hành → 409 DATA_REVISION_STALE."
           example: REV-2024604757-001
           nullable: true
+        policyVersion:
+          type: string
+          description: "Quy chế đã áp dụng khi sinh phương án (policyId@version)."
+          example: policy-haui-demo-2026@0.0.1-v0
+          nullable: true
     ValidateStudyPlanRequest:
       type: object
-      description: "Thẩm định kế hoạch bằng AcademicFacade. Có planId (+planVersion): thẩm định bản đã lưu, hợp lệ thì bản đó chuyển VALIDATED; semesters bỏ trống. Không planId: kiểm tra nhanh semesters chưa lưu, không ghi gì."
+      description: "Thẩm định kế hoạch bằng AcademicFacade. Có planId (+planVersion): thẩm định bản đã lưu, hợp lệ thì bản đó chuyển VALIDATED (bản ACTIVE giữ ACTIVE, kết quả ghi lại); semesters bỏ trống. Không planId: kiểm tra nhanh semesters chưa lưu, không ghi gì, status luôn DRAFT (valid chỉ để tham khảo, lưu xong vẫn phải thẩm định bản đã lưu)."
       properties:
         planId:
           type: string
@@ -1685,7 +1692,7 @@ components:
           nullable: true
     SaveStudyPlanResponse:
       type: object
-      description: "Kết quả lưu nháp; status luôn DRAFT."
+      description: "Kết quả lưu nháp; status luôn DRAFT, bản nháp chưa được thẩm định."
       required: [planId, planName, status, planVersion, updatedAt]
       properties:
         planId:
@@ -1895,8 +1902,13 @@ components:
           nullable: true
         validatedAt:
           type: string
-          description: "Thời điểm thẩm định thật gần nhất còn hiệu lực (null nếu chưa/đã sửa sau đó)."
+          description: "Thời điểm thẩm định thật gần nhất còn hiệu lực (null nếu chưa/đã sửa sau đó, hoặc lần thẩm định lại gần nhất phát hiện vi phạm)."
           format: date-time
+          nullable: true
+        policyVersion:
+          type: string
+          description: "Quy chế của lần thẩm định thật còn hiệu lực (cùng lúc với validatedAt; khi đó dataRevision là hồ sơ của lần thẩm định đó). Null khi chưa thẩm định hoặc kết quả đã hết hiệu lực."
+          example: policy-haui-demo-2026@0.0.1-v0
           nullable: true
     ReconcileStudyPlanRequest:
       type: object

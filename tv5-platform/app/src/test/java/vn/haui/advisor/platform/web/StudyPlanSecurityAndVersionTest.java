@@ -81,10 +81,11 @@ public class StudyPlanSecurityAndVersionTest {
 
         ValidateStudyPlanRequest spoofed = new ValidateStudyPlanRequest(null, "attacker-9999", validSemesters(), null,
                 revisionOf("sv-spoof"));
+        // Nội dung chưa lưu: kết quả hợp lệ nhưng không kế hoạch nào thành VALIDATED (Task 4.2b)
         perform(post("/api/v1/planner/validate"), spoofed)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.valid", is(true)))
-                .andExpect(jsonPath("$.status", is("VALIDATED")))
+                .andExpect(jsonPath("$.status", is("DRAFT")))
                 .andExpect(jsonPath("$.planVersion").value(nullValue()));
     }
 

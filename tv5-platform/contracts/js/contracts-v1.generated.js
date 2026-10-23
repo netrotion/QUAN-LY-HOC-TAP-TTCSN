@@ -1,5 +1,5 @@
 // GENERATED — KHÔNG SỬA TAY. Sinh bởi `npm run contracts:build` từ tv5-platform/contracts (openapi-v1.yaml, examples/*.json, enum Java).
-export const CONTRACT_VERSION = "1.3.0";
+export const CONTRACT_VERSION = "1.4.0";
 export const CONTRACT_MILESTONE = "contracts-v1";
 export const API_BASE_PATH = '/api/v1';
 export const DEMO_STUDENT = Object.freeze({
@@ -2240,7 +2240,8 @@ export const FIXTURES = Object.freeze({
       "warnings": [
         "Lộ trình dựa trên quy chế demo (DEMO_UNVERIFIED), cần đối chiếu thông báo mở lớp chính thức"
       ],
-      "dataRevision": "REV-2024604757-001"
+      "dataRevision": "REV-2024604757-001",
+      "policyVersion": "policy-haui-demo-2026@0.0.1-v0"
     },
     "consumers": [
       "TV3",
@@ -2611,7 +2612,8 @@ export const FIXTURES = Object.freeze({
       "createdAt": "2026-09-15T08:00:00Z",
       "updatedAt": "2026-09-20T02:00:00Z",
       "activatedAt": "2026-09-20T02:05:00Z",
-      "validatedAt": "2026-09-20T02:04:00Z"
+      "validatedAt": "2026-09-20T02:04:00Z",
+      "policyVersion": "policy-haui-demo-2026@0.0.1-v0"
     },
     "consumers": [
       "TV3",
@@ -3241,9 +3243,9 @@ export const FIXTURES = Object.freeze({
     ]
   },
   "not-implemented": {
-    "operationId": "generateStudyPlan",
+    "operationId": "reconcileStudyPlan",
     "method": "POST",
-    "path": "/planner/generate",
+    "path": "/planner/reconcile",
     "httpStatus": 501,
     "pathParams": null,
     "requestSchema": null,
@@ -3255,7 +3257,7 @@ export const FIXTURES = Object.freeze({
       "requestId": "req-2026-10-13-0005",
       "timestamp": "2026-10-13T08:15:00Z",
       "details": [
-        "operationId: generateStudyPlan"
+        "operationId: reconcileStudyPlan"
       ]
     },
     "consumers": [

@@ -1,5 +1,6 @@
 package vn.haui.advisor.platform.student;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.haui.advisor.contracts.dto.*;
@@ -29,15 +30,17 @@ public class StudentDataService {
     private final TranscriptRepository transcriptRepository;
     private final CertificateRepository certificateRepository;
     private final PolicyVersionSource policy;
+    private final ApplicationEventPublisher events;
 
     public StudentDataService(StudentRepository studentRepository, CurriculumRepository curriculumRepository,
                               TranscriptRepository transcriptRepository, CertificateRepository certificateRepository,
-                              PolicyVersionSource policy) {
+                              PolicyVersionSource policy, ApplicationEventPublisher events) {
         this.studentRepository = studentRepository;
         this.curriculumRepository = curriculumRepository;
         this.transcriptRepository = transcriptRepository;
         this.certificateRepository = certificateRepository;
         this.policy = policy;
+        this.events = events;
     }
 
     @Transactional(readOnly = true)
@@ -153,9 +156,12 @@ public class StudentDataService {
         }
     }
 
+    /** Tăng dataRevision và báo cho phần phụ thuộc (kế hoạch đang theo dõi được thẩm định lại sau khi commit). */
     public String bumpRevision(StudentRepository.StudentRow student, Instant now) {
-        return studentRepository.bumpRevision(student.studentId(), student.version(), now)
+        String revision = studentRepository.bumpRevision(student.studentId(), student.version(), now)
                 .orElseThrow(() -> ApiException.staleRevision(student.dataRevision(), student.dataRevision()));
+        events.publishEvent(new AcademicDataChangedEvent(student.studentId(), revision));
+        return revision;
     }
 
     private StudentProfileResponse toProfile(StudentRepository.StudentRow student) {

@@ -14,7 +14,7 @@ import {
 
 test('phát hành đúng mốc contracts-v1', () => {
   assert.equal(CONTRACT_MILESTONE, 'contracts-v1');
-  assert.equal(CONTRACT_VERSION, '1.3.0');
+  assert.equal(CONTRACT_VERSION, '1.4.0');
   assert.equal(DEMO_STUDENT.studentId, '2024604757');
 });
 
@@ -66,4 +66,15 @@ test('kết quả học vụ (1.3.0) mang dataRevision và policyVersion; cây C
   assert.equal(tree.operationId, 'getCurriculumTree');
   assert.ok(tree.response.courses.every((c) => ENUMS.CourseProgressStatus.includes(c.status)));
   assert.deepEqual(ENUMS.CourseProgressStatus, ['PASSED', 'FAILED', 'IN_PROGRESS', 'ELIGIBLE', 'BLOCKED', 'UNKNOWN']);
+});
+
+test('planner (1.4.0): phương án sinh ra là DRAFT kèm dataRevision/policyVersion; generate không còn 501', () => {
+  const proposal = findFixture('POST', '/planner/generate');
+  assert.equal(proposal.httpStatus, 200);
+  assert.equal(proposal.response.status, 'DRAFT');
+  assert.ok(proposal.response.dataRevision);
+  assert.ok(proposal.response.policyVersion);
+  assert.equal(findFixture('POST', '/planner/generate', { httpStatus: 501 }), null);
+  assert.equal(getFixture('not-implemented').operationId, 'reconcileStudyPlan');
+  assert.ok(getFixture('get-study-plan').response.policyVersion, 'chi tiết kế hoạch đã thẩm định ghi quy chế đã dùng');
 });

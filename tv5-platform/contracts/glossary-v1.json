@@ -1,6 +1,6 @@
 {
   "milestone": "contracts-v1",
-  "contractVersion": "1.3.0",
+  "contractVersion": "1.4.0",
   "owner": "TV5",
   "rule": "Một dữ liệu chỉ có một tên trường; cùng tên trường thì cùng kiểu JSON ở mọi schema. Thêm trường mới phải đăng ký ở đây trong cùng PR.",
   "fields": {

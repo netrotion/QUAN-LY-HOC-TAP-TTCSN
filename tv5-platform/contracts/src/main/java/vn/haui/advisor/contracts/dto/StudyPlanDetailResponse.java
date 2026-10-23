@@ -28,6 +28,7 @@ public class StudyPlanDetailResponse implements Serializable {
     private String updatedAt;
     private String activatedAt;
     private String validatedAt;
+    private String policyVersion;
 
     public StudyPlanDetailResponse() {
     }
@@ -182,5 +183,13 @@ public class StudyPlanDetailResponse implements Serializable {
 
     public void setValidatedAt(String validatedAt) {
         this.validatedAt = validatedAt;
+    }
+
+    public String getPolicyVersion() {
+        return policyVersion;
+    }
+
+    public void setPolicyVersion(String policyVersion) {
+        this.policyVersion = policyVersion;
     }
 }

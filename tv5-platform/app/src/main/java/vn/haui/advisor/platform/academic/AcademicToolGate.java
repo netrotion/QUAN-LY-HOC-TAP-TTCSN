@@ -26,7 +26,7 @@ public class AcademicToolGate {
     /** Capability platform đã nối vào endpoint; capability khác vẫn trả 501 NOT_IMPLEMENTED. */
     static final Set<AcademicCapability> WIRED = EnumSet.of(AcademicCapability.GET_ACADEMIC_STATUS,
             AcademicCapability.CHECK_COURSE_ELIGIBILITY, AcademicCapability.RUN_GRADUATION_AUDIT,
-            AcademicCapability.VALIDATE_STUDY_PLAN);
+            AcademicCapability.GENERATE_STUDY_PLAN, AcademicCapability.VALIDATE_STUDY_PLAN);
 
     /** Capability có chế độ thử ở dev/test; capability khác chỉ chạy công cụ thật, không có kết quả thay thế. */
     static final Set<AcademicCapability> MOCKABLE = EnumSet.of(AcademicCapability.VALIDATE_STUDY_PLAN);

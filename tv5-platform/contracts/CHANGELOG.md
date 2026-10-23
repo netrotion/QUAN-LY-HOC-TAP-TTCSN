@@ -3,6 +3,36 @@
 Mọi thay đổi hợp đồng sau mốc `contracts-v1` phải có mục ở đây, trong cùng PR của TV5 với thay đổi.
 Quy trình: [docs/task-2.4-contracts-v1.md §6](../docs/task-2.4-contracts-v1.md).
 
+## [1.4.0] — 2026-10-23 — sinh và thẩm định kế hoạch trên planner tool thật (Task 4.2b)
+
+Sinh phương án và thẩm định kế hoạch chạy planner tool của AcademicFacade trên hồ sơ server nạp từ DB; kế hoạch đang theo dõi
+được thẩm định lại khi hồ sơ hoặc quy chế đổi. Không đổi tên hay xóa trường nào của 1.3.0.
+
+### Thêm
+- `GenerateStudyPlanResponse.policyVersion`: quy chế đã áp dụng khi sinh phương án (`policyId@version`).
+- `StudyPlanDetailResponse.policyVersion`: quy chế của lần thẩm định thật còn hiệu lực, đi cùng `validatedAt`
+  (khi đó `dataRevision` của kế hoạch là hồ sơ của lần thẩm định đó). Null khi chưa thẩm định hoặc kết quả đã hết hiệu lực.
+- Fixture `generate-study-plan-response`, `study-plan-read-response` có `policyVersion` (không thêm file mẫu).
+
+### Thay đổi hành vi
+- `generateStudyPlan`: `x-implementation-status: IMPLEMENTED`; response 501 thay bằng **503 `TOOL_NOT_READY`** khi AcademicFacade
+  chưa khai báo `GENERATE_STUDY_PLAN`. Không lưu gì; phương án luôn `DRAFT`. `dataRevision` client gửi khác bản hiện hành → 409,
+  `targetGraduationSemester` sai dạng → 400. Chưa có bảng điểm đã xác nhận → cảnh báo đầu `warnings`.
+- `validateStudyPlan` không có `planId` (kiểm tra nhanh nội dung chưa lưu): `status` luôn `DRAFT` (1.3.0 trả `VALIDATED` khi hợp lệ);
+  `valid` vẫn là kết quả. Lưu nháp không mang kết quả thẩm định nào; `SaveStudyPlanResponse.message` nói rõ bản nháp chưa được kiểm tra.
+- `validateStudyPlan` với `planId` của bản ACTIVE: kết quả được ghi lại, kế hoạch giữ ACTIVE.
+- Thẩm định lại: khi `dataRevision` tăng (xác nhận bảng điểm, khai báo chứng chỉ, đổi CTĐT) hoặc quy chế đổi, kế hoạch VALIDATED/ACTIVE
+  được thẩm định lại trên dữ liệu mới. VALIDATED vi phạm → DRAFT; ACTIVE vi phạm giữ ACTIVE, `validatedAt`/`policyVersion` về null,
+  `warnings` nêu vi phạm. Chưa có công cụ thẩm định thật → VALIDATED về DRAFT (kết quả cũ hết hiệu lực).
+- Fixture `not-implemented` minh họa `reconcileStudyPlan` (operation còn 501) thay cho `generateStudyPlan`.
+
+### Việc cho owner khác
+- TV3 (4.3a): nối `POST /planner/generate` (nhãn "Dự kiến", hiện `policyVersion`, cảnh báo); sau khi lưu luôn hiển thị bản nháp
+  "chưa kiểm tra điều kiện", không dùng kết quả kiểm tra nhanh để bật "Kích hoạt"; hiển thị `validatedAt`/`policyVersion` và cảnh báo
+  thẩm định lại trong `warnings` của chi tiết kế hoạch.
+- TV4: `validateStudyPlan` vẫn chưa khai báo trong `readyCapabilities()` nên validate/activate còn 503 ở runtime; chi tiết và các sai lệch
+  của planner tool ghi ở `tv5-platform/docs/task-4.2b-planner-api-live.md` §5.
+
 ## [1.3.0] — 2026-10-20 — API học vụ nối công cụ thật (Task 4.1)
 
 Trạng thái học vụ, điều kiện học phần, cây CTĐT và rà soát tốt nghiệp chạy trên AcademicFacade thật với hồ sơ server nạp từ DB.

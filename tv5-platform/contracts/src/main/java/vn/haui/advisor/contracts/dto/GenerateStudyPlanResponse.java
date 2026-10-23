@@ -23,6 +23,7 @@ public class GenerateStudyPlanResponse implements Serializable {
     private List<ChatActionItem> actions;
     private List<String> warnings;
     private String dataRevision;
+    private String policyVersion;
 
     public GenerateStudyPlanResponse() {
     }
@@ -138,6 +139,14 @@ public class GenerateStudyPlanResponse implements Serializable {
 
     public void setDataRevision(String dataRevision) {
         this.dataRevision = dataRevision;
+    }
+
+    public String getPolicyVersion() {
+        return policyVersion;
+    }
+
+    public void setPolicyVersion(String policyVersion) {
+        this.policyVersion = policyVersion;
     }
 
     /**

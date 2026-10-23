@@ -210,7 +210,7 @@ class PlanPersistenceTest {
     }
 
     @Test
-    @DisplayName("Nhập bảng điểm lặp: revision đổi → kích hoạt bằng revision cũ bị chặn, thẩm định lại trên dữ liệu mới, không nhân đôi bảng điểm")
+    @DisplayName("Nhập bảng điểm lặp: revision đổi → kế hoạch tự thẩm định lại trên dữ liệu mới, kích hoạt bằng revision cũ bị chặn, không nhân đôi bảng điểm")
     void repeatedImportForcesRecheck() throws Exception {
         String sv = "sv-plan-reimport";
         String rev1 = accounts.ensure(sv);
@@ -219,12 +219,16 @@ class PlanPersistenceTest {
 
         String rev2 = confirmManualImport(sv, rev1, row("IT6015", "2024_1", 8.5, "A"), row("DC6006", "2024_1", 8.7, "A"));
         assertThat(rev2).isNotEqualTo(rev1);
+        assertThat(jdbc.sql("SELECT validated_data_revision FROM study_plans WHERE plan_id = :id").param("id", planId)
+                .query(String.class).single()).as("thẩm định lại ngay sau khi xác nhận bảng điểm").isEqualTo(rev2);
 
         JsonNode stale = activate(sv, planId, 1, rev1, 409);
         assertThat(stale.get("code").asText()).isEqualTo("DATA_REVISION_STALE");
         JsonNode validated = api().call(get(plan(planId)), sv, 200, "StudyPlanDetailResponse");
         assertThat(validated.get("status").asText()).isEqualTo("VALIDATED");
-        assertThat(validated.get("warnings").toString()).contains("Dữ liệu học vụ đã thay đổi sau khi kiểm tra điều kiện");
+        assertThat(validated.get("dataRevision").asText()).isEqualTo(rev2);
+        assertThat(validated.get("warnings").toString())
+                .contains("Đã tự kiểm tra lại vì dữ liệu học vụ đã thay đổi (" + rev1 + " → " + rev2 + "): kế hoạch vẫn đạt điều kiện.");
 
         String rev3 = confirmManualImport(sv, rev2, row("IT6015", "2024_1", 9.0, "A"));
         JsonNode transcript = api().call(get("/api/v1/academic/transcript"), sv, 200, "TranscriptResponse");
@@ -232,19 +236,22 @@ class PlanPersistenceTest {
         assertThat(transcript.get("dataRevision").asText()).isEqualTo(rev3);
 
         JsonNode activated = activate(sv, planId, 1, rev3, 200);
-        assertThat(activated.get("message").asText()).contains("Dữ liệu học vụ đã thay đổi", "kiểm tra lại");
+        assertThat(activated.get("message").asText()).as("đã kiểm tra lại trên rev3 trước khi kích hoạt").doesNotContain("đã thay đổi");
         JsonNode active = api().call(get(plan(planId)), sv, 200, "StudyPlanDetailResponse");
         assertThat(active.get("status").asText()).isEqualTo("ACTIVE");
         assertThat(active.get("dataRevision").asText()).isEqualTo(rev3);
         assertThat(active.get("warnings").toString()).doesNotContain("đã thay đổi");
 
-        confirmManualImport(sv, rev3, row("IT6015", "2024_1", 7.0, "B"));
-        assertThat(api().call(get(plan(planId)), sv, 200, "StudyPlanDetailResponse").get("warnings").toString())
-                .as("theo dõi: kế hoạch ACTIVE dựa trên dữ liệu cũ").contains("Dữ liệu học vụ đã thay đổi sau khi kích hoạt");
+        String rev4 = confirmManualImport(sv, rev3, row("IT6015", "2024_1", 7.0, "B"));
+        JsonNode tracked = api().call(get(plan(planId)), sv, 200, "StudyPlanDetailResponse");
+        assertThat(tracked.get("status").asText()).isEqualTo("ACTIVE");
+        assertThat(tracked.get("dataRevision").asText()).isEqualTo(rev4);
+        assertThat(tracked.get("warnings").toString()).as("theo dõi: ACTIVE được thẩm định lại trên dữ liệu mới")
+                .contains("Đã tự kiểm tra lại vì dữ liệu học vụ đã thay đổi (" + rev3 + " → " + rev4 + "): kế hoạch vẫn đạt điều kiện.");
     }
 
     @Test
-    @DisplayName("Đổi quy chế sau khi thẩm định: kích hoạt thẩm định lại theo quy chế mới, vi phạm thì về DRAFT")
+    @DisplayName("Đổi quy chế sau khi thẩm định: tự thẩm định lại theo quy chế mới; kích hoạt thẩm định lại, vi phạm thì về DRAFT")
     void policyChangeRequiresRecheck() throws Exception {
         String sv = "sv-plan-policy";
         String revision = accounts.ensure(sv);
@@ -254,8 +261,11 @@ class PlanPersistenceTest {
         assertThat(result.get("policyVersion").asText()).isEqualTo(AcademicToolsTestConfig.POLICY_V1);
 
         policy.set("policy-test@2");
-        assertThat(api().call(get(plan(planId)), sv, 200, "StudyPlanDetailResponse").get("warnings").toString())
-                .contains("Quy chế đã cập nhật");
+        JsonNode rechecked = api().call(get(plan(planId)), sv, 200, "StudyPlanDetailResponse");
+        assertThat(rechecked.get("status").asText()).isEqualTo("VALIDATED");
+        assertThat(rechecked.get("policyVersion").asText()).isEqualTo("policy-test@2");
+        assertThat(rechecked.get("warnings").toString())
+                .contains("Đã tự kiểm tra lại vì quy chế đã cập nhật (policy-test@1 → policy-test@2): kế hoạch vẫn đạt điều kiện.");
 
         academicFacade.forceViolations("Quy chế mới: học kỳ 2026_1 vượt số tín chỉ tối đa");
         JsonNode failed = activate(sv, planId, 1, revision, 422);

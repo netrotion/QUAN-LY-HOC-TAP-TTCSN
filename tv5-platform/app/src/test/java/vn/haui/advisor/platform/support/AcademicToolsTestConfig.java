@@ -3,26 +3,25 @@ package vn.haui.advisor.platform.support;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
-import vn.haui.advisor.academic.service.DefaultAcademicFacade;
 import vn.haui.advisor.contracts.dto.AcademicCapability;
 import vn.haui.advisor.contracts.dto.StudyPlanStatus;
 import vn.haui.advisor.contracts.dto.ValidateStudyPlanRequest;
 import vn.haui.advisor.contracts.dto.ValidateStudyPlanResponse;
-import vn.haui.advisor.contracts.ports.StudentAcademicRecordProvider;
 import vn.haui.advisor.platform.academic.AcademicEngineSources;
 import vn.haui.advisor.platform.academic.PolicyVersionSource;
+import vn.haui.advisor.platform.academic.RecordBackedAcademicFacade;
 import vn.haui.advisor.platform.transcript.DbStudentAcademicRecordProvider;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
  * Chỉ dùng trong test. Mô phỏng TV4 đã có công cụ thẩm định thật (khai báo thêm VALIDATE_STUDY_PLAN) để test luồng
- * VALIDATED → ACTIVE. Facade được dựng giống runtime (hồ sơ từ DB, quy chế/CTĐT cùng nguồn seed, không hồ sơ mẫu);
- * test có thể tắt mọi "công cụ thật", ép vi phạm hoặc đổi phiên bản quy chế.
+ * VALIDATED → ACTIVE. Facade chính là facade runtime (planner tool TV4 trên hồ sơ DB, quy chế/CTĐT cùng nguồn seed, không
+ * hồ sơ mẫu), chỉ khác phần khai báo sẵn sàng: kết quả thẩm định là kết quả thật của engine TV4. Test có thể tắt mọi
+ * "công cụ thật", ép thêm vi phạm hoặc đổi phiên bản quy chế.
  * Bean dùng chung trong context: test sửa trạng thái phải gọi {@link #reset}.
  */
 @TestConfiguration
@@ -48,13 +47,13 @@ public class AcademicToolsTestConfig {
         policy.set(POLICY_V1);
     }
 
-    public static class ControllableAcademicFacade extends DefaultAcademicFacade {
+    public static class ControllableAcademicFacade extends RecordBackedAcademicFacade {
 
         private volatile boolean ready = true;
         private volatile List<String> forcedViolations = List.of();
 
-        public ControllableAcademicFacade(StudentAcademicRecordProvider records, AcademicEngineSources sources) {
-            super(records, sources.policy(), sources.curriculum(), Map.of());
+        public ControllableAcademicFacade(DbStudentAcademicRecordProvider records, AcademicEngineSources sources) {
+            super(records, sources);
         }
 
         @Override

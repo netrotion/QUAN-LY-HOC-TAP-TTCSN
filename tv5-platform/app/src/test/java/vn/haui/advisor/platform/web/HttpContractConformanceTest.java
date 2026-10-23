@@ -124,11 +124,40 @@ class HttpContractConformanceTest {
     @Test
     @DisplayName("Operation chưa nối trả 501 NOT_IMPLEMENTED đúng schema thay vì 404")
     void notImplementedOperationsMatchSchema() throws Exception {
-        for (String path : List.of("/api/v1/planner/generate", "/api/v1/planner/reconcile",
+        for (String path : List.of("/api/v1/planner/reconcile",
                 "/api/v1/simulation/grades", "/api/v1/simulation/retake-ranking", "/api/v1/simulation/target-grades",
                 "/api/v1/advisor/chat")) {
             JsonNode error = expect(post(path), objectMapper.createObjectNode(), 501, "ApiErrorResponse");
             assertThat(error.get("code").asText()).isEqualTo("NOT_IMPLEMENTED");
+        }
+    }
+
+    @Test
+    @DisplayName("Contracts 1.4: generate dùng request fixture, trả đúng schema; revision cũ 409, đầu vào sai 400, công cụ chưa thật 503")
+    void generateMatchesSchema() throws Exception {
+        String revision = expect(get("/api/v1/academic/status"), null, 200, "AcademicStatusResponse").get("dataRevision").asText();
+        ObjectNode generate = (ObjectNode) ContractTestSupport.readExample("generate-study-plan-request.sample.json");
+        generate.put("dataRevision", revision);
+        JsonNode proposal = expect(post("/api/v1/planner/generate"), generate, 200, "GenerateStudyPlanResponse");
+        assertThat(proposal.get("studentId").asText()).isEqualTo("2024604757");
+        assertThat(proposal.get("status").asText()).isEqualTo("DRAFT");
+        assertThat(proposal.get("dataRevision").asText()).isEqualTo(revision);
+        assertThat(proposal.get("policyVersion").isTextual()).isTrue();
+
+        generate.put("dataRevision", "REV-2024604757-000");
+        assertThat(expect(post("/api/v1/planner/generate"), generate, 409, "ApiErrorResponse").get("code").asText())
+                .isEqualTo("DATA_REVISION_STALE");
+        generate.remove("dataRevision");
+        generate.put("targetGraduationSemester", "2028-1");
+        expect(post("/api/v1/planner/generate"), generate, 400, "ApiErrorResponse");
+        generate.remove("targetGraduationSemester");
+
+        academicFacade.setReady(false);
+        try {
+            assertThat(expect(post("/api/v1/planner/generate"), generate, 503, "ApiErrorResponse").get("code").asText())
+                    .isEqualTo("TOOL_NOT_READY");
+        } finally {
+            academicFacade.reset();
         }
     }
 

@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 /**
- * Runtime mặc định: engine TV4 chưa khai báo công cụ thẩm định thật, mock tắt. Kế hoạch lưu được nhưng
+ * Runtime mặc định: engine TV4 chưa khai báo công cụ thẩm định thật, mock tắt. Kế hoạch sinh và lưu được nhưng
  * không thẩm định hay kích hoạt được (503 TOOL_NOT_READY) — không có ACTIVE khi validation chưa thật.
  */
 @SpringBootTest
@@ -56,6 +56,14 @@ class ToolNotReadyTest {
         StudentApi api = new StudentApi(mockMvc, objectMapper);
         String sv = "sv-tool-not-ready";
         String revision = accounts.ensure(sv);
+
+        // Sinh phương án là công cụ TV4 đã khai báo thật: chạy được dù thẩm định chưa thật; kết quả là bản xem trước DRAFT
+        JsonNode proposal = api.call(post("/api/v1/planner/generate"), sv, 200, "GenerateStudyPlanResponse",
+                new GenerateStudyPlanRequest(null, null, null, null, null, revision));
+        assertThat(proposal.get("status").asText()).isEqualTo("DRAFT");
+        assertThat(proposal.get("semesters")).isNotEmpty();
+        assertThat(proposal.get("warnings").toString()).contains("Chưa có bảng điểm đã xác nhận");
+
         List<PlannedSemesterItem> semesters = List.of(new PlannedSemesterItem("2026_1", "Học kỳ 2026_1",
                 List.of(new PlannedCourseItem("IT6015", "Học phần IT6015", 3, "B", null),
                         new PlannedCourseItem("IT9MOCK1", "Học phần thử 1", 3, "B", null),
@@ -86,6 +94,7 @@ class ToolNotReadyTest {
 
         JsonNode bootstrap = api.call(get("/api/v1/system/bootstrap"), sv, 200, "BootstrapInfoResponse");
         assertThat(toolStatus(bootstrap, AcademicCapability.VALIDATE_STUDY_PLAN)).isEqualTo("NOT_READY");
+        assertThat(toolStatus(bootstrap, AcademicCapability.GENERATE_STUDY_PLAN)).isEqualTo("READY");
         assertThat(bootstrap.at("/modules/academic").asText()).isEqualTo("PARTIAL");
     }
 
