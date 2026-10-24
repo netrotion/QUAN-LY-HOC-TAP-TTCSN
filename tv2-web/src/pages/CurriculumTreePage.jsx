@@ -448,52 +448,54 @@ export function CurriculumTreePage() {
 
           {/* Export & Flow Controls */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'inline-flex', padding: '3px', backgroundColor: 'var(--color-canvas)', borderRadius: '9999px', border: '1px solid var(--color-hairline)' }}>
-              <button
-                type="button"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
-                  borderRadius: '9999px',
-                  border: 'none',
-                  backgroundColor: viewMode === 'flowchart' ? 'var(--color-paper)' : 'transparent',
-                  color: viewMode === 'flowchart' ? 'var(--color-ink)' : 'var(--color-mid-gray)',
-                  fontWeight: viewMode === 'flowchart' ? 600 : 400,
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                  boxShadow: viewMode === 'flowchart' ? '0 1px 3px rgba(0, 0, 0, 0.08)' : 'none',
-                  transition: 'all 150ms'
-                }}
-                onClick={() => setViewMode('flowchart')}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>account_tree</span>
-                <span>Sơ đồ luồng (Flowchart)</span>
-              </button>
-              <button
-                type="button"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
-                  borderRadius: '9999px',
-                  border: 'none',
-                  backgroundColor: viewMode === 'table' ? 'var(--color-paper)' : 'transparent',
-                  color: viewMode === 'table' ? 'var(--color-ink)' : 'var(--color-mid-gray)',
-                  fontWeight: viewMode === 'table' ? 600 : 400,
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                  boxShadow: viewMode === 'table' ? '0 1px 3px rgba(0, 0, 0, 0.08)' : 'none',
-                  transition: 'all 150ms'
-                }}
-                onClick={() => setViewMode('table')}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>view_list</span>
-                <span>Dạng bảng</span>
-              </button>
-            </div>
+            {treeData?.transcriptStatus !== 'NONE' && (
+              <div style={{ display: 'inline-flex', padding: '3px', backgroundColor: 'var(--color-canvas)', borderRadius: '9999px', border: '1px solid var(--color-hairline)' }}>
+                <button
+                  type="button"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 14px',
+                    borderRadius: '9999px',
+                    border: 'none',
+                    backgroundColor: viewMode === 'flowchart' ? 'var(--color-paper)' : 'transparent',
+                    color: viewMode === 'flowchart' ? 'var(--color-ink)' : 'var(--color-mid-gray)',
+                    fontWeight: viewMode === 'flowchart' ? 600 : 400,
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                    boxShadow: viewMode === 'flowchart' ? '0 1px 3px rgba(0, 0, 0, 0.08)' : 'none',
+                    transition: 'all 150ms'
+                  }}
+                  onClick={() => setViewMode('flowchart')}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>account_tree</span>
+                  <span>Sơ đồ luồng (Flowchart)</span>
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 14px',
+                    borderRadius: '9999px',
+                    border: 'none',
+                    backgroundColor: viewMode === 'table' ? 'var(--color-paper)' : 'transparent',
+                    color: viewMode === 'table' ? 'var(--color-ink)' : 'var(--color-mid-gray)',
+                    fontWeight: viewMode === 'table' ? 600 : 400,
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                    boxShadow: viewMode === 'table' ? '0 1px 3px rgba(0, 0, 0, 0.08)' : 'none',
+                    transition: 'all 150ms'
+                  }}
+                  onClick={() => setViewMode('table')}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>view_list</span>
+                  <span>Dạng bảng</span>
+                </button>
+              </div>
+            )}
 
             <button
               type="button"
@@ -505,57 +507,111 @@ export function CurriculumTreePage() {
               <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>refresh</span>
             </button>
 
-            <button
-              type="button"
-              className="haui-pill-btn-dark"
-              onClick={() => window.print()}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>download</span>
-              <span>Xuất lộ trình PDF</span>
-            </button>
+            {treeData?.transcriptStatus !== 'NONE' && (
+              <button
+                type="button"
+                className="haui-pill-btn-dark"
+                onClick={() => window.print()}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>download</span>
+                <span>Xuất lộ trình PDF</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Thông báo trạng thái trắng khi chưa nạp bảng điểm */}
-      {treeData?.transcriptStatus === 'NONE' && (
+      {/* Khi acc trắng (chưa có bảng điểm): Ẩn toàn bộ cây môn học & hiển thị hộp Empty State */}
+      {treeData?.transcriptStatus === 'NONE' ? (
         <div
           style={{
-            padding: '16px 20px',
-            borderRadius: '16px',
-            backgroundColor: '#fffbeb',
-            border: '1.5px solid #fef3c7',
+            backgroundColor: 'var(--color-paper)',
+            borderRadius: '24px',
+            border: '1px solid var(--color-hairline)',
+            padding: '48px 32px',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '12px'
+            textAlign: 'center',
+            gap: '20px',
+            maxWidth: '720px',
+            margin: '24px auto 0',
+            width: '100%',
+            boxSizing: 'border-box'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#d97706' }}>info</span>
-            <div>
-              <strong style={{ fontSize: '14px', color: '#92400e' }}>Chưa có dữ liệu bảng điểm cá nhân</strong>
-              <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#b45309' }}>
-                Cây môn học đang ở trạng thái chưa nạp điểm (UNKNOWN). Toàn bộ các học phần sẽ tự động đổi màu trạng thái (Đã đạt, Đang học, Đủ điều kiện, Khóa) ngay sau khi bạn nạp bảng điểm.
-              </p>
+          <div
+            style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--color-surface-alt)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--color-ink)'
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '32px' }}>account_tree</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--color-ink)', margin: 0 }}>
+              Chưa có dữ liệu bảng điểm để hiển thị cây môn học
+            </h2>
+            <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-mid-gray)', lineHeight: 1.6, maxWidth: '580px' }}>
+              Mỗi ngành đào tạo tại Đại học Công nghiệp Hà Nội có khung chương trình và sơ đồ tiên quyết riêng biệt. Vui lòng nạp bảng điểm cá nhân để hệ thống đồng bộ chính xác cây môn học và trạng thái các học phần theo đúng ngành của bạn.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button
+              type="button"
+              className="haui-pill-btn-dark"
+              onClick={() => navigate('/transcript')}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>upload_file</span>
+              <span>Nạp bảng điểm e-HaUI ngay</span>
+            </button>
+            <button
+              type="button"
+              className="haui-pill-btn-canvas"
+              onClick={() => navigate('/profile')}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>person</span>
+              <span>Cập nhật hồ sơ sinh viên</span>
+            </button>
+          </div>
+
+          <div
+            style={{
+              marginTop: '12px',
+              padding: '16px 20px',
+              borderRadius: '16px',
+              backgroundColor: 'var(--color-surface-alt)',
+              border: '1px solid var(--color-hairline)',
+              width: '100%',
+              boxSizing: 'border-box',
+              textAlign: 'left'
+            }}
+          >
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-ink)', display: 'block', marginBottom: '8px' }}>
+              Quy trình đồng bộ lộ trình môn học:
+            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: 'var(--color-mid-gray)' }}>
+              <span>1. Tải file bảng điểm PDF / Excel xuất từ cổng <strong>sv.haui.edu.vn</strong></span>
+              <span>2. Tải lên tại mục <strong>Nhập bảng điểm</strong> và xác nhận danh sách môn</span>
+              <span>3. Sơ đồ cây môn học sẽ tự động nhận diện ngành và tô màu trực quan (Đã đạt, Đang học, Đủ điều kiện, Khóa)</span>
             </div>
           </div>
-          <button
-            type="button"
-            className="haui-pill-btn-dark"
-            onClick={() => navigate('/transcript')}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>upload_file</span>
-            <span>Nạp bảng điểm ngay</span>
-          </button>
         </div>
-      )}
-
-      {/* =========================================================================
-          SECTION 2: 4 FAST STATS COUNTER BADGES (Live Server Metrics)
-          ========================================================================= */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+      ) : (
+        <>
+          {/* =========================================================================
+              SECTION 2: 4 FAST STATS COUNTER BADGES (Live Server Metrics)
+              ========================================================================= */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
         {/* Thẻ 1: Đã hoàn thành */}
         <div style={{ backgroundColor: 'var(--color-paper)', padding: '16px 20px', borderRadius: '24px', border: '1px solid var(--color-hairline)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -753,7 +809,7 @@ export function CurriculumTreePage() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-ink)' }}>
-                    {treeData?.curriculumName || 'Sơ đồ mạng lưới học phần CTĐT'}
+                    {treeData?.curriculumName || 'Chương trình đào tạo'}
                   </span>
                   <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>
                     Tổng số {courses.length} học phần · Cập nhật từ hồ sơ {treeData?.dataRevision}
@@ -1212,6 +1268,8 @@ export function CurriculumTreePage() {
             striped
           />
         </div>
+      )}
+        </>
       )}
 
       {/* Modal Thẩm định Tiên Quyết Rule Engine */}

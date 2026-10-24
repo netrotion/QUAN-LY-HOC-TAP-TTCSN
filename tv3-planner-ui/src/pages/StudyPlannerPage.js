@@ -90,6 +90,25 @@ export function StudyPlannerPage({ api, ui } = {}) {
         // Bỏ qua lỗi kết nối ban đầu, giữ nguyên fixture/fallback
       });
     }
+
+    // Đồng bộ CPA & Tín chỉ tích lũy từ Tổng quan học tập
+    if (api && api.academic && typeof api.academic.getStatus === 'function') {
+      api.academic.getStatus().then((status) => {
+        if (status) {
+          if (status.accumulatedCredits !== undefined && status.accumulatedCredits !== null) {
+            plannerStore.plan.totalEarnedCredits = status.accumulatedCredits;
+            plannerStore.plan.remainingCredits = Math.max(
+              0,
+              (plannerStore.plan.totalRequiredCredits || 135) - status.accumulatedCredits
+            );
+          }
+          if (status.cpa !== undefined && status.cpa !== null) {
+            plannerStore.plan.currentCpa = status.cpa;
+          }
+          plannerStore.notify();
+        }
+      }).catch(() => {});
+    }
   }, [api]);
 
   // Lắng nghe custom event từ Chat / What-if nếu có

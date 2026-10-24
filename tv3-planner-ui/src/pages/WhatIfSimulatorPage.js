@@ -187,6 +187,16 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
+  const [academicStatus, setAcademicStatus] = useState(null);
+
+  // Đồng bộ trạng thái học vụ (CPA, tín chỉ) từ Tổng quan học tập
+  useEffect(() => {
+    if (api && api.academic && typeof api.academic.getStatus === 'function') {
+      api.academic.getStatus().then((st) => {
+        if (st) setAcademicStatus(st);
+      }).catch(() => {});
+    }
+  }, [api]);
 
   const showToast = useCallback((msg) => {
     setToastMessage(msg);
@@ -244,8 +254,12 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
             };
           } else {
             const sessionStudent = api?.getConfig?.()?.sessionStudent || null;
-            const currentCpa = sessionStudent?.cpa !== null && sessionStudent?.cpa !== undefined ? Number(sessionStudent.cpa) : 3.18;
-            const currentCredits = sessionStudent?.accumulatedCredits !== null && sessionStudent?.accumulatedCredits !== undefined ? Number(sessionStudent.accumulatedCredits) : 108;
+            const currentCpa = academicStatus?.cpa !== null && academicStatus?.cpa !== undefined
+              ? Number(academicStatus.cpa)
+              : (sessionStudent?.cpa !== null && sessionStudent?.cpa !== undefined ? Number(sessionStudent.cpa) : 3.18);
+            const currentCredits = academicStatus?.accumulatedCredits !== null && academicStatus?.accumulatedCredits !== undefined
+              ? Number(academicStatus.accumulatedCredits)
+              : (sessionStudent?.accumulatedCredits !== null && sessionStudent?.accumulatedCredits !== undefined ? Number(sessionStudent.accumulatedCredits) : 108);
 
             const totalCredits = coursesToSimulate.reduce((sum, c) => sum + Number(c.credits || 0), 0);
             const totalPoints = coursesToSimulate.reduce(
@@ -387,9 +401,13 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
             };
           } else {
             const sessionStudent = api?.getConfig?.()?.sessionStudent || null;
-            const currentCpa = sessionStudent?.cpa !== null && sessionStudent?.cpa !== undefined ? Number(sessionStudent.cpa) : 3.18;
-            const earnedCredits = sessionStudent?.accumulatedCredits !== null && sessionStudent?.accumulatedCredits !== undefined ? Number(sessionStudent.accumulatedCredits) : 108;
-            const totalCredits = sessionStudent?.totalCreditsRequired || 145;
+            const currentCpa = academicStatus?.cpa !== null && academicStatus?.cpa !== undefined
+              ? Number(academicStatus.cpa)
+              : (sessionStudent?.cpa !== null && sessionStudent?.cpa !== undefined ? Number(sessionStudent.cpa) : 3.18);
+            const earnedCredits = academicStatus?.accumulatedCredits !== null && academicStatus?.accumulatedCredits !== undefined
+              ? Number(academicStatus.accumulatedCredits)
+              : (sessionStudent?.accumulatedCredits !== null && sessionStudent?.accumulatedCredits !== undefined ? Number(sessionStudent.accumulatedCredits) : 108);
+            const totalCredits = academicStatus?.totalCreditsRequired || sessionStudent?.totalCreditsRequired || 135;
             const remainingCredits = Math.max(1, totalCredits - earnedCredits);
 
             const requiredTotalPoints = targetCpa * totalCredits - currentCpa * earnedCredits;
@@ -612,8 +630,13 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
     }
   }, [onNavigate, showToast]);
 
+  const sessionStudent = api?.getConfig?.()?.sessionStudent;
+
   // Giá trị KPI
-  const currentCpaVal = result?.currentCpa ?? 3.18;
+  const fallbackCpa = academicStatus?.cpa !== null && academicStatus?.cpa !== undefined
+    ? Number(academicStatus.cpa)
+    : (sessionStudent?.cpa !== null && sessionStudent?.cpa !== undefined ? Number(sessionStudent.cpa) : 3.18);
+  const currentCpaVal = result?.currentCpa ?? fallbackCpa;
   const simulatedCpaVal = result?.projectedCpa ?? result?.projectedNewCpa ?? 3.31;
   const deltaVal = typeof result?.cpaDelta === 'number'
     ? result.cpaDelta
@@ -623,7 +646,6 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
   const targetCpaVal = parseFloat(targetCpaInput) || 3.20;
   const targetDiff = +(simulatedCpaVal - targetCpaVal).toFixed(2);
 
-  const sessionStudent = api?.getConfig?.()?.sessionStudent;
   const isStudentEmpty = Boolean(
     sessionStudent &&
     (sessionStudent.hasTranscript === false || sessionStudent.id === 'empty' || sessionStudent.studentId === 'std-2026-empty')

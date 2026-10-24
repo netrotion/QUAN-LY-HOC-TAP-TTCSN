@@ -6,7 +6,8 @@ import {
   SAMPLE_K16_PROFILE,
   HAUI_MEMBER_SCHOOLS,
   HAUI_FACULTIES_AND_MAJORS,
-  getMajorsForFaculty
+  getMajorsForFaculty,
+  HAUI_COHORTS
 } from './pages/StudentProfilePage.js';
 import { PlanHistoryModal } from './components/PlanHistoryModal.js';
 import { CurriculumTreeModal } from './components/CurriculumTreeModal.js';
@@ -90,7 +91,8 @@ export {
   SAMPLE_K16_PROFILE,
   HAUI_MEMBER_SCHOOLS,
   HAUI_FACULTIES_AND_MAJORS,
-  getMajorsForFaculty
+  getMajorsForFaculty,
+  HAUI_COHORTS
 };
 
 export const PACKAGE_INFO = {

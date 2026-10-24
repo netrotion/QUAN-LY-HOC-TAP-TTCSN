@@ -840,15 +840,15 @@ export function AcademicProgressPage() {
                 <div style={{ padding: '14px 16px', borderRadius: '16px', backgroundColor: 'var(--color-surface-alt)', border: '1px solid var(--color-hairline)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-ink)' }}>Tín chỉ Chuyên ngành bắt buộc (KTPM)</span>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-ink)' }}>Tín chỉ Chuyên ngành bắt buộc</span>
                       <span style={{ padding: '2px 8px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', fontSize: '11px', color: isProjected ? 'var(--color-ink)' : 'var(--color-ember)', fontWeight: 600 }}>
                         {isProjected ? '38 / 38 TC' : '25 / 38 TC'}
                       </span>
                     </div>
                     <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>
                       {isProjected
-                        ? 'Đã bao gồm hoàn thành bù đắp gỡ nợ MATH1002 và các môn chuyên ngành bắt buộc'
-                        : 'Còn thiếu 13 TC (Kiến trúc PM, Đảm bảo chất lượng PM, DevOps) — Dự kiến Kỳ 7 &amp; 8'}
+                        ? 'Đã bao gồm hoàn thành bù đắp các học phần chuyên ngành còn thiếu'
+                        : 'Còn thiếu 13 TC học phần chuyên ngành — Dự kiến các học kỳ tiếp theo'}
                     </span>
                   </div>
                   {isProjected ? (

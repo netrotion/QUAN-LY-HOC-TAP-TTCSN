@@ -20,6 +20,17 @@ import { MOCK_TRANSCRIPT_INGESTION_PREVIEW } from '../services/mockFixtures.js';
  * - Bảng dữ liệu bảng điểm với chức năng Inline Edit (sửa điểm 10, điểm chữ, tín chỉ)
  * - Thẻ chỉ số tổng kết CPA & Tín chỉ tích lũy trước khi xác nhận cập nhật
  */
+const LETTER_GRADE_TO_SCORE4 = Object.freeze({
+  A: 4.0,
+  'B+': 3.5,
+  B: 3.0,
+  'C+': 2.5,
+  C: 2.0,
+  'D+': 1.5,
+  D: 1.0,
+  F: 0.0
+});
+
 export function TranscriptImportPage() {
   const navigate = useNavigate();
   const initialSnapshot = getAcademicSnapshot();
@@ -52,8 +63,8 @@ export function TranscriptImportPage() {
     courseName: '',
     credits: 3,
     semester: 6,
-    letterGrade: 'B',
-    score10: 7.5
+    score4: 3.0,
+    letterGrade: 'B'
   });
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -160,15 +171,20 @@ export function TranscriptImportPage() {
     if (e) e.preventDefault();
     if (!newCourseForm.courseCode || !newCourseForm.courseName) return;
 
-    const converted = convertScore10ToGrade(newCourseForm.score10);
+    const letter = newCourseForm.letterGrade || 'B';
+    const score4Val = Number(newCourseForm.score4 !== undefined && newCourseForm.score4 !== '' ? newCourseForm.score4 : (LETTER_GRADE_TO_SCORE4[letter] ?? 3.0));
+    const isFailed = letter === 'F' || score4Val === 0;
+
     const newRecord = {
       courseCode: newCourseForm.courseCode.toUpperCase().trim(),
       courseName: newCourseForm.courseName.trim(),
       credits: Number(newCourseForm.credits || 3),
       semester: Number(newCourseForm.semester || 6),
-      score10: Number(newCourseForm.score10),
-      letterGrade: newCourseForm.letterGrade || converted.letterGrade || 'B',
-      status: converted.status || 'PASSED'
+      score4: score4Val,
+      gradePoint: score4Val,
+      score10: Number((score4Val * 2.5).toFixed(1)),
+      letterGrade: letter,
+      status: isFailed ? 'FAILED' : 'PASSED'
     };
 
     setDraftRecords((prev) => [...prev, newRecord]);
@@ -177,8 +193,8 @@ export function TranscriptImportPage() {
       courseName: '',
       credits: 3,
       semester: 6,
-      letterGrade: 'B',
-      score10: 7.5
+      score4: 3.0,
+      letterGrade: 'B'
     });
     setShowAddModal(false);
   };
@@ -467,7 +483,7 @@ export function TranscriptImportPage() {
             </div>
 
             {/* Phương thức 2: Nhập thủ công & Điều chỉnh (5 cols) */}
-            <div className="haui-stat-card" style={{ gridColumn: 'span 5', justifyContent: 'space-between' }}>
+            <div className="haui-stat-card" style={{ gridColumn: 'span 5', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)' }} />
@@ -475,60 +491,84 @@ export function TranscriptImportPage() {
                     Phương thức 2: Nhập thủ công &amp; Điều chỉnh
                   </h2>
                 </div>
-                <p style={{ margin: '0 0 16px', fontSize: '14px', color: 'var(--color-mid-gray)' }}>
+                <p style={{ margin: '0 0 16px', fontSize: '14px', color: 'var(--color-mid-gray)', lineHeight: 1.5 }}>
                   Bổ sung môn học chuyển đổi điểm, môn học lại hoặc chỉnh sửa trực tiếp thông tin điểm từng học phần.
                 </p>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
-                  <button
-                    type="button"
-                    className="haui-pill-btn-dark"
-                    style={{ justifyContent: 'center' }}
-                    onClick={() => setShowAddModal(true)}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add</span>
-                    <span>+ Thêm môn học</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="haui-pill-btn-canvas"
-                    style={{ justifyContent: 'center' }}
-                    onClick={() => {
-                      if (draftRecords.length === 0) {
-                        handleUseDemoFile();
-                      } else {
-                        setCurrentStep(2);
-                      }
-                    }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>tune</span>
-                    <span>Quy đổi thang điểm</span>
-                  </button>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>Xem nhanh theo giai đoạn đào tạo:</span>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {['ALL', '1', '2', '3', '4', '5', '6'].map((sem) => (
-                      <span
-                        key={sem}
-                        style={{
-                          padding: '4px 12px',
-                          borderRadius: '9999px',
-                          fontSize: '12px',
-                          fontWeight: selectedSemesterFilter === sem ? 500 : 400,
-                          backgroundColor: selectedSemesterFilter === sem ? 'var(--color-ink)' : 'var(--color-canvas)',
-                          color: selectedSemesterFilter === sem ? 'var(--color-paper)' : 'var(--color-mid-gray)',
-                          cursor: 'pointer'
-                        }}
-                        onClick={() => setSelectedSemesterFilter(sem)}
-                      >
-                        {sem === 'ALL' ? 'Tất cả kỳ' : `Học kỳ ${sem}`}
+                {/* Hộp thông tin tính năng nhập liệu */}
+                <div
+                  style={{
+                    borderRadius: '18px',
+                    padding: '16px 18px',
+                    backgroundColor: 'var(--color-surface-alt)',
+                    border: '1px solid var(--color-hairline)',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '9999px',
+                        backgroundColor: 'var(--color-paper)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--color-ink)',
+                        flexShrink: 0,
+                        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+                      }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>edit_note</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-ink)' }}>
+                        Nhập điểm &amp; học phần cá nhân
                       </span>
-                    ))}
+                      <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>
+                        Hỗ trợ thang điểm 10, điểm chữ và tự động quy đổi hệ 4
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--color-mid-gray)', paddingTop: '4px', borderTop: '1px solid var(--color-hairline)' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-ink)' }}>task_alt</span>
+                    <span>Đang có <strong>{draftRecords.length}</strong> học phần trong danh sách xem trước</span>
                   </div>
                 </div>
+              </div>
+
+              {/* Các nút thao tác */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <button
+                  type="button"
+                  className="haui-pill-btn-dark"
+                  style={{ justifyContent: 'center' }}
+                  onClick={() => setShowAddModal(true)}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add</span>
+                  <span>Thêm môn học</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="haui-pill-btn-canvas"
+                  style={{ justifyContent: 'center' }}
+                  onClick={() => {
+                    if (draftRecords.length === 0) {
+                      handleUseDemoFile();
+                    } else {
+                      setCurrentStep(2);
+                    }
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>tune</span>
+                  <span>Quy đổi thang điểm</span>
+                </button>
               </div>
             </div>
           </div>
@@ -920,81 +960,236 @@ export function TranscriptImportPage() {
       {/* Modal Thêm Môn Học Mới */}
       {showAddModal && (
         <div className="haui-modal-backdrop" onClick={() => setShowAddModal(false)}>
-          <div className="haui-modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="haui-modal-header">
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Thêm Môn Học Mới</h3>
-              <button className="haui-modal-close" onClick={() => setShowAddModal(false)}>
+          <div
+            className="haui-modal-box"
+            style={{
+              maxWidth: '520px',
+              borderRadius: '24px',
+              border: '1px solid var(--color-hairline)',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.12)',
+              overflow: 'hidden'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="haui-modal-header"
+              style={{
+                padding: '20px 24px',
+                borderBottom: '1px solid var(--color-hairline)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '9999px',
+                    backgroundColor: 'var(--color-canvas)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--color-ink)'
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>post_add</span>
+                </div>
+                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 600, color: 'var(--color-ink)' }}>
+                  Thêm Môn Học Mới
+                </h3>
+              </div>
+              <button
+                type="button"
+                className="haui-modal-close"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '9999px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  border: 'none',
+                  backgroundColor: 'var(--color-canvas)',
+                  color: 'var(--color-mid-gray)',
+                  fontSize: '16px'
+                }}
+                onClick={() => setShowAddModal(false)}
+              >
                 ✕
               </button>
             </div>
+
             <form onSubmit={handleAddCourseSubmit}>
-              <div className="haui-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div className="haui-modal-body" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
-                  <label className="haui-form-label">Mã học phần:</label>
+                  <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)', marginBottom: '6px', display: 'block' }}>
+                    Mã môn học:
+                  </label>
                   <input
                     type="text"
-                    className="haui-input"
                     value={newCourseForm.courseCode}
                     placeholder="VD: IT6001, MATH1002"
                     onChange={(e) => setNewCourseForm({ ...newCourseForm, courseCode: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 16px',
+                      borderRadius: '12px',
+                      backgroundColor: 'var(--color-surface-alt, #f5f5f5)',
+                      border: '1px solid var(--color-hairline, #e5e5e5)',
+                      color: 'var(--color-ink, #0a0a0a)',
+                      fontSize: '14px',
+                      boxSizing: 'border-box',
+                      outline: 'none'
+                    }}
                     required
                   />
                 </div>
+
                 <div>
-                  <label className="haui-form-label">Tên học phần:</label>
+                  <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)', marginBottom: '6px', display: 'block' }}>
+                    Tên môn học:
+                  </label>
                   <input
                     type="text"
-                    className="haui-input"
                     value={newCourseForm.courseName}
                     placeholder="VD: Cấu trúc dữ liệu và giải thuật"
                     onChange={(e) => setNewCourseForm({ ...newCourseForm, courseName: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 16px',
+                      borderRadius: '12px',
+                      backgroundColor: 'var(--color-surface-alt, #f5f5f5)',
+                      border: '1px solid var(--color-hairline, #e5e5e5)',
+                      color: 'var(--color-ink, #0a0a0a)',
+                      fontSize: '14px',
+                      boxSizing: 'border-box',
+                      outline: 'none'
+                    }}
                     required
                   />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                   <div>
-                    <label className="haui-form-label">Số tín chỉ:</label>
+                    <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)', marginBottom: '6px', display: 'block' }}>
+                      Số tín chỉ:
+                    </label>
                     <input
                       type="number"
                       min="1"
                       max="12"
-                      className="haui-input"
                       value={newCourseForm.credits}
                       onChange={(e) => setNewCourseForm({ ...newCourseForm, credits: Number(e.target.value) })}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '12px',
+                        backgroundColor: 'var(--color-surface-alt, #f5f5f5)',
+                        border: '1px solid var(--color-hairline, #e5e5e5)',
+                        color: 'var(--color-ink, #0a0a0a)',
+                        fontSize: '14px',
+                        boxSizing: 'border-box',
+                        outline: 'none'
+                      }}
                     />
                   </div>
+
                   <div>
-                    <label className="haui-form-label">Điểm 10:</label>
+                    <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)', marginBottom: '6px', display: 'block' }}>
+                      Điểm (thang 4):
+                    </label>
                     <input
                       type="number"
                       step="0.1"
                       min="0"
-                      max="10"
-                      className="haui-input"
-                      value={newCourseForm.score10}
-                      onChange={(e) => setNewCourseForm({ ...newCourseForm, score10: Number(e.target.value) })}
+                      max="4.0"
+                      value={newCourseForm.score4}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const num = Number(val);
+                        let matchingLetter = newCourseForm.letterGrade;
+                        if (!isNaN(num) && val !== '') {
+                          if (num >= 3.8) matchingLetter = 'A';
+                          else if (num >= 3.3) matchingLetter = 'B+';
+                          else if (num >= 2.8) matchingLetter = 'B';
+                          else if (num >= 2.3) matchingLetter = 'C+';
+                          else if (num >= 1.8) matchingLetter = 'C';
+                          else if (num >= 1.3) matchingLetter = 'D+';
+                          else if (num >= 0.8) matchingLetter = 'D';
+                          else matchingLetter = 'F';
+                        }
+                        setNewCourseForm({ ...newCourseForm, score4: val, letterGrade: matchingLetter });
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '12px',
+                        backgroundColor: 'var(--color-surface-alt, #f5f5f5)',
+                        border: '1px solid var(--color-hairline, #e5e5e5)',
+                        color: 'var(--color-ink, #0a0a0a)',
+                        fontSize: '14px',
+                        boxSizing: 'border-box',
+                        outline: 'none'
+                      }}
                     />
                   </div>
+
                   <div>
-                    <label className="haui-form-label">Điểm chữ:</label>
+                    <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)', marginBottom: '6px', display: 'block' }}>
+                      Điểm chữ:
+                    </label>
                     <select
-                      className="haui-input"
                       value={newCourseForm.letterGrade}
-                      onChange={(e) => setNewCourseForm({ ...newCourseForm, letterGrade: e.target.value })}
+                      onChange={(e) => {
+                        const letter = e.target.value;
+                        const mappedScore4 = LETTER_GRADE_TO_SCORE4[letter] ?? 3.0;
+                        setNewCourseForm({
+                          ...newCourseForm,
+                          letterGrade: letter,
+                          score4: mappedScore4
+                        });
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '12px',
+                        backgroundColor: 'var(--color-surface-alt, #f5f5f5)',
+                        border: '1px solid var(--color-hairline, #e5e5e5)',
+                        color: 'var(--color-ink, #0a0a0a)',
+                        fontSize: '14px',
+                        boxSizing: 'border-box',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
                     >
-                      <option value="A">A (4.0)</option>
-                      <option value="B+">B+ (3.5)</option>
-                      <option value="B">B (3.0)</option>
-                      <option value="C+">C+ (2.5)</option>
-                      <option value="C">C (2.0)</option>
-                      <option value="D+">D+ (1.5)</option>
-                      <option value="D">D (1.0)</option>
-                      <option value="F">F (0.0)</option>
+                      <option value="A">A</option>
+                      <option value="B+">B+</option>
+                      <option value="B">B</option>
+                      <option value="C+">C+</option>
+                      <option value="C">C</option>
+                      <option value="D+">D+</option>
+                      <option value="D">D</option>
+                      <option value="F">F</option>
                     </select>
                   </div>
                 </div>
               </div>
-              <div className="haui-modal-footer">
+
+              <div
+                className="haui-modal-footer"
+                style={{
+                  padding: '16px 24px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  borderTop: '1px solid var(--color-hairline, #e5e5e5)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  gap: '10px'
+                }}
+              >
                 <button
                   type="button"
                   className="haui-pill-btn-canvas"
@@ -1006,7 +1201,8 @@ export function TranscriptImportPage() {
                   type="submit"
                   className="haui-pill-btn-dark"
                 >
-                  Thêm Vào Bảng Điểm
+                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add</span>
+                  <span>Thêm Vào Bảng Điểm</span>
                 </button>
               </div>
             </form>

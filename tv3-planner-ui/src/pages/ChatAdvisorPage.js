@@ -442,6 +442,22 @@ export function ChatAdvisorPage({
     }
   }, [api]);
 
+  // Đồng bộ CPA & Tín chỉ từ Tổng quan học tập
+  useEffect(() => {
+    if (api && api.academic && typeof api.academic.getStatus === 'function') {
+      api.academic.getStatus().then((status) => {
+        if (status) {
+          setStudent((prev) => ({
+            ...(prev || {}),
+            cpa: status.cpa ?? prev?.cpa,
+            accumulatedCredits: status.accumulatedCredits ?? prev?.accumulatedCredits,
+            totalCreditsRequired: status.totalCreditsRequired ?? prev?.totalCreditsRequired
+          }));
+        }
+      }).catch(() => {});
+    }
+  }, [api]);
+
   useEffect(() => {
     const handleTranscriptUpdated = (e) => {
       if (e?.detail?.snapshot?.student) {

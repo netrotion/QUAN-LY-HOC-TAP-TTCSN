@@ -727,7 +727,7 @@ class MockAcademicServiceState {
 
     return {
       curriculumId: 'curriculum-ktpm-haui-2024',
-      curriculumName: 'Chương trình đào tạo Kỹ sư Kỹ thuật phần mềm - HaUI (Khóa 2024)',
+      curriculumName: 'Chương trình đào tạo',
       majorCode: student.majorCode,
       majorName: student.majorName,
       faculty: student.faculty,
@@ -843,10 +843,40 @@ class MockAcademicServiceState {
       };
     });
 
+    // Bổ sung các môn học sinh viên đã/đang học từ bảng điểm (nếu có môn ngoài khung cơ sở)
+    if (hasTranscript) {
+      const baseCodes = new Set(CURRICULUM_COURSES_BASE.map((c) => c.courseCode));
+      for (const [code, att] of allAttemptsMap.entries()) {
+        if (!baseCodes.has(code)) {
+          const isFailed = att.letterGrade === 'F' || att.status === 'FAILED';
+          const isInProgress = att.status === 'IN_PROGRESS' || (att.letterGrade === null && (att.score10 === null || att.score10 === undefined));
+          const attStatus = isFailed ? 'FAILED' : (isInProgress ? 'IN_PROGRESS' : 'PASSED');
+          courses.push({
+            courseCode: code,
+            courseName: att.courseName || code,
+            credits: Number(att.credits || 3),
+            knowledgeBlock: 'III. KIẾN THỨC CHUYÊN NGÀNH',
+            suggestedSemester: Number(att.semesterCode?.split('_')?.[1] || 6),
+            mandatory: true,
+            status: attStatus,
+            nodeColor: attStatus === 'PASSED' ? '#16a34a' : (attStatus === 'IN_PROGRESS' ? '#0a0a0a' : '#e7000b'),
+            prerequisiteCourseCodes: [],
+            priorCourseCodes: [],
+            corequisiteCourseCodes: [],
+            letterGrade: att.letterGrade || (isFailed ? 'F' : null),
+            semesterCode: att.semesterCode,
+            eligible: true,
+            missingPrerequisites: [],
+            warnings: []
+          });
+        }
+      }
+    }
+
     return {
       studentId: student.studentId,
       curriculumId: 'curriculum-ktpm-haui-2024',
-      curriculumName: 'Chương trình đào tạo Kỹ sư Kỹ thuật phần mềm - HaUI (Khóa 2024)',
+      curriculumName: 'Chương trình đào tạo',
       majorCode: student.majorCode,
       totalCreditsRequired: student.totalCreditsRequired || 150,
       transcriptStatus,

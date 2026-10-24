@@ -11,7 +11,8 @@ import {
   StudentProfilePage,
   generateMockChatResponse,
   QUICK_PROMPTS_MAN_2,
-  SAMPLE_K16_PROFILE
+  SAMPLE_K16_PROFILE,
+  HAUI_COHORTS
 } from '../src/index.js';
 
 beforeEach(() => {
@@ -220,6 +221,46 @@ test('Task 3.12 - 7: StudentProfilePage hiển thị đầy đủ thông tin hà
   assert.equal(SAMPLE_K16_PROFILE.studentCode, '2020601234');
   assert.equal(SAMPLE_K16_PROFILE.cpa, 3.18);
   assert.equal(SAMPLE_K16_PROFILE.accumulatedCredits, 108);
+});
+
+test('Task 3.12 - 7b: StudentProfilePage hiển thị Cơ sở đào tạo ĐH Công nghiệp Hà Nội và dropdown Khóa học K16-K21', () => {
+  assert.deepEqual(HAUI_COHORTS, [
+    'K16 (2021 - 2025)',
+    'K17 (2022 - 2026)',
+    'K18 (2023 - 2027)',
+    'K19 (2024 - 2028)',
+    'K20 (2025 - 2029)',
+    'K21 (2026 - 2030)'
+  ]);
+
+  const element = React.createElement(StudentProfilePage, {
+    ui: mockUi,
+    initialProfileData: SAMPLE_K16_PROFILE
+  });
+
+  const html = ReactDOMServer.renderToStaticMarkup(element);
+  assert.ok(html.includes('value="Đại học Công nghiệp Hà Nội"'), 'Ô cơ sở đào tạo phải hiển thị Đại học Công nghiệp Hà Nội');
+  assert.ok(html.includes('K16 (2021 - 2025)'), 'Dropdown khóa học phải chứa K16');
+  assert.ok(html.includes('K21 (2026 - 2030)'), 'Dropdown khóa học phải chứa K21');
+});
+
+test('Task 3.12 - 7c: StudentProfilePage không để null cho CPA/GPA/Tín chỉ, đổi null thành 0 và đồng bộ', () => {
+  const profileWithNulls = {
+    ...SAMPLE_K16_PROFILE,
+    cpa: null,
+    gpa: null,
+    accumulatedCredits: null
+  };
+
+  const element = React.createElement(StudentProfilePage, {
+    ui: mockUi,
+    initialProfileData: profileWithNulls
+  });
+
+  const html = ReactDOMServer.renderToStaticMarkup(element);
+  assert.ok(!html.includes('>null'), 'Không được hiển thị null trên giao diện');
+  assert.ok(!html.includes('null / 4.00'), 'Không được hiển thị null / 4.00 trên giao diện');
+  assert.ok(html.includes('>0 </strong>'), 'CPA hoặc GPA null phải hiển thị 0');
 });
 
 test('Task 3.12 - 8: StudentProfilePage xử lý đúng trạng thái Chưa có hồ sơ (Empty State) và liên kết TV2', () => {
