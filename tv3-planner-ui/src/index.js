@@ -1,7 +1,13 @@
 import { StudyPlannerPage } from './pages/StudyPlannerPage.js';
 import { ChatAdvisorPage, generateMockChatResponse, QUICK_PROMPTS_MAN_2 } from './pages/ChatAdvisorPage.js';
 import { WhatIfSimulatorPage, WHAT_IF_TOOLS } from './pages/WhatIfSimulatorPage.js';
-import { StudentProfilePage, SAMPLE_K16_PROFILE, HAUI_MEMBER_SCHOOLS } from './pages/StudentProfilePage.js';
+import {
+  StudentProfilePage,
+  SAMPLE_K16_PROFILE,
+  HAUI_MEMBER_SCHOOLS,
+  HAUI_FACULTIES_AND_MAJORS,
+  getMajorsForFaculty
+} from './pages/StudentProfilePage.js';
 import { PlanHistoryModal } from './components/PlanHistoryModal.js';
 import { CurriculumTreeModal } from './components/CurriculumTreeModal.js';
 import {
@@ -82,7 +88,9 @@ export {
   generateMockChatResponse,
   QUICK_PROMPTS_MAN_2,
   SAMPLE_K16_PROFILE,
-  HAUI_MEMBER_SCHOOLS
+  HAUI_MEMBER_SCHOOLS,
+  HAUI_FACULTIES_AND_MAJORS,
+  getMajorsForFaculty
 };
 
 export const PACKAGE_INFO = {

@@ -8,10 +8,10 @@ export const SAMPLE_K16_PROFILE = Object.freeze({
   studentId: '2020601234',
   fullName: 'Nguyễn Văn An',
   studentCode: '2020601234',
-  majorName: 'Kỹ thuật phần mềm (ĐH chính quy)',
+  majorName: 'Kỹ thuật phần mềm',
   majorCode: '7480103',
   cohort: 'Khóa 16 (2020 - 2024)',
-  faculty: 'Đại học Công nghiệp Hà Nội (HaUI)',
+  faculty: 'Trường Công nghệ Thông tin & Truyền thông',
   advisorClass: 'KTPM01-K16',
   cpa: 3.18,
   gpa: 3.32,
@@ -22,15 +22,128 @@ export const SAMPLE_K16_PROFILE = Object.freeze({
 });
 
 /**
- * Danh sách 5 Trường thuộc Đại học Công nghiệp Hà Nội (HaUI)
+ * Danh mục các Trường / Khoa và Danh sách Chuyên ngành / Chương trình đào tạo chuẩn Đại học Công nghiệp Hà Nội (HaUI)
  */
-export const HAUI_MEMBER_SCHOOLS = Object.freeze([
-  'Trường Ngoại ngữ - Du lịch',
-  'Trường Công nghệ thông tin và Truyền thông',
-  'Trường Điện - Điện tử',
-  'Trường Kinh tế',
-  'Trường Cơ khí - Ô tô'
-]);
+export const HAUI_FACULTIES_AND_MAJORS = Object.freeze({
+  'Trường Ngoại ngữ - Du lịch': [
+    'Ngôn ngữ Anh',
+    'Ngôn ngữ Trung Quốc',
+    'Ngôn ngữ Trung Quốc (2+2)',
+    'Trung Quốc học',
+    'Ngôn ngữ Nhật',
+    'Ngôn ngữ Hàn Quốc',
+    'Ngôn ngữ học',
+    'Du lịch',
+    'Quản trị dịch vụ du lịch và lữ hành',
+    'Quản trị khách sạn',
+    'Quản trị nhà hàng và dịch vụ ăn uống',
+    'Du lịch (CTĐT bằng tiếng Anh)',
+    'Quản trị dịch vụ du lịch và lữ hành (CTĐT bằng tiếng Anh)',
+    'Quản trị khách sạn (CTĐT bằng tiếng Anh)',
+    'Quản trị nhà hàng và dịch vụ ăn uống (CTĐT bằng tiếng Anh)'
+  ],
+  'Trường Cơ khí - Ô tô': [
+    'Công nghệ kỹ thuật cơ khí',
+    'Công nghệ kỹ thuật cơ khí (CTĐT bằng tiếng Anh)',
+    'Công nghệ kỹ thuật khuôn mẫu',
+    'Thiết kế cơ khí và kiểu dáng công nghiệp',
+    'Công nghệ kỹ thuật cơ điện tử',
+    'Công nghệ kỹ thuật cơ điện tử (CTĐT bằng tiếng Anh)',
+    'Công nghệ kỹ thuật cơ điện tử ô tô',
+    'Robot và trí tuệ nhân tạo',
+    'Công nghệ kỹ thuật ô tô',
+    'Công nghệ kỹ thuật ô tô (CTĐT bằng tiếng Anh)',
+    'Kỹ thuật ô tô và năng lượng mới',
+    'Kỹ thuật cơ khí động lực',
+    'Kỹ thuật hệ thống công nghiệp'
+  ],
+  'Trường Kinh tế': [
+    'Kiểm toán',
+    'Kế toán',
+    'Kế toán (CTĐT bằng tiếng Anh)',
+    'Marketing',
+    'Marketing (CTĐT bằng tiếng Anh)',
+    'Logistic và quản lý chuỗi cung ứng',
+    'Phân tích dữ liệu kinh doanh',
+    'Quản trị kinh doanh',
+    'Quản trị kinh doanh (CTĐT bằng tiếng Anh)',
+    'Quản trị nhân lực',
+    'Quản trị văn phòng',
+    'Tài chính ngân hàng',
+    'Tài chính ngân hàng (CTĐT bằng tiếng Anh)',
+    'Kinh tế đầu tư'
+  ],
+  'Trường Công nghệ Thông tin & Truyền thông': [
+    'Khoa học máy tính',
+    'Khoa học máy tính (CTĐT bằng tiếng Anh)',
+    'Trí tuệ nhân tạo',
+    'Mạng máy tính và truyền thông dữ liệu',
+    'Kỹ thuật phần mềm',
+    'Hệ thống thông tin',
+    'Công nghệ thông tin',
+    'Công nghệ thông tin (CTĐT bằng tiếng Anh)',
+    'Công nghệ đa phương tiện',
+    'An toàn thông tin'
+  ],
+  'Trường Điện - Điện tử': [
+    'CNKT Điện tử - Viễn thông (CTĐT bằng tiếng Anh)',
+    'CNKT Điện tử - Viễn thông',
+    'CNKT Điện tử y sinh',
+    'CNKT Điện - Điện tử (CTĐT bằng tiếng Anh)',
+    'CNKT Điện - Điện tử',
+    'CNKT Điều khiển và tự động hóa',
+    'CNKT Máy tính',
+    'CNKT Nhiệt',
+    'KT sản xuất thông minh',
+    'Năng lượng tái tạo',
+    'Vi mạch bán dẫn'
+  ],
+  'Khoa Công nghệ Hóa': [
+    'Công nghệ kỹ thuật hóa học',
+    'Công nghệ vật liệu',
+    'Công nghệ kỹ thuật môi trường',
+    'Công nghệ thực phẩm',
+    'Hóa dược'
+  ],
+  'Khoa CN May & TKTT': [
+    'Công nghệ dệt, may',
+    'Thiết kế Thời trang',
+    'Công nghệ vật liệu dệt, may'
+  ]
+});
+
+/**
+ * Danh sách Đơn vị / Trường / Khoa thuộc Đại học Công nghiệp Hà Nội (HaUI)
+ */
+export const HAUI_MEMBER_SCHOOLS = Object.freeze(Object.keys(HAUI_FACULTIES_AND_MAJORS));
+
+/**
+ * Tra cứu danh sách ngành/chương trình đào tạo theo Khoa/Trường
+ * @param {string} facultyName
+ * @returns {string[]}
+ */
+export function getMajorsForFaculty(facultyName) {
+  if (!facultyName) return HAUI_FACULTIES_AND_MAJORS['Trường Công nghệ Thông tin & Truyền thông'];
+  if (HAUI_FACULTIES_AND_MAJORS[facultyName]) return HAUI_FACULTIES_AND_MAJORS[facultyName];
+
+  const norm = facultyName.toLowerCase();
+  for (const [key, majors] of Object.entries(HAUI_FACULTIES_AND_MAJORS)) {
+    const keyNorm = key.toLowerCase();
+    if (
+      norm === keyNorm ||
+      (norm.includes('thông tin') && keyNorm.includes('thông tin')) ||
+      (norm.includes('cơ khí') && keyNorm.includes('cơ khí')) ||
+      (norm.includes('kinh tế') && keyNorm.includes('kinh tế')) ||
+      (norm.includes('điện') && keyNorm.includes('điện')) ||
+      (norm.includes('ngoại ngữ') && keyNorm.includes('ngoại ngữ')) ||
+      (norm.includes('hóa') && keyNorm.includes('hóa')) ||
+      (norm.includes('may') && keyNorm.includes('may'))
+    ) {
+      return majors;
+    }
+  }
+  return HAUI_FACULTIES_AND_MAJORS['Trường Công nghệ Thông tin & Truyền thông'];
+}
 
 /**
  * Màn hình Hồ sơ Sinh viên & Tùy chọn Học tập cá nhân (Student Profile) — TV3
@@ -85,7 +198,7 @@ export function StudentProfilePage({
   const [phoneInput, setPhoneInput] = useState('0987 654 321');
   const [addressInput, setAddressInput] = useState('Bắc Ninh, Việt Nam');
   const [advisorClassInput, setAdvisorClassInput] = useState('');
-  const [facultyInput, setFacultyInput] = useState(() => HAUI_MEMBER_SCHOOLS[1]);
+  const [facultyInput, setFacultyInput] = useState(() => HAUI_MEMBER_SCHOOLS.find((s) => s.includes('Thông tin')) || HAUI_MEMBER_SCHOOLS[0]);
   const [majorNameInput, setMajorNameInput] = useState('Kỹ thuật phần mềm');
   const [cohortInput, setCohortInput] = useState('Khóa 17 (2022 - 2026)');
 
@@ -100,6 +213,16 @@ export function StudentProfilePage({
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3500);
   }, []);
+
+  // Xử lý khi người dùng đổi Trường thuộc HaUI / Khoa đào tạo -> cập nhật danh sách ngành tương ứng
+  const handleFacultyChange = useCallback((e) => {
+    const newFaculty = e.target.value;
+    setFacultyInput(newFaculty);
+    const majors = getMajorsForFaculty(newFaculty);
+    if (majors && majors.length > 0 && !majors.includes(majorNameInput)) {
+      setMajorNameInput(majors[0]);
+    }
+  }, [majorNameInput]);
 
   // Điều hướng an toàn
   const navigateTo = useCallback((path) => {
@@ -1281,7 +1404,7 @@ export function StudentProfilePage({
                 'select',
                 {
                   value: facultyInput,
-                  onChange: (e) => setFacultyInput(e.target.value),
+                  onChange: handleFacultyChange,
                   style: {
                     width: '100%',
                     padding: '8px 16px',
@@ -1299,25 +1422,36 @@ export function StudentProfilePage({
               )
             ),
 
-            // Ngành đào tạo
+            // Chuyên ngành / Ngành đào tạo (chọn theo Khoa/Trường)
             React.createElement(
               'div',
               { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
-              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Ngành đào tạo'),
-              React.createElement('input', {
-                type: 'text',
-                value: majorNameInput,
-                onChange: (e) => setMajorNameInput(e.target.value),
-                style: {
-                  width: '100%',
-                  padding: '8px 16px',
-                  borderRadius: '9999px',
-                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
-                  border: '1px solid var(--color-hairline, #e5e5e5)',
-                  color: 'var(--color-ink, #0a0a0a)',
-                  boxSizing: 'border-box'
-                }
-              })
+              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Chuyên ngành / Ngành đào tạo'),
+              React.createElement(
+                'select',
+                {
+                  value: majorNameInput,
+                  onChange: (e) => setMajorNameInput(e.target.value),
+                  style: {
+                    width: '100%',
+                    padding: '8px 16px',
+                    borderRadius: '9999px',
+                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                    border: '1px solid var(--color-hairline, #e5e5e5)',
+                    color: 'var(--color-ink, #0a0a0a)',
+                    boxSizing: 'border-box',
+                    cursor: 'pointer'
+                  }
+                },
+                (() => {
+                  const majors = getMajorsForFaculty(facultyInput);
+                  const inList = majors.includes(majorNameInput);
+                  const options = inList || !majorNameInput ? majors : [majorNameInput, ...majors];
+                  return options.map((m) =>
+                    React.createElement('option', { key: m, value: m }, m)
+                  );
+                })()
+              )
             ),
 
             // Khóa học
