@@ -585,11 +585,13 @@ export const AUDIT_REMEDIATION_PROPOSAL = Object.freeze({
 /**
  * Xây dựng payload đề xuất bù đắp từ kết quả Kiểm toán tốt nghiệp hiện hành (F23-006)
  * @param {Object} [auditData]
+ * @param {Object} [options]
  */
-export function buildAuditRemediationProposal(auditData = null) {
+export function buildAuditRemediationProposal(auditData = null, options = {}) {
   const effectiveAudit = auditData || getDynamicGraduationAudit();
   const totalRequired = effectiveAudit?.totalCreditsRequired ?? 135;
   const totalEarned = effectiveAudit?.accumulatedCredits ?? 112;
+  const planId = options?.planId || auditData?.planId;
 
   return {
     ...JSON.parse(JSON.stringify(AUDIT_REMEDIATION_PROPOSAL)),
@@ -597,7 +599,8 @@ export function buildAuditRemediationProposal(auditData = null) {
     missingCredits: Math.max(0, totalRequired - totalEarned),
     pendingActions: Array.isArray(effectiveAudit?.pendingActions)
       ? JSON.parse(JSON.stringify(effectiveAudit.pendingActions))
-      : []
+      : [],
+    ...(planId ? { planId } : {})
   };
 }
 
@@ -605,9 +608,10 @@ export function buildAuditRemediationProposal(auditData = null) {
  * Phát đề xuất lộ trình bù đắp từ Audit sang Planner qua cả plannerStore và CustomEvent('haui:planner:proposal') (F23-006)
  * @param {Object} [auditData]
  * @param {Object} [plannerStoreTarget]
+ * @param {Object} [options]
  */
-export function dispatchAuditRemediationProposal(auditData = null, plannerStoreTarget = null) {
-  const proposal = buildAuditRemediationProposal(auditData);
+export function dispatchAuditRemediationProposal(auditData = null, plannerStoreTarget = null, options = {}) {
+  const proposal = buildAuditRemediationProposal(auditData, options);
 
   if (plannerStoreTarget && typeof plannerStoreTarget.setIncomingProposal === 'function') {
     plannerStoreTarget.setIncomingProposal(proposal, proposal.sourceName);

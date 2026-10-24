@@ -27,10 +27,21 @@ export function AcademicProgressPage() {
   const navigate = useNavigate();
   const [reportMode, setReportMode] = useState('actual'); // 'actual' | 'projected'
   const [auditData, setAuditData] = useState(null);
+  const [plannerState, setPlannerState] = useState(() => (plannerStore?.getState ? plannerStore.getState() : {}));
   const [loading, setLoading] = useState(true);
   const [isRechecking, setIsRechecking] = useState(false);
   const [error, setError] = useState(null);
   const [isRemediationModalOpen, setIsRemediationModalOpen] = useState(false);
+  const [snapshotTimestamp] = useState(() =>
+    new Date().toLocaleString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
+  );
 
   const fetchAudit = useCallback(async (mode = reportMode) => {
     setLoading(true);
@@ -53,20 +64,47 @@ export function AcademicProgressPage() {
     const unsubApi = api.subscribe(() => {
       fetchAudit(reportMode);
     });
+    const unsubPlanner = plannerStore?.subscribe
+      ? plannerStore.subscribe((newState) => {
+          setPlannerState(newState);
+          fetchAudit(reportMode);
+        })
+      : () => {};
+
     const handleTranscriptUpdated = () => {
       fetchAudit(reportMode);
     };
+
+    const handlePlanUpdated = () => {
+      if (plannerStore?.getState) {
+        setPlannerState(plannerStore.getState());
+      }
+      fetchAudit(reportMode);
+    };
+
     if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
       window.addEventListener('haui:academic:transcript-updated', handleTranscriptUpdated);
+      window.addEventListener('haui:planner:plan-updated', handlePlanUpdated);
+      window.addEventListener('haui:planner:plan-activated', handlePlanUpdated);
     }
     return () => {
       unsubStore();
       unsubApi();
+      unsubPlanner();
       if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
         window.removeEventListener('haui:academic:transcript-updated', handleTranscriptUpdated);
+        window.removeEventListener('haui:planner:plan-updated', handlePlanUpdated);
+        window.removeEventListener('haui:planner:plan-activated', handlePlanUpdated);
       }
     };
   }, [fetchAudit, reportMode]);
+
+  const activePlanId =
+    plannerState?.plan?.status === 'ACTIVE'
+      ? plannerState.plan.planId
+      : (plannerState?.history?.find((h) => h.status === 'ACTIVE')?.planId ||
+         plannerState?.plan?.planId ||
+         '');
 
   const handleSwitchReportMode = (newMode) => {
     setReportMode(newMode);
@@ -272,14 +310,18 @@ export function AcademicProgressPage() {
               ? '⚠️ BÁO CÁO MÔ PHỎNG DỰ KIẾN (SIMULATION ONLY) — KHÔNG THAY THẾ BẢNG ĐIỂM CHÍNH THỨC'
               : '● BÁO CÁO THỰC TẾ — PHẢN ÁNH DỮ LIỆU CHÍNH THỨC e-HaUI'}
           </div>
-          <div style={{ fontSize: '11px', color: '#555' }}>
+          <div style={{ fontSize: '11px', color: '#555', lineHeight: 1.5 }}>
             Mã văn bản: {isProjected ? 'AUDIT-SIM-' : 'AUDIT-ACTUAL-'}
             {Date.now().toString().slice(-6)} &bull; Phân loại:{' '}
             <strong>{isProjected ? 'DỰ KIẾN / SIMULATION' : 'CHÍNH THỨC / THỰC TẾ'}</strong> &bull; Trạng thái: DEMO_UNVERIFIED
+            <br />
+            <span>Thời điểm xuất báo cáo: {snapshotTimestamp}</span> &bull;{' '}
+            <span>Quy chế: {auditData?.policyVersion || 'policy-haui-demo-2026@0.0.1-v0'}</span> &bull;{' '}
+            <span>Hồ sơ: {auditData?.dataRevision || 'REV-SERVER'}</span>
           </div>
         </div>
 
-        {/* Cảnh báo in ấn bắt buộc: TUYỆT ĐỐI KHÔNG ĐỂ LẪN DỰ KIẾN VỚI THỰC TẾ */}
+        {/* Cảnh báo in ấn bắt buộc: TUYỆT ĐỐI KHÔNG ĐỂ LẪN DỰ KIẾN VỚI THỰC TẾ & KHÔNG XÁC NHẬN THAY TRƯỜNG */}
         <div
           className={`haui-print-disclaimer ${isProjected ? 'haui-print-disclaimer--projected' : 'haui-print-disclaimer--actual'}`}
           style={{
@@ -295,8 +337,8 @@ export function AcademicProgressPage() {
           }}
         >
           {isProjected
-            ? '🚨 CẢNH BÁO BẢN IN DỰ KIẾN / MÔ PHỎNG: Báo cáo này được lập dựa trên kế hoạch bù đắp các học phần nợ và chứng chỉ còn thiếu. TUYỆT ĐỐI KHÔNG CÓ GIÁ TRỊ PHÁP LÝ XÉT TỐT NGHIỆP CHÍNH THỨC cho đến khi tất cả học phần và chứng chỉ được hoàn thành trên hệ thống điểm thực tế e-HaUI.'
-            : '⚠️ BÁO CÁO HỌC VỤ THỰC TẾ: Báo cáo này phản ánh trung thực kết quả học tập và tích lũy ghi nhận trên cổng e-HaUI tính đến thời điểm in. Sinh viên CHƯA ĐỦ ĐIỀU KIỆN TỐT NGHIỆP nếu còn tiêu chí thiếu hoặc cảnh báo đỏ.'}
+            ? '🚨 CẢNH BÁO BẢN IN DỰ KIẾN / MÔ PHỎNG: Báo cáo này được lập dựa trên kế hoạch bù đắp các học phần nợ và chứng chỉ còn thiếu. Trạng thái ứng dụng đánh giá tự động — Không xác nhận tốt nghiệp thay trường. TUYỆT ĐỐI KHÔNG CÓ GIÁ TRỊ PHÁP LÝ XÉT TỐT NGHIỆP CHÍNH THỨC cho đến khi tất cả học phần và chứng chỉ được hoàn thành trên hệ thống điểm thực tế e-HaUI. Quyết định công nhận tốt nghiệp chính thức thuộc thẩm quyền của Hội đồng xét tốt nghiệp Trường Đại học Công nghiệp Hà Nội.'
+            : '⚠️ BÁO CÁO HỌC VỤ THỰC TẾ: Báo cáo này phản ánh trung thực kết quả học tập và tích lũy ghi nhận trên cổng e-HaUI tính đến thời điểm in. Trạng thái ứng dụng đánh giá tự động — Không xác nhận tốt nghiệp thay trường. Sinh viên CHƯA ĐỦ ĐIỀU KIỆN TỐT NGHIỆP nếu còn tiêu chí thiếu hoặc cảnh báo đỏ. Quyết định công nhận tốt nghiệp chính thức thuộc thẩm quyền của Hội đồng xét tốt nghiệp Trường Đại học Công nghiệp Hà Nội.'}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px', marginBottom: '16px', padding: '10px 14px', backgroundColor: 'var(--color-bg-muted)', border: '1px solid var(--color-border)', borderRadius: '4px' }}>
@@ -521,6 +563,57 @@ export function AcademicProgressPage() {
             <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>build</span>
             <span>Lập kế hoạch bù đắp</span>
           </button>
+        </div>
+      </div>
+
+      {/* =========================================================================
+          SECTION 3: KHUYẾN CÁO PHÁP LÝ & QUY CHẾ ĐÀO TẠO HaUI
+          ========================================================================= */}
+      <div
+        className="haui-disclaimer-banner"
+        style={{
+          padding: '14px 18px',
+          borderRadius: 'var(--radius-cards)',
+          backgroundColor: isProjected ? '#fff1f2' : '#f0fdf4',
+          border: isProjected ? '1px solid #fecaca' : '1px solid #bbf7d0',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '12px',
+          boxShadow: '0 1px 4px rgba(0, 0, 0, 0.02)'
+        }}
+      >
+        <span
+          className="material-symbols-outlined"
+          style={{
+            fontSize: '22px',
+            color: isProjected ? '#b91c1c' : '#15803d',
+            marginTop: '1px',
+            flexShrink: 0
+          }}
+        >
+          {isProjected ? 'warning' : 'verified_user'}
+        </span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <strong
+            style={{
+              fontSize: '13px',
+              color: isProjected ? '#991b1b' : '#166534'
+            }}
+          >
+            {isProjected
+              ? 'Lưu ý: Báo cáo mô phỏng dự kiến (Kèm lộ trình bù đắp) — Chưa phải kết quả thực tế'
+              : 'Trạng thái ứng dụng đánh giá tự động — Không xác nhận tốt nghiệp thay trường'}
+          </strong>
+          <p
+            style={{
+              margin: 0,
+              fontSize: '12px',
+              lineHeight: 1.5,
+              color: isProjected ? '#7f1d1d' : '#14532d'
+            }}
+          >
+            Kết quả rà soát do hệ thống HaUI Advisor tự động đối chiếu dựa trên dữ liệu học vụ tại thời điểm rà soát (Quy chế: {auditData?.policyVersion || 'policy-haui-demo-2026@0.0.1-v0'}, Hồ sơ: {auditData?.dataRevision || 'REV-SERVER'}). Hệ thống hỗ trợ sinh viên theo dõi tiến độ và lập kế hoạch bù đắp, <strong>tuyệt đối không thay thế Quyết định công nhận tốt nghiệp chính thức của Hội đồng xét tốt nghiệp Trường Đại học Công nghiệp Hà Nội</strong>.
+          </p>
         </div>
       </div>
 
@@ -1355,6 +1448,22 @@ export function AcademicProgressPage() {
                   <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_forward</span>
                 </button>
 
+                {activePlanId && (
+                  <button
+                    type="button"
+                    className="haui-pill-btn-paper"
+                    style={{ width: '100%', justifyContent: 'space-between', padding: '10px 16px' }}
+                    onClick={() => navigate(`/planner?plan_id=${encodeURIComponent(activePlanId)}`)}
+                    title="Mở kế hoạch học tập đã lưu trên hệ thống"
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>folder_open</span>
+                      <span>Mở Kế hoạch Học tập Đã lưu ({activePlanId})</span>
+                    </span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>chevron_right</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   className="haui-pill-btn-canvas"
@@ -1435,7 +1544,7 @@ export function AcademicProgressPage() {
               variant="primary"
               size="sm"
               onClick={() => {
-                const proposal = buildAuditRemediationProposal(auditData);
+                const proposal = buildAuditRemediationProposal(auditData, { planId: activePlanId });
                 dispatchAuditRemediationProposal(auditData, plannerStore);
                 if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
                   window.dispatchEvent(
@@ -1449,7 +1558,7 @@ export function AcademicProgressPage() {
                   );
                 }
                 setIsRemediationModalOpen(false);
-                navigate('/planner');
+                navigate(activePlanId ? `/planner?plan_id=${encodeURIComponent(activePlanId)}` : '/planner');
               }}
             >
               Chuyển sang Màn hình 5 (Xác nhận Kế hoạch) &rarr;
