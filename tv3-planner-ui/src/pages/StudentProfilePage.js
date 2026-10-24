@@ -88,7 +88,6 @@ export function StudentProfilePage({
   const [facultyInput, setFacultyInput] = useState(() => HAUI_MEMBER_SCHOOLS[1]);
   const [majorNameInput, setMajorNameInput] = useState('Kỹ thuật phần mềm');
   const [cohortInput, setCohortInput] = useState('Khóa 17 (2022 - 2026)');
-  const [trackDirectionInput, setTrackDirectionInput] = useState('ktpm-httt');
 
   // Tùy chọn mục tiêu cá nhân
   const [targetCpa, setTargetCpa] = useState('3.20');
@@ -239,8 +238,7 @@ export function StudentProfilePage({
       cohort: cohortInput,
       targetCpa,
       graduationPace,
-      specialization,
-      trackDirection: trackDirectionInput
+      specialization
     };
 
     setProfileData(updated);
@@ -268,7 +266,7 @@ export function StudentProfilePage({
     }
 
     showToast(`Đã lưu thành công thông tin hồ sơ và mục tiêu học tập!`);
-  }, [profileData, fullNameInput, genderInput, dobInput, personalEmailInput, phoneInput, addressInput, advisorClassInput, facultyInput, majorNameInput, cohortInput, targetCpa, graduationPace, specialization, trackDirectionInput, api, showToast]);
+  }, [profileData, fullNameInput, genderInput, dobInput, personalEmailInput, phoneInput, addressInput, advisorClassInput, facultyInput, majorNameInput, cohortInput, targetCpa, graduationPace, specialization, api, showToast]);
 
   // Hủy thay đổi form
   const handleCancelChanges = useCallback(() => {
@@ -1364,39 +1362,10 @@ export function StudentProfilePage({
               })
             ),
 
-            // Chuyên ngành định hướng (span 2 cols)
-            React.createElement(
-              'div',
-              { style: { display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: '1 / -1' } },
-              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Định hướng chuyên sâu / Chuyên ngành hẹp'),
-              React.createElement(
-                'select',
-                {
-                  value: trackDirectionInput,
-                  onChange: (e) => setTrackDirectionInput(e.target.value),
-                  style: {
-                    width: '100%',
-                    padding: '8px 16px',
-                    borderRadius: '9999px',
-                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
-                    border: '1px solid var(--color-hairline, #e5e5e5)',
-                    color: 'var(--color-ink, #0a0a0a)',
-                    boxSizing: 'border-box',
-                    cursor: 'pointer'
-                  }
-                },
-                React.createElement('option', { value: 'ktpm-httt' }, 'Khối Kỹ thuật & Công nghệ (CNTT, Phần mềm, Điện, Điện tử, Cơ khí, Tự động hóa)'),
-                React.createElement('option', { value: 'kinh-te' }, 'Khối Kinh tế & Quản lý (Kế toán, QTKD, Tài chính ngân hàng, Logistics, Thương mại điện tử)'),
-                React.createElement('option', { value: 'ngon-ngu-dulich' }, 'Khối Ngôn ngữ & Du lịch (Ngôn ngữ Anh, Trung, Hàn, Nhật, Quản trị khách sạn)'),
-                React.createElement('option', { value: 'hoa-may-thietke' }, 'Khối Hóa chất, May mặc & Thiết kế (Công nghệ Hóa, Thực phẩm, Công nghệ May & Thời trang)')
-              ),
-              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Hệ thống hỗ trợ sinh viên tất cả các ngành của HaUI lập kế hoạch và phân bổ môn tự chọn')
-            ),
-
             // Chương trình đào tạo (CTĐT)
             React.createElement(
               'div',
-              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+              { style: { display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: '1 / -1' } },
               React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Chương trình đào tạo (CTĐT)'),
               React.createElement('input', {
                 readOnly: true,
@@ -1413,28 +1382,6 @@ export function StudentProfilePage({
                 }
               }),
               React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Khung kỹ sư định hướng ứng dụng POHE')
-            ),
-
-            // Cố vấn học tập chủ nhiệm
-            React.createElement(
-              'div',
-              { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
-              React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Cố vấn học tập chủ nhiệm'),
-              React.createElement('input', {
-                readOnly: true,
-                value: 'TS. Trần Văn Minh (minhtv@haui.edu.vn)',
-                style: {
-                  width: '100%',
-                  padding: '8px 16px',
-                  borderRadius: '9999px',
-                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
-                  border: '1px solid var(--color-hairline, #e5e5e5)',
-                  color: 'var(--color-mid-gray, #737373)',
-                  cursor: 'not-allowed',
-                  boxSizing: 'border-box'
-                }
-              }),
-              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Liên hệ đổi cố vấn qua Văn phòng Khoa/Viện quản lý sinh viên (Nhà A1)')
             )
           )
         ),
