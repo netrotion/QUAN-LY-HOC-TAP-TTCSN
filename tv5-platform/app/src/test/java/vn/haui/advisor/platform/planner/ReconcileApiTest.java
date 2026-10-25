@@ -82,7 +82,7 @@ class ReconcileApiTest {
         List<PlannedSemesterItem> plan = List.of(
                 semester("2025_1", course("LP6011", 2, "B"), course("BS6001", 3, "A"), course("IT6126", 4, "B"),
                         course("BS6018", 2, "B")),
-                semester("2025_2", course("IT6015", 3, "B"), course("DC6006", 2, "B"), course("BS6019", 2, "B"),
+                semester("2025_2", course("IT6016", 3, "B"), course("DC6006", 2, "B"), course("BS6019", 2, "B"),
                         course("BS6020", 2, "B"), course("BS6021", 2, "B")));
         String planId = activePlan(sv, rev1, plan);
         JsonNode before = api().call(get(plan(planId)), sv, 200, "StudyPlanDetailResponse");
@@ -129,7 +129,8 @@ class ReconcileApiTest {
         String intruder = "sv-reconcile-intruder";
         String revision = accounts.ensure(owner);
         String intruderRevision = accounts.ensure(intruder);
-        List<PlannedSemesterItem> plan = List.of(semester("2025_1", course("LP6011", 2, "B"), course("BS6001", 3, "A"),
+        // Chưa có bảng điểm: không xếp LP6011 vì thiếu học phần học trước LP6010
+        List<PlannedSemesterItem> plan = List.of(semester("2025_1", course("BS6019", 2, "B"), course("BS6001", 3, "A"),
                 course("IT6126", 4, "B"), course("BS6018", 2, "B")));
 
         String draft = api().call(post("/api/v1/planner/plans"), owner, 200, "SaveStudyPlanResponse", save(revision, plan))

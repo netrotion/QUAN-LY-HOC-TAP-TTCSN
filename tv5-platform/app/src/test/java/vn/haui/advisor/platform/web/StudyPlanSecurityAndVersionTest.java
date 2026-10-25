@@ -15,10 +15,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import vn.haui.advisor.platform.support.AcademicToolsTestConfig;
 import vn.haui.advisor.contracts.dto.*;
+import vn.haui.advisor.platform.support.PlanCourses;
 import vn.haui.advisor.platform.support.TestAccounts;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.Matchers.*;
@@ -285,16 +285,9 @@ public class StudyPlanSecurityAndVersionTest {
         return List.of(semester("2026_1", 14), semester("2026_2", 14));
     }
 
-    /** Học kỳ có tổng tín chỉ mong muốn, gồm các môn 3 TC và một môn 2 TC nếu lẻ. */
+    /** Học kỳ có tổng tín chỉ mong muốn, gồm học phần thật của CTĐT (xem {@link PlanCourses}). */
     private static PlannedSemesterItem semester(String code, int credits) {
-        List<PlannedCourseItem> courses = new ArrayList<>();
-        int remaining = credits;
-        int index = 1;
-        while (remaining > 0) {
-            int c = remaining % 3 == 2 ? 2 : Math.min(3, remaining);
-            courses.add(new PlannedCourseItem("IT9" + code.replace("_", "") + index++, "Học phần thử nghiệm", c, "B", "test"));
-            remaining -= c;
-        }
-        return new PlannedSemesterItem(code, "Học kỳ " + code, courses, credits, new BigDecimal("3.20"));
+        return new PlannedSemesterItem(code, "Học kỳ " + code, PlanCourses.forSemester(code, credits, "test"), credits,
+                new BigDecimal("3.20"));
     }
 }

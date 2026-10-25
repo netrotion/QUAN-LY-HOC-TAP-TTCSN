@@ -22,6 +22,7 @@ import vn.haui.advisor.contracts.ports.ConversationStore;
 import vn.haui.advisor.platform.support.AcademicToolsTestConfig;
 import vn.haui.advisor.platform.support.AcademicToolsTestConfig.ControllableAcademicFacade;
 import vn.haui.advisor.platform.support.AcademicToolsTestConfig.MutablePolicyVersion;
+import vn.haui.advisor.platform.support.PlanCourses;
 import vn.haui.advisor.platform.support.StudentApi;
 import vn.haui.advisor.platform.support.TestAccounts;
 
@@ -302,7 +303,7 @@ class PlanPersistenceTest {
                 new RestoreStudyPlanRequest("Bản khôi phục"));
         assertThat(restored.get("status").asText()).isEqualTo("DRAFT");
         assertThat(restored.get("sourcePlanId").asText()).isEqualTo(active);
-        assertThat(restored.get("semesters").toString()).contains("IT6015");
+        assertThat(restored.get("semesters").toString()).contains(validSemester().getCourses().get(0).getCourseCode());
     }
 
     @Test
@@ -435,10 +436,9 @@ class PlanPersistenceTest {
                 semesters, actions);
     }
 
-    /** Học kỳ 14 tín chỉ, trong khoảng tín chỉ quy chế cho phép. */
+    /** Học kỳ 14 tín chỉ, trong khoảng tín chỉ quy chế cho phép, gồm học phần thật của CTĐT (xem {@link PlanCourses}). */
     private static PlannedSemesterItem validSemester() {
-        return semester("2026_1", course("IT6015", 3), course("IT9BASE1", 3), course("IT9BASE2", 3), course("IT9BASE3", 3),
-                course("IT9BASE4", 2));
+        return new PlannedSemesterItem("2026_1", "Học kỳ 2026_1", PlanCourses.forSemester("2026_1", 14, "Theo CTĐT"), null, null);
     }
 
     private static PlannedSemesterItem semester(String code, PlannedCourseItem... courses) {

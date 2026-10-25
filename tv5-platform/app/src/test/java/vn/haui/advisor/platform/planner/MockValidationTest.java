@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import vn.haui.advisor.contracts.dto.*;
+import vn.haui.advisor.platform.support.PlanCourses;
 import vn.haui.advisor.platform.support.StudentApi;
 import vn.haui.advisor.platform.support.TestAccounts;
 
@@ -45,11 +46,7 @@ class MockValidationTest {
         String sv = "sv-mock-validation";
         String revision = accounts.ensure(sv);
         List<PlannedSemesterItem> semesters = List.of(new PlannedSemesterItem("2026_1", "Học kỳ 2026_1",
-                List.of(new PlannedCourseItem("IT6015", "Học phần IT6015", 3, "B", null),
-                        new PlannedCourseItem("IT9MOCK1", "Học phần thử 1", 3, "B", null),
-                        new PlannedCourseItem("IT9MOCK2", "Học phần thử 2", 3, "B", null),
-                        new PlannedCourseItem("IT9MOCK3", "Học phần thử 3", 3, "B", null),
-                        new PlannedCourseItem("IT9MOCK4", "Học phần thử 4", 2, "B", null)), null, null));
+                PlanCourses.forSemester("2026_1", 14, null), null, null));
         String planId = api.call(post("/api/v1/planner/plans"), sv, 200, "SaveStudyPlanResponse",
                 new SaveStudyPlanRequest(null, "Kế hoạch thử", null, revision, new BigDecimal("3.0"), "2028_1", 20,
                         semesters, List.of())).get("planId").asText();

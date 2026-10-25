@@ -66,9 +66,7 @@ class HttpContractConformanceTest {
     void plannerFlowWithFixtureRequests() throws Exception {
         expect(get("/api/v1/planner/plans"), null, 200, "StudyPlanListResponse");
 
-        ObjectNode save = (ObjectNode) ContractTestSupport.readExample("study-plan-save-request.sample.json");
-        save.putNull("planId");
-        save.putNull("planVersion");
+        ObjectNode save = validatableSaveRequest();
         JsonNode saved = expect(post("/api/v1/planner/plans"), save, 200, "SaveStudyPlanResponse");
         String planId = saved.get("planId").asText();
         int planVersion = saved.get("planVersion").asInt();
@@ -137,9 +135,7 @@ class HttpContractConformanceTest {
         }
 
         // Đối chiếu cần kế hoạch ACTIVE của sinh viên demo: lưu, thẩm định, kích hoạt bằng request fixture
-        ObjectNode save = (ObjectNode) ContractTestSupport.readExample("study-plan-save-request.sample.json");
-        save.putNull("planId");
-        save.putNull("planVersion");
+        ObjectNode save = validatableSaveRequest();
         save.put("dataRevision", revision);
         String planId = expect(post("/api/v1/planner/plans"), save, 200, "SaveStudyPlanResponse").get("planId").asText();
         expect(post("/api/v1/planner/validate"), objectMapper.createObjectNode().put("planId", planId).put("planVersion", 1), 200,
@@ -278,6 +274,26 @@ class HttpContractConformanceTest {
         expect(get("/api/v1/advisor/conversations/conv-contract-1"), null, 200, "ConversationRecord");
         JsonNode missing = expect(get("/api/v1/advisor/conversations/conv-khong-ton-tai"), null, 404, "ApiErrorResponse");
         assertThat(missing.get("code").asText()).isEqualTo("CONVERSATION_NOT_FOUND");
+    }
+
+    /**
+     * Request fixture lưu kế hoạch mới của sinh viên demo, qua được thẩm định của TV4: thay IT6039 (học phần học trước
+     * IT6018, IT6027 không có trong CTĐT nên không bao giờ đạt) bằng IT6010, môn có học phần học trước BS6001, IT6015
+     * sinh viên demo đã học.
+     */
+    private static ObjectNode validatableSaveRequest() throws Exception {
+        ObjectNode save = (ObjectNode) ContractTestSupport.readExample("study-plan-save-request.sample.json");
+        save.putNull("planId");
+        save.putNull("planVersion");
+        for (JsonNode semester : save.get("semesters")) {
+            for (JsonNode course : semester.get("courses")) {
+                if ("IT6039".equals(course.get("courseCode").asText())) {
+                    ((ObjectNode) course).put("courseCode", "IT6010").put("courseName", "Đồ họa máy tính")
+                            .put("rationale", "Đã học BS6001 và IT6015 (học phần học trước)");
+                }
+            }
+        }
+        return save;
     }
 
     private JsonNode expect(MockHttpServletRequestBuilder request, JsonNode body, int status, String schema) throws Exception {

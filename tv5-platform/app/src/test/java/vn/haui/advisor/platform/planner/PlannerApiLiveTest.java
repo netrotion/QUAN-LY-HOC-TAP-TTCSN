@@ -1,5 +1,6 @@
 package vn.haui.advisor.platform.planner;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -22,6 +23,7 @@ import vn.haui.advisor.platform.academic.AcademicEngineSources;
 import vn.haui.advisor.platform.support.AcademicToolsTestConfig;
 import vn.haui.advisor.platform.support.AcademicToolsTestConfig.ControllableAcademicFacade;
 import vn.haui.advisor.platform.support.AcademicToolsTestConfig.MutablePolicyVersion;
+import vn.haui.advisor.platform.support.PlanCourses;
 import vn.haui.advisor.platform.support.StudentApi;
 import vn.haui.advisor.platform.support.StudentRecords;
 import vn.haui.advisor.platform.support.TestAccounts;
@@ -142,15 +144,12 @@ class PlannerApiLiveTest {
         assertThat(validated.get("dataRevision").asText()).isEqualTo(revision);
         assertThat(validated.get("policyVersion").asText()).isEqualTo(AcademicToolsTestConfig.POLICY_V1);
 
-        List<PlannedSemesterItem> reordered = new ArrayList<>(edited);
-        reordered.add(new PlannedSemesterItem("2026_1", "Học kỳ 1 năm 2026-2027",
-                List.of(new PlannedCourseItem("IT6126", "Kiến trúc máy tính", 4, "B", "Thêm theo nguyện vọng"),
-                        new PlannedCourseItem("BS6001", "Đại số tuyến tính", 3, "B", null),
-                        new PlannedCourseItem("LP6011", "Kinh tế chính trị Mác-Lênin", 2, "B", null),
-                        new PlannedCourseItem("IT9LIVE01", "Học phần tự chọn", 3, "B", null)), null, null));
+        // Sửa tiếp về đúng phương án planner tool (thêm lại học phần vừa bỏ; không xếp trùng môn đã có trong phương án)
+        List<PlannedSemesterItem> revised = objectMapper.convertValue(proposal.get("semesters"),
+                new TypeReference<List<PlannedSemesterItem>>() { });
         JsonNode resaved = api().call(post("/api/v1/planner/plans"), sv, 200, "SaveStudyPlanResponse",
                 new SaveStudyPlanRequest(planId, "Phương án từ planner tool", 1, revision, new BigDecimal("3.20"), "2028_1", 18,
-                        reordered, List.of()));
+                        revised, List.of()));
         assertThat(resaved.get("planVersion").asInt()).isEqualTo(2);
         assertThat(resaved.get("status").asText()).isEqualTo("DRAFT");
 
@@ -177,7 +176,7 @@ class PlannerApiLiveTest {
         assertThat(active.get("policyVersion").asText()).isEqualTo(AcademicToolsTestConfig.POLICY_V1);
         assertThat(active.get("validatedAt").isTextual()).isTrue();
         assertThat(active.get("semesters").findValuesAsText("semesterCode"))
-                .containsExactlyElementsOf(reordered.stream().map(PlannedSemesterItem::getSemesterCode).toList());
+                .containsExactlyElementsOf(revised.stream().map(PlannedSemesterItem::getSemesterCode).toList());
         assertThat(api().call(get("/api/v1/planner/plans"), sv, 200, "StudyPlanListResponse").get("plans").get(0)
                 .get("status").asText()).isEqualTo("ACTIVE");
         assertThat(rows("SELECT count(*) FROM study_plans WHERE student_id = :id AND status = 'ACTIVE'", sv)).isEqualTo(1);
@@ -457,16 +456,8 @@ class PlannerApiLiveTest {
                 "2028_1", 20, semesters, List.of());
     }
 
-    /** Học kỳ có tổng tín chỉ mong muốn, gồm các môn 3 TC và một môn 2 TC nếu lẻ (mã ngoài CTĐT). */
+    /** Học kỳ có tổng tín chỉ mong muốn, gồm học phần thật của CTĐT (xem {@link PlanCourses}). */
     private static PlannedSemesterItem semester(String code, int credits) {
-        List<PlannedCourseItem> courses = new ArrayList<>();
-        int remaining = credits;
-        int index = 1;
-        while (remaining > 0) {
-            int c = remaining % 3 == 2 ? 2 : Math.min(3, remaining);
-            courses.add(new PlannedCourseItem("IT9L" + code.replace("_", "") + index++, "Học phần thử nghiệm", c, "B", null));
-            remaining -= c;
-        }
-        return new PlannedSemesterItem(code, "Học kỳ " + code, courses, null, null);
+        return new PlannedSemesterItem(code, "Học kỳ " + code, PlanCourses.forSemester(code, credits, null), null, null);
     }
 }
