@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { plannerStore, PLAN_STATUSES } from '../services/plannerStore.js';
 import * as plannerApi from '../services/plannerApiService.js';
+import { Select } from '../components/Select.js';
 
 const h = React.createElement;
 
@@ -662,11 +663,11 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
             padding: '48px 24px',
             textAlign: 'center',
             backgroundColor: 'var(--color-paper, #ffffff)',
-            borderRadius: '24px',
+            borderRadius: 'var(--heroui-radius-xl, 24px)',
             border: '1px solid var(--color-hairline, #e5e5e5)',
             margin: '24px auto',
             maxWidth: '640px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+            boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04))',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -800,11 +801,11 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
       'div',
       {
         style: {
-          borderRadius: '24px',
+          borderRadius: 'var(--heroui-radius-xl, 24px)',
           backgroundColor: 'var(--color-paper, #ffffff)',
           padding: '16px 20px',
           border: '1px solid var(--color-hairline, #e5e5e5)',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+          boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04))',
           display: 'flex',
           alignItems: 'flex-start',
           gap: '14px'
@@ -867,7 +868,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
       // KPI 1: CPA Thực tế
       h(
         'div',
-        { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', padding: '20px', border: '1px solid var(--color-hairline)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '14px' } },
+        { style: { backgroundColor: 'var(--color-paper)', borderRadius: 'var(--heroui-radius-xl, 24px)', padding: '20px', border: '1px solid var(--color-hairline)', boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0,0,0,0.04))', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '14px' } },
         h(
           'div',
           { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
@@ -903,7 +904,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
           style: {
             backgroundColor: 'var(--color-ink, #0a0a0a)',
             color: 'var(--color-paper, #ffffff)',
-            borderRadius: '24px',
+            borderRadius: 'var(--heroui-radius-xl, 24px)',
             padding: '20px',
             boxShadow: '0 4px 16px rgba(0, 0, 0, 0.16)',
             display: 'flex',
@@ -946,7 +947,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
       // KPI 3: Mục tiêu đặt ra
       h(
         'div',
-        { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', padding: '20px', border: '1px solid var(--color-hairline)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '14px' } },
+        { style: { backgroundColor: 'var(--color-paper)', borderRadius: 'var(--heroui-radius-xl, 24px)', padding: '20px', border: '1px solid var(--color-hairline)', boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0,0,0,0.04))', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '14px' } },
         h(
           'div',
           { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
@@ -981,7 +982,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
       // KPI 4: Tổng tín chỉ tính toán
       h(
         'div',
-        { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', padding: '20px', border: '1px solid var(--color-hairline)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '14px' } },
+        { style: { backgroundColor: 'var(--color-paper)', borderRadius: 'var(--heroui-radius-xl, 24px)', padding: '20px', border: '1px solid var(--color-hairline)', boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0,0,0,0.04))', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '14px' } },
         h(
           'div',
           { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
@@ -1054,7 +1055,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
         // Parameter Settings Card
         h(
           'div',
-          { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' } },
+          { style: { backgroundColor: 'var(--color-paper)', borderRadius: 'var(--heroui-radius-xl, 24px)', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0,0,0,0.04))', display: 'flex', flexDirection: 'column', gap: '16px' } },
           h(
             'div',
             { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid var(--color-hairline)' } },
@@ -1152,7 +1153,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
         activeTool === 'grades' || activeTool === 'accelerate'
           ? h(
               'div',
-              { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' } },
+              { style: { backgroundColor: 'var(--color-paper)', borderRadius: 'var(--heroui-radius-xl, 24px)', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0,0,0,0.04))', display: 'flex', flexDirection: 'column', gap: '16px' } },
               h(
                 'div',
                 { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid var(--color-hairline)' } },
@@ -1205,21 +1206,11 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
                           'td',
                           { style: { padding: '12px 14px' } },
                           h(
-                            'select',
+                            Select,
                             {
                               value: c.expectedGrade,
                               onChange: (e) => handleGradeChange(c.courseCode, e.target.value),
-                              style: {
-                                padding: '4px 10px',
-                                borderRadius: '9999px',
-                                backgroundColor: 'var(--color-surface-alt)',
-                                border: '1px solid var(--color-hairline)',
-                                fontSize: '12px',
-                                fontWeight: 600,
-                                color: 'var(--color-ink)',
-                                outline: 'none',
-                                cursor: 'pointer'
-                              }
+                              style: { width: '130px' }
                             },
                             Object.keys(GRADE_POINTS_MAP).map((g) =>
                               h('option', { key: g, value: g }, `Điểm ${g} (${GRADE_POINTS_MAP[g].toFixed(1)})`)
@@ -1270,7 +1261,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
         activeTool === 'retake'
           ? h(
               'div',
-              { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' } },
+              { style: { backgroundColor: 'var(--color-paper)', borderRadius: 'var(--heroui-radius-xl, 24px)', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0,0,0,0.04))', display: 'flex', flexDirection: 'column', gap: '16px' } },
               h(
                 'div',
                 { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid var(--color-hairline)' } },
@@ -1329,19 +1320,11 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
                       'div',
                       { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
                       h(
-                        'select',
+                        Select,
                         {
                           value: item.targetGrade,
                           onChange: (e) => handleRetakeGradeChange(item.courseCode, e.target.value),
-                          style: {
-                            padding: '4px 10px',
-                            borderRadius: '9999px',
-                            border: '1px solid var(--color-hairline)',
-                            fontWeight: 700,
-                            color: '#16a34a',
-                            backgroundColor: 'var(--color-paper)',
-                            cursor: 'pointer'
-                          }
+                          style: { width: '110px' }
                         },
                         ['A', 'B+', 'B', 'C+'].map((g) => h('option', { key: g, value: g }, `Lên ${g}`))
                       ),
@@ -1371,7 +1354,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
         activeTool === 'grades'
           ? h(
               'div',
-              { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' } },
+              { style: { backgroundColor: 'var(--color-paper)', borderRadius: 'var(--heroui-radius-xl, 24px)', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0,0,0,0.04))', display: 'flex', flexDirection: 'column', gap: '16px' } },
               h(
                 'div',
                 { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
@@ -1466,7 +1449,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
         // Progression Chart Card (Inline SVG Chart)
         h(
           'div',
-          { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' } },
+          { style: { backgroundColor: 'var(--color-paper)', borderRadius: 'var(--heroui-radius-xl, 24px)', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0,0,0,0.04))', display: 'flex', flexDirection: 'column', gap: '16px' } },
           h(
             'div',
             { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
@@ -1570,7 +1553,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
         // Sensitivity Analysis & AI Feasibility Card
         h(
           'div',
-          { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '14px' } },
+          { style: { backgroundColor: 'var(--color-paper)', borderRadius: 'var(--heroui-radius-xl, 24px)', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0,0,0,0.04))', display: 'flex', flexDirection: 'column', gap: '14px' } },
           h(
             'div',
             { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
@@ -1636,7 +1619,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
         // Saved Scenarios Card
         h(
           'div',
-          { style: { backgroundColor: 'var(--color-paper)', borderRadius: '24px', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '14px' } },
+          { style: { backgroundColor: 'var(--color-paper)', borderRadius: 'var(--heroui-radius-xl, 24px)', border: '1px solid var(--color-hairline)', padding: '24px', boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0,0,0,0.04))', display: 'flex', flexDirection: 'column', gap: '14px' } },
           h(
             'div',
             { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },

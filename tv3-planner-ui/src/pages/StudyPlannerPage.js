@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { plannerStore, PLAN_STATUSES } from '../services/plannerStore.js';
 import { PlanHistoryModal } from '../components/PlanHistoryModal.js';
 import { CurriculumTreeModal } from '../components/CurriculumTreeModal.js';
+import { Select } from '../components/Select.js';
 
 /**
  * Màn hình 5: Tùy chỉnh & Xác nhận Kế hoạch học tập (Study Planner) — TV3
@@ -872,10 +873,10 @@ export function StudyPlannerPage({ api, ui } = {}) {
         className: 'haui-stat-card',
         style: {
           padding: '20px',
-          borderRadius: 'var(--radius-cards, 24px)',
+          borderRadius: 'var(--heroui-radius-xl, 24px)',
           backgroundColor: 'var(--color-paper, #ffffff)',
           border: '1px solid var(--color-hairline, #e5e5e5)',
-          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+          boxShadow: 'var(--heroui-shadow-sm, 0 1px 8px rgba(0, 0, 0, 0.04))',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between'
@@ -917,10 +918,10 @@ export function StudyPlannerPage({ api, ui } = {}) {
         className: 'haui-stat-card',
         style: {
           padding: '20px',
-          borderRadius: 'var(--radius-cards, 24px)',
+          borderRadius: 'var(--heroui-radius-xl, 24px)',
           backgroundColor: 'var(--color-paper, #ffffff)',
           border: '1px solid var(--color-hairline, #e5e5e5)',
-          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+          boxShadow: 'var(--heroui-shadow-sm, 0 1px 8px rgba(0, 0, 0, 0.04))',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between'
@@ -953,10 +954,10 @@ export function StudyPlannerPage({ api, ui } = {}) {
         className: 'haui-stat-card',
         style: {
           padding: '20px',
-          borderRadius: 'var(--radius-cards, 24px)',
+          borderRadius: 'var(--heroui-radius-xl, 24px)',
           backgroundColor: 'var(--color-paper, #ffffff)',
           border: '1px solid var(--color-hairline, #e5e5e5)',
-          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+          boxShadow: 'var(--heroui-shadow-sm, 0 1px 8px rgba(0, 0, 0, 0.04))',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between'
@@ -1016,10 +1017,10 @@ export function StudyPlannerPage({ api, ui } = {}) {
         className: 'haui-stat-card',
         style: {
           padding: '20px',
-          borderRadius: 'var(--radius-cards, 24px)',
+          borderRadius: 'var(--heroui-radius-xl, 24px)',
           backgroundColor: 'var(--color-paper, #ffffff)',
           border: '1px solid var(--color-hairline, #e5e5e5)',
-          boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+          boxShadow: 'var(--heroui-shadow-sm, 0 1px 8px rgba(0, 0, 0, 0.04))',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between'
@@ -1523,16 +1524,13 @@ export function StudyPlannerPage({ api, ui } = {}) {
               'Học kỳ vừa có kết quả:'
             ),
             React.createElement(
-              'select',
+              Select,
               {
                 value: reconcileSemester,
                 onChange: (e) => setReconcileSemester(e.target.value),
                 style: {
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--color-hairline, #e5e5e5)',
-                  backgroundColor: 'var(--color-paper, #ffffff)',
-                  fontSize: '13px'
+                  width: 'auto',
+                  minWidth: '220px'
                 }
               },
               React.createElement('option', { value: '2025_1' }, 'Học kỳ 1 (2024-2025) - 2025_1'),

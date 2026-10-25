@@ -11,6 +11,8 @@ import {
 } from './pages/StudentProfilePage.js';
 import { PlanHistoryModal } from './components/PlanHistoryModal.js';
 import { CurriculumTreeModal } from './components/CurriculumTreeModal.js';
+import { DatePicker } from './components/DatePicker.js';
+import { Select } from './components/Select.js';
 import {
   plannerStore,
   PLAN_STATUSES,
@@ -79,6 +81,8 @@ export {
   WhatIfSimulatorPage,
   WHAT_IF_TOOLS,
   StudentProfilePage,
+  DatePicker,
+  Select,
   PlanHistoryModal,
   CurriculumTreeModal,
   plannerStore,

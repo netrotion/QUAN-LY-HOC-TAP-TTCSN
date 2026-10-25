@@ -733,10 +733,10 @@ export function ChatAdvisorPage({
         {
           style: {
             backgroundColor: 'var(--color-paper, #ffffff)',
-            borderRadius: '24px',
+            borderRadius: 'var(--heroui-radius-xl, 24px)',
             border: '1px solid var(--color-hairline, #e5e5e5)',
             padding: '24px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+            boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04))',
             display: 'flex',
             flexWrap: 'wrap',
             justifyContent: 'space-between',
@@ -906,10 +906,10 @@ export function ChatAdvisorPage({
           {
             style: {
               backgroundColor: 'var(--color-paper, #ffffff)',
-              borderRadius: '24px',
+              borderRadius: 'var(--heroui-radius-xl, 24px)',
               padding: '16px 20px',
               border: '1px solid var(--color-hairline, #e5e5e5)',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+              boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04))',
               display: 'flex',
               flexDirection: 'column',
               gap: '12px'
@@ -970,10 +970,11 @@ export function ChatAdvisorPage({
                 {
                   style: {
                     backgroundColor: 'var(--color-paper, #ffffff)',
-                    borderRadius: '24px',
+                    borderRadius: 'var(--heroui-radius-xl, 24px)',
                     padding: '48px 24px',
                     textAlign: 'center',
                     border: '1px solid var(--color-hairline, #e5e5e5)',
+                    boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04))',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -1594,9 +1595,9 @@ export function ChatAdvisorPage({
             {
               style: {
                 backgroundColor: 'var(--color-paper, #ffffff)',
-                borderRadius: '24px',
+                borderRadius: 'var(--heroui-radius-xl, 24px)',
                 padding: '8px 12px',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                boxShadow: 'var(--heroui-shadow-md, 0 4px 20px rgba(0, 0, 0, 0.08))',
                 border: '1px solid var(--color-hairline, #e5e5e5)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1616,7 +1617,7 @@ export function ChatAdvisorPage({
                   style: {
                     width: '38px',
                     height: '38px',
-                    borderRadius: '50%',
+                    borderRadius: 'var(--heroui-radius-full, 9999px)',
                     backgroundColor: 'var(--color-canvas, #f5f5f5)',
                     border: 'none',
                     display: 'flex',
@@ -1633,6 +1634,7 @@ export function ChatAdvisorPage({
               // Input text
               React.createElement('input', {
                 type: 'text',
+                className: 'haui-input',
                 value: inputValue,
                 onChange: (e) => setInputValue(e.target.value),
                 onKeyDown: handleKeyDown,
@@ -1641,12 +1643,10 @@ export function ChatAdvisorPage({
                 style: {
                   flex: 1,
                   backgroundColor: 'var(--color-canvas, #f5f5f5)',
-                  border: 'none',
-                  borderRadius: '9999px',
+                  borderRadius: 'var(--heroui-radius-full, 9999px)',
                   padding: '10px 18px',
                   fontSize: '14px',
                   color: 'var(--color-ink, #0a0a0a)',
-                  outline: 'none',
                   fontFamily: 'inherit'
                 }
               }),
@@ -1729,10 +1729,10 @@ export function ChatAdvisorPage({
           {
             style: {
               backgroundColor: 'var(--color-paper, #ffffff)',
-              borderRadius: '24px',
+              borderRadius: 'var(--heroui-radius-xl, 24px)',
               border: '1px solid var(--color-hairline, #e5e5e5)',
               padding: '24px',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+              boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04))',
               display: 'flex',
               flexDirection: 'column',
               gap: '16px'
@@ -1847,10 +1847,10 @@ export function ChatAdvisorPage({
           {
             style: {
               backgroundColor: 'var(--color-paper, #ffffff)',
-              borderRadius: '24px',
+              borderRadius: 'var(--heroui-radius-xl, 24px)',
               border: '1px solid var(--color-hairline, #e5e5e5)',
               padding: '24px',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+              boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04))',
               display: 'flex',
               flexDirection: 'column',
               gap: '12px'
@@ -1938,10 +1938,10 @@ export function ChatAdvisorPage({
           {
             style: {
               backgroundColor: 'var(--color-paper, #ffffff)',
-              borderRadius: '24px',
+              borderRadius: 'var(--heroui-radius-xl, 24px)',
               border: '1px solid var(--color-hairline, #e5e5e5)',
               padding: '24px',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+              boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04))',
               display: 'flex',
               flexDirection: 'column',
               gap: '12px'

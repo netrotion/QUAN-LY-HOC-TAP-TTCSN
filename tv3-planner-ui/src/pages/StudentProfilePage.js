@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { plannerStore } from '../services/plannerStore.js';
+import { DatePicker } from '../components/DatePicker.js';
+import { Select } from '../components/Select.js';
 
 /**
  * Mẫu hồ sơ sinh viên chuẩn HaUI phục vụ khám phá và kiểm thử
@@ -765,9 +767,9 @@ export function StudentProfilePage({
             style: {
               backgroundColor: 'var(--color-paper, #ffffff)',
               border: '1px solid var(--color-hairline, #e5e5e5)',
-              borderRadius: '24px',
+              borderRadius: 'var(--heroui-radius-xl, 24px)',
               padding: '24px',
-              boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+              boxShadow: 'var(--heroui-shadow-sm, 0 1px 8px rgba(0, 0, 0, 0.04))',
               display: 'flex',
               flexDirection: 'column',
               gap: '20px'
@@ -1030,9 +1032,9 @@ export function StudentProfilePage({
             style: {
               backgroundColor: 'var(--color-paper, #ffffff)',
               border: '1px solid var(--color-hairline, #e5e5e5)',
-              borderRadius: '24px',
+              borderRadius: 'var(--heroui-radius-xl, 24px)',
               padding: '20px',
-              boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+              boxShadow: 'var(--heroui-shadow-sm, 0 1px 8px rgba(0, 0, 0, 0.04))',
               display: 'flex',
               flexDirection: 'column',
               gap: '12px'
@@ -1110,9 +1112,9 @@ export function StudentProfilePage({
             style: {
               backgroundColor: 'var(--color-paper, #ffffff)',
               border: '1px solid var(--color-hairline, #e5e5e5)',
-              borderRadius: '24px',
+              borderRadius: 'var(--heroui-radius-xl, 24px)',
               padding: '24px',
-              boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+              boxShadow: 'var(--heroui-shadow-sm, 0 1px 8px rgba(0, 0, 0, 0.04))',
               display: 'flex',
               flexDirection: 'column',
               gap: '20px'
@@ -1217,26 +1219,17 @@ export function StudentProfilePage({
               React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Khớp chính xác với thẻ CCCD gắn chip')
             ),
 
-            // Field: Ngày sinh
+            // Field: Ngày sinh (HeroUI v3 Custom DatePicker)
             React.createElement(
               'div',
               { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
               React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Ngày sinh'),
-              React.createElement('input', {
-                type: 'date',
+              React.createElement(DatePicker, {
                 value: dobInput,
-                onChange: (e) => setDobInput(e.target.value),
-                style: {
-                  width: '100%',
-                  padding: '8px 16px',
-                  borderRadius: '9999px',
-                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
-                  border: '1px solid var(--color-hairline, #e5e5e5)',
-                  color: 'var(--color-ink, #0a0a0a)',
-                  boxSizing: 'border-box'
-                }
+                placeholder: 'Chọn ngày sinh (Ngày/Tháng/Năm)',
+                onChange: (e) => setDobInput(e.target.value)
               }),
-              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Định dạng Ngày/Tháng/Năm')
+              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Định dạng Ngày/Tháng/Năm (HeroUI v3 DatePicker)')
             ),
 
             // Field: Giới tính
@@ -1381,9 +1374,9 @@ export function StudentProfilePage({
             style: {
               backgroundColor: 'var(--color-paper, #ffffff)',
               border: '1px solid var(--color-hairline, #e5e5e5)',
-              borderRadius: '24px',
+              borderRadius: 'var(--heroui-radius-xl, 24px)',
               padding: '24px',
-              boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+              boxShadow: 'var(--heroui-shadow-sm, 0 1px 8px rgba(0, 0, 0, 0.04))',
               display: 'flex',
               flexDirection: 'column',
               gap: '20px'
@@ -1466,20 +1459,10 @@ export function StudentProfilePage({
               { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
               React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Trường thuộc HaUI / Khoa đào tạo'),
               React.createElement(
-                'select',
+                Select,
                 {
                   value: facultyInput,
-                  onChange: handleFacultyChange,
-                  style: {
-                    width: '100%',
-                    padding: '8px 16px',
-                    borderRadius: '9999px',
-                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
-                    border: '1px solid var(--color-hairline, #e5e5e5)',
-                    color: 'var(--color-ink, #0a0a0a)',
-                    boxSizing: 'border-box',
-                    cursor: 'pointer'
-                  }
+                  onChange: handleFacultyChange
                 },
                 HAUI_MEMBER_SCHOOLS.map((school) =>
                   React.createElement('option', { key: school, value: school }, school)
@@ -1493,20 +1476,10 @@ export function StudentProfilePage({
               { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
               React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Chuyên ngành / Ngành đào tạo'),
               React.createElement(
-                'select',
+                Select,
                 {
                   value: majorNameInput,
-                  onChange: (e) => setMajorNameInput(e.target.value),
-                  style: {
-                    width: '100%',
-                    padding: '8px 16px',
-                    borderRadius: '9999px',
-                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
-                    border: '1px solid var(--color-hairline, #e5e5e5)',
-                    color: 'var(--color-ink, #0a0a0a)',
-                    boxSizing: 'border-box',
-                    cursor: 'pointer'
-                  }
+                  onChange: (e) => setMajorNameInput(e.target.value)
                 },
                 (() => {
                   const majors = getMajorsForFaculty(facultyInput);
@@ -1525,28 +1498,18 @@ export function StudentProfilePage({
               { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
               React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Khóa học'),
               React.createElement(
-                'select',
+                Select,
                 {
                   value: cohortInput,
-                  onChange: (e) => setCohortInput(e.target.value),
-                  style: {
-                    width: '100%',
-                    padding: '8px 16px',
-                    borderRadius: '9999px',
-                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
-                    border: '1px solid var(--color-hairline, #e5e5e5)',
-                    color: 'var(--color-ink, #0a0a0a)',
-                    boxSizing: 'border-box',
-                    cursor: 'pointer'
-                  }
+                  onChange: (e) => setCohortInput(e.target.value)
                 },
                 (() => {
                   const inList = HAUI_COHORTS.includes(cohortInput);
                   const options = inList || !cohortInput ? HAUI_COHORTS : [cohortInput, ...HAUI_COHORTS];
                   return [
                     React.createElement('option', { key: 'empty', value: '' }, '-- Chọn khóa học --'),
-                    ...options.map((cohort) =>
-                      React.createElement('option', { key: cohort, value: cohort }, cohort)
+                    ...options.map((c) =>
+                      React.createElement('option', { key: c, value: c }, c)
                     )
                   ];
                 })()
@@ -1607,9 +1570,9 @@ export function StudentProfilePage({
             style: {
               backgroundColor: 'var(--color-paper, #ffffff)',
               border: '1px solid var(--color-hairline, #e5e5e5)',
-              borderRadius: '24px',
+              borderRadius: 'var(--heroui-radius-xl, 24px)',
               padding: '24px',
-              boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
+              boxShadow: 'var(--heroui-shadow-sm, 0 1px 8px rgba(0, 0, 0, 0.04))',
               display: 'flex',
               flexDirection: 'column',
               gap: '20px'
@@ -1716,20 +1679,10 @@ export function StudentProfilePage({
               { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
               React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Mục tiêu CPA tốt nghiệp mong muốn:'),
               React.createElement(
-                'select',
+                Select,
                 {
                   value: targetCpa,
-                  onChange: (e) => setTargetCpa(e.target.value),
-                  style: {
-                    width: '100%',
-                    padding: '8px 16px',
-                    borderRadius: '9999px',
-                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
-                    border: '1px solid var(--color-hairline, #e5e5e5)',
-                    color: 'var(--color-ink, #0a0a0a)',
-                    boxSizing: 'border-box',
-                    cursor: 'pointer'
-                  }
+                  onChange: (e) => setTargetCpa(e.target.value)
                 },
                 React.createElement('option', { value: '2.50' }, 'CPA ≥ 2.50 (Xếp loại Khá)'),
                 React.createElement('option', { value: '3.20' }, 'CPA ≥ 3.20 (Xếp loại Giỏi)'),
@@ -1742,20 +1695,10 @@ export function StudentProfilePage({
               { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
               React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Tiến độ tốt nghiệp mong muốn:'),
               React.createElement(
-                'select',
+                Select,
                 {
                   value: graduationPace,
-                  onChange: (e) => setGraduationPace(e.target.value),
-                  style: {
-                    width: '100%',
-                    padding: '8px 16px',
-                    borderRadius: '9999px',
-                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
-                    border: '1px solid var(--color-hairline, #e5e5e5)',
-                    color: 'var(--color-ink, #0a0a0a)',
-                    boxSizing: 'border-box',
-                    cursor: 'pointer'
-                  }
+                  onChange: (e) => setGraduationPace(e.target.value)
                 },
                 React.createElement('option', { value: 'STANDARD' }, 'Chuẩn 4 năm (2 kỳ chính + 1 kỳ hè nhẹ)'),
                 React.createElement('option', { value: 'FAST' }, 'Rút ngắn 3.5 năm (Học vượt, tối đa 8 TC kỳ hè)')
