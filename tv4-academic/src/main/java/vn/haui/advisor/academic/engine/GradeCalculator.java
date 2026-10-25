@@ -210,16 +210,34 @@ public final class GradeCalculator {
             return 0;
         }
 
-        Map<String, Integer> passedCreditsByCourse = new LinkedHashMap<>();
+        Map<String, BigDecimal> passedCreditsByCourse = new LinkedHashMap<>();
         for (vn.haui.advisor.contracts.dto.TranscriptAttemptItem attempt : allAttempts) {
             if (attempt.getCourseCode() == null || attempt.getCredits() == null) continue;
             Boolean passed = isPassed(attempt.getLetterGrade());
             if (Boolean.TRUE.equals(passed)) {
-                passedCreditsByCourse.put(attempt.getCourseCode().toUpperCase(), attempt.getCredits().intValue());
+                passedCreditsByCourse.put(attempt.getCourseCode().toUpperCase(), attempt.getCredits());
             }
         }
 
-        return passedCreditsByCourse.values().stream().mapToInt(Integer::intValue).sum();
+        BigDecimal sum = passedCreditsByCourse.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+        return sum.intValue();
+    }
+
+    public static BigDecimal calculateAccumulatedCreditsExactFromAttempts(List<vn.haui.advisor.contracts.dto.TranscriptAttemptItem> allAttempts) {
+        if (allAttempts == null || allAttempts.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        Map<String, BigDecimal> passedCreditsByCourse = new LinkedHashMap<>();
+        for (vn.haui.advisor.contracts.dto.TranscriptAttemptItem attempt : allAttempts) {
+            if (attempt.getCourseCode() == null || attempt.getCredits() == null) continue;
+            Boolean passed = isPassed(attempt.getLetterGrade());
+            if (Boolean.TRUE.equals(passed)) {
+                passedCreditsByCourse.put(attempt.getCourseCode().toUpperCase(), attempt.getCredits());
+            }
+        }
+
+        return passedCreditsByCourse.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public static int calculateDebtCreditsFromAttempts(List<vn.haui.advisor.contracts.dto.TranscriptAttemptItem> allAttempts) {
