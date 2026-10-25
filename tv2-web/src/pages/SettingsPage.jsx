@@ -1,23 +1,24 @@
 ﻿import React, { useState, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { logoutStudent, getAcademicSnapshot } from '../services/academicStore.js';
+import { Select } from '../components/ui/Select.jsx';
 
 // ponytail: all styles inline using CSS vars — no new CSS file needed
 
 const S = {
-  section: { background: 'var(--color-paper)', borderRadius: 24, border: '1px solid var(--color-hairline)', padding: 32, boxShadow: '0 1px 8px rgba(0,0,0,0.02)' },
+  section: { background: 'var(--color-paper)', borderRadius: 'var(--heroui-radius-xl, 24px)', border: '1px solid var(--color-hairline)', padding: 32, boxShadow: 'var(--heroui-shadow-sm, 0 1px 8px rgba(0,0,0,0.02))' },
   sectionHeader: { display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 16, borderBottom: '1px solid var(--color-hairline)', marginBottom: 20 },
-  iconCircle: { width: 40, height: 40, borderRadius: '50%', background: 'var(--color-canvas)', border: '1px solid var(--color-hairline)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-ink)' },
+  iconCircle: { width: 40, height: 40, borderRadius: 'var(--heroui-radius-full, 9999px)', background: 'var(--color-canvas)', border: '1px solid var(--color-hairline)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-ink)' },
   h2: { fontSize: 18, fontWeight: 600, color: 'var(--color-ink)', margin: 0 },
   caption: { fontSize: 12, color: 'var(--color-mid-gray)', margin: '2px 0 0' },
   label: { fontSize: 12, fontWeight: 500, letterSpacing: '0.01em', color: 'var(--color-ink)' },
   labelMuted: { fontSize: 12, fontWeight: 500, letterSpacing: '0.01em', color: 'var(--color-mid-gray)' },
-  inputRO: { width: '100%', background: 'var(--color-surface-alt)', border: '1px solid var(--color-hairline)', borderRadius: 9999, padding: '8px 16px', fontSize: 14, color: 'var(--color-ink)', cursor: 'not-allowed', boxSizing: 'border-box' },
-  input: { width: '100%', background: 'var(--color-surface-alt)', border: '1px solid var(--color-hairline)', borderRadius: 9999, padding: '8px 16px', fontSize: 14, color: 'var(--color-ink)', outline: 'none', boxSizing: 'border-box', transition: 'border-color 150ms' },
-  btnPrimary: { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 20px', borderRadius: 9999, background: 'var(--color-ink)', color: 'var(--color-paper)', fontSize: 14, fontWeight: 500, border: 'none', cursor: 'pointer', transition: 'all 150ms' },
-  btnSecondary: { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 9999, background: 'var(--color-canvas)', color: 'var(--color-ink)', fontSize: 14, fontWeight: 500, border: '1px solid var(--color-hairline)', cursor: 'pointer', transition: 'all 150ms' },
-  btnGhost: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 9999, background: 'transparent', color: 'var(--color-ink)', fontSize: 14, fontWeight: 500, border: 'none', cursor: 'pointer' },
-  select: { width: '100%', appearance: 'none', background: 'var(--color-surface-alt)', border: '1px solid var(--color-hairline)', borderRadius: 9999, padding: '8px 40px 8px 16px', fontSize: 14, color: 'var(--color-ink)', outline: 'none', cursor: 'pointer', boxSizing: 'border-box' },
+  inputRO: { width: '100%', background: 'var(--field-background, var(--color-surface-alt))', border: '1px solid var(--color-hairline)', borderRadius: 'var(--heroui-radius-lg, 18px)', padding: '8px 16px', fontSize: 14, color: 'var(--color-ink)', cursor: 'not-allowed', boxSizing: 'border-box' },
+  input: { width: '100%', background: 'var(--field-background, var(--color-surface-alt))', border: '1px solid var(--color-hairline)', borderRadius: 'var(--heroui-radius-lg, 18px)', padding: '8px 16px', fontSize: 14, color: 'var(--color-ink)', outline: 'none', boxSizing: 'border-box', transition: 'border-color 150ms, box-shadow 150ms' },
+  btnPrimary: { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 20px', borderRadius: 'var(--heroui-radius-lg, 18px)', background: 'var(--color-ink)', color: 'var(--color-paper)', fontSize: 14, fontWeight: 500, border: 'none', cursor: 'pointer', transition: 'all 150ms cubic-bezier(0.4, 0, 0.2, 1)', boxShadow: 'var(--heroui-shadow-sm)' },
+  btnSecondary: { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 'var(--heroui-radius-lg, 18px)', background: 'var(--color-canvas)', color: 'var(--color-ink)', fontSize: 14, fontWeight: 500, border: '1px solid var(--color-hairline)', cursor: 'pointer', transition: 'all 150ms' },
+  btnGhost: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 'var(--heroui-radius-lg, 18px)', background: 'transparent', color: 'var(--color-ink)', fontSize: 14, fontWeight: 500, border: 'none', cursor: 'pointer' },
+  select: { width: '100%', appearance: 'none', WebkitAppearance: 'none', background: 'var(--field-background, var(--color-surface-alt))', border: '1px solid var(--color-hairline)', borderRadius: 'var(--heroui-radius-lg, 18px)', padding: '8px 40px 8px 16px', fontSize: 14, color: 'var(--color-ink)', outline: 'none', cursor: 'pointer', boxSizing: 'border-box', backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23737373\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', backgroundSize: '16px' },
   toggle: (on) => ({ width: 44, height: 24, borderRadius: 9999, background: on ? 'var(--color-ink)' : 'var(--color-hairline)', padding: 2, border: 'none', cursor: 'pointer', transition: 'background 200ms', display: 'flex', alignItems: 'center', flexShrink: 0 }),
   toggleDot: (on) => ({ width: 20, height: 20, borderRadius: '50%', background: 'var(--color-paper)', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transform: on ? 'translateX(20px)' : 'translateX(0)', transition: 'transform 200ms' }),
 };
@@ -495,12 +496,11 @@ function SelectField({ label, value, onChange, hint, options }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <label style={S.label}>{label}</label>
-      <div style={{ position: 'relative' }}>
-        <select style={S.select} value={value} onChange={e => onChange(e.target.value)}>
-          {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-        </select>
-        <span className="material-symbols-outlined" style={{ position: 'absolute', right: 14, top: 10, fontSize: 18, color: 'var(--color-mid-gray)', pointerEvents: 'none' }}>arrow_drop_down</span>
-      </div>
+      <Select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        options={options.map(([v, l]) => ({ value: v, label: l }))}
+      />
       {hint && <span style={{ fontSize: 12, color: 'var(--color-mid-gray)' }}>{hint}</span>}
     </div>
   );

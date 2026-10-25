@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Card, EmptyState, Table } from '../components/ui/index.js';
+import { Button, Card, EmptyState, Table, Select } from '../components/ui/index.js';
 import {
   commitTranscriptRecords,
   convertScore10ToGrade,
@@ -270,9 +270,9 @@ export function TranscriptImportPage() {
           justifyContent: 'space-between',
           padding: '16px 24px',
           backgroundColor: 'var(--color-paper)',
-          borderRadius: 'var(--radius-cards)',
+          borderRadius: 'var(--heroui-radius-xl, 24px)',
           border: '1px solid var(--color-hairline)',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)'
+          boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04))'
         }}
       >
         {/* Step 1 */}
@@ -663,35 +663,28 @@ export function TranscriptImportPage() {
                   </span>
                   <input
                     type="text"
+                    className="haui-input"
                     placeholder="Tìm theo mã hoặc tên môn..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     style={{
                       width: '100%',
-                      backgroundColor: 'var(--color-surface-alt)',
-                      border: '1px solid var(--color-hairline)',
-                      borderRadius: '9999px',
+                      borderRadius: 'var(--heroui-radius-full, 9999px)',
                       padding: '8px 14px 8px 36px',
-                      fontSize: '13px',
-                      color: 'var(--color-ink)',
-                      outline: 'none'
+                      fontSize: '13px'
                     }}
                   />
                 </div>
 
                 {/* Term Select */}
-                <select
+                <Select
                   value={selectedSemesterFilter}
                   onChange={(e) => setSelectedSemesterFilter(e.target.value)}
-                  style={{
-                    backgroundColor: 'var(--color-surface-alt)',
-                    border: '1px solid var(--color-hairline)',
-                    borderRadius: '9999px',
-                    padding: '8px 16px',
-                    fontSize: '13px',
-                    color: 'var(--color-ink)',
-                    outline: 'none',
-                    cursor: 'pointer'
+                  style={{ width: '220px' }}
+                  triggerStyle={{
+                    borderRadius: 'var(--heroui-radius-full, 9999px)',
+                    padding: '8px 36px 8px 16px',
+                    fontSize: '13px'
                   }}
                 >
                   <option value="ALL">Tất cả các học kỳ</option>
@@ -701,7 +694,7 @@ export function TranscriptImportPage() {
                   <option value="3">Kỳ 3 - Năm học 2021-2022</option>
                   <option value="2">Kỳ 2 - Năm học 2021-2022</option>
                   <option value="1">Kỳ 1 - Năm học 2021-2022</option>
-                </select>
+                </Select>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1030,19 +1023,16 @@ export function TranscriptImportPage() {
                   </label>
                   <input
                     type="text"
+                    className="haui-input"
                     value={newCourseForm.courseCode}
                     placeholder="VD: IT6001, MATH1002"
                     onChange={(e) => setNewCourseForm({ ...newCourseForm, courseCode: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '10px 16px',
-                      borderRadius: '12px',
-                      backgroundColor: 'var(--color-surface-alt, #f5f5f5)',
-                      border: '1px solid var(--color-hairline, #e5e5e5)',
-                      color: 'var(--color-ink, #0a0a0a)',
+                      borderRadius: 'var(--heroui-radius-md, 12px)',
                       fontSize: '14px',
-                      boxSizing: 'border-box',
-                      outline: 'none'
+                      boxSizing: 'border-box'
                     }}
                     required
                   />
@@ -1054,19 +1044,16 @@ export function TranscriptImportPage() {
                   </label>
                   <input
                     type="text"
+                    className="haui-input"
                     value={newCourseForm.courseName}
                     placeholder="VD: Cấu trúc dữ liệu và giải thuật"
                     onChange={(e) => setNewCourseForm({ ...newCourseForm, courseName: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '10px 16px',
-                      borderRadius: '12px',
-                      backgroundColor: 'var(--color-surface-alt, #f5f5f5)',
-                      border: '1px solid var(--color-hairline, #e5e5e5)',
-                      color: 'var(--color-ink, #0a0a0a)',
+                      borderRadius: 'var(--heroui-radius-md, 12px)',
                       fontSize: '14px',
-                      boxSizing: 'border-box',
-                      outline: 'none'
+                      boxSizing: 'border-box'
                     }}
                     required
                   />
@@ -1079,6 +1066,7 @@ export function TranscriptImportPage() {
                     </label>
                     <input
                       type="number"
+                      className="haui-input"
                       min="1"
                       max="12"
                       value={newCourseForm.credits}
@@ -1086,13 +1074,9 @@ export function TranscriptImportPage() {
                       style={{
                         width: '100%',
                         padding: '10px 14px',
-                        borderRadius: '12px',
-                        backgroundColor: 'var(--color-surface-alt, #f5f5f5)',
-                        border: '1px solid var(--color-hairline, #e5e5e5)',
-                        color: 'var(--color-ink, #0a0a0a)',
+                        borderRadius: 'var(--heroui-radius-md, 12px)',
                         fontSize: '14px',
-                        boxSizing: 'border-box',
-                        outline: 'none'
+                        boxSizing: 'border-box'
                       }}
                     />
                   </div>
@@ -1103,6 +1087,7 @@ export function TranscriptImportPage() {
                     </label>
                     <input
                       type="number"
+                      className="haui-input"
                       step="0.1"
                       min="0"
                       max="4.0"
@@ -1126,13 +1111,9 @@ export function TranscriptImportPage() {
                       style={{
                         width: '100%',
                         padding: '10px 14px',
-                        borderRadius: '12px',
-                        backgroundColor: 'var(--color-surface-alt, #f5f5f5)',
-                        border: '1px solid var(--color-hairline, #e5e5e5)',
-                        color: 'var(--color-ink, #0a0a0a)',
+                        borderRadius: 'var(--heroui-radius-md, 12px)',
                         fontSize: '14px',
-                        boxSizing: 'border-box',
-                        outline: 'none'
+                        boxSizing: 'border-box'
                       }}
                     />
                   </div>
@@ -1141,7 +1122,7 @@ export function TranscriptImportPage() {
                     <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)', marginBottom: '6px', display: 'block' }}>
                       Điểm chữ:
                     </label>
-                    <select
+                    <Select
                       value={newCourseForm.letterGrade}
                       onChange={(e) => {
                         const letter = e.target.value;
@@ -1152,17 +1133,10 @@ export function TranscriptImportPage() {
                           score4: mappedScore4
                         });
                       }}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '12px',
-                        backgroundColor: 'var(--color-surface-alt, #f5f5f5)',
-                        border: '1px solid var(--color-hairline, #e5e5e5)',
-                        color: 'var(--color-ink, #0a0a0a)',
-                        fontSize: '14px',
-                        boxSizing: 'border-box',
-                        outline: 'none',
-                        cursor: 'pointer'
+                      triggerStyle={{
+                        borderRadius: 'var(--heroui-radius-md, 12px)',
+                        padding: '10px 36px 10px 14px',
+                        fontSize: '14px'
                       }}
                     >
                       <option value="A">A</option>
@@ -1173,7 +1147,7 @@ export function TranscriptImportPage() {
                       <option value="D+">D+</option>
                       <option value="D">D</option>
                       <option value="F">F</option>
-                    </select>
+                    </Select>
                   </div>
                 </div>
               </div>

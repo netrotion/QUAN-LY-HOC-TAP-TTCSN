@@ -12,8 +12,10 @@ import { Modal } from './Modal.jsx';
 import { Loading } from './Loading.jsx';
 import { Error } from './Error.jsx';
 import { EmptyState } from './EmptyState.jsx';
+import { DatePicker } from './DatePicker.jsx';
+import { Select } from './Select.jsx';
 
-export { Button, Card, Table, Modal, Loading, Error, EmptyState };
+export { Button, Card, Table, Modal, Loading, Error, EmptyState, DatePicker, Select };
 
 /**
  * Bộ UI Component V0 đóng gói theo hợp đồng Dependency Injection `createStudentRoutes({ api, ui })`
@@ -25,7 +27,9 @@ export const ui = Object.freeze({
   Modal,
   Loading,
   Error,
-  EmptyState
+  EmptyState,
+  DatePicker,
+  Select
 });
 
 export default ui;

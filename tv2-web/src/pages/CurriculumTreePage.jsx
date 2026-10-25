@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/apiClient.js';
-import { Table, Modal, Loading, Error as ErrorBox } from '../components/ui/index.js';
+import { Table, Modal, Loading, Error as ErrorBox, Select } from '../components/ui/index.js';
 import { subscribeAcademicStore } from '../services/academicStore.js';
 import { getCourseDisplayMeta } from '../services/curriculumTreeHelper.js';
 
@@ -669,17 +669,22 @@ export function CurriculumTreePage() {
       {/* =========================================================================
           SECTION 3: SMART FILTER TOOLBAR & VISUAL LEGEND
           ========================================================================= */}
-      <div style={{ backgroundColor: 'var(--color-paper)', borderRadius: '24px', border: '1px solid var(--color-hairline)', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div style={{ backgroundColor: 'var(--color-paper)', borderRadius: 'var(--heroui-radius-xl, 24px)', border: '1px solid var(--color-hairline)', padding: '16px 20px', boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0,0,0,0.04))', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
           {/* Selectors */}
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px' }}>
             {/* Semester filter */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--color-canvas)', padding: '6px 14px', borderRadius: '9999px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>Học kỳ:</span>
-              <select
+              <Select
                 value={semesterFilter}
                 onChange={(e) => setSemesterFilter(e.target.value)}
-                style={{ backgroundColor: 'transparent', border: 'none', fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)', outline: 'none', cursor: 'pointer' }}
+                style={{ width: '160px' }}
+                triggerStyle={{
+                  padding: '6px 32px 6px 12px',
+                  fontSize: '12px',
+                  backgroundColor: 'var(--color-canvas)'
+                }}
               >
                 <option value="all">Tất cả kỳ (1 - 8)</option>
                 <option value="1">Kỳ 1</option>
@@ -690,39 +695,49 @@ export function CurriculumTreePage() {
                 <option value="6">Kỳ 6 (Hiện tại)</option>
                 <option value="7">Kỳ 7</option>
                 <option value="8">Kỳ 8 (Tốt nghiệp)</option>
-              </select>
+              </Select>
             </div>
 
             {/* Block filter */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--color-canvas)', padding: '6px 14px', borderRadius: '9999px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>Môn kiến thức:</span>
-              <select
+              <Select
                 value={blockFilter}
                 onChange={(e) => setBlockFilter(e.target.value)}
-                style={{ backgroundColor: 'transparent', border: 'none', fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)', outline: 'none', cursor: 'pointer' }}
+                style={{ width: '190px' }}
+                triggerStyle={{
+                  padding: '6px 32px 6px 12px',
+                  fontSize: '12px',
+                  backgroundColor: 'var(--color-canvas)'
+                }}
               >
                 <option value="all">Tất cả môn kiến thức</option>
                 <option value="core">Đại cương & Cơ sở ngành</option>
                 <option value="major">Chuyên ngành</option>
                 <option value="elective">Tự chọn chuyên ngành</option>
                 <option value="internship">Thực tập &amp; Khóa luận</option>
-              </select>
+              </Select>
             </div>
 
             {/* Status filter */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--color-canvas)', padding: '6px 14px', borderRadius: '9999px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>Trạng thái:</span>
-              <select
+              <Select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                style={{ backgroundColor: 'transparent', border: 'none', fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)', outline: 'none', cursor: 'pointer' }}
+                style={{ width: '180px' }}
+                triggerStyle={{
+                  padding: '6px 32px 6px 12px',
+                  fontSize: '12px',
+                  backgroundColor: 'var(--color-canvas)'
+                }}
               >
                 <option value="all">Tất cả trạng thái</option>
                 <option value="passed">Đã hoàn thành (PASSED)</option>
                 <option value="studying">Đang học (IN_PROGRESS)</option>
                 <option value="eligible">Đủ ĐK đăng ký (ELIGIBLE)</option>
                 <option value="locked">Khóa / Nợ môn (BLOCKED/FAILED)</option>
-              </select>
+              </Select>
             </div>
           </div>
 
@@ -733,18 +748,16 @@ export function CurriculumTreePage() {
             </span>
             <input
               type="text"
+              className="haui-input"
               placeholder="Tìm môn trên sơ đồ (VD: IT6015, Giải thuật...)"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
                 width: '100%',
                 backgroundColor: 'var(--color-canvas)',
-                border: 'none',
-                borderRadius: '9999px',
+                borderRadius: 'var(--heroui-radius-full, 9999px)',
                 padding: '8px 14px 8px 36px',
                 fontSize: '13px',
-                color: 'var(--color-ink)',
-                outline: 'none',
                 boxSizing: 'border-box'
               }}
             />

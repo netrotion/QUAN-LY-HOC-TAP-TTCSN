@@ -5,6 +5,7 @@ import {
   STUDENT_PRESETS,
   selectStudentPreset
 } from '../../services/academicStore.js';
+import { Select } from '../ui/Select.jsx';
 
 /**
  * Topbar Component (TV2 — design-base-v1)
@@ -115,7 +116,7 @@ export function Topbar({ collapsed = false, onToggleCollapse }) {
         </Link>
 
         {/* Persona Switcher */}
-        <select
+        <Select
           className="haui-topbar__persona-select"
           value={student?.id || 'normal'}
           onChange={(e) => {
@@ -124,21 +125,19 @@ export function Topbar({ collapsed = false, onToggleCollapse }) {
             const p = STUDENT_PRESETS[presetKey];
             if (p) api.setSessionStudent(p);
           }}
-          title="Chuyển nhanh tài khoản mẫu"
-          style={{
+          style={{ width: '130px' }}
+          triggerStyle={{
             fontSize: '11px',
-            padding: '4px 8px',
+            padding: '4px 32px 4px 10px',
             borderRadius: '9999px',
-            border: '1px solid var(--color-hairline)',
-            background: 'var(--color-canvas)',
-            color: 'var(--color-mid-gray)',
-            maxWidth: '120px'
+            backgroundColor: 'var(--color-canvas)',
+            color: 'var(--color-ink)'
           }}
         >
           <option value="normal">👤 Chuẩn</option>
           <option value="at-risk">🚨 Nguy cơ</option>
           <option value="empty">⚪ Trắng</option>
-        </select>
+        </Select>
       </div>
     </header>
   );

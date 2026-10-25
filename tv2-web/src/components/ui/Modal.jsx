@@ -128,4 +128,39 @@ export function Modal({
   );
 }
 
+/**
+ * Sub-component Modal.Header chuẩn HeroUI v3
+ */
+Modal.Header = function ModalHeader({ children, className = '', ...rest }) {
+  return (
+    <div className={`haui-modal__header ${className}`.trim()} {...rest}>
+      {children}
+    </div>
+  );
+};
+
+/**
+ * Sub-component Modal.Body chuẩn HeroUI v3
+ */
+Modal.Body = function ModalBody({ children, className = '', ...rest }) {
+  return (
+    <div className={`haui-modal__body ${className}`.trim()} {...rest}>
+      {children}
+    </div>
+  );
+};
+
+/**
+ * Sub-component Modal.Footer chuẩn HeroUI v3
+ */
+Modal.Footer = function ModalFooter({ children, className = '', ...rest }) {
+  return (
+    <div className={`haui-modal__footer ${className}`.trim()} {...rest}>
+      {children}
+    </div>
+  );
+};
+
+Modal.Content = Modal.Body;
+
 export default Modal;

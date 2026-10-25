@@ -204,7 +204,7 @@ test('4. Cơ chế mount Route cho TV3: createStudentRoutes({ api, ui }) và Fal
   assert.equal(plannerRoute.status, 'IMPLEMENTED');
 });
 
-test('5. Kiểm tra cấu trúc Design Tokens, Shared UI Library V0, trang /demo-ui và ranh giới không gọi LLM trực tiếp', () => {
+test('5. Kiểm tra cấu trúc Design Tokens, Shared UI Library V0, trang /demo-ui và ranh giới không gọi LLM trực tiếp', async () => {
   const tv2Root = path.resolve(__dirname, '..');
 
   const requiredFiles = [
@@ -252,10 +252,33 @@ test('5. Kiểm tra cấu trúc Design Tokens, Shared UI Library V0, trang /demo
     '--color-info',
     '--space-4',
     '--radius-md',
-    '--font-sans'
+    '--font-sans',
+    '--heroui-primary',
+    '--heroui-radius-lg'
   ]) {
     assert.equal(tokensCss.includes(token), true, `tokens.css thiếu biến CSS: ${token}`);
   }
+
+  const globalCss = fs.readFileSync(path.join(tv2Root, 'src/styles/global.css'), 'utf-8');
+  assert.equal(globalCss.includes('active:scale'), true, 'global.css thiếu hiệu ứng active:scale HeroUI');
+  assert.equal(globalCss.includes('--heroui-scale-pressed'), true, 'global.css thiếu biến --heroui-scale-pressed');
+
+  const buttonContent = fs.readFileSync(path.join(tv2Root, 'src/components/ui/Button.jsx'), 'utf-8');
+  assert.equal(buttonContent.includes("'outline'"), true, 'Button.VARIANTS thiếu biến thể outline của HeroUI');
+
+  const cardContent = fs.readFileSync(path.join(tv2Root, 'src/components/ui/Card.jsx'), 'utf-8');
+  assert.equal(cardContent.includes('Card.Title ='), true, 'Card thiếu compound component Card.Title');
+  assert.equal(cardContent.includes('Card.Description ='), true, 'Card thiếu compound component Card.Description');
+  assert.equal(cardContent.includes('Card.Content ='), true, 'Card thiếu compound component Card.Content');
+
+  const modalContent = fs.readFileSync(path.join(tv2Root, 'src/components/ui/Modal.jsx'), 'utf-8');
+  assert.equal(modalContent.includes('Modal.Header ='), true, 'Modal thiếu compound component Modal.Header');
+  assert.equal(modalContent.includes('Modal.Body ='), true, 'Modal thiếu compound component Modal.Body');
+  assert.equal(modalContent.includes('Modal.Footer ='), true, 'Modal thiếu compound component Modal.Footer');
+
+  const tableContent = fs.readFileSync(path.join(tv2Root, 'src/components/ui/Table.jsx'), 'utf-8');
+  assert.equal(tableContent.includes('Table.Header ='), true, 'Table thiếu compound component Table.Header');
+  assert.equal(tableContent.includes('Table.Row ='), true, 'Table thiếu compound component Table.Row');
 });
 
 test('6. Kiểm tra mốc bàn giao design-base-v1 (Task 2.1): tokens.json, design-base-v1.md, UI Shell và Dashboard States', () => {

@@ -89,6 +89,28 @@ Card.Header = function CardHeader({ title, subtitle, action, children, className
 };
 
 /**
+ * Sub-component Card.Title chuẩn anatomy HeroUI v3
+ */
+Card.Title = function CardTitle({ children, className = '', ...rest }) {
+  return (
+    <h3 className={`haui-card__title ${className}`.trim()} {...rest}>
+      {children}
+    </h3>
+  );
+};
+
+/**
+ * Sub-component Card.Description chuẩn anatomy HeroUI v3
+ */
+Card.Description = function CardDescription({ children, className = '', ...rest }) {
+  return (
+    <p className={`haui-card__subtitle ${className}`.trim()} {...rest}>
+      {children}
+    </p>
+  );
+};
+
+/**
  * Sub-component Card.Body
  */
 Card.Body = function CardBody({ children, className = '', ...rest }) {
@@ -98,6 +120,11 @@ Card.Body = function CardBody({ children, className = '', ...rest }) {
     </div>
   );
 };
+
+/**
+ * Alias Card.Content tương đương Card.Body theo chuẩn HeroUI v3
+ */
+Card.Content = Card.Body;
 
 /**
  * Sub-component Card.Footer

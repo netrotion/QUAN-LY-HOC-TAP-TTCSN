@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * @typedef {'primary' | 'secondary' | 'danger' | 'ghost'} ButtonVariant
+ * @typedef {'primary' | 'secondary' | 'danger' | 'ghost' | 'outline'} ButtonVariant
  * @typedef {'sm' | 'md' | 'lg'} ButtonSize
  *
  * @typedef {Object} ButtonProps
@@ -15,12 +15,13 @@ import React from 'react';
  * @property {React.ReactNode} [rightIcon] - Icon bên phải nhãn
  * @property {string} [className=''] - Class CSS bổ sung
  * @property {(event: React.MouseEvent<HTMLButtonElement>) => void} [onClick] - Hàm xử lý sự kiện click
+ * @property {(event: React.MouseEvent<HTMLButtonElement>) => void} [onPress] - Handler chuẩn HeroUI v3
  * @property {React.ReactNode} [children] - Nội dung nút
  */
 
 /**
- * Shared UI V0 — Button Component
- * Hỗ trợ variants (primary, secondary, danger, ghost), sizes (sm, md, lg), loading và disabled.
+ * Shared UI V0 — Button Component (HeroUI v3 Enhanced)
+ * Hỗ trợ variants (primary, secondary, danger, ghost, outline), sizes (sm, md, lg), loading và disabled.
  *
  * @param {ButtonProps & React.ButtonHTMLAttributes<HTMLButtonElement>} props
  */
@@ -35,6 +36,7 @@ export function Button({
   rightIcon = null,
   className = '',
   onClick,
+  onPress,
   children,
   ...rest
 }) {
@@ -60,6 +62,9 @@ export function Button({
     }
     if (typeof onClick === 'function') {
       onClick(event);
+    }
+    if (typeof onPress === 'function') {
+      onPress(event);
     }
   };
 
@@ -98,7 +103,7 @@ export function Button({
   );
 }
 
-Button.VARIANTS = Object.freeze(['primary', 'secondary', 'danger', 'ghost']);
+Button.VARIANTS = Object.freeze(['primary', 'secondary', 'danger', 'ghost', 'outline']);
 Button.SIZES = Object.freeze(['sm', 'md', 'lg']);
 
 export default Button;

@@ -158,6 +158,10 @@ pre {
   color: var(--color-ink);
 }
 
+.haui-sidebar__link:active {
+  transform: scale(var(--heroui-scale-pressed, 0.98));
+}
+
 .haui-sidebar__link--active {
   background-color: var(--color-ink) !important;
   color: var(--color-paper) !important;
@@ -378,12 +382,13 @@ pre {
   font-family: var(--font-sans);
   font-size: var(--text-sm);
   color: var(--color-ink);
-  transition: border-color var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 .haui-topbar__search-input:focus {
   outline: none;
-  border-color: var(--color-ink);
+  border-color: var(--heroui-focus, #0052cc);
+  box-shadow: 0 0 0 3px oklch(0.6204 0.195 253.83 / 0.15);
   background: var(--color-paper);
 }
 
@@ -405,12 +410,16 @@ pre {
   font-size: var(--text-sm);
   font-weight: 500;
   text-decoration: none;
-  transition: background-color var(--transition-fast);
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
 }
 
 .haui-topbar__ai-btn:hover {
   background-color: var(--color-ink-soft);
+}
+
+.haui-topbar__ai-btn:active {
+  transform: scale(var(--heroui-scale-pressed, 0.98));
 }
 
 .haui-topbar__icon-btn {
@@ -613,8 +622,14 @@ pre {
   user-select: none;
 }
 
+/* HeroUI v3 Micro-interactions (active:scale) */
+.haui-btn:active:not(:disabled) {
+  transform: scale(var(--heroui-scale-pressed, 0.98));
+  transition: transform 100ms var(--heroui-transition-timing, cubic-bezier(0.34, 1.56, 0.64, 1));
+}
+
 .haui-btn:focus-visible {
-  outline: 2px solid var(--color-border-focus);
+  outline: 2px solid var(--heroui-focus, var(--color-border-focus));
   outline-offset: 2px;
 }
 
@@ -691,6 +706,18 @@ pre {
 .haui-btn--ghost:hover:not(:disabled) {
   background-color: var(--color-bg-subtle);
   color: var(--color-text-primary);
+}
+
+.haui-btn--outline {
+  background-color: transparent;
+  color: var(--heroui-primary, var(--color-primary));
+  border-color: var(--color-hairline, #e5e5e5);
+  box-shadow: var(--heroui-shadow-sm);
+}
+
+.haui-btn--outline:hover:not(:disabled) {
+  background-color: var(--heroui-secondary, #f4f4f5);
+  border-color: var(--heroui-primary, #0052cc);
 }
 
 /* ==========================================================================
@@ -822,8 +849,9 @@ pre {
 .haui-modal-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(2px);
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -835,7 +863,7 @@ pre {
 .haui-modal {
   background-color: var(--color-bg-surface);
   border-radius: var(--radius-cards);
-  box-shadow: var(--shadow-modal);
+  box-shadow: var(--heroui-shadow-lg, var(--shadow-modal));
   border: var(--border-width) solid var(--color-border);
   width: 100%;
   max-height: 90vh;
@@ -1700,13 +1728,13 @@ pre {
 .haui-login-input {
   width: 100%;
   padding: 10px 16px 10px 44px;
-  border-radius: 9999px;
-  background: var(--color-surface-alt);
-  border: none;
+  border-radius: var(--heroui-radius-full, 9999px);
+  background: var(--field-background, var(--color-surface-alt));
+  border: 1px solid var(--color-hairline);
   font-size: 14px;
   color: var(--color-ink);
   outline: none;
-  transition: background-color 150ms;
+  transition: all var(--transition-fast, 150ms);
 }
 
 .haui-login-input::placeholder {
@@ -1715,7 +1743,8 @@ pre {
 
 .haui-login-input:focus {
   background: var(--color-paper);
-  box-shadow: 0 0 0 1px var(--color-hairline);
+  border-color: var(--heroui-focus, #0052cc);
+  box-shadow: 0 0 0 3px oklch(0.6204 0.195 253.83 / 0.15);
 }
 
 .haui-login-input--flat {
@@ -1843,7 +1872,7 @@ pre {
 }
 
 .haui-login-submit:active {
-  transform: scale(0.99);
+  transform: scale(var(--heroui-scale-pressed, 0.98));
 }
 
 .haui-login-submit:disabled {
@@ -2231,20 +2260,21 @@ pre {
    ========================================================================== */
 .haui-stat-card {
   background-color: var(--color-paper);
-  border-radius: var(--radius-cards);
+  border-radius: var(--heroui-radius-xl, var(--radius-cards));
   border: 1px solid var(--color-hairline);
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--heroui-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04));
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   position: relative;
   overflow: hidden;
-  transition: box-shadow var(--transition-fast);
+  transition: all 200ms var(--heroui-transition-timing, cubic-bezier(0.34, 1.56, 0.64, 1));
 }
 
 .haui-stat-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--heroui-shadow-md, 0 4px 12px rgba(0, 0, 0, 0.06));
+  transform: translateY(-1px);
 }
 
 .haui-stat-trend {
@@ -2271,7 +2301,7 @@ pre {
   background-color: var(--color-ink);
   height: 100%;
   border-radius: var(--radius-full);
-  transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: width 0.7s var(--heroui-transition-timing, cubic-bezier(0.16, 1, 0.3, 1));
 }
 
 .haui-pill-btn-dark {
@@ -2280,23 +2310,43 @@ pre {
   gap: 8px;
   background-color: var(--color-ink);
   color: var(--color-paper);
-  padding: 8px 16px;
+  padding: 9px 18px;
   border-radius: var(--radius-full);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-  border: none;
-  cursor: pointer;
   text-decoration: none;
-  transition: background-color var(--transition-fast), transform var(--transition-fast);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  border: none;
+  transition: all 150ms var(--heroui-transition-timing, cubic-bezier(0.34, 1.56, 0.64, 1));
+  box-shadow: var(--heroui-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
+}
+
+.haui-pill-btn-dark:active {
+  transform: scale(var(--heroui-scale-pressed, 0.98));
+}
+
+.haui-pill-btn-canvas {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  padding: 9px 18px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid var(--color-hairline);
+  transition: all 150ms var(--heroui-transition-timing, cubic-bezier(0.34, 1.56, 0.64, 1));
+}
+
+.haui-pill-btn-canvas:active {
+  transform: scale(var(--heroui-scale-pressed, 0.98));
 }
 
 .haui-pill-btn-dark:hover {
   background-color: var(--color-ink-soft);
-}
-
-.haui-pill-btn-dark:active {
-  transform: scale(0.98);
 }
 
 .haui-pill-btn-paper {
@@ -2350,7 +2400,7 @@ pre {
 
 /* Material Symbols Outlined Font Support */
 .material-symbols-outlined {
-  font-family: 'Material Symbols Outlined' !important;
+  font-family: 'Material Symbols Outlined', system-ui, -apple-system, sans-serif !important;
   font-weight: normal;
   font-style: normal;
   display: inline-block;
@@ -2361,6 +2411,160 @@ pre {
   white-space: nowrap;
   direction: ltr;
   -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'liga';
+}
+
+/* ==========================================================================
+   HeroUI v3 Form Controls & Interactive Inputs (Synchronized)
+   ========================================================================== */
+.haui-input,
+input.haui-input,
+textarea.haui-textarea {
+  width: 100%;
+  background: var(--field-background, var(--surface-secondary, #f4f4f5));
+  color: var(--field-foreground, var(--color-ink, #0a0a0a));
+  border: 1px solid var(--color-hairline, #e5e5e5);
+  border-radius: var(--heroui-radius-lg, 18px);
+  padding: 10px 16px;
+  font-size: var(--text-sm, 14px);
+  font-family: var(--font-sans);
+  outline: none;
+  transition: all var(--transition-fast, 150ms cubic-bezier(0.4, 0, 0.2, 1));
+  box-sizing: border-box;
+}
+
+.haui-input:focus,
+input.haui-input:focus,
+textarea.haui-textarea:focus {
+  background: var(--surface, #ffffff);
+  border-color: var(--heroui-focus, #0052cc);
+  box-shadow: 0 0 0 3px oklch(0.6204 0.195 253.83 / 0.15);
+}
+
+.haui-select,
+select.haui-select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  background-color: var(--field-background, var(--surface-secondary, #f4f4f5));
+  color: var(--field-foreground, var(--color-ink, #0a0a0a));
+  border: 1px solid var(--color-hairline, #e5e5e5);
+  border-radius: var(--heroui-radius-lg, 18px);
+  padding: 10px 40px 10px 16px;
+  font-size: var(--text-sm, 14px);
+  font-family: var(--font-sans);
+  outline: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+  transition: all var(--transition-fast, 150ms cubic-bezier(0.4, 0, 0.2, 1));
+  box-sizing: border-box;
+}
+
+.haui-select:focus,
+select.haui-select:focus {
+  background-color: var(--surface, #ffffff);
+  border-color: var(--heroui-focus, #0052cc);
+  box-shadow: 0 0 0 3px oklch(0.6204 0.195 253.83 / 0.15);
+}
+
+/* HeroUI v3 DatePicker Popover Animation */
+.haui-datepicker-popover {
+  animation: haui-datepicker-enter 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top left;
+}
+
+@keyframes haui-datepicker-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* HeroUI v3 Select Popover Animation */
+.haui-select-popover {
+  animation: haui-select-enter 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top center;
+}
+
+@keyframes haui-select-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.haui-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+  color: var(--color-ink);
+}
+
+.haui-checkbox input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--color-hairline, #e5e5e5);
+  border-radius: var(--heroui-radius-xs, 4px);
+  background: var(--surface, #ffffff);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 150ms;
+  margin: 0;
+  vertical-align: middle;
+  position: relative;
+}
+
+.haui-checkbox input[type="checkbox"]:checked {
+  background: var(--color-ink, #0a0a0a);
+  border-color: var(--color-ink, #0a0a0a);
+}
+
+.haui-checkbox input[type="checkbox"]:checked::after {
+  content: '';
+  width: 5px;
+  height: 9px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  position: absolute;
+  top: 2px;
+}
+
+/* HeroUI v3 Smooth Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: var(--heroui-radius-full, 9999px);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
 }
 
 /* Print Header & Signatures Elements (Hidden on screen) */

@@ -172,4 +172,48 @@ export function Table({
   );
 }
 
+/**
+ * Sub-component Table.Header chuẩn HeroUI v3
+ */
+Table.Header = function TableHeader({ children, className = '', ...rest }) {
+  return (
+    <thead className={`haui-table__head ${className}`.trim()} {...rest}>
+      {children}
+    </thead>
+  );
+};
+
+/**
+ * Sub-component Table.Body chuẩn HeroUI v3
+ */
+Table.Body = function TableBody({ children, className = '', ...rest }) {
+  return (
+    <tbody className={`haui-table__body ${className}`.trim()} {...rest}>
+      {children}
+    </tbody>
+  );
+};
+
+/**
+ * Sub-component Table.Row chuẩn HeroUI v3
+ */
+Table.Row = function TableRow({ children, className = '', ...rest }) {
+  return (
+    <tr className={`haui-table__row ${className}`.trim()} {...rest}>
+      {children}
+    </tr>
+  );
+};
+
+/**
+ * Sub-component Table.Cell chuẩn HeroUI v3
+ */
+Table.Cell = function TableCell({ children, className = '', ...rest }) {
+  return (
+    <td className={`haui-table__cell ${className}`.trim()} {...rest}>
+      {children}
+    </td>
+  );
+};
+
 export default Table;
