@@ -12,31 +12,31 @@ const h = React.createElement;
 export const WHAT_IF_TOOLS = Object.freeze([
   {
     id: 'grades',
-    name: 'Màn 6: Giả lập điểm kỳ tới',
-    shortName: 'Giả lập điểm (Màn 6)',
-    icon: '🎯',
+    name: 'Giả lập điểm kỳ tới',
+    shortName: 'Giả lập điểm',
+    icon: 'target',
     description: 'Dự báo GPA học kỳ và biến thiên CPA tích lũy khi thay đổi điểm số các môn dự kiến.'
   },
   {
     id: 'retake',
-    name: 'Màn 7: Xếp hạng tối ưu học cải thiện (ROI)',
-    shortName: 'ROI cải thiện (Màn 7)',
-    icon: '📈',
-    description: 'Xếp hạng các môn điểm D/D+/C theo độ nhạy tăng CPA (ROI) trên mỗi tín chỉ đăng ký (BR-06).'
+    name: 'Xếp hạng học cải thiện',
+    shortName: 'Học cải thiện',
+    icon: 'trending_up',
+    description: 'Xếp hạng các môn điểm D/D+/C theo mức tăng CPA trên mỗi tín chỉ đăng ký.'
   },
   {
     id: 'target',
-    name: 'Màn 8: Tính điểm mục tiêu ngược',
-    shortName: 'Mục tiêu ngược (Màn 8)',
-    icon: '🏁',
-    description: 'Tính toán phân bổ điểm số tối thiểu cần đạt trong các kỳ còn lại để đạt ngưỡng CPA mục tiêu (≥ 3.20).'
+    name: 'Tính điểm mục tiêu',
+    shortName: 'Mục tiêu điểm',
+    icon: 'flag',
+    description: 'Tính điểm tối thiểu cần đạt trong các kỳ còn lại để đạt CPA mục tiêu từ 3.20.'
   },
   {
     id: 'accelerate',
     name: 'Học vượt: Rút ngắn 3.5 năm',
     shortName: 'Học vượt 3.5 năm',
-    icon: '⚡',
-    description: 'Phân bổ học phần vào kỳ hè (tối đa 8 TC theo quy chế HaUI) để tốt nghiệp sớm 1 học kỳ.'
+    icon: 'bolt',
+    description: 'Phân bổ tối đa 8 tín chỉ vào kỳ hè để tốt nghiệp sớm 1 học kỳ.'
   }
 ]);
 
@@ -611,7 +611,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
 
     plannerStore.setIncomingProposal(updatedPlan, proposalTitle);
     showToast(
-      '✓ Đã áp dụng tạo phương án đề xuất cho Planner! Hãy mở Planner để xem lại và quyết định lưu nháp hoặc kích hoạt.'
+      'Đã áp dụng tạo phương án đề xuất cho Planner! Hãy mở Planner để xem lại và quyết định lưu nháp hoặc kích hoạt.'
     );
 
     if (typeof onNavigate === 'function') {
@@ -704,15 +704,15 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
       { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
       h(
         'nav',
-        { style: { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } },
+        { className: 'haui-breadcrumb', 'aria-label': 'Đường dẫn trang' },
         h(
-          'span',
-          { style: { cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'inherit' } },
-          h('span', { className: 'material-symbols-outlined', style: { fontSize: '14px' } }, 'home'),
+          'button',
+          { type: 'button', className: 'haui-breadcrumb__home', onClick: () => onNavigate?.('/') },
+          h('span', { className: 'material-symbols-outlined haui-breadcrumb__icon', 'aria-hidden': 'true' }, 'home'),
           'Trang chủ'
         ),
-        h('span', { style: { color: 'var(--color-hairline, #e5e5e5)' } }, '/'),
-        h('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500 } }, 'What-if mô phỏng điểm')
+        h('span', { className: 'haui-breadcrumb__separator', 'aria-hidden': 'true' }, '/'),
+        h('span', { className: 'haui-breadcrumb__current', 'aria-current': 'page' }, 'What-if mô phỏng điểm')
       ),
       h(
         'div',
@@ -1023,7 +1023,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
               borderRadius: '18px',
               cursor: 'pointer',
               backgroundColor: isActive ? 'var(--color-paper)' : 'var(--color-surface-alt)',
-              border: isActive ? '2px solid var(--color-ink)' : '1px solid var(--color-hairline)',
+              border: isActive ? '2px solid var(--color-ink)' : '2px solid var(--color-hairline)',
               boxShadow: isActive ? '0 4px 12px rgba(0,0,0,0.06)' : 'none',
               transition: 'all 150ms ease',
               display: 'flex',
@@ -1034,7 +1034,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
           h(
             'div',
             { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-            h('span', { style: { fontSize: '18px' } }, t.icon),
+            h('span', { className: 'material-symbols-outlined', style: { fontSize: '18px' }, 'aria-hidden': true }, t.icon),
             h('strong', { style: { fontSize: '13px', color: 'var(--color-ink)' } }, t.name)
           ),
           h('p', { style: { margin: '2px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)', lineHeight: 1.4 } }, t.description)
@@ -1045,7 +1045,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
     // SECTION 4: MAIN WORKSPACE (7 COLS LEFT / 5 COLS RIGHT)
     h(
       'div',
-      { style: { display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px', alignItems: 'start' } },
+      { key: activeTool, className: 'haui-tab-panel', style: { display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px', alignItems: 'start' } },
 
       // LEFT PANEL (7 cols)
       h(
@@ -1268,7 +1268,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
                 h(
                   'div',
                   null,
-                  h('h2', { style: { margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)' } }, 'Xếp hạng tối ưu học cải thiện (ROI)'),
+                  h('h2', { style: { margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)' } }, 'Xếp hạng học cải thiện'),
                   h('p', { style: { margin: '4px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)' } }, 'Danh sách môn điểm D, D+, C hoặc F đã hoàn thành. Tích chọn các môn muốn đưa vào kế hoạch cải thiện:')
                 ),
                 h('span', { style: { padding: '4px 12px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)', fontSize: '12px', fontWeight: 600 } }, `${retakeCandidates.length} Môn đề xuất`)
@@ -1386,7 +1386,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
                       'div',
                       null,
                       h('label', { htmlFor: 'retake-toggle-card', style: { fontSize: '13px', fontWeight: 600, color: 'var(--color-ink)', cursor: 'pointer', display: 'block' } }, 'IT6008 - Mạng máy tính cơ sở (3 TC)'),
-                      h('p', { style: { margin: '2px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)' } }, 'Điểm gốc Kỳ 4: C (2.0) ➔ Giả lập cải thiện thành công lên A (4.0)')
+                      h('p', { style: { margin: '2px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)' } }, 'Điểm gốc Kỳ 4: C (2.0) → Giả lập cải thiện thành công lên A (4.0)')
                     )
                   ),
                   h('span', { style: { padding: '4px 10px', borderRadius: '9999px', backgroundColor: 'var(--color-paper)', color: 'var(--color-ink)', fontSize: '12px', fontWeight: 600, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' } }, '+0.04 CPA toàn khóa')

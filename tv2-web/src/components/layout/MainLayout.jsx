@@ -2,6 +2,7 @@ import React, { useState, Component } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar.jsx';
 import { Topbar } from './Topbar.jsx';
+import { Link } from './animatedNavigation.jsx';
 
 /**
  * Error Boundary bảo vệ ứng dụng không bị trắng trang khi bất kỳ component con nào gặp sự cố
@@ -29,7 +30,7 @@ class PageErrorBoundary extends Component {
       return (
         <div style={{ padding: '40px 24px', maxWidth: '600px', margin: '40px auto', textAlign: 'center', backgroundColor: '#fff', borderRadius: '16px', border: '1px solid #fee2e2', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
           <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '24px' }}>
-            ⚠️
+            <span className="material-symbols-outlined" aria-hidden="true">warning</span>
           </div>
           <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#111827', margin: '0 0 8px' }}>
             Có sự cố khi hiển thị nội dung trang này
@@ -45,13 +46,12 @@ class PageErrorBoundary extends Component {
             >
               Tải lại trang này
             </button>
-            <button
-              type="button"
+            <Link
+              to="/dashboard"
               className="haui-pill-btn-paper"
-              onClick={() => { window.location.href = '/dashboard'; }}
             >
               Về Trang chủ
-            </button>
+            </Link>
           </div>
         </div>
       );
@@ -92,7 +92,9 @@ export function MainLayout({ children }) {
         <Topbar collapsed={isCollapsed} onToggleCollapse={toggleSidebar} />
         <main className="haui-content">
           <PageErrorBoundary>
-            {children || <Outlet />}
+            <div className="haui-route-content">
+              {children || <Outlet />}
+            </div>
           </PageErrorBoundary>
         </main>
       </div>

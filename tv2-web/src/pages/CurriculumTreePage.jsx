@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useAnimatedNavigate } from '../components/layout/animatedNavigation.jsx';
 import { api } from '../services/apiClient.js';
 import { Table, Modal, Loading, Error as ErrorBox, Select } from '../components/ui/index.js';
 import { subscribeAcademicStore } from '../services/academicStore.js';
@@ -74,7 +74,7 @@ const PROTOTYPE_COURSE_DETAILS = Object.freeze({
 export { getCourseDisplayMeta };
 
 export function CurriculumTreePage() {
-  const navigate = useNavigate();
+  const navigate = useAnimatedNavigate();
   const timelineScrollRef = useRef(null);
 
   // Chế độ xem: 'flowchart' (Sơ đồ luồng) | 'table' (Dạng bảng)
@@ -250,14 +250,14 @@ export function CurriculumTreePage() {
   const filteredTimeline = useMemo(() => {
     const semMap = new Map();
     const defaultSems = [
-      { semester: 1, label: 'Học kỳ 1 (Năm 1)', meta: 'Đại cương' },
-      { semester: 2, label: 'Học kỳ 2 (Năm 1)', meta: 'Đại cương & Cơ sở' },
-      { semester: 3, label: 'Học kỳ 3 (Năm 2)', meta: 'Cơ sở ngành' },
-      { semester: 4, label: 'Học kỳ 4 (Năm 2)', meta: 'Cơ sở & Chuyên ngành' },
-      { semester: 5, label: 'Học kỳ 5 (Năm 3)', meta: 'Chuyên ngành' },
-      { semester: 6, label: 'Học kỳ 6 (Năm 3)', meta: 'Chuyên ngành (Hiện tại)', isCurrent: true },
-      { semester: 7, label: 'Học kỳ 7 (Năm 4)', meta: 'Đồ án & Thực tập' },
-      { semester: 8, label: 'Học kỳ 8 (Năm 4)', meta: 'Tốt nghiệp' }
+      { semester: 1, label: 'Học kỳ 1 · Năm 1', meta: 'Đại cương' },
+      { semester: 2, label: 'Học kỳ 2 · Năm 1', meta: 'Đại cương & Cơ sở' },
+      { semester: 3, label: 'Học kỳ 3 · Năm 2', meta: 'Cơ sở ngành' },
+      { semester: 4, label: 'Học kỳ 4 · Năm 2', meta: 'Cơ sở & Chuyên ngành' },
+      { semester: 5, label: 'Học kỳ 5 · Năm 3', meta: 'Chuyên ngành' },
+      { semester: 6, label: 'Học kỳ 6 · Năm 3', meta: 'Chuyên ngành · Hiện tại', isCurrent: true },
+      { semester: 7, label: 'Học kỳ 7 · Năm 4', meta: 'Đồ án & Thực tập' },
+      { semester: 8, label: 'Học kỳ 8 · Năm 4', meta: 'Tốt nghiệp' }
     ];
 
     defaultSems.forEach((s) => semMap.set(s.semester, { ...s, courses: [] }));
@@ -410,16 +410,13 @@ export function CurriculumTreePage() {
           SECTION 1: BREADCRUMB & PAGE TITLE & METADATA BADGES
           ========================================================================= */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
-          <span
-            style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'inherit' }}
-            onClick={() => navigate('/')}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>home</span>
+        <nav className="haui-breadcrumb" aria-label="Đường dẫn trang">
+          <button type="button" className="haui-breadcrumb__home" onClick={() => navigate('/')}>
+            <span className="material-symbols-outlined haui-breadcrumb__icon" aria-hidden="true">home</span>
             Trang chủ
-          </span>
-          <span style={{ color: 'var(--color-hairline)' }}>/</span>
-          <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Cây môn học &amp; Lộ trình tiên quyết</span>
+          </button>
+          <span className="haui-breadcrumb__separator" aria-hidden="true">/</span>
+          <span className="haui-breadcrumb__current" aria-current="page">Cây môn học &amp; Lộ trình tiên quyết</span>
         </nav>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: '16px', paddingTop: '4px' }}>
@@ -427,23 +424,6 @@ export function CurriculumTreePage() {
             <h1 style={{ fontSize: '30px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.5px' }}>
               Cây môn học &amp; Sơ đồ tiên quyết
             </h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
-              <span className="haui-badge haui-badge--neutral" style={{ fontSize: '11px' }}>
-                Quy chế: {treeData?.policyVersion || 'policy-haui-demo-2026@0.0.1-v0'}
-              </span>
-              <span className="haui-badge haui-badge--neutral" style={{ fontSize: '11px' }}>
-                Hồ sơ: {treeData?.dataRevision || 'REV-SERVER'}
-              </span>
-              {treeData?.transcriptStatus === 'NONE' ? (
-                <span className="haui-badge haui-badge--warning" style={{ fontSize: '11px' }}>
-                  Chưa nạp bảng điểm (NONE)
-                </span>
-              ) : (
-                <span className="haui-badge haui-badge--success" style={{ fontSize: '11px' }}>
-                  Bảng điểm đã xác nhận (CONFIRMED)
-                </span>
-              )}
-            </div>
           </div>
 
           {/* Export & Flow Controls */}
@@ -470,7 +450,7 @@ export function CurriculumTreePage() {
                   onClick={() => setViewMode('flowchart')}
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>account_tree</span>
-                  <span>Sơ đồ luồng (Flowchart)</span>
+                  <span>Sơ đồ luồng</span>
                 </button>
                 <button
                   type="button"
@@ -733,10 +713,10 @@ export function CurriculumTreePage() {
                 }}
               >
                 <option value="all">Tất cả trạng thái</option>
-                <option value="passed">Đã hoàn thành (PASSED)</option>
-                <option value="studying">Đang học (IN_PROGRESS)</option>
-                <option value="eligible">Đủ ĐK đăng ký (ELIGIBLE)</option>
-                <option value="locked">Khóa / Nợ môn (BLOCKED/FAILED)</option>
+                <option value="passed">Đã hoàn thành</option>
+                <option value="studying">Đang học</option>
+                <option value="eligible">Đủ điều kiện đăng ký</option>
+                <option value="locked">Khóa / Nợ môn</option>
               </Select>
             </div>
           </div>
@@ -749,7 +729,7 @@ export function CurriculumTreePage() {
             <input
               type="text"
               className="haui-input"
-              placeholder="Tìm môn trên sơ đồ (VD: IT6015, Giải thuật...)"
+              placeholder="Tìm môn theo tên hoặc mã"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
@@ -769,26 +749,26 @@ export function CurriculumTreePage() {
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '16px' }}>
             <span style={{ fontWeight: 600, color: 'var(--color-ink)' }}>Chú thích sơ đồ:</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--color-paper)', border: '1px solid var(--color-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 700, color: 'var(--color-ink)' }}>✓</span>
-              Đã hoàn thành (PASSED)
+              <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--color-paper)', border: '1px solid var(--color-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 700, color: 'var(--color-ink)' }}></span>
+              Đã hoàn thành
             </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--color-ink)' }} />
-              Đang học (IN_PROGRESS)
+              Đang học
             </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--color-canvas)', border: '1px solid var(--color-mid-gray)' }} />
-              Đủ điều kiện (ELIGIBLE)
+              Đủ điều kiện
             </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--color-mid-gray)' }}>lock</span>
-              Khóa (BLOCKED / FAILED)
+              Khóa / Nợ môn
             </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>info</span>
-            <span>Dữ liệu CTĐT chuẩn Contract 1.3.0. Đối chiếu chính thức tại <strong>sv.haui.edu.vn</strong></span>
+            <span>Đối chiếu chương trình đào tạo chính thức tại <strong>sv.haui.edu.vn</strong></span>
           </div>
         </div>
       </div>
@@ -825,7 +805,7 @@ export function CurriculumTreePage() {
                     {treeData?.curriculumName || 'Chương trình đào tạo'}
                   </span>
                   <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>
-                    Tổng số {courses.length} học phần · Cập nhật từ hồ sơ {treeData?.dataRevision}
+                    Tổng số {courses.length} học phần
                   </span>
                 </div>
               </div>
@@ -866,7 +846,7 @@ export function CurriculumTreePage() {
                       transition: 'all 150ms'
                     }}
                   >
-                    🎯 Tô sáng luồng môn
+                    Tô sáng luồng môn
                   </button>
                 </div>
 
@@ -1080,7 +1060,7 @@ export function CurriculumTreePage() {
                   <div>
                     <p style={{ margin: 0, fontSize: '11px', color: 'var(--color-mid-gray)' }}>Thẩm định đăng ký</p>
                     <p style={{ margin: '2px 0 0', fontSize: '14px', fontWeight: 600, color: selectedCourse.eligible ? '#16a34a' : 'var(--color-ember)' }}>
-                      {selectedCourse.eligible ? '✓ Đủ điều kiện' : '⚠️ Bị chặn đăng ký'}
+                      {selectedCourse.eligible ? 'Đủ điều kiện' : 'Bị chặn đăng ký'}
                     </p>
                   </div>
                 </div>
@@ -1333,7 +1313,7 @@ export function CurriculumTreePage() {
                 }}
               >
                 <strong>Trạng thái thẩm định:</strong>{' '}
-                {eligibilityResult.eligible ? '✓ Đủ điều kiện đăng ký' : '⚠️ Bị chặn bởi điều kiện tiên quyết (BR-01)'}
+                {eligibilityResult.eligible ? 'Đủ điều kiện đăng ký' : 'Bị chặn bởi điều kiện tiên quyết'}
               </div>
 
               {eligibilityResult.missingPrerequisites?.length > 0 && (
@@ -1347,11 +1327,6 @@ export function CurriculumTreePage() {
                 </div>
               )}
 
-              {eligibilityResult.policyVersion && (
-                <div style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>
-                  Phiên bản quy chế: <code>{eligibilityResult.policyVersion}</code>
-                </div>
-              )}
             </div>
           )}
         </div>

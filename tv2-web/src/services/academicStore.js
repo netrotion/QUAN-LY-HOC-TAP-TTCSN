@@ -47,7 +47,7 @@ export const STUDENT_PRESETS = Object.freeze({
     avatarChar: 'A',
     presetLabel: 'Sinh viên tiến độ chuẩn',
     badgeType: 'success',
-    badgeText: '✓ Tiến độ chuẩn (Bình thường)',
+    badgeText: 'Tiến độ chuẩn (Bình thường)',
     warnings: [],
     totalCreditsRequired: 135,
     initialCpa: 3.05,
@@ -82,7 +82,7 @@ export const STUDENT_PRESETS = Object.freeze({
     avatarChar: 'B',
     presetLabel: 'Sinh viên có nguy cơ học vụ',
     badgeType: 'warning',
-    badgeText: '⚠️ Cảnh báo học vụ: Mức 1',
+    badgeText: 'Cảnh báo học vụ: Mức 1',
     warnings: [
       'Cảnh báo học vụ Mức 1 (BR-07): CPA 1.85 < 2.00 và nợ môn tiên quyết Toán rời rạc (MATH1002). Cần ưu tiên học lại ngay để mở khóa các môn chuyên ngành.'
     ],

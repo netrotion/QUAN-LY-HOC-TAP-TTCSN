@@ -18,7 +18,7 @@ import { Select } from '../components/Select.js';
  * @param {Object} props.api - Singleton API Client từ TV2
  * @param {Object} props.ui - Shared UI Library V0 từ TV2
  */
-export function StudyPlannerPage({ api, ui } = {}) {
+export function StudyPlannerPage({ api, ui, onNavigate } = {}) {
   const {
     Button,
     Card,
@@ -172,9 +172,9 @@ export function StudyPlannerPage({ api, ui } = {}) {
           includeSummerSemesters: true
         });
         if (res.success) {
-          showToast(res.message || 'Đã sinh phương án học tập đề xuất (DRAFT)!');
+          showToast(res.message || 'Đã tạo phương án học tập đề xuất!');
         } else {
-          showToast(`⚠️ ${res.message}`);
+          showToast(`${res.message}`);
         }
       } else {
         plannerStore.resetToDefault();
@@ -182,7 +182,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
       }
     } catch (err) {
       setError(err);
-      showToast(`⚠️ Lỗi sinh phương án: ${err?.message || 'Sự cố kết nối'}`);
+      showToast(`Lỗi sinh phương án: ${err?.message || 'Sự cố kết nối'}`);
     } finally {
       setLoading(false);
     }
@@ -198,7 +198,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
       if (api && typeof plannerStore.validatePlanAsync === 'function') {
         const res = await plannerStore.validatePlanAsync(api);
         if (res.toolNotReady) {
-          showToast('⚠️ Công cụ thẩm định quy chế học vụ chưa sẵn sàng (503 TOOL_NOT_READY).');
+          showToast('Công cụ thẩm định quy chế học vụ chưa sẵn sàng (503 TOOL_NOT_READY).');
         } else if (res.valid) {
           showToast(res.message || 'Kế hoạch hợp lệ theo quy chế HaUI — đã chuyển sang VALIDATED, có thể kích hoạt.');
         } else {
@@ -213,7 +213,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
         );
       }
     } catch (err) {
-      showToast(`⚠️ Lỗi khi kiểm tra điều kiện: ${err?.message || 'Sự cố kết nối'}`);
+      showToast(`Lỗi khi kiểm tra điều kiện: ${err?.message || 'Sự cố kết nối'}`);
     } finally {
       setValidating(false);
     }
@@ -249,17 +249,17 @@ export function StudyPlannerPage({ api, ui } = {}) {
       if (api && typeof plannerStore.reconcilePlanAsync === 'function') {
         const res = await plannerStore.reconcilePlanAsync(api, reconcileSemester);
         if (res.planNotActive) {
-          showToast('⚠️ Chỉ có thể đối soát trên kế hoạch đang theo dõi (ACTIVE).');
+          showToast('Chỉ có thể đối soát trên kế hoạch đang theo dõi.');
         } else if (res.success) {
           showToast(res.message);
         } else {
-          showToast(`⚠️ ${res.message}`);
+          showToast(`${res.message}`);
         }
       } else {
-        showToast('⚠️ API đối soát kế hoạch chưa sẵn sàng.');
+        showToast('API đối soát kế hoạch chưa sẵn sàng.');
       }
     } catch (err) {
-      showToast(`⚠️ Lỗi đối chiếu học kỳ: ${err?.message || 'Sự cố kết nối'}`);
+      showToast(`Lỗi đối chiếu học kỳ: ${err?.message || 'Sự cố kết nối'}`);
     } finally {
       setReconciling(false);
     }
@@ -270,7 +270,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
     const draft = plannerStore.applyReconcileAdjustmentsAsDraft();
     if (draft) {
       setIsReconcileModalOpen(false);
-      showToast('✓ Đã tạo bản nháp điều chỉnh lộ trình! Bạn có thể xem lại và bấm "Lưu bản nháp".');
+      showToast('Đã tạo bản nháp điều chỉnh lộ trình! Bạn có thể xem lại và bấm "Lưu bản nháp".');
     } else {
       showToast('Không có kiến nghị điều chỉnh để áp dụng.');
     }
@@ -291,11 +291,11 @@ export function StudyPlannerPage({ api, ui } = {}) {
       if (storeRes.success) {
         showToast(storeRes.message || 'Đã lưu thành công bản nháp vào hệ thống!');
       } else {
-        showToast(`⚠️ ${storeRes.message}`);
+        showToast(`${storeRes.message}`);
       }
     } catch (err) {
       // Lưu lỗi không mất nội dung: thông báo lỗi nhưng giữ nguyên kế hoạch trong store
-      showToast(`⚠️ Lỗi khi lưu máy chủ: ${err?.message || 'Sự cố kết nối'}. Nội dung nháp vẫn được giữ nguyên.`);
+      showToast(`Lỗi khi lưu máy chủ: ${err?.message || 'Sự cố kết nối'}. Nội dung nháp vẫn được giữ nguyên.`);
     } finally {
       setSaving(false);
     }
@@ -312,9 +312,9 @@ export function StudyPlannerPage({ api, ui } = {}) {
       } else {
         res = plannerStore.activatePlan();
       }
-      showToast(res.success ? res.message : `⚠️ ${res.message}`);
+      showToast(res.success ? res.message : `${res.message}`);
     } catch (err) {
-      showToast(`⚠️ Lỗi khi kích hoạt: ${err?.message || 'Sự cố kết nối'}`);
+      showToast(`Lỗi khi kích hoạt: ${err?.message || 'Sự cố kết nối'}`);
     }
   }, [api, showToast]);
 
@@ -384,32 +384,28 @@ export function StudyPlannerPage({ api, ui } = {}) {
       style: {
         display: 'flex',
         flexDirection: 'column',
-        gap: '8px',
-        marginBottom: '20px'
+        gap: '6px'
       }
     },
     // Breadcrumb
     React.createElement(
-      'div',
+      'nav',
       {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          fontSize: '12px',
-          color: 'var(--color-mid-gray, #737373)'
-        }
+        className: 'haui-breadcrumb',
+        'aria-label': 'Đường dẫn trang'
       },
       React.createElement(
-        'span',
+        'button',
         {
-          style: { cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }
+          type: 'button',
+          className: 'haui-breadcrumb__home',
+          onClick: () => onNavigate?.('/')
         },
-        React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '15px' } }, 'home'),
+        React.createElement('span', { className: 'material-symbols-outlined haui-breadcrumb__icon', 'aria-hidden': 'true' }, 'home'),
         'Trang chủ'
       ),
-      React.createElement('span', { style: { color: 'var(--color-hairline, #e5e5e5)' } }, '/'),
-      React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500 } }, 'Kế hoạch học tập cá nhân')
+      React.createElement('span', { className: 'haui-breadcrumb__separator', 'aria-hidden': 'true' }, '/'),
+      React.createElement('span', { className: 'haui-breadcrumb__current', 'aria-current': 'page' }, 'Kế hoạch học tập cá nhân')
     ),
     // Title & Actions Bar
     React.createElement(
@@ -433,8 +429,8 @@ export function StudyPlannerPage({ api, ui } = {}) {
             'h1',
             {
               style: {
-                fontSize: '28px',
-                fontWeight: 700,
+                fontSize: '30px',
+                fontWeight: 600,
                 letterSpacing: '-0.02em',
                 color: 'var(--color-ink, #0a0a0a)',
                 margin: 0
@@ -457,42 +453,9 @@ export function StudyPlannerPage({ api, ui } = {}) {
               }
             },
             plan?.status === PLAN_STATUSES.ACTIVE
-              ? `● Kế hoạch đang theo dõi (ACTIVE)`
-              : `Bản nháp ${plan?.version || 'v2.4'} (Chưa kích hoạt)`
+              ? '● Kế hoạch đang theo dõi'
+              : 'Bản nháp chưa kích hoạt'
           ),
-          plan?.sourcePlanId
-            ? React.createElement(
-                'span',
-                {
-                  style: {
-                    fontSize: '11px',
-                    fontWeight: 500,
-                    padding: '3px 10px',
-                    borderRadius: '9999px',
-                    background: '#fef3c7',
-                    color: '#b45309',
-                    border: '1px solid #fde68a'
-                  }
-                },
-                `Kế thừa từ ${plan.sourcePlanId}`
-              )
-            : null,
-          plan?.policyVersion
-            ? React.createElement(
-                'span',
-                {
-                  style: {
-                    fontSize: '11px',
-                    padding: '3px 10px',
-                    borderRadius: '9999px',
-                    background: '#f1f5f9',
-                    color: '#475569',
-                    border: '1px solid #e2e8f0'
-                  }
-                },
-                `Quy chế: ${plan.policyVersion}`
-              )
-            : null,
           React.createElement(
             'span',
             {
@@ -530,21 +493,21 @@ export function StudyPlannerPage({ api, ui } = {}) {
           ? React.createElement(
               Button,
               { variant: 'secondary', size: 'sm', onClick: handleGeneratePlan },
-              '⚡ Tạo phương án đề xuất'
+              'Tạo phương án đề xuất'
             )
           : null,
         Button
           ? React.createElement(
               Button,
               { variant: 'ghost', size: 'sm', onClick: () => setIsTreeModalOpen(true) },
-              '🌳 Xem Cây môn học (Tùy chọn)'
+              'Xem Cây môn học (Tùy chọn)'
             )
           : null,
         Button
           ? React.createElement(
               Button,
               { variant: 'secondary', size: 'sm', onClick: () => setIsHistoryModalOpen(true) },
-              '📜 Lịch sử & Mở lại'
+              'Lịch sử & Mở lại'
             )
           : null,
         Button
@@ -555,7 +518,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
                 size: 'sm',
                 onClick: () => setIsReconcileModalOpen(true)
               },
-              '🔍 Đối chiếu học kỳ'
+              'Đối chiếu học kỳ'
             )
           : null,
         Button
@@ -569,7 +532,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
           ? React.createElement(
               Button,
               { variant: 'secondary', size: 'sm', loading: saving, onClick: handleSaveDraft },
-              '💾 Lưu bản nháp'
+              'Lưu bản nháp'
             )
           : null,
         Button
@@ -581,7 +544,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
                 loading: validating,
                 onClick: handleValidatePlan
               },
-              '✓ Kiểm tra điều kiện'
+              'Kiểm tra điều kiện'
             )
           : null,
         Button
@@ -620,7 +583,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
             boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
           }
         },
-        React.createElement('span', null, `💡 ${toastMessage}`),
+        React.createElement('span', null, `${toastMessage}`),
         React.createElement(
           'button',
           {
@@ -675,7 +638,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
                   gap: '8px'
                 }
               },
-              `✨ Đề xuất lộ trình mới từ: ${incomingProposal.sourceName || 'AI Advisor'}`,
+              `Đề xuất lộ trình mới từ: ${incomingProposal.sourceName || 'AI Advisor'}`,
               React.createElement(
                 'span',
                 {
@@ -846,7 +809,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
             description: isStudentEmpty
               ? 'Hồ sơ của bạn chưa có dữ liệu bảng điểm. Vui lòng nạp bảng điểm từ sv.haui.edu.vn hoặc bấm nút bên dưới để tạo phương án học tập đề xuất.'
               : 'Bạn chưa tạo lộ trình học tập hoặc chưa có môn học trong kế hoạch. Nhấn nút bên dưới để tạo phương án học tập đề xuất.',
-            actionLabel: '⚡ Tạo phương án đề xuất',
+            actionLabel: 'Tạo phương án đề xuất',
             onAction: handleGeneratePlan
           })
         : React.createElement('div', null, 'Chưa có kế hoạch nào.')
@@ -1040,15 +1003,15 @@ export function StudyPlannerPage({ api, ui } = {}) {
           { style: { fontSize: '22px', fontWeight: 700, color: 'var(--color-ink, #0a0a0a)', lineHeight: 1 } },
           validationResult
             ? validationResult.valid
-              ? '✓ 100% Hợp lệ'
-              : '⚠️ Có cảnh báo'
+              ? '100% Hợp lệ'
+              : 'Có cảnh báo'
             : 'Sẵn sàng kiểm tra'
         )
       ),
       React.createElement(
         'div',
         { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } },
-        'Thỏa mãn quy định 10-24 TC (BR-03/04)'
+        'Đáp ứng giới hạn 10–24 tín chỉ'
       )
     )
   );
@@ -1061,7 +1024,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
       ? React.createElement(
           Card,
           {
-            title: validationResult.valid ? '✓ Kế hoạch hợp lệ 100% theo quy chế HaUI' : '⚠️ Cảnh báo quy chế cần lưu ý',
+            title: validationResult.valid ? 'Kế hoạch hợp lệ 100% theo quy chế HaUI' : 'Cảnh báo quy chế cần lưu ý',
             variant: validationResult.valid ? 'status-success' : 'status-warning',
             style: { marginBottom: '20px' }
           },
@@ -1086,83 +1049,75 @@ export function StudyPlannerPage({ api, ui } = {}) {
   // ==========================================
   // 4. DANH SÁCH CÁC HỌC KỲ TRONG KẾ HOẠCH
   // ==========================================
-  const semestersList = plan.semesters.map((semester) => {
+  const semestersList = plan.semesters.map((semester, index) => {
     const isSummer = semester.semesterCode.includes('SUMMER');
     const courses = semester.courses || [];
-    const credits = Number(semester.totalCredits) || 0;
 
     const columns = [
       {
         key: 'courseCode',
         title: 'Mã HP',
         dataIndex: 'courseCode',
-        width: '100px',
-        render: (val) => React.createElement('strong', { style: { color: '#0284c7' } }, val)
+        width: '10%',
+        render: (val) => React.createElement('strong', { style: { color: 'var(--color-ink)' } }, val)
       },
       {
         key: 'courseName',
         title: 'Tên học phần',
         dataIndex: 'courseName',
-        render: (val, row) =>
-          React.createElement(
-            'div',
-            null,
-            React.createElement('div', { style: { fontWeight: 600, color: '#0f172a' } }, val),
-            row.rationale ? React.createElement('div', { style: { fontSize: '11px', color: '#64748b' } }, `💡 ${row.rationale}`) : null
-          )
+        width: '35%',
+        render: (val) => React.createElement('strong', { style: { fontWeight: 600, color: 'var(--color-ink)' } }, val)
       },
       {
         key: 'credits',
         title: 'Số TC',
         dataIndex: 'credits',
         align: 'center',
-        width: '80px',
+        width: '7%',
         render: (val) => React.createElement('strong', null, val)
       },
       {
         key: 'courseType',
         title: 'Phân loại môn',
         dataIndex: 'courseType',
-        width: '170px',
-        render: (val) => {
-          const isRetake = val?.includes('Học lại');
-          const isImprove = val?.includes('cải thiện');
-          const isAccelerate = val?.includes('Học vượt');
-          const bg = isRetake ? '#fee2e2' : isImprove ? '#fef3c7' : isAccelerate ? '#f3e8ff' : '#e0f2fe';
-          const fg = isRetake ? '#b91c1c' : isImprove ? '#b45309' : isAccelerate ? '#7e22ce' : '#0369a1';
-
-          return React.createElement(
+        align: 'center',
+        width: '20%',
+        render: (val) =>
+          React.createElement(
             'span',
             {
               style: {
-                fontSize: '11px',
-                fontWeight: 600,
-                padding: '2px 8px',
-                borderRadius: '4px',
-                background: bg,
-                color: fg
+                fontSize: '12px',
+                fontWeight: 500,
+                display: 'inline-block',
+                maxWidth: '100%',
+                lineHeight: 1.35,
+                padding: '5px 10px',
+                borderRadius: '9999px',
+                border: '1px solid var(--color-hairline)',
+                background: 'var(--color-surface-alt)',
+                color: 'var(--color-ink)'
               }
             },
             val || 'Chuẩn CTĐT'
-          );
-        }
+          )
       },
       {
         key: 'targetGrade',
         title: 'Điểm mục tiêu',
         dataIndex: 'targetGrade',
         align: 'center',
-        width: '120px',
+        width: '12%',
         render: (val) =>
           React.createElement(
             'span',
             {
               style: {
                 fontWeight: 700,
-                color: '#16a34a',
-                background: '#f1f5f9',
-                padding: '2px 8px',
-                borderRadius: '4px'
+                color: 'var(--color-ink)',
+                background: 'var(--color-surface-alt)',
+                padding: '5px 10px',
+                borderRadius: '9999px'
               }
             },
             val || 'B (3.0)'
@@ -1172,11 +1127,11 @@ export function StudyPlannerPage({ api, ui } = {}) {
         key: 'actions',
         title: 'Thao tác',
         align: 'center',
-        width: '140px',
+        width: '16%',
         render: (_, row) =>
           React.createElement(
             'div',
-            { style: { display: 'flex', gap: '4px', justifyContent: 'center' } },
+            { style: { display: 'flex', gap: '4px', justifyContent: 'center', whiteSpace: 'nowrap' } },
             Button
               ? React.createElement(
                   Button,
@@ -1208,8 +1163,8 @@ export function StudyPlannerPage({ api, ui } = {}) {
           Card,
           {
             key: semester.semesterCode,
-            title: semester.semesterName,
-            subtitle: `Tổng khối lượng: ${credits} tín chỉ · Đánh giá tải: ${semester.workloadAssessment || 'Cân bằng'} · GPA dự kiến: ${semester.expectedGpa || '3.40'}`,
+            className: 'haui-planner-semester-card',
+            title: index === 0 ? 'Học kỳ tiếp theo' : semester.semesterName,
             variant: 'default',
             style: { marginBottom: '20px' },
             headerAction: Button
@@ -1229,10 +1184,11 @@ export function StudyPlannerPage({ api, ui } = {}) {
           },
           Table
             ? React.createElement(Table, {
+                className: 'haui-planner-semester-table',
                 columns,
                 data: courses,
                 rowKey: 'courseCode',
-                striped: true,
+                striped: false,
                 hoverable: true
               })
             : null
@@ -1250,7 +1206,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
           variant: 'default',
           style: { marginTop: '12px' }
         },
-        React.createElement('p', { style: { margin: '0 0 8px 0', fontSize: '13px', color: '#92400e' } }, `📌 ${plan.aiRiskAdvice}`),
+        React.createElement('p', { style: { margin: '0 0 8px 0', fontSize: '13px', color: '#92400e' } }, `${plan.aiRiskAdvice}`),
         plan.warnings && plan.warnings.length > 0
           ? React.createElement(
               'ul',
@@ -1319,7 +1275,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
         {
           isOpen: isAddCourseModalOpen,
           onClose: () => setIsAddCourseModalOpen(false),
-          title: `Thêm môn học vào ${selectedSemesterForAdd}`,
+          title: 'Thêm môn',
           subtitle: 'Chọn học phần trong danh mục CTĐT Đại học Công nghiệp Hà Nội để bổ sung vào kế hoạch.',
           size: 'md',
           footer: React.createElement(
@@ -1332,28 +1288,24 @@ export function StudyPlannerPage({ api, ui } = {}) {
         },
         React.createElement(
           'div',
-          { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+          { className: 'haui-planner-add-course-list' },
           availableCoursesPool.map((c) =>
             React.createElement(
               'div',
               {
                 key: c.courseCode,
-                style: {
-                  padding: '10px 14px',
-                  borderRadius: '12px',
-                  background: 'var(--color-surface-alt, #fafafa)',
-                  border: '1px solid var(--color-hairline, #e5e5e5)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }
+                className: 'haui-planner-add-course-row'
               },
               React.createElement(
                 'div',
-                null,
-                React.createElement('strong', { style: { color: '#0284c7' } }, `${c.courseCode} `),
-                React.createElement('span', { style: { fontWeight: 600, color: '#0f172a' } }, c.courseName),
-                React.createElement('div', { style: { fontSize: '11px', color: '#64748b' } }, `${c.credits} tín chỉ · ${c.courseType}`)
+                { className: 'haui-planner-add-course-info' },
+                React.createElement(
+                  'div',
+                  { className: 'haui-planner-add-course-name' },
+                  React.createElement('strong', null, c.courseCode),
+                  React.createElement('span', null, c.courseName)
+                ),
+                React.createElement('div', { className: 'haui-planner-add-course-meta' }, `${c.credits} tín chỉ · ${c.courseType}`)
               ),
               Button
                 ? React.createElement(
@@ -1446,12 +1398,12 @@ export function StudyPlannerPage({ api, ui } = {}) {
                     'div',
                     { style: { fontSize: '11px', color: '#64748b', marginTop: '2px' } },
                     alreadyHas
-                      ? '⚠️ Đã có môn này trong học kỳ'
+                      ? 'Đã có môn này trong học kỳ'
                       : `Hiện có ${sem.totalCredits} TC → Dự kiến sau chuyển: ${Number(sem.totalCredits) + Number(moveCourseTarget.course?.credits)} TC`
                   )
                 ),
                 isSelected
-                  ? React.createElement('span', { style: { color: '#0284c7', fontWeight: 700, fontSize: '16px' } }, '✓')
+                  ? React.createElement('span', { className: 'material-symbols-outlined', style: { color: 'var(--color-ink)', fontSize: '18px' }, 'aria-hidden': true }, 'check')
                   : null
               );
             })
@@ -1491,7 +1443,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
                     size: 'sm',
                     onClick: handleApplyReconcileAdjustments
                   },
-                  '⚡ Tạo bản nháp điều chỉnh (DRAFT)'
+                  'Tạo bản nháp điều chỉnh'
                 )
               : null
           )
@@ -1512,7 +1464,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
                     lineHeight: 1.5
                   }
                 },
-                '⚠️ Lưu ý: Nghiệp vụ đối soát theo quy chuẩn US-13 chỉ áp dụng trên bản kế hoạch chính thức đang theo dõi (ACTIVE). Nếu kế hoạch hiện tại là DRAFT, hệ thống sẽ đối soát với bản ACTIVE trong lịch sử nếu có.'
+                'Đối soát áp dụng cho kế hoạch đang theo dõi. Nếu bạn đang chỉnh sửa bản nháp, hệ thống sẽ dùng kế hoạch đang theo dõi gần nhất.'
               )
             : null,
           React.createElement(
@@ -1571,24 +1523,8 @@ export function StudyPlannerPage({ api, ui } = {}) {
                   React.createElement(
                     'strong',
                     { style: { fontSize: '15px', color: reconcileResult.onTrack ? '#166534' : '#9a3412' } },
-                    reconcileResult.onTrack ? '✓ Kế hoạch ĐÚNG TIẾN ĐỘ' : '⚠️ Cần điều chỉnh kế hoạch học tập'
-                  ),
-                  reconcileResult.policyVersion
-                    ? React.createElement(
-                        'span',
-                        {
-                          style: {
-                            fontSize: '11px',
-                            padding: '2px 8px',
-                            borderRadius: '9999px',
-                            backgroundColor: '#ffffff',
-                            color: '#64748b',
-                            border: '1px solid #cbd5e1'
-                          }
-                        },
-                        `Quy chế: ${reconcileResult.policyVersion}`
-                      )
-                    : null
+                    reconcileResult.onTrack ? 'Kế hoạch ĐÚNG TIẾN ĐỘ' : 'Cần điều chỉnh kế hoạch học tập'
+                  )
                 ),
                 React.createElement(
                   'div',
@@ -1629,7 +1565,7 @@ export function StudyPlannerPage({ api, ui } = {}) {
                           { style: { margin: 0, paddingLeft: '18px', color: '#b91c1c' } },
                           reconcileResult.missedOrFailedCourses.map((c, i) => React.createElement('li', { key: i }, c))
                         )
-                      : React.createElement('div', { style: { color: '#16a34a' } }, '✓ Không có môn nợ')
+                      : React.createElement('div', { style: { color: '#16a34a' } }, 'Không có môn nợ')
                   )
                 ),
                 reconcileResult.adjustmentsRecommended?.length > 0

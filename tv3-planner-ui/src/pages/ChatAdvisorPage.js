@@ -412,6 +412,7 @@ export function ChatAdvisorPage({
   ui,
   onOpenTranscript,
   onOpenPlanner,
+  onNavigate,
   initialMessages = undefined,
   initialError = null
 } = {}) {
@@ -478,7 +479,7 @@ export function ChatAdvisorPage({
     }
     return 'c1111111-2222-3333-4444-555555555555';
   });
-  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const isInitialMount = useRef(true);
 
   const showToast = useCallback((msg) => {
@@ -488,15 +489,18 @@ export function ChatAdvisorPage({
 
   // Cuộn xuống tin nhắn mới nhất khi có tương tác (không tự nhảy xuống đáy lúc vừa mở trang)
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+      });
+    }
   }, []);
 
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
-      if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
-        window.scrollTo(0, 0);
-      }
       return;
     }
     if (messages.length > 0) {
@@ -506,6 +510,10 @@ export function ChatAdvisorPage({
 
   // Điều hướng an toàn hỗ trợ cả HashRouter và BrowserRouter
   const navigateTo = useCallback((path) => {
+    if (typeof onNavigate === 'function') {
+      onNavigate(path);
+      return;
+    }
     if (typeof window !== 'undefined' && window.location) {
       if (window.location.hash) {
         window.location.hash = `#${path.startsWith('/') ? path : '/' + path}`;
@@ -513,7 +521,7 @@ export function ChatAdvisorPage({
         window.location.pathname = path;
       }
     }
-  }, []);
+  }, [onNavigate]);
 
   // Xử lý nút đính kèm -> mở luồng nhập bảng điểm chung của TV2 (/transcript)
   const handleAttachmentClick = useCallback(() => {
@@ -709,24 +717,21 @@ export function ChatAdvisorPage({
       React.createElement(
         'nav',
         {
-          style: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontSize: '12px',
-            color: 'var(--color-mid-gray, #737373)'
-          }
+          className: 'haui-breadcrumb',
+          'aria-label': 'Đường dẫn trang'
         },
         React.createElement(
-          'span',
+          'button',
           {
+            type: 'button',
+            className: 'haui-breadcrumb__home',
             onClick: () => navigateTo('/'),
-            style: { cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'inherit' }
           },
+          React.createElement('span', { className: 'material-symbols-outlined haui-breadcrumb__icon', 'aria-hidden': 'true' }, 'home'),
           'Trang chủ'
         ),
-        React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '14px' } }, 'chevron_right'),
-        React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500 } }, 'Tư vấn AI & Lộ trình học tập')
+        React.createElement('span', { className: 'haui-breadcrumb__separator', 'aria-hidden': 'true' }, '/'),
+        React.createElement('span', { className: 'haui-breadcrumb__current', 'aria-current': 'page' }, 'Tư vấn AI & Lộ trình học tập')
       ),
       React.createElement(
         'div',
@@ -780,7 +785,7 @@ export function ChatAdvisorPage({
             'h1',
             {
               style: {
-                fontSize: '28px',
+                fontSize: '30px',
                 fontWeight: 600,
                 color: 'var(--color-ink, #0a0a0a)',
                 margin: 0,
@@ -876,7 +881,7 @@ export function ChatAdvisorPage({
                 fontSize: '13px'
               }
             },
-            React.createElement('span', null, `⚠️ ${error?.message}`),
+            React.createElement('span', null, `${error?.message}`),
             React.createElement(
               'button',
               {
@@ -963,7 +968,7 @@ export function ChatAdvisorPage({
         // Dòng hội thoại tin nhắn (Conversation Stream)
         React.createElement(
           'div',
-          { style: { display: 'flex', flexDirection: 'column', gap: '24px' } },
+          { ref: messagesContainerRef, className: 'haui-chat-stream', style: { display: 'flex', flexDirection: 'column', gap: '24px' } },
           messages.length === 0
             ? React.createElement(
                 'div',
@@ -1042,7 +1047,7 @@ export function ChatAdvisorPage({
                         ? React.createElement(
                             'div',
                             { style: { display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' } },
-                            React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-ember)' } }, '⚠️ Không thể gửi tin nhắn'),
+                            React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-ember)' } }, 'Không thể gửi tin nhắn'),
                             React.createElement(
                               'button',
                               {
@@ -1432,7 +1437,7 @@ export function ChatAdvisorPage({
                             React.createElement(
                               'div',
                               { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-                              React.createElement('strong', { style: { fontSize: '14px', color: 'var(--color-ink)' } }, '📋 Đề xuất Phương án Lộ trình Học tập mới'),
+                              React.createElement('strong', { style: { fontSize: '14px', color: 'var(--color-ink)' } }, 'Đề xuất Phương án Lộ trình Học tập mới'),
                               React.createElement(
                                 'span',
                                 {
@@ -1445,7 +1450,7 @@ export function ChatAdvisorPage({
                                     color: msg.proposalAccepted ? '#15803d' : '#ffffff'
                                   }
                                 },
-                                msg.proposalAccepted ? '✓ Đã chấp nhận & Nạp vào Planner' : 'Chờ bạn xem xét'
+                                msg.proposalAccepted ? 'Đã chấp nhận & Nạp vào Planner' : 'Chờ bạn xem xét'
                               )
                             ),
                             React.createElement(
@@ -1504,7 +1509,7 @@ export function ChatAdvisorPage({
                         ? React.createElement(
                             'div',
                             { style: { paddingTop: '8px', borderTop: '1px solid var(--color-hairline)', fontSize: '12px', color: 'var(--color-mid-gray)' } },
-                            React.createElement('strong', { style: { color: 'var(--color-ink)' } }, '📖 Nguồn tham khảo & Quy chế: '),
+                            React.createElement('strong', { style: { color: 'var(--color-ink)' } }, 'Nguồn tham khảo & Quy chế: '),
                             msg.sources.map((s, sIdx) =>
                               React.createElement('span', { key: sIdx }, `${s.title} ${s.section ? `(${s.section})` : ''}${sIdx < msg.sources.length - 1 ? '; ' : ''}`)
                             )
@@ -1583,7 +1588,7 @@ export function ChatAdvisorPage({
                 React.createElement('span', null, 'AI đang đối chiếu bảng điểm và phân tích quy chế đào tạo HaUI...')
               )
             : null,
-          React.createElement('div', { ref: messagesEndRef })
+          React.createElement('div')
         ),
 
         // Sticky Bottom Chat Input Bar (Chuẩn xác theo prototype)

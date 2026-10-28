@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useAnimatedNavigate } from '../components/layout/animatedNavigation.jsx';
 import { plannerStore } from '@haui/planner-ui';
 import { api } from '../services/apiClient.js';
 import { HAUI_BUSINESS_RULES } from '../services/mockFixtures.js';
@@ -24,7 +24,7 @@ import {
  * - Bản in A4 (@media print) phân định rạch ròi Thực tế vs Dự kiến.
  */
 export function AcademicProgressPage() {
-  const navigate = useNavigate();
+  const navigate = useAnimatedNavigate();
   const [reportMode, setReportMode] = useState('actual'); // 'actual' | 'projected'
   const [auditData, setAuditData] = useState(null);
   const [plannerState, setPlannerState] = useState(() => (plannerStore?.getState ? plannerStore.getState() : {}));
@@ -129,7 +129,7 @@ export function AcademicProgressPage() {
     },
     {
       key: 'name',
-      title: 'Tiêu chí chi tiết (FR-17)'
+      title: 'Tiêu chí chi tiết'
     },
     {
       key: 'creditsProgress',
@@ -154,17 +154,17 @@ export function AcademicProgressPage() {
       width: '180px',
       render: (completed, row) => {
         if (completed === true) {
-          return <span className="haui-badge haui-badge--success">✓ ĐẠT (Hợp lệ)</span>;
+        return <span className="haui-badge haui-badge--success">ĐẠT</span>;
         }
         if (completed === false) {
           const isRedAlert = row.category.includes('TIN HỌC') || row.category.includes('NỢ MÔN');
           return (
             <span className={`haui-badge ${isRedAlert ? 'haui-badge--error' : 'haui-badge--warning'}`}>
-              {isRedAlert ? '🚨 CẢNH BÁO ĐỎ' : '⚠️ CÒN THIẾU'}
+              {isRedAlert ? 'CẢNH BÁO ĐỎ' : 'CÒN THIẾU'}
             </span>
           );
         }
-        return <span className="haui-badge haui-badge--neutral">○ CHƯA XÁC ĐỊNH / CHỜ DUYỆT</span>;
+        return <span className="haui-badge haui-badge--neutral">CHƯA XÁC ĐỊNH / CHỜ DUYỆT</span>;
       }
     },
     {
@@ -196,11 +196,11 @@ export function AcademicProgressPage() {
     },
     {
       key: 'requiredStandard',
-      title: 'Chuẩn yêu cầu (DEMO_UNVERIFIED)'
+      title: 'Chuẩn yêu cầu'
     },
     {
       key: 'actionDescription',
-      title: 'Hành động bù đắp khuyến nghị (AC-05)'
+      title: 'Hành động bù đắp khuyến nghị'
     },
     {
       key: 'deadline',
@@ -307,7 +307,7 @@ export function AcademicProgressPage() {
             }}
           >
             {isProjected
-              ? '⚠️ BÁO CÁO MÔ PHỎNG DỰ KIẾN (SIMULATION ONLY) — KHÔNG THAY THẾ BẢNG ĐIỂM CHÍNH THỨC'
+              ? 'BÁO CÁO MÔ PHỎNG DỰ KIẾN (SIMULATION ONLY) — KHÔNG THAY THẾ BẢNG ĐIỂM CHÍNH THỨC'
               : '● BÁO CÁO THỰC TẾ — PHẢN ÁNH DỮ LIỆU CHÍNH THỨC e-HaUI'}
           </div>
           <div style={{ fontSize: '11px', color: '#555', lineHeight: 1.5 }}>
@@ -337,8 +337,8 @@ export function AcademicProgressPage() {
           }}
         >
           {isProjected
-            ? '🚨 CẢNH BÁO BẢN IN DỰ KIẾN / MÔ PHỎNG: Báo cáo này được lập dựa trên kế hoạch bù đắp các học phần nợ và chứng chỉ còn thiếu. Trạng thái ứng dụng đánh giá tự động — Không xác nhận tốt nghiệp thay trường. TUYỆT ĐỐI KHÔNG CÓ GIÁ TRỊ PHÁP LÝ XÉT TỐT NGHIỆP CHÍNH THỨC cho đến khi tất cả học phần và chứng chỉ được hoàn thành trên hệ thống điểm thực tế e-HaUI. Quyết định công nhận tốt nghiệp chính thức thuộc thẩm quyền của Hội đồng xét tốt nghiệp Trường Đại học Công nghiệp Hà Nội.'
-            : '⚠️ BÁO CÁO HỌC VỤ THỰC TẾ: Báo cáo này phản ánh trung thực kết quả học tập và tích lũy ghi nhận trên cổng e-HaUI tính đến thời điểm in. Trạng thái ứng dụng đánh giá tự động — Không xác nhận tốt nghiệp thay trường. Sinh viên CHƯA ĐỦ ĐIỀU KIỆN TỐT NGHIỆP nếu còn tiêu chí thiếu hoặc cảnh báo đỏ. Quyết định công nhận tốt nghiệp chính thức thuộc thẩm quyền của Hội đồng xét tốt nghiệp Trường Đại học Công nghiệp Hà Nội.'}
+            ? 'CẢNH BÁO BẢN IN DỰ KIẾN / MÔ PHỎNG: Báo cáo này được lập dựa trên kế hoạch bù đắp các học phần nợ và chứng chỉ còn thiếu. Trạng thái ứng dụng đánh giá tự động — Không xác nhận tốt nghiệp thay trường. TUYỆT ĐỐI KHÔNG CÓ GIÁ TRỊ PHÁP LÝ XÉT TỐT NGHIỆP CHÍNH THỨC cho đến khi tất cả học phần và chứng chỉ được hoàn thành trên hệ thống điểm thực tế e-HaUI. Quyết định công nhận tốt nghiệp chính thức thuộc thẩm quyền của Hội đồng xét tốt nghiệp Trường Đại học Công nghiệp Hà Nội.'
+            : 'BÁO CÁO HỌC VỤ THỰC TẾ: Báo cáo này phản ánh trung thực kết quả học tập và tích lũy ghi nhận trên cổng e-HaUI tính đến thời điểm in. Trạng thái ứng dụng đánh giá tự động — Không xác nhận tốt nghiệp thay trường. Sinh viên CHƯA ĐỦ ĐIỀU KIỆN TỐT NGHIỆP nếu còn tiêu chí thiếu hoặc cảnh báo đỏ. Quyết định công nhận tốt nghiệp chính thức thuộc thẩm quyền của Hội đồng xét tốt nghiệp Trường Đại học Công nghiệp Hà Nội.'}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px', marginBottom: '16px', padding: '10px 14px', backgroundColor: 'var(--color-bg-muted)', border: '1px solid var(--color-border)', borderRadius: '4px' }}>
@@ -351,7 +351,7 @@ export function AcademicProgressPage() {
             <strong>Đủ ĐK Tốt nghiệp:</strong>{' '}
             {auditData?.eligibleForGraduation ? (
               <span style={{ color: isProjected ? '#2563eb' : '#16a34a', fontWeight: 700 }}>
-                {isProjected ? '✓ ĐẠT YÊU CẦU (DỰ KIẾN SAU BÙ ĐẮP)' : '✓ ĐẠT YÊU CẦU THỰC TẾ'}
+                {isProjected ? 'ĐẠT YÊU CẦU (DỰ KIẾN SAU BÙ ĐẮP)' : 'ĐẠT YÊU CẦU THỰC TẾ'}
               </span>
             ) : (
               <span style={{ color: '#dc2626', fontWeight: 700 }}>CHƯA ĐẠT (CÒN ĐIỀU KIỆN THIẾU)</span>
@@ -366,18 +366,13 @@ export function AcademicProgressPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
-              <span
-                style={{ cursor: 'pointer', transition: 'color 0.15s' }}
-                onClick={() => navigate('/dashboard')}
-                onKeyDown={(e) => e.key === 'Enter' && navigate('/dashboard')}
-                role="button"
-                tabIndex={0}
-              >
+            <nav className="haui-breadcrumb" aria-label="Đường dẫn trang">
+              <button type="button" className="haui-breadcrumb__home" onClick={() => navigate('/dashboard')}>
+                <span className="material-symbols-outlined haui-breadcrumb__icon" aria-hidden="true">home</span>
                 Trang chủ
-              </span>
-              <span style={{ color: 'var(--color-hairline)' }}>/</span>
-              <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Kiểm tra điều kiện tốt nghiệp</span>
+              </button>
+              <span className="haui-breadcrumb__separator" aria-hidden="true">/</span>
+              <span className="haui-breadcrumb__current" aria-current="page">Kiểm tra điều kiện tốt nghiệp</span>
               <span
                 style={{
                   display: 'inline-flex',
@@ -393,28 +388,22 @@ export function AcademicProgressPage() {
               >
                 {sessionStudent.cohort || 'Khóa đào tạo'} - {sessionStudent.majorName || sessionStudent.majorCode || 'HaUI'}
               </span>
-            </div>
+            </nav>
 
             <h1
               style={{
                 margin: 0,
-                fontSize: '28px',
-                fontWeight: 700,
+                fontSize: '30px',
+                fontWeight: 600,
                 letterSpacing: '-0.02em',
                 color: 'var(--color-ink)'
               }}
             >
-              Rà soát &amp; Kiểm tra điều kiện tốt nghiệp
+              Kiểm tra điều kiện tốt nghiệp
             </h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
               <span className="haui-badge haui-badge--neutral" style={{ fontSize: '11px' }}>
-                Quy chế: {auditData?.policyVersion || 'policy-haui-demo-2026@0.0.1-v0'}
-              </span>
-              <span className="haui-badge haui-badge--neutral" style={{ fontSize: '11px' }}>
-                Hồ sơ: {auditData?.dataRevision || 'REV-SERVER'}
-              </span>
-              <span className="haui-badge haui-badge--neutral" style={{ fontSize: '11px' }}>
-                Chế độ: {isProjected ? 'Dự kiến (Bù đắp)' : 'Thực tế (Hiện tại)'}
+                Chế độ: {isProjected ? 'Dự kiến' : 'Thực tế'}
               </span>
             </div>
           </div>
@@ -531,7 +520,7 @@ export function AcademicProgressPage() {
               onClick={() => handleSwitchReportMode('actual')}
               title="Xem Báo cáo dựa trên dữ liệu học tập thực tế hiện có trên e-HaUI"
             >
-              📋 Báo cáo Thực tế (Hiện tại — {auditData?.reportType === 'ACTUAL' ? pct : 82}%)
+              Báo cáo Thực tế (Hiện tại — {auditData?.reportType === 'ACTUAL' ? pct : 82}%)
             </button>
             <button
               type="button"
@@ -539,7 +528,7 @@ export function AcademicProgressPage() {
               onClick={() => handleSwitchReportMode('projected')}
               title="Xem Báo cáo dự kiến mô phỏng sau khi hoàn thành lộ trình bù đắp 2 học kỳ"
             >
-              🔮 Báo cáo Dự kiến (Kèm Lộ trình Bù đắp — 100%)
+              Báo cáo Dự kiến (Kèm Lộ trình Bù đắp — 100%)
             </button>
           </div>
         </div>
@@ -552,7 +541,7 @@ export function AcademicProgressPage() {
             title="In báo cáo học vụ hoặc Lưu PDF khổ A4 theo chế độ đang chọn"
           >
             <span className="material-symbols-outlined" style={{ fontSize: '15px', color: 'var(--color-mid-gray)' }}>print</span>
-            <span>🖨️ In Báo Cáo ({isProjected ? 'Dự kiến' : 'Thực tế'})</span>
+            <span>In Báo Cáo ({isProjected ? 'Dự kiến' : 'Thực tế'})</span>
           </button>
           <button
             type="button"
@@ -612,7 +601,7 @@ export function AcademicProgressPage() {
               color: isProjected ? '#7f1d1d' : '#14532d'
             }}
           >
-            Kết quả rà soát do hệ thống HaUI Advisor tự động đối chiếu dựa trên dữ liệu học vụ tại thời điểm rà soát (Quy chế: {auditData?.policyVersion || 'policy-haui-demo-2026@0.0.1-v0'}, Hồ sơ: {auditData?.dataRevision || 'REV-SERVER'}). Hệ thống hỗ trợ sinh viên theo dõi tiến độ và lập kế hoạch bù đắp, <strong>tuyệt đối không thay thế Quyết định công nhận tốt nghiệp chính thức của Hội đồng xét tốt nghiệp Trường Đại học Công nghiệp Hà Nội</strong>.
+            Kết quả rà soát do hệ thống HaUI Advisor tự động đối chiếu dựa trên dữ liệu học vụ hiện có. Hệ thống hỗ trợ sinh viên theo dõi tiến độ và lập kế hoạch bù đắp, <strong>tuyệt đối không thay thế Quyết định công nhận tốt nghiệp chính thức của Hội đồng xét tốt nghiệp Trường Đại học Công nghiệp Hà Nội</strong>.
           </p>
         </div>
       </div>
@@ -831,23 +820,16 @@ export function AcademicProgressPage() {
         </div>
       </div>
 
-      {/* =========================================================================
-          SECTION 5: MAIN 2-COLUMN LAYOUT (8 COLS CHECKLIST + 4 COLS SIDEBAR)
-          ========================================================================= */}
+      {/* Các bảng kiểm toán dùng toàn bộ chiều rộng để hiển thị đủ nội dung. */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '24px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px', alignItems: 'start' }}>
           
-          {/* CỘT TRÁI (8 COLS): 4 NHÓM HẠNG MỤC TIÊU CHÍ & BẢNG CHI TIẾT */}
+          {/* NHÓM HẠNG MỤC TIÊU CHÍ & BẢNG CHI TIẾT */}
           <div style={{ gridColumn: 'span 12', display: 'flex', flexDirection: 'column', gap: '24px' }} className="haui-audit-left-col">
-            <style>{`
-              @media (min-width: 1024px) {
-                .haui-audit-left-col { grid-column: span 8 !important; }
-                .haui-audit-right-col { grid-column: span 4 !important; }
-              }
-            `}</style>
 
             {/* NHÓM 1: Khối lượng kiến thức & Tín chỉ tích lũy */}
             <div
+              className="haui-audit-group"
               style={{
                 borderRadius: 'var(--radius-cards)',
                 backgroundColor: 'var(--color-paper)',
@@ -914,7 +896,7 @@ export function AcademicProgressPage() {
                     </div>
                     <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>Toán cao cấp, Vật lý, Triết học M-L, Pháp luật đại cương, Kinh tế chính trị</span>
                   </div>
-                  <span className="haui-badge haui-badge--success">✓ ĐÃ HOÀN THÀNH</span>
+                  <span className="haui-badge haui-badge--success">ĐÃ HOÀN THÀNH</span>
                 </div>
 
                 {/* Sub-item 2 */}
@@ -926,7 +908,7 @@ export function AcademicProgressPage() {
                     </div>
                     <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>Cấu trúc dữ liệu &amp; giải thuật, CSDL, Mạng máy tính, Hệ điều hành, OOP</span>
                   </div>
-                  <span className="haui-badge haui-badge--success">✓ ĐÃ HOÀN THÀNH</span>
+                  <span className="haui-badge haui-badge--success">ĐÃ HOÀN THÀNH</span>
                 </div>
 
                 {/* Sub-item 3 */}
@@ -945,9 +927,9 @@ export function AcademicProgressPage() {
                     </span>
                   </div>
                   {isProjected ? (
-                    <span className="haui-badge haui-badge--success">✓ ĐÃ HOÀN THÀNH</span>
+                    <span className="haui-badge haui-badge--success">ĐÃ HOÀN THÀNH</span>
                   ) : (
-                    <span className="haui-badge haui-badge--warning">⚠️ CÒN THIẾU 13 TC</span>
+                    <span className="haui-badge haui-badge--warning">CÒN THIẾU 13 TC</span>
                   )}
                 </div>
 
@@ -967,9 +949,9 @@ export function AcademicProgressPage() {
                     </span>
                   </div>
                   {isProjected ? (
-                    <span className="haui-badge haui-badge--success">✓ ĐÃ HOÀN THÀNH</span>
+                    <span className="haui-badge haui-badge--success">ĐÃ HOÀN THÀNH</span>
                   ) : (
-                    <span className="haui-badge haui-badge--warning">⚠️ CÒN THIẾU 6 TC</span>
+                    <span className="haui-badge haui-badge--warning">CÒN THIẾU 6 TC</span>
                   )}
                 </div>
 
@@ -987,9 +969,9 @@ export function AcademicProgressPage() {
                     </span>
                   </div>
                   {isProjected ? (
-                    <span className="haui-badge haui-badge--success">✓ ĐÃ HOÀN THÀNH</span>
+                    <span className="haui-badge haui-badge--success">ĐÃ HOÀN THÀNH</span>
                   ) : (
-                    <span className="haui-badge haui-badge--neutral">○ CHƯA MỞ (KỲ 8)</span>
+                    <span className="haui-badge haui-badge--neutral">CHƯA MỞ</span>
                   )}
                 </div>
               </div>
@@ -997,6 +979,7 @@ export function AcademicProgressPage() {
 
             {/* NHÓM 2: Điểm học tập & Rèn luyện toàn khóa */}
             <div
+              className="haui-audit-group"
               style={{
                 borderRadius: 'var(--radius-cards)',
                 backgroundColor: 'var(--color-paper)',
@@ -1027,7 +1010,7 @@ export function AcademicProgressPage() {
                     Căn cứ theo thang điểm 4.0 và thang rèn luyện 100 điểm của Trường ĐH Công nghiệp Hà Nội
                   </p>
                 </div>
-                <span className="haui-badge haui-badge--success">✓ Trạng thái: Đã hoàn thành</span>
+                <span className="haui-badge haui-badge--success">Trạng thái: Đã hoàn thành</span>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -1044,7 +1027,7 @@ export function AcademicProgressPage() {
                       Quy định: CPA &ge; 2.00 (Đạt tốt nghiệp). Hiện tại xếp loại: {isProjected ? 'Giỏi' : 'Khá (tiệm cận Giỏi ≥ 3.20)'}
                     </span>
                   </div>
-                  <span className="haui-badge haui-badge--success">✓ ĐÃ ĐẠT ({isProjected ? 'GIỎI' : 'KHÁ'})</span>
+                  <span className="haui-badge haui-badge--success">ĐÃ ĐẠT · {isProjected ? 'GIỎI' : 'KHÁ'}</span>
                 </div>
 
                 {/* Điểm rèn luyện */}
@@ -1060,7 +1043,7 @@ export function AcademicProgressPage() {
                       Quy định: ĐRL &ge; 65 điểm (Khá). Hiện tại xếp loại: {auditData?.trainingScore >= 80 ? 'Tốt' : 'Khá'} (không vi phạm kỷ luật)
                     </span>
                   </div>
-                  <span className="haui-badge haui-badge--success">✓ ĐÃ ĐẠT (TỐT)</span>
+                  <span className="haui-badge haui-badge--success">ĐÃ ĐẠT · TỐT</span>
                 </div>
 
                 {/* Tình trạng nợ môn */}
@@ -1079,9 +1062,9 @@ export function AcademicProgressPage() {
                     </span>
                   </div>
                   {isProjected ? (
-                    <span className="haui-badge haui-badge--success">✓ HỢP LỆ</span>
+                    <span className="haui-badge haui-badge--success">HỢP LỆ</span>
                   ) : (
-                    <span className="haui-badge haui-badge--error">🚨 CẢNH BÁO ĐỎ: NỢ 1 MÔN</span>
+                    <span className="haui-badge haui-badge--error">CẢNH BÁO ĐỎ: NỢ 1 MÔN</span>
                   )}
                 </div>
               </div>
@@ -1089,6 +1072,7 @@ export function AcademicProgressPage() {
 
             {/* NHÓM 3: Chuẩn đầu ra Ngoại ngữ & Tin học */}
             <div
+              className="haui-audit-group"
               style={{
                 borderRadius: 'var(--radius-cards)',
                 backgroundColor: 'var(--color-paper)',
@@ -1120,9 +1104,9 @@ export function AcademicProgressPage() {
                   </p>
                 </div>
                 {isProjected ? (
-                  <span className="haui-badge haui-badge--success">✓ ĐÃ HOÀN THÀNH</span>
+                  <span className="haui-badge haui-badge--success">ĐÃ HOÀN THÀNH</span>
                 ) : (
-                  <span className="haui-badge haui-badge--warning">⚠️ Cần nộp chứng chỉ</span>
+                  <span className="haui-badge haui-badge--warning">Cần nộp chứng chỉ</span>
                 )}
               </div>
 
@@ -1136,7 +1120,7 @@ export function AcademicProgressPage() {
                     </div>
                     <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>Đã nộp chứng chỉ VSTEP B1 ngày 12/10/2023 - Đạt điểm 6.5 (HaUI Testing Center cấp)</span>
                   </div>
-                  <span className="haui-badge haui-badge--success">✓ ĐÃ HOÀN THÀNH</span>
+                  <span className="haui-badge haui-badge--success">ĐÃ HOÀN THÀNH</span>
                 </div>
 
                 {/* MOS/IC3 */}
@@ -1155,9 +1139,9 @@ export function AcademicProgressPage() {
                     </span>
                   </div>
                   {isProjected ? (
-                    <span className="haui-badge haui-badge--success">✓ ĐÃ HOÀN THÀNH (DỰ KIẾN)</span>
+                    <span className="haui-badge haui-badge--success">DỰ KIẾN HOÀN THÀNH</span>
                   ) : (
-                    <span className="haui-badge haui-badge--error">🚨 CẢNH BÁO ĐỎ: THIẾU MOS</span>
+                    <span className="haui-badge haui-badge--error">CẢNH BÁO ĐỎ: THIẾU MOS</span>
                   )}
                 </div>
 
@@ -1170,13 +1154,14 @@ export function AcademicProgressPage() {
                     </div>
                     <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>Đã hoàn thành học phần Tiếng Anh chuyên ngành tại Kỳ 5 (Điểm B+)</span>
                   </div>
-                  <span className="haui-badge haui-badge--success">✓ ĐÃ HOÀN THÀNH</span>
+                  <span className="haui-badge haui-badge--success">ĐÃ HOÀN THÀNH</span>
                 </div>
               </div>
             </div>
 
             {/* NHÓM 4: Giáo dục Quốc phòng & Thể chất */}
             <div
+              className="haui-audit-group"
               style={{
                 borderRadius: 'var(--radius-cards)',
                 backgroundColor: 'var(--color-paper)',
@@ -1207,7 +1192,7 @@ export function AcademicProgressPage() {
                     Điều kiện bắt buộc theo Luật Giáo dục Đại học (Điều kiện cần để cấp văn bằng)
                   </p>
                 </div>
-                <span className="haui-badge haui-badge--success">✓ Trạng thái: Đã hoàn thành</span>
+                <span className="haui-badge haui-badge--success">Trạng thái: Đã hoàn thành</span>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -1219,7 +1204,7 @@ export function AcademicProgressPage() {
                     </div>
                     <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>Đã hoàn thành 165 tiết tại Trung tâm GDQP-AN cơ sở Hà Nam (Chứng chỉ: QP2021-98442)</span>
                   </div>
-                  <span className="haui-badge haui-badge--success">✓ ĐÃ HOÀN THÀNH</span>
+                  <span className="haui-badge haui-badge--success">ĐÃ HOÀN THÀNH</span>
                 </div>
 
                 <div style={{ padding: '14px 16px', borderRadius: '16px', backgroundColor: 'var(--color-surface-alt)', border: '1px solid var(--color-hairline)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
@@ -1230,15 +1215,16 @@ export function AcademicProgressPage() {
                     </div>
                     <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>Đã hoàn thành Thể dục cơ bản, Bóng chuyền &amp; Cầu lông</span>
                   </div>
-                  <span className="haui-badge haui-badge--success">✓ ĐÃ HOÀN THÀNH</span>
+                  <span className="haui-badge haui-badge--success">ĐÃ HOÀN THÀNH</span>
                 </div>
               </div>
             </div>
 
             {/* BẢNG 7 HẠNG MỤC KIỂM TOÁN TỐT NGHIỆP CHI TIẾT (AUDIT CHECKLIST 100%) */}
             <Card
-              title="Danh mục 7 Điều kiện Kiểm tra Tốt nghiệp 100% (Audit Checklist)"
-              subtitle="Theo dõi toàn diện: Tín chỉ tích lũy, Bắt buộc, Tự chọn chuyên ngành, Ngoại ngữ, Tin học, GDTC/GDQP-AN và Điểm rèn luyện"
+              className="haui-audit-table-card"
+              title="Danh mục 7 điều kiện tốt nghiệp"
+              subtitle="Theo dõi tín chỉ, điểm học tập, rèn luyện và các chuẩn đầu ra"
               headerAction={
                 <span className="haui-badge haui-badge--info">
                   {passedCriteriaCount}/7 Hạng mục Đạt
@@ -1259,8 +1245,9 @@ export function AcademicProgressPage() {
 
             {/* CẢNH BÁO SỚM CHUẨN ĐẦU RA & TÍN CHỈ THIẾU (AC-05 / FR-18) */}
             <Card
+              className="haui-audit-table-card"
               variant="default"
-              title="Cảnh báo Sớm Các Điều kiện & Chứng chỉ Tồn đọng (AC-05 / FR-18)"
+              title="Cảnh báo các điều kiện và chứng chỉ còn thiếu"
               subtitle="Cần hoàn thành trước mốc xét tốt nghiệp để tránh chậm ra trường"
             >
               {Array.isArray(auditData?.pendingActions) && auditData.pendingActions.length > 0 ? (
@@ -1280,8 +1267,9 @@ export function AcademicProgressPage() {
 
             {/* BẢNG THAM CHIẾU QUY TẮC NGHIỆP VỤ HAUI (PRD MỤC 9: BR-01 -> BR-10) */}
             <Card
-              title="Bảng Quy tắc Nghiệp vụ Học vụ HaUI (PRD Mục 9: BR-01 → BR-10)"
-              subtitle="Các tham số quy chế sử dụng trong Rule Engine ở mốc V0 được gắn nhãn DEMO_UNVERIFIED theo Quy tắc 5 AGENTS.md"
+              className="haui-audit-table-card"
+              title="Quy tắc học vụ HaUI"
+              subtitle="Các quy tắc đang dùng để đối chiếu điều kiện tốt nghiệp"
             >
               <Table
                 columns={[
@@ -1307,11 +1295,12 @@ export function AcademicProgressPage() {
             </Card>
           </div>
 
-          {/* CỘT PHẢI (4 COLS): SIDEBAR / ACTION DRAWERS */}
+          {/* TỔNG HỢP VÀ THAO TÁC BÊN DƯỚI BẢNG */}
           <div style={{ gridColumn: 'span 12', display: 'flex', flexDirection: 'column', gap: '24px' }} className="haui-audit-right-col">
             
             {/* CARD 1: Tổng hợp việc cần làm (Action Checklist) */}
             <div
+              className="haui-audit-side-card"
               style={{
                 borderRadius: 'var(--radius-cards)',
                 backgroundColor: 'var(--color-paper)',
@@ -1411,6 +1400,7 @@ export function AcademicProgressPage() {
 
             {/* CARD 2: Gợi ý từ AI Advisor (Next Step Advisor Suggestions) */}
             <div
+              className="haui-audit-side-card"
               style={{
                 borderRadius: 'var(--radius-cards)',
                 backgroundColor: 'var(--color-paper)',
@@ -1504,6 +1494,7 @@ export function AcademicProgressPage() {
 
             {/* CARD 3: Academic Advisor Contact Note */}
             <div
+              className="haui-audit-side-card"
               style={{
                 borderRadius: 'var(--radius-cards)',
                 backgroundColor: 'var(--color-canvas)',
@@ -1538,7 +1529,7 @@ export function AcademicProgressPage() {
         footer={
           <>
             <Button variant="secondary" size="sm" onClick={() => setIsRemediationModalOpen(false)}>
-              Đóng (ESC)
+              Đóng
             </Button>
             <Button
               variant="primary"

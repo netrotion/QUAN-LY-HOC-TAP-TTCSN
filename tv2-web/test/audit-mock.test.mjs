@@ -43,15 +43,15 @@ test('Task 3.9 - Test 1: Bảng Kiểm toán Tốt nghiệp 100% và 3 Trạng t
   // Kiểm tra logic render trong AcademicProgressPage.jsx hỗ trợ badge trung tính
   const progressJsx = fs.readFileSync(path.join(tv2Root, 'src/pages/AcademicProgressPage.jsx'), 'utf-8');
   assert.ok(
-    progressJsx.includes('✓ ĐẠT (Hợp lệ)'),
-    'Giao diện phải render nhãn ĐẠT hợp lệ'
+    progressJsx.includes('ĐẠT</span>'),
+    'Giao diện phải render nhãn ĐẠT ngắn gọn'
   );
   assert.ok(
-    progressJsx.includes('⚠️ CÒN THIẾU') || progressJsx.includes('🚨 CẢNH BÁO ĐỎ'),
+    progressJsx.includes('CÒN THIẾU') || progressJsx.includes('CẢNH BÁO ĐỎ'),
     'Giao diện phải render nhãn CÒN THIẾU hoặc CẢNH BÁO ĐỎ'
   );
   assert.ok(
-    progressJsx.includes('○ CHƯA XÁC ĐỊNH / CHỜ DUYỆT'),
+    progressJsx.includes('CHƯA XÁC ĐỊNH / CHỜ DUYỆT'),
     'Giao diện phải render nhãn CHƯA XÁC ĐỊNH / CHỜ DUYỆT cho trạng thái thứ 3 (unknown/null)'
   );
 
@@ -176,13 +176,12 @@ test('Task 3.9 - Test 4: Đường bù đắp Audit (F23-006) và Nút Lập k�
   plannerStore.dismissProposal();
 });
 
-test('Task 3.9 - Test 5: Tiến độ Dashboard và Nút Mở Kế hoạch Học tập Đã lưu (Kế hoạch cũ)', () => {
+test('Task 3.9 - Test 5: Tiến độ Dashboard và Nút Mở Kế hoạch Học tập Đã lưu', () => {
   const dashboardJsx = fs.readFileSync(path.join(tv2Root, 'src/pages/DashboardPage.jsx'), 'utf-8');
 
   // 1. Kiểm tra có nút mở kế hoạch cũ
   assert.ok(
-    dashboardJsx.includes('Mở Kế hoạch Học tập Đã lưu (Kế hoạch cũ)') ||
-    dashboardJsx.includes('Mở Kế hoạch cũ (ACTIVE)'),
+    dashboardJsx.includes('Mở Kế hoạch Học tập Đã lưu &rarr;'),
     'DashboardPage phải có nút mở kế hoạch cũ đã lưu'
   );
   assert.ok(
@@ -199,7 +198,7 @@ test('Task 3.9 - Test 5: Tiến độ Dashboard và Nút Mở Kế hoạch Học
 
   // 3. Khối tiến độ học vụ & kế hoạch đã lưu Task 3.9
   assert.ok(
-    dashboardJsx.includes('Tiến độ Học vụ & Kế hoạch Học tập Đã lưu (Task 3.9)'),
+    dashboardJsx.includes('Tiến độ Học vụ & Kế hoạch Học tập Đã lưu'),
     'DashboardPage phải có khối hiển thị Tiến độ học vụ và Kế hoạch đã lưu'
   );
   assert.ok(dashboardJsx.includes('plan-2026-9001'));

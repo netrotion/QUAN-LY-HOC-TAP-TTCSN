@@ -311,14 +311,14 @@ test('6. Kiểm tra mốc bàn giao design-base-v1 (Task 2.1): tokens.json, desi
   const sidebarCode = fs.readFileSync(path.join(tv2Root, 'src/components/layout/Sidebar.jsx'), 'utf-8');
   assert.ok(sidebarCode.includes('collapsed'), 'Sidebar phải hỗ trợ prop collapsed');
   assert.ok(sidebarCode.includes('haui-sidebar--collapsed'));
-  for (const itemRoute of ['/', '/progress', '/curriculum', '/planner', '/chat', '/what-if', '/audit']) {
+  for (const itemRoute of ['/', '/progress', '/curriculum', '/planner', '/chat', '/audit']) {
     assert.ok(sidebarCode.includes(`'${itemRoute}'`), `Sidebar thiếu route: ${itemRoute}`);
   }
 
-  // 4. Kiểm tra UI Shell: Topbar có nút thu gọn sidebar và badge Cảnh báo học vụ
+  // 4. Kiểm tra UI Shell: Topbar có nút thu gọn sidebar và lối tắt tư vấn AI
   const topbarCode = fs.readFileSync(path.join(tv2Root, 'src/components/layout/Topbar.jsx'), 'utf-8');
   assert.ok(topbarCode.includes('onToggleCollapse'));
-  assert.ok(topbarCode.includes('Cảnh báo học vụ'));
+  assert.ok(topbarCode.includes('Tư vấn lộ trình nhanh với AI'));
 
   // 5. Kiểm tra Dashboard: Đủ 4 component states và các widget học vụ cốt lõi
   const dashboardCode = fs.readFileSync(path.join(tv2Root, 'src/pages/DashboardPage.jsx'), 'utf-8');

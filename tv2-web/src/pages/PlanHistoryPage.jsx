@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useAnimatedNavigate } from '../components/layout/animatedNavigation.jsx';
 import { api } from '../services/apiClient.js';
 import { plannerStore, PLAN_STATUSES } from '@haui/planner-ui';
 
@@ -37,7 +37,7 @@ const STATUS_CONFIG = {
 };
 
 export function PlanHistoryPage() {
-  const navigate = useNavigate();
+  const navigate = useAnimatedNavigate();
   const [filter, setFilter] = useState('all');
   const [toast, setToast] = useState(null);
 

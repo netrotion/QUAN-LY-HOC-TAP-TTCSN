@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { NavLink, useAnimatedNavigate } from './animatedNavigation.jsx';
 import { api } from '../../services/apiClient.js';
 import { logoutStudent } from '../../services/academicStore.js';
 import hauiLogo from '@haui/logo';
@@ -32,19 +33,9 @@ const NAV_ITEMS = Object.freeze([
     icon: 'event_note'
   },
   {
-    to: '/plan-history',
-    label: 'Lịch sử kế hoạch',
-    icon: 'history'
-  },
-  {
     to: '/chat',
     label: 'Tư vấn AI',
     icon: 'smart_toy'
-  },
-  {
-    to: '/what-if',
-    label: 'What-if mô phỏng điểm',
-    icon: 'insights'
   },
   {
     to: '/audit',
@@ -62,15 +53,51 @@ const NAV_ITEMS = Object.freeze([
  * Sidebar Navigation Component của Web Host (TV2 — design-base-v1)
  * Phong cách "Clinical Blueprint on Frosted Paper" chuẩn xác theo prototype:
  * - Logo thương hiệu HaUI Advisor (SVG)
- * - 10 mục điều hướng với Material Symbols Outlined
+ * - 8 mục điều hướng với Material Symbols Outlined
  * - Thẻ sinh viên tinh gọn bo góc 24px ở đáy sidebar
  * - Hỗ trợ chế độ thu gọn (collapsed 72px) / mở rộng (expanded 268px)
  *
  * @param {{ collapsed?: boolean }} props
  */
 export function Sidebar({ collapsed = false }) {
-  const navigate = useNavigate();
+  const navigate = useAnimatedNavigate();
+  const { pathname } = useLocation();
+  const navRef = useRef(null);
+  const activePillRef = useRef(null);
   const [student, setStudent] = useState(() => api.getConfig().sessionStudent);
+
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    const pill = activePillRef.current;
+    if (!nav || !pill) return undefined;
+
+    const positionPill = () => {
+      const active = nav.querySelector('.haui-sidebar__link--active');
+      if (!active) {
+        pill.style.opacity = '0';
+        return;
+      }
+      pill.style.setProperty('--haui-active-y', `${active.offsetTop}px`);
+      pill.style.height = `${active.offsetHeight}px`;
+      pill.style.opacity = '1';
+    };
+
+    positionPill();
+    const readyFrame = nav.dataset.indicatorReady
+      ? null
+      : window.requestAnimationFrame(() => { nav.dataset.indicatorReady = 'true'; });
+    window.addEventListener('resize', positionPill);
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(positionPill) : null;
+    if (observer) {
+      observer.observe(nav);
+      nav.querySelectorAll('.haui-sidebar__link').forEach((link) => observer.observe(link));
+    }
+    return () => {
+      if (readyFrame !== null) window.cancelAnimationFrame(readyFrame);
+      window.removeEventListener('resize', positionPill);
+      observer?.disconnect();
+    };
+  }, [pathname, collapsed]);
 
   useEffect(() => {
     return api.subscribe((config) => {
@@ -107,7 +134,8 @@ export function Sidebar({ collapsed = false }) {
       </div>
 
       {/* 2. Navigation Links */}
-      <nav className="haui-sidebar__nav">
+      <nav ref={navRef} className="haui-sidebar__nav">
+        <span ref={activePillRef} className="haui-sidebar__active-pill" aria-hidden="true" />
         {NAV_ITEMS.map((item) => (
           <NavLink
             key={item.to}
@@ -115,7 +143,7 @@ export function Sidebar({ collapsed = false }) {
             end={item.end}
             title={collapsed ? item.label : undefined}
             className={({ isActive }) =>
-              `haui-sidebar__link ${isActive ? 'haui-sidebar__link--active' : ''}`.trim()
+              `haui-sidebar__link ${isActive || (item.to === '/' && pathname === '/dashboard') || (item.to === '/progress' && pathname === '/profile') ? 'haui-sidebar__link--active' : ''}`.trim()
             }
           >
             <span className="material-symbols-outlined haui-sidebar__icon" aria-hidden="true">

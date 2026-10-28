@@ -123,6 +123,8 @@ pre {
 }
 
 .haui-sidebar__nav {
+  position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -134,7 +136,35 @@ pre {
   padding: var(--space-4) var(--space-2);
 }
 
+.haui-sidebar__active-pill {
+  position: absolute;
+  top: 0;
+  left: var(--space-3);
+  right: var(--space-3);
+  height: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-ink);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+  transform: translateY(var(--haui-active-y, 0px));
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.haui-sidebar__nav[data-indicator-ready] .haui-sidebar__active-pill {
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    left var(--transition-base), right var(--transition-base);
+}
+
+.haui-sidebar--collapsed .haui-sidebar__active-pill {
+  left: var(--space-2);
+  right: var(--space-2);
+}
+
 .haui-sidebar__link {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -167,6 +197,11 @@ pre {
   color: var(--color-paper) !important;
   font-weight: 500;
   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
+}
+
+.haui-sidebar__nav[data-indicator-ready] .haui-sidebar__link--active {
+  background: transparent !important;
+  box-shadow: none;
 }
 
 .haui-sidebar__icon {
@@ -358,40 +393,6 @@ pre {
   background-color: var(--color-canvas);
 }
 
-.haui-topbar__search-form {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 320px;
-}
-
-.haui-topbar__search-icon {
-  position: absolute;
-  left: 12px;
-  font-size: 18px;
-  color: var(--color-mid-gray);
-  pointer-events: none;
-}
-
-.haui-topbar__search-input {
-  width: 100%;
-  background: var(--color-surface-alt);
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-full);
-  padding: 8px 14px 8px 38px;
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  color: var(--color-ink);
-  transition: all var(--transition-fast);
-}
-
-.haui-topbar__search-input:focus {
-  outline: none;
-  border-color: var(--heroui-focus, #0052cc);
-  box-shadow: 0 0 0 3px oklch(0.6204 0.195 253.83 / 0.15);
-  background: var(--color-paper);
-}
-
 .haui-topbar__right {
   display: flex;
   align-items: center;
@@ -551,6 +552,39 @@ pre {
   gap: var(--space-2);
   flex-wrap: wrap;
 }
+
+.haui-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 20px;
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--color-mid-gray);
+}
+
+.haui-breadcrumb__home {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: color 180ms ease;
+}
+
+.haui-breadcrumb__home:hover { color: var(--color-ink); }
+.haui-breadcrumb__home:focus-visible {
+  outline: 2px solid var(--heroui-focus, var(--color-border-focus));
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+.haui-breadcrumb__icon { font-size: 15px !important; }
+.haui-breadcrumb__separator { color: var(--color-hairline); }
+.haui-breadcrumb__current { color: var(--color-ink); font-weight: 500; }
 
 /* ==========================================================================
    3. Badges & Status Pills
@@ -1370,10 +1404,6 @@ pre {
     padding: 0 var(--space-4);
   }
 
-  .haui-topbar__search-form {
-    width: 160px;
-  }
-
   .haui-topbar__ai-text {
     display: none;
   }
@@ -1384,9 +1414,6 @@ pre {
 }
 
 @media (max-width: 480px) {
-  .haui-topbar__search-form {
-    display: none;
-  }
   .haui-topbar__persona-select {
     display: none;
   }
@@ -2573,6 +2600,11 @@ select.haui-select:focus {
   display: none;
 }
 
+.haui-report-mode-switcher,
+.haui-disclaimer-banner {
+  display: none !important;
+}
+
 /* ==========================================================================
    11. Print Stylesheet (@media print — Task 2.2a)
    Ẩn Sidebar, Topbar và Buttons; Định dạng khổ giấy A4 sạch sẽ cho Báo cáo Học vụ
@@ -2708,6 +2740,13 @@ select.haui-select:focus {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.haui-chat-stream {
+  max-height: min(68vh, 720px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .haui-chat-grid {
@@ -2868,6 +2907,377 @@ select.haui-select:focus {
 
 .haui-tree-timeline-scroll::-webkit-scrollbar-thumb:hover {
   background: var(--color-ink);
+}
+
+/* Keep content opaque while each page settles into place. */
+@keyframes haui-page-enter {
+  from { transform: translateY(5px); }
+  to { transform: translateY(0); }
+}
+
+.haui-route-content > .haui-page-container,
+.haui-login-container {
+  animation: haui-page-enter 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.haui-sidebar__link {
+  position: relative;
+  transition: background-color var(--transition-fast), color var(--transition-fast),
+    transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.haui-sidebar__link:hover:not(.haui-sidebar__link--active) {
+  transform: translateX(2px);
+}
+
+.haui-topbar__ai-btn:hover {
+  transform: translateY(-2px);
+}
+
+.haui-topbar__ai-btn:focus-visible,
+.haui-sidebar__link:focus-visible {
+  outline: 2px solid var(--heroui-focus, var(--color-border-focus));
+  outline-offset: 2px;
+}
+
+.haui-card {
+  transition: box-shadow 220ms ease, border-color 220ms ease;
+}
+
+.haui-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
+}
+
+.haui-dashboard-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: stretch;
+}
+
+.haui-dashboard-panel {
+  min-width: 0;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-cards);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.haui-dashboard-panel .haui-card__header {
+  align-items: flex-start;
+  padding: 22px 24px 18px;
+  gap: 16px;
+}
+
+.haui-dashboard-panel .haui-card__title {
+  font-size: 17px;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+}
+
+.haui-dashboard-panel .haui-card__subtitle {
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+.haui-dashboard-panel .haui-card__body { padding: 22px 24px 24px; }
+
+.haui-dashboard-panel--attention .haui-card__body,
+.haui-dashboard-panel--attention .haui-card__body > div {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.haui-dashboard-panel--attention .haui-card__body > div > .haui-dashboard-empty-success { flex: 1; }
+
+.haui-dashboard-empty-success {
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  text-align: center;
+  color: var(--color-ink);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-hairline);
+  border-radius: 18px;
+}
+
+.haui-dashboard-course-list { display: flex; flex-direction: column; gap: 9px; }
+
+.haui-dashboard-course-row {
+  min-height: 44px;
+  gap: 12px;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.haui-dashboard-course-row:hover {
+  transform: translateX(3px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.haui-dashboard-credit-total { gap: 12px; }
+
+.haui-dashboard-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.haui-dashboard-summary-card {
+  min-width: 0;
+  min-height: 148px;
+}
+
+.haui-planner-semester-card .haui-card__header {
+  align-items: center;
+  padding: 22px 24px;
+}
+
+.haui-planner-semester-card .haui-card__title,
+.haui-planner-semester-card .haui-card__subtitle,
+.haui-planner-semester-table .haui-table th,
+.haui-planner-semester-table .haui-table td {
+  color: var(--color-ink);
+}
+
+.haui-planner-semester-table .haui-table th {
+  background: var(--color-surface-alt);
+  letter-spacing: 0.04em;
+}
+
+.haui-planner-semester-table .haui-table {
+  min-width: 1080px;
+  table-layout: fixed;
+}
+
+.haui-planner-semester-table .haui-table th,
+.haui-planner-semester-table .haui-table td {
+  padding-inline: 14px;
+}
+
+.haui-planner-semester-table .haui-table tbody tr {
+  background: var(--color-paper);
+  transition: background-color 160ms ease;
+}
+
+.haui-planner-semester-table .haui-table tbody tr:hover {
+  background: var(--color-surface-alt);
+}
+
+.haui-planner-add-course-list { display: flex; flex-direction: column; }
+
+.haui-planner-add-course-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.haui-planner-add-course-row:first-child { padding-top: 0; }
+.haui-planner-add-course-row:last-child { padding-bottom: 0; border-bottom: 0; }
+.haui-planner-add-course-info { min-width: 0; }
+
+.haui-planner-add-course-name {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--color-ink);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.haui-planner-add-course-name strong {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.haui-planner-add-course-name span { font-weight: 600; }
+
+.haui-planner-add-course-meta {
+  margin-top: 4px;
+  color: var(--color-mid-gray);
+  font-size: 12px;
+}
+
+@media screen {
+  .haui-audit-container .haui-stat-card,
+  .haui-audit-group,
+  .haui-audit-side-card,
+  .haui-audit-table-card {
+    background: var(--color-bg-surface) !important;
+    border: var(--border-width) solid var(--color-border) !important;
+    border-radius: var(--radius-cards) !important;
+    box-shadow: var(--shadow-card) !important;
+  }
+
+  .haui-audit-group > div:last-child,
+  .haui-audit-side-card:first-child > div:last-child {
+    gap: 0 !important;
+  }
+
+  .haui-audit-group > div:last-child > div,
+  .haui-audit-side-card:first-child > div:last-child > div {
+    min-width: 0;
+    padding: 14px 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--color-hairline) !important;
+    border-radius: 0 !important;
+  }
+
+  .haui-audit-group > div:last-child > div:last-child,
+  .haui-audit-side-card:first-child > div:last-child > div:last-child {
+    padding-bottom: 0 !important;
+    border-bottom: 0 !important;
+  }
+
+  .haui-audit-table-card .haui-card__header {
+    padding: 20px 24px;
+  }
+
+  .haui-audit-table-card .haui-card__body {
+    padding: 0;
+  }
+
+  .haui-audit-table-card .haui-table-wrapper {
+    border: 0;
+    border-radius: 0;
+    overflow-x: hidden;
+  }
+
+  .haui-audit-table-card .haui-table {
+    table-layout: fixed;
+  }
+
+  .haui-audit-table-card .haui-table th,
+  .haui-audit-table-card .haui-table td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .haui-audit-table-card .haui-empty-state {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .haui-audit-table-card .haui-table th {
+    color: var(--color-ink);
+    background: var(--color-surface-alt);
+  }
+
+  .haui-audit-table-card .haui-table--striped tbody tr:nth-child(even) {
+    background: transparent;
+  }
+
+  .haui-audit-table-card .haui-table--hoverable tbody tr:hover {
+    background: var(--color-surface-alt);
+  }
+}
+
+@media screen and (max-width: 1050px) {
+  .haui-audit-table-card .haui-table,
+  .haui-audit-table-card .haui-table tbody,
+  .haui-audit-table-card .haui-table tr,
+  .haui-audit-table-card .haui-table td[data-label] {
+    display: block;
+    width: 100%;
+  }
+
+  .haui-audit-table-card .haui-table thead {
+    display: none;
+  }
+
+  .haui-audit-table-card .haui-table tbody tr {
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .haui-audit-table-card .haui-table tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .haui-audit-table-card .haui-table td[data-label] {
+    display: grid;
+    grid-template-columns: minmax(110px, 34%) minmax(0, 1fr);
+    gap: 12px;
+    padding: 8px 0;
+    border: 0;
+    text-align: left !important;
+  }
+
+  .haui-audit-table-card .haui-table td[data-label]::before {
+    content: attr(data-label);
+    color: var(--color-text-secondary);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .haui-audit-table-card .haui-table td[data-label] {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+}
+
+@media (max-width: 1050px) {
+  .haui-dashboard-detail-grid { grid-template-columns: minmax(0, 1fr); }
+  .haui-dashboard-empty-success { min-height: 170px; }
+}
+
+@media (max-width: 850px) {
+  .haui-dashboard-summary-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .haui-dashboard-panel .haui-card__header,
+  .haui-dashboard-panel .haui-card__body { padding: 18px; }
+  .haui-dashboard-panel .haui-card__header { flex-wrap: wrap; }
+  .haui-dashboard-course-row { flex-wrap: wrap; }
+  .haui-dashboard-credit-total { flex-wrap: wrap; }
+}
+
+.haui-login-card-header,
+.haui-login-form,
+.haui-login-forgot-request,
+.haui-login-forgot-success {
+  animation: haui-page-enter 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.haui-tab-panel {
+  animation: haui-page-enter 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.haui-login-tab:focus-visible {
+  outline: 2px solid var(--heroui-focus, var(--color-border-focus));
+  outline-offset: 2px;
+}
+
+.haui-login-main {
+  justify-content: flex-start;
+  padding-top: clamp(32px, 7vh, 80px);
+}
+
+[id^='section-'] {
+  scroll-margin-top: 128px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 

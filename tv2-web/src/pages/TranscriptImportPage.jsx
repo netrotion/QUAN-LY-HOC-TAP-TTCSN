@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useAnimatedNavigate } from '../components/layout/animatedNavigation.jsx';
 import { Button, Card, EmptyState, Table, Select } from '../components/ui/index.js';
 import {
   commitTranscriptRecords,
@@ -32,7 +32,7 @@ const LETTER_GRADE_TO_SCORE4 = Object.freeze({
 });
 
 export function TranscriptImportPage() {
-  const navigate = useNavigate();
+  const navigate = useAnimatedNavigate();
   const initialSnapshot = getAcademicSnapshot();
 
   // Wizard Step: 1 = Nạp dữ liệu, 2 = Xem lại (Review), 3 = Xác nhận (Confirm)
@@ -232,16 +232,14 @@ export function TranscriptImportPage() {
       {/* 1. Header & Page Title */}
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: '16px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
-            <span
-              style={{ cursor: 'pointer', color: 'var(--color-ink)' }}
-              onClick={() => navigate('/dashboard')}
-            >
+          <nav className="haui-breadcrumb" aria-label="Đường dẫn trang">
+            <button type="button" className="haui-breadcrumb__home" onClick={() => navigate('/dashboard')}>
+              <span className="material-symbols-outlined haui-breadcrumb__icon" aria-hidden="true">home</span>
               Trang chủ
-            </span>
-            <span>/</span>
-            <span style={{ color: 'var(--color-mid-gray)' }}>Nhập bảng điểm cá nhân</span>
-          </div>
+            </button>
+            <span className="haui-breadcrumb__separator" aria-hidden="true">/</span>
+            <span className="haui-breadcrumb__current" aria-current="page">Nhập bảng điểm cá nhân</span>
+          </nav>
           <h1 style={{ fontSize: '30px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
             Nhập &amp; Quản lý bảng điểm
           </h1>
@@ -409,7 +407,7 @@ export function TranscriptImportPage() {
                     fontSize: '13px'
                   }}
                 >
-                  <strong>⚠️ Lỗi tải bảng điểm:</strong> {uploadError}
+                  <strong>Lỗi tải bảng điểm:</strong> {uploadError}
                 </div>
               )}
 
@@ -819,7 +817,7 @@ export function TranscriptImportPage() {
                         {row.letterGrade === 'F' || row.status === 'FAILED' ? (
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ember)', fontWeight: 600 }}>
                             <span style={{ width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--color-ember)' }} />
-                            Nợ môn (F)
+                            Nợ môn
                           </span>
                         ) : row.letterGrade === 'D' || row.letterGrade === 'D+' ? (
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
@@ -911,7 +909,7 @@ export function TranscriptImportPage() {
                   Trạng Thái Học Vụ Dự Kiến
                 </span>
                 <div style={{ fontSize: '20px', fontWeight: 700, color: projectedCpa < 2.0 || failedCourses.length > 0 ? 'var(--color-ember)' : 'var(--color-ink)', marginTop: '8px' }}>
-                  {projectedCpa < 2.0 || failedCourses.length > 0 ? '⚠️ Cảnh báo Mức 1' : '✓ Bình thường'}
+                  {projectedCpa < 2.0 || failedCourses.length > 0 ? 'Cảnh báo Mức 1' : 'Bình thường'}
                 </div>
                 <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>
                   Theo quy chế HaUI BR-07
@@ -943,7 +941,7 @@ export function TranscriptImportPage() {
                 className="haui-pill-btn-dark"
                 onClick={handleConfirmAndSave}
               >
-                ✓ Xác Nhận &amp; Cập Nhật Kết Quả Ngay
+                Xác Nhận &amp; Cập Nhật Kết Quả Ngay
               </button>
             </div>
           </div>
@@ -1011,7 +1009,7 @@ export function TranscriptImportPage() {
                 }}
                 onClick={() => setShowAddModal(false)}
               >
-                ✕
+                ×
               </button>
             </div>
 

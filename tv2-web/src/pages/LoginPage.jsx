@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useAnimatedNavigate } from '../components/layout/animatedNavigation.jsx';
 import { STUDENT_PRESETS, loginStudent } from '../services/academicStore.js';
 import { api } from '../services/apiClient.js';
 import hauiLogo from '@haui/logo';
@@ -14,7 +14,7 @@ import hauiLogo from '@haui/logo';
  * - Tương thích hoàn toàn với kiểm thử tự động (handleLogin, studentIdInput, STUDENT_PRESETS)
  */
 export function LoginPage() {
-  const navigate = useNavigate();
+  const navigate = useAnimatedNavigate();
   const [activeTab, setActiveTab] = useState('login'); // 'login' | 'register' | 'forgot'
 
   // Form State cho Đăng nhập
@@ -259,7 +259,7 @@ export function LoginPage() {
                   title="Điền nhanh thông tin tài khoản sinh viên mẫu"
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>bolt</span>
-                  <span>Điền tài khoản mẫu (2020601234)</span>
+                  <span>Điền tài khoản mẫu</span>
                 </button>
               </div>
             </form>

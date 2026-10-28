@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useAnimatedNavigate } from '../components/layout/animatedNavigation.jsx';
 import { REQUIRED_UI_COMPONENT_NAMES, UI_API_CONTRACT_VERSION } from '../routes/tv3RouteContract.js';
 import { HAUI_GRADE_SCALE_BR05, OPTIMIZER_WEIGHTS } from '../services/mockFixtures.js';
 
@@ -21,7 +21,7 @@ const QUICK_PROMPTS_MAN_2 = Object.freeze([
  * Màn 6-7-8: What-if / Retake ROI / Tính điểm ngược) thông qua chính bộ `{ api, ui }` được truyền qua DI.
  */
 export function Tv3FallbackPage({ routeSpec, api, ui, contractStatus }) {
-  const navigate = useNavigate();
+  const navigate = useAnimatedNavigate();
   const { Button, Card, Table, Loading, Error: ErrorBox, EmptyState, Modal } = ui;
 
   const [previewData, setPreviewData] = useState(null);
@@ -124,7 +124,7 @@ export function Tv3FallbackPage({ routeSpec, api, ui, contractStatus }) {
                     handlePreviewContractApi({ message: prompt });
                   }}
                 >
-                  ✨ {prompt}
+                  {prompt}
                 </button>
               ))}
             </div>
@@ -154,10 +154,10 @@ export function Tv3FallbackPage({ routeSpec, api, ui, contractStatus }) {
             />
             <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: '12px', flexWrap: 'wrap' }}>
               <Button variant="secondary" size="sm" onClick={() => navigate('/curriculum')}>
-                🌳 Xem Sơ đồ cây môn học (Màn hình 4)
+                Xem Sơ đồ cây môn học (Màn hình 4)
               </Button>
               <Button variant="secondary" size="sm" onClick={() => navigate('/planner')}>
-                ✏️ Tùy chỉnh &amp; Xác nhận kế hoạch (Màn hình 5)
+                Tùy chỉnh &amp; Xác nhận kế hoạch (Màn hình 5)
               </Button>
             </div>
           </div>
@@ -177,7 +177,7 @@ export function Tv3FallbackPage({ routeSpec, api, ui, contractStatus }) {
                   handlePreviewContractApi({ action: 'validate', totalCredits: 18 });
                 }}
               >
-                ✓ Thử 18/24 TC (Hợp lệ cân bằng)
+                Thử 18/24 TC (Hợp lệ cân bằng)
               </Button>
               <Button
                 variant={plannedCredits === 6 ? 'danger' : 'secondary'}
@@ -187,7 +187,7 @@ export function Tv3FallbackPage({ routeSpec, api, ui, contractStatus }) {
                   handlePreviewContractApi({ action: 'validate', totalCredits: 6 });
                 }}
               >
-                ⚠️ Thử 6 TC (&lt; 10 TC: Vi phạm sàn BR-03)
+                Thử 6 TC (&lt; 10 TC: Vi phạm sàn BR-03)
               </Button>
               <Button
                 variant={plannedCredits === 27 ? 'danger' : 'secondary'}
@@ -197,7 +197,7 @@ export function Tv3FallbackPage({ routeSpec, api, ui, contractStatus }) {
                   handlePreviewContractApi({ action: 'validate', totalCredits: 27 });
                 }}
               >
-                ⚠️ Thử 27 TC (&gt; 24 TC: Vượt trần BR-04)
+                Thử 27 TC (&gt; 24 TC: Vượt trần BR-04)
               </Button>
               <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: 'var(--text-xs)', marginLeft: '8px' }}>
                 <input

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from './animatedNavigation.jsx';
 import { api } from '../../services/apiClient.js';
 import {
   STUDENT_PRESETS,
@@ -11,19 +11,14 @@ import { Select } from '../ui/Select.jsx';
  * Topbar Component (TV2 — design-base-v1)
  * Chuẩn xác theo Stitch Prototype:
  * - Nút thu gọn / mở rộng menu (onToggleCollapse)
- * - Thanh tìm kiếm pill (left)
  * - Nút Tư vấn lộ trình nhanh với AI (dark pill)
- * - Chuông thông báo kèm chấm đỏ ember
- * - Huy hiệu trạng thái học vụ (BR-07: Cảnh báo học vụ / Học vụ bình thường)
  * - Avatar sinh viên
  * - Menu chuyển nhanh Persona mẫu cho reviewer
  *
  * @param {{ collapsed?: boolean, onToggleCollapse?: () => void }} props
  */
 export function Topbar({ collapsed = false, onToggleCollapse }) {
-  const navigate = useNavigate();
   const [apiConfig, setApiConfig] = useState(() => api.getConfig());
-  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     return api.subscribe((nextConfig) => {
@@ -33,16 +28,9 @@ export function Topbar({ collapsed = false, onToggleCollapse }) {
 
   const student = apiConfig.sessionStudent;
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/curriculum?search=${encodeURIComponent(searchQuery.trim())}`);
-    }
-  };
-
   return (
     <header className="haui-topbar">
-      {/* 1. Left: Menu Toggle + Search Pill */}
+      {/* 1. Left: Menu Toggle */}
       <div className="haui-topbar__left">
         {typeof onToggleCollapse === 'function' && (
           <button
@@ -58,21 +46,9 @@ export function Topbar({ collapsed = false, onToggleCollapse }) {
           </button>
         )}
 
-        <form onSubmit={handleSearchSubmit} className="haui-topbar__search-form">
-          <span className="material-symbols-outlined haui-topbar__search-icon">
-            search
-          </span>
-          <input
-            type="text"
-            className="haui-topbar__search-input"
-            placeholder="Tìm môn học, mã môn, chuẩn tốt nghiệp..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </form>
       </div>
 
-      {/* 2. Right: AI CTA + Notifications + Academic Status + Avatar + Persona Switcher */}
+      {/* 2. Right: AI CTA + Avatar + Persona Switcher */}
       <div className="haui-topbar__right">
         {/* Quick AI Action Pill */}
         <Link
@@ -85,24 +61,6 @@ export function Topbar({ collapsed = false, onToggleCollapse }) {
           </span>
           <span className="haui-topbar__ai-text">Tư vấn lộ trình nhanh với AI</span>
         </Link>
-
-        {/* Academic Status Badge (BR-07 / US-12) */}
-        <span
-          className={`haui-badge ${
-            student?.id === 'empty'
-              ? 'haui-badge--neutral'
-              : (student?.cpa !== null && student?.cpa < 2.0) || student?.id === 'at-risk'
-              ? 'haui-badge--warning'
-              : 'haui-badge--success'
-          }`}
-          title="Quy chế BR-07: Sinh viên có CPA 2.45 và đang nợ môn tiên quyết (MATH1002)"
-        >
-          {student?.id === 'empty'
-            ? 'ℹ️ Chưa nạp bảng điểm'
-            : (student?.cpa !== null && student?.cpa < 2.0) || student?.id === 'at-risk'
-            ? '⚠️ Cảnh báo học vụ: Mức 1'
-            : '✓ Học vụ: Bình thường'}
-        </span>
 
         {/* Student Avatar */}
         <Link
@@ -134,9 +92,9 @@ export function Topbar({ collapsed = false, onToggleCollapse }) {
             color: 'var(--color-ink)'
           }}
         >
-          <option value="normal">👤 Chuẩn</option>
-          <option value="at-risk">🚨 Nguy cơ</option>
-          <option value="empty">⚪ Trắng</option>
+          <option value="normal">Chuẩn</option>
+          <option value="at-risk">Nguy cơ</option>
+          <option value="empty">Trắng</option>
         </Select>
       </div>
     </header>

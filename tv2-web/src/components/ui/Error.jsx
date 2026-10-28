@@ -51,8 +51,8 @@ export function Error({
     <div className={`haui-error ${className}`.trim()} role="alert" {...rest}>
       <div className="haui-error__header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span aria-hidden="true" style={{ fontSize: '18px', lineHeight: 1 }}>
-            ⚠️
+          <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: '18px', lineHeight: 1 }}>
+            warning
           </span>
           <h4 className="haui-error__title">{title}</h4>
         </div>

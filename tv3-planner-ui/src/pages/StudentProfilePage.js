@@ -15,6 +15,7 @@ export const SAMPLE_K16_PROFILE = Object.freeze({
   cohort: 'K16 (2021 - 2025)',
   faculty: 'Trường Công nghệ Thông tin & Truyền thông',
   advisorClass: 'KTPM01-K16',
+  institutionName: 'Đại học Công nghiệp Hà Nội',
   cpa: 3.18,
   gpa: 3.32,
   accumulatedCredits: 108,
@@ -131,6 +132,11 @@ export const HAUI_COHORTS = Object.freeze([
   'K21 (2026 - 2030)'
 ]);
 
+const PROGRAM_SELECT_TRIGGER_STYLE = Object.freeze({
+  minHeight: '44px',
+  padding: '10px 40px 10px 16px'
+});
+
 /**
  * Tra cứu danh sách ngành/chương trình đào tạo theo Khoa/Trường
  * @param {string} facultyName
@@ -184,6 +190,7 @@ export function StudentProfilePage({
   ui,
   onOpenTranscript,
   onOpenPlanner,
+  onNavigate,
   initialProfileData = undefined,
   initialLoading = false
 } = {}) {
@@ -220,6 +227,7 @@ export function StudentProfilePage({
   const [phoneInput, setPhoneInput] = useState('');
   const [addressInput, setAddressInput] = useState('');
   const [advisorClassInput, setAdvisorClassInput] = useState('');
+  const [institutionInput, setInstitutionInput] = useState(initialProfileData?.institutionName || '');
   const [facultyInput, setFacultyInput] = useState('');
   const [majorNameInput, setMajorNameInput] = useState('');
   const [cohortInput, setCohortInput] = useState('');
@@ -230,6 +238,10 @@ export function StudentProfilePage({
   const [specialization, setSpecialization] = useState('');
 
   const currentPlan = plannerStore.getPlan();
+  const profileFields = profileData
+    ? [profileData.fullName, profileData.studentCode, profileData.institutionName, profileData.faculty, profileData.majorName, profileData.cohort, profileData.advisorClass, profileData.email]
+    : [];
+  const profileCompletion = Math.round((profileFields.filter(Boolean).length / 8) * 100);
 
   const showToast = useCallback((msg) => {
     setToastMessage(msg);
@@ -240,12 +252,7 @@ export function StudentProfilePage({
   const handleFacultyChange = useCallback((e) => {
     const newFaculty = e.target.value;
     setFacultyInput(newFaculty);
-    const majors = getMajorsForFaculty(newFaculty);
-    if (majors && majors.length > 0) {
-      setMajorNameInput(majors[0]);
-    } else {
-      setMajorNameInput('');
-    }
+    setMajorNameInput('');
   }, []);
 
   // Điều hướng an toàn
@@ -283,6 +290,7 @@ export function StudentProfilePage({
     if (profileData) {
       setFullNameInput(profileData.fullName || '');
       setAdvisorClassInput(profileData.advisorClass || '');
+      setInstitutionInput(profileData.institutionName || '');
       setFacultyInput(profileData.faculty || '');
       setMajorNameInput(profileData.majorName || '');
       setCohortInput(profileData.cohort || '');
@@ -295,6 +303,7 @@ export function StudentProfilePage({
     } else {
       setFullNameInput('');
       setAdvisorClassInput('');
+      setInstitutionInput('');
       setFacultyInput('');
       setMajorNameInput('');
       setCohortInput('');
@@ -319,6 +328,10 @@ export function StudentProfilePage({
       }
 
       const sessionStudent = api?.getConfig?.()?.sessionStudent || null;
+      const studentId = sessionStudent?.studentId || academicStatus?.studentId || '';
+      const hasEnteredProfileDetails = sessionStudent?.profileDetailsEnteredFor === studentId;
+      const hasProgramData = sessionStudent?.id !== 'empty' || sessionStudent?.hasTranscript === true || hasEnteredProfileDetails;
+      const hasProgramCredits = sessionStudent?.id !== 'empty' || sessionStudent?.hasTranscript === true;
 
       // Nếu có dữ liệu từ backend hoặc session
       if (academicStatus || sessionStudent) {
@@ -348,14 +361,21 @@ export function StudentProfilePage({
           : ((sessionStudent?.accumulatedCredits !== null && sessionStudent?.accumulatedCredits !== undefined) ? Number(sessionStudent.accumulatedCredits) : 0);
 
         setProfileData({
-          studentId: sessionStudent?.studentId || academicStatus?.studentId || '',
+          id: sessionStudent?.id || '',
+          studentId,
           fullName: sessionStudent?.fullName || academicStatus?.fullName || '',
           studentCode: sessionStudent?.studentCode || sessionStudent?.studentId || academicStatus?.studentId || '',
-          majorName: sessionStudent?.majorName || '',
+          majorName: hasProgramData ? (sessionStudent?.majorName || '') : '',
           majorCode: sessionStudent?.majorCode || '',
-          cohort: sessionStudent?.cohort || '',
-          faculty: sessionStudent?.faculty || '',
-          advisorClass: sessionStudent?.advisorClass || '',
+          cohort: hasProgramData ? (sessionStudent?.cohort || '') : '',
+          faculty: hasProgramData ? (sessionStudent?.faculty || '') : '',
+          advisorClass: hasProgramData ? (sessionStudent?.advisorClass || '') : '',
+          institutionName: hasEnteredProfileDetails
+            ? (sessionStudent?.institutionName || '')
+            : (hasProgramData ? 'Đại học Công nghiệp Hà Nội' : ''),
+          hasProgramData,
+          hasProgramCredits,
+          email: sessionStudent?.email || '',
           cpa: cpaVal,
           gpa: gpaVal,
           accumulatedCredits: creditsVal,
@@ -423,6 +443,7 @@ export function StudentProfilePage({
       phone: phoneInput,
       address: addressInput,
       advisorClass: advisorClassInput,
+      institutionName: institutionInput,
       faculty: facultyInput,
       majorName: majorNameInput,
       cohort: cohortInput,
@@ -435,11 +456,15 @@ export function StudentProfilePage({
 
     if (api && typeof api.setSessionStudent === 'function') {
       api.setSessionStudent({
+        id: api.getConfig?.()?.sessionStudent?.id,
+        studentId: profileData?.studentId,
         fullName: fullNameInput,
         advisorClass: advisorClassInput,
+        institutionName: institutionInput,
         faculty: facultyInput,
         majorName: majorNameInput,
-        cohort: cohortInput
+        cohort: cohortInput,
+        profileDetailsEnteredFor: profileData?.studentId
       });
     }
 
@@ -456,21 +481,22 @@ export function StudentProfilePage({
     }
 
     showToast(`Đã lưu thành công thông tin hồ sơ và mục tiêu học tập!`);
-  }, [profileData, fullNameInput, genderInput, dobInput, personalEmailInput, phoneInput, addressInput, advisorClassInput, facultyInput, majorNameInput, cohortInput, targetCpa, graduationPace, specialization, api, showToast]);
+  }, [profileData, fullNameInput, genderInput, dobInput, personalEmailInput, phoneInput, addressInput, advisorClassInput, institutionInput, facultyInput, majorNameInput, cohortInput, targetCpa, graduationPace, specialization, api, showToast]);
 
   // Hủy thay đổi form
   const handleCancelChanges = useCallback(() => {
     if (profileData) {
       setFullNameInput(profileData.fullName || '');
       setAdvisorClassInput(profileData.advisorClass || '');
-      setFacultyInput(profileData.faculty || HAUI_MEMBER_SCHOOLS[1]);
-      setMajorNameInput(profileData.majorName || 'Kỹ thuật phần mềm');
-      setCohortInput(profileData.cohort || 'K17 (2022 - 2026)');
-      if (profileData.personalEmail) setPersonalEmailInput(profileData.personalEmail);
-      if (profileData.phone) setPhoneInput(profileData.phone);
-      if (profileData.address) setAddressInput(profileData.address);
-      if (profileData.gender) setGenderInput(profileData.gender);
-      if (profileData.dob) setDobInput(profileData.dob);
+      setInstitutionInput(profileData.institutionName || '');
+      setFacultyInput(profileData.faculty || '');
+      setMajorNameInput(profileData.majorName || '');
+      setCohortInput(profileData.cohort || '');
+      setPersonalEmailInput(profileData.personalEmail || '');
+      setPhoneInput(profileData.phone || '');
+      setAddressInput(profileData.address || '');
+      setGenderInput(profileData.gender || '');
+      setDobInput(profileData.dob || '');
     }
     showToast('Đã hoàn tác các thay đổi chưa lưu.');
   }, [profileData, showToast]);
@@ -490,32 +516,28 @@ export function StudentProfilePage({
       style: {
         display: 'flex',
         flexDirection: 'column',
-        gap: '12px',
-        marginBottom: '24px'
+        gap: '6px'
       }
     },
     // Breadcrumb
     React.createElement(
-      'div',
+      'nav',
       {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          fontSize: '12px',
-          color: 'var(--color-mid-gray, #737373)'
-        }
+        className: 'haui-breadcrumb',
+        'aria-label': 'Đường dẫn trang'
       },
       React.createElement(
-        'span',
+        'button',
         {
-          style: { cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }
+          type: 'button',
+          className: 'haui-breadcrumb__home',
+          onClick: () => onNavigate?.('/')
         },
-        React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '15px' } }, 'home'),
+        React.createElement('span', { className: 'material-symbols-outlined haui-breadcrumb__icon', 'aria-hidden': 'true' }, 'home'),
         'Trang chủ'
       ),
-      React.createElement('span', { style: { color: 'var(--color-hairline, #e5e5e5)' } }, '/'),
-      React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500 } }, 'Hồ sơ sinh viên')
+      React.createElement('span', { className: 'haui-breadcrumb__separator', 'aria-hidden': 'true' }, '/'),
+      React.createElement('span', { className: 'haui-breadcrumb__current', 'aria-current': 'page' }, 'Hồ sơ sinh viên')
     ),
     // Title bar
     React.createElement(
@@ -539,8 +561,8 @@ export function StudentProfilePage({
             'h1',
             {
               style: {
-                fontSize: '28px',
-                fontWeight: 700,
+                fontSize: '30px',
+                fontWeight: 600,
                 letterSpacing: '-0.02em',
                 color: 'var(--color-ink, #0a0a0a)',
                 margin: 0
@@ -680,7 +702,7 @@ export function StudentProfilePage({
             title: 'Chưa có thông tin hồ sơ sinh viên',
             description:
               'Hệ thống chưa tìm thấy dữ liệu học tập cá nhân của bạn. Để bắt đầu tư vấn lộ trình học tập, phân tích What-if và kiểm toán tốt nghiệp, vui lòng nạp bảng điểm từ sv.haui.edu.vn tại luồng Nhập bảng điểm của hệ thống.',
-            actionLabel: '📎 Nhập bảng điểm ngay (TV2)',
+            actionLabel: 'Nhập bảng điểm ngay',
             onAction: handleOpenTranscript
           })
         : React.createElement(
@@ -838,7 +860,7 @@ export function StudentProfilePage({
               { style: { fontSize: '14px', color: 'var(--color-mid-gray, #737373)', margin: '4px 0 0' } },
               profileData.studentCode
             ),
-            React.createElement(
+            profileData.advisorClass ? React.createElement(
               'div',
               {
                 style: {
@@ -856,8 +878,8 @@ export function StudentProfilePage({
                 }
               },
               React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '14px' } }, 'school'),
-              profileData.advisorClass || 'ĐH CNTT 2 - K16'
-            )
+              profileData.advisorClass
+            ) : null
           ),
 
           // Divider
@@ -871,7 +893,7 @@ export function StudentProfilePage({
               'div',
               { style: { display: 'flex', justifyContent: 'space-between', fontSize: '12px' } },
               React.createElement('span', { style: { color: 'var(--color-mid-gray, #737373)', fontWeight: 500 } }, 'Tiến độ hoàn thành hồ sơ'),
-              React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 600 } }, '100%')
+              React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 600 } }, `${profileCompletion}%`)
             ),
             React.createElement(
               'div',
@@ -889,7 +911,7 @@ export function StudentProfilePage({
                   backgroundColor: '#0a0a0a',
                   height: '100%',
                   borderRadius: '9999px',
-                  width: '100%',
+                  width: `${profileCompletion}%`,
                   transition: 'width 0.5s ease'
                 }
               })
@@ -897,7 +919,9 @@ export function StudentProfilePage({
             React.createElement(
               'p',
               { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)', margin: '4px 0 0', lineHeight: 1.4 } },
-              'Hồ sơ chuẩn hóa đã sẵn sàng cho cổng thẩm định tốt nghiệp và What-if.'
+              profileCompletion === 100
+                ? 'Hồ sơ chuẩn hóa đã sẵn sàng cho cổng thẩm định tốt nghiệp và What-if.'
+                : 'Bổ sung các thông tin còn thiếu để hoàn thiện hồ sơ.'
             )
           ),
 
@@ -934,7 +958,7 @@ export function StudentProfilePage({
                 'div',
                 { style: { display: 'flex', flexDirection: 'column', minWidth: 0 } },
                 React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Khoa / Viện'),
-                React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, profileData.faculty || 'Trường Đại học Công nghiệp Hà Nội (HaUI)')
+                React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, profileData.faculty || '')
               )
             ),
             // Item 2: Email trường
@@ -963,7 +987,7 @@ export function StudentProfilePage({
                 'div',
                 { style: { display: 'flex', flexDirection: 'column', minWidth: 0 } },
                 React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Email trường'),
-                React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, `${profileData.studentCode}@sv.haui.edu.vn`)
+                React.createElement('span', { style: { color: 'var(--color-ink, #0a0a0a)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, profileData.email || '')
               )
             ),
             // Item 3: Trạng thái định danh
@@ -1280,7 +1304,7 @@ export function StudentProfilePage({
                 { style: { position: 'relative' } },
                 React.createElement('input', {
                   readOnly: true,
-                  value: `${profileData.studentCode}@sv.haui.edu.vn`,
+                  value: profileData.email || '',
                   style: {
                     width: '100%',
                     padding: '8px 16px',
@@ -1436,20 +1460,22 @@ export function StudentProfilePage({
                 'div',
                 { style: { position: 'relative' } },
                 React.createElement('input', {
-                  readOnly: true,
-                  value: 'Đại học Công nghiệp Hà Nội',
+                  type: 'text',
+                  value: institutionInput,
+                  onChange: (e) => setInstitutionInput(e.target.value),
                   style: {
                     width: '100%',
+                    minHeight: '44px',
                     padding: '8px 16px',
                     borderRadius: '9999px',
                     backgroundColor: 'var(--color-canvas, #f5f5f5)',
                     border: '1px solid var(--color-hairline, #e5e5e5)',
                     color: 'var(--color-mid-gray, #737373)',
-                    cursor: 'not-allowed',
+                    cursor: 'text',
                     boxSizing: 'border-box'
                   }
                 }),
-                React.createElement('span', { className: 'material-symbols-outlined', style: { position: 'absolute', right: '12px', top: '9px', fontSize: '18px', color: 'var(--color-mid-gray, #737373)' } }, 'apartment')
+                React.createElement('span', { className: 'material-symbols-outlined', style: { position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '18px', color: 'var(--color-mid-gray, #737373)' } }, 'apartment')
               )
             ),
 
@@ -1462,6 +1488,8 @@ export function StudentProfilePage({
                 Select,
                 {
                   value: facultyInput,
+                  placeholder: ' ',
+                  triggerStyle: PROGRAM_SELECT_TRIGGER_STYLE,
                   onChange: handleFacultyChange
                 },
                 HAUI_MEMBER_SCHOOLS.map((school) =>
@@ -1479,6 +1507,8 @@ export function StudentProfilePage({
                 Select,
                 {
                   value: majorNameInput,
+                  placeholder: ' ',
+                  triggerStyle: PROGRAM_SELECT_TRIGGER_STYLE,
                   onChange: (e) => setMajorNameInput(e.target.value)
                 },
                 (() => {
@@ -1501,17 +1531,14 @@ export function StudentProfilePage({
                 Select,
                 {
                   value: cohortInput,
+                  placeholder: ' ',
+                  triggerStyle: PROGRAM_SELECT_TRIGGER_STYLE,
                   onChange: (e) => setCohortInput(e.target.value)
                 },
                 (() => {
                   const inList = HAUI_COHORTS.includes(cohortInput);
                   const options = inList || !cohortInput ? HAUI_COHORTS : [cohortInput, ...HAUI_COHORTS];
-                  return [
-                    React.createElement('option', { key: 'empty', value: '' }, '-- Chọn khóa học --'),
-                    ...options.map((c) =>
-                      React.createElement('option', { key: c, value: c }, c)
-                    )
-                  ];
+                  return options.map((c) => React.createElement('option', { key: c, value: c }, c));
                 })()
               )
             ),
@@ -1527,6 +1554,7 @@ export function StudentProfilePage({
                 onChange: (e) => setAdvisorClassInput(e.target.value),
                 style: {
                   width: '100%',
+                  minHeight: '44px',
                   padding: '8px 16px',
                   borderRadius: '9999px',
                   backgroundColor: 'var(--color-canvas, #f5f5f5)',
@@ -1544,9 +1572,12 @@ export function StudentProfilePage({
               React.createElement('label', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink, #0a0a0a)' } }, 'Chương trình đào tạo'),
               React.createElement('input', {
                 readOnly: true,
-                value: `${profileData.totalCreditsRequired || 135} Tín chỉ (Đại học chính quy)`,
+                value: profileData.hasProgramCredits === false || profileData.totalCreditsRequired == null
+                  ? ''
+                  : `${profileData.totalCreditsRequired} Tín chỉ (Đại học chính quy)`,
                 style: {
                   width: '100%',
+                  minHeight: '44px',
                   padding: '8px 16px',
                   borderRadius: '9999px',
                   backgroundColor: 'var(--color-canvas, #f5f5f5)',
@@ -1556,7 +1587,7 @@ export function StudentProfilePage({
                   boxSizing: 'border-box'
                 }
               }),
-              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)', fontStyle: 'italic', paddingLeft: '4px' } }, 'Khung chương trình đào tạo chuẩn Đại học Công nghiệp Hà Nội')
+              profileData.hasProgramCredits === false ? null : React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)', fontStyle: 'italic', paddingLeft: '4px' } }, 'Khung chương trình đào tạo chuẩn Đại học Công nghiệp Hà Nội')
             )
           )
         ),
@@ -1665,7 +1696,7 @@ export function StudentProfilePage({
             React.createElement(
               'span',
               null,
-              '⚠️ Cảnh báo học vụ: Nợ học phần bắt buộc Toán rời rạc (MATH1002 - Điểm F). Đã được AI ưu tiên đưa vào kế hoạch Kỳ 7.'
+              'Cảnh báo học vụ: Nợ học phần bắt buộc Toán rời rạc, mã MATH1002, điểm F. Đã được ưu tiên đưa vào kế hoạch Kỳ 7.'
             )
           ),
 

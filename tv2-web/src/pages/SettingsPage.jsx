@@ -1,5 +1,5 @@
 ﻿import React, { useState, useRef, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useAnimatedNavigate } from '../components/layout/animatedNavigation.jsx';
 import { logoutStudent, getAcademicSnapshot } from '../services/academicStore.js';
 import { Select } from '../components/ui/Select.jsx';
 
@@ -51,7 +51,7 @@ function Toast({ message, onClose }) {
 }
 
 export function SettingsPage() {
-  const navigate = useNavigate();
+  const navigate = useAnimatedNavigate();
   const [activeTab, setActiveTab] = useState('account');
   const [toast, setToast] = useState('');
   const sectionRefs = useRef({});
@@ -171,10 +171,10 @@ export function SettingsPage() {
       {/* Page Header */}
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '16px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <nav style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--color-mid-gray)' }}>
-            <Link to="/" style={{ color: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}><Icon name="home" size={14} />Trang chủ</Link>
-            <span style={{ color: 'var(--color-hairline)' }}>/</span>
-            <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Cài đặt</span>
+          <nav className="haui-breadcrumb" aria-label="Đường dẫn trang">
+            <Link to="/" className="haui-breadcrumb__home"><span className="material-symbols-outlined haui-breadcrumb__icon" aria-hidden="true">home</span>Trang chủ</Link>
+            <span className="haui-breadcrumb__separator" aria-hidden="true">/</span>
+            <span className="haui-breadcrumb__current" aria-current="page">Cài đặt</span>
           </nav>
           <h1 style={{ fontSize: 30, fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.5px' }}>Cài đặt</h1>
           <p style={{ fontSize: 14, color: 'var(--color-mid-gray)', margin: 0 }}>Quản lý thông tin tài khoản và tùy chỉnh trải nghiệm học tập.</p>
@@ -228,7 +228,7 @@ export function SettingsPage() {
               return (
                 <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
                   <Field label="Họ và tên sinh viên" value={currentStudent?.fullName || 'Nguyễn Văn An'} readOnly />
-                  <Field label="Mã số sinh viên (MSSV)" value={currentStudent?.studentId || '2024604757'} readOnly locked />
+                  <Field label="Mã số sinh viên" value={currentStudent?.studentId || '2024604757'} readOnly locked />
                   <Field label="Ngành đào tạo" value={currentStudent?.majorName || 'Kỹ thuật phần mềm'} readOnly />
                   <Field label="Lớp sinh hoạt & Khóa" value={`${currentStudent?.className || '2022DHKTPM01'} • ${currentStudent?.faculty || 'Đại học Công nghiệp Hà Nội'}`} readOnly />
                   <div style={{ gridColumn: '1 / -1' }}>
@@ -376,8 +376,8 @@ export function SettingsPage() {
             <div><h2 style={S.h2}>Tùy chọn học tập cá nhân</h2><p style={S.caption}>Cấu hình các chỉ số mục tiêu để thuật toán gợi ý lộ trình tối ưu</p></div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-            <SelectField label="Học kỳ hiện tại" value={semester} onChange={setSemester} hint="Căn cứ để tính số học kỳ còn lại" options={[['sem5', 'Học kỳ 5 (HK1 2023-2024)'], ['sem6', 'Học kỳ 6 (HK2 2023-2024)'], ['sem7', 'Học kỳ 7 (HK1 2024-2025)'], ['sem8', 'Học kỳ 8 (HK2 2024-2025 - Khóa luận)']]} />
-            <SelectField label="Ngôn ngữ giao diện" value={language} onChange={setLanguage} hint="Tên học phần luôn hiển thị theo chuẩn HaUI" options={[['vi', 'Tiếng Việt (Mặc định)'], ['en', 'English (Academic Mode)']]} />
+            <SelectField label="Học kỳ hiện tại" value={semester} onChange={setSemester} hint="Căn cứ để tính số học kỳ còn lại" options={[['sem5', 'Học kỳ 5 · Kỳ I 2023–2024'], ['sem6', 'Học kỳ 6 · Kỳ II 2023–2024'], ['sem7', 'Học kỳ 7 · Kỳ I 2024–2025'], ['sem8', 'Học kỳ 8 · Kỳ II 2024–2025 · Khóa luận']]} />
+            <SelectField label="Ngôn ngữ giao diện" value={language} onChange={setLanguage} hint="Tên học phần luôn hiển thị theo chuẩn HaUI" options={[['vi', 'Tiếng Việt'], ['en', 'English']]} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <label style={S.label}>Mục tiêu CPA mong muốn</label>
@@ -396,7 +396,7 @@ export function SettingsPage() {
               </div>
               <div style={{ position: 'relative' }}>
                 <input style={S.input} type="number" min="10" max="25" value={creditsLimit} onChange={e => setCreditsLimit(e.target.value)} />
-                <span style={{ position: 'absolute', right: 16, top: 8, fontSize: 12, color: 'var(--color-mid-gray)' }}>Tín chỉ (TC)</span>
+                <span style={{ position: 'absolute', right: 16, top: 8, fontSize: 12, color: 'var(--color-mid-gray)' }}>Tín chỉ</span>
               </div>
               <span style={{ fontSize: 12, color: 'var(--color-mid-gray)' }}>Tránh quá tải và đảm bảo thời gian thực tập</span>
             </div>

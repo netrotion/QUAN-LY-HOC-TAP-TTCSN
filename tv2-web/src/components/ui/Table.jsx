@@ -157,6 +157,7 @@ export function Table({
                   return (
                     <td
                       key={`${resolveRowKey(row, rowIdx)}-${colKey}`}
+                      data-label={typeof (col.title ?? col.header) === 'string' ? (col.title ?? col.header) : colKey}
                       style={{ textAlign: col.align || 'left' }}
                     >
                       {cellContent}

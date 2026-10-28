@@ -119,7 +119,7 @@ export function CurriculumTreeModal({ isOpen, onClose, ui }) {
                             color: badgeColor
                           }
                         },
-                        isPassed ? '✓ Đã học' : isFailed ? '✕ Nợ môn' : isPlanned ? 'Đề xuất' : 'Khóa'
+                        isPassed ? 'Đã học' : isFailed ? '× Nợ môn' : isPlanned ? 'Đề xuất' : 'Khóa'
                       )
                     ),
                     React.createElement('div', { style: { fontSize: '11px', color: '#0f172a', marginTop: '2px', fontWeight: 500 } }, step.name),

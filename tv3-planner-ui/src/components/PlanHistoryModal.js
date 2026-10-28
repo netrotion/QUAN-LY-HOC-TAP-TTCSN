@@ -110,7 +110,7 @@ export function PlanHistoryModal({ isOpen, onClose, ui, api, onPlanChanged }) {
               justifyContent: 'space-between'
             }
           },
-          React.createElement('span', null, `${toast.ok ? '✓' : '⚠️'} ${toast.message}`)
+          React.createElement('span', null, toast.message)
         )
       : null,
 
@@ -320,7 +320,7 @@ export function PlanHistoryModal({ isOpen, onClose, ui, api, onPlanChanged }) {
               `Phiên bản: ${item.version} · Cập nhật: ${item.updatedAt} · ${item.totalSemesters} kỳ (${item.totalCredits} TC) · CPA dự phóng: ${item.projectedCpa}`
             ),
             item.note
-              ? React.createElement('div', { style: { fontSize: '11px', color: '#94a3b8', marginTop: '2px', fontStyle: 'italic' } }, `📌 ${item.note}`)
+              ? React.createElement('div', { style: { fontSize: '11px', color: '#94a3b8', marginTop: '2px', fontStyle: 'italic' } }, `${item.note}`)
               : null
           ),
           React.createElement(
@@ -368,7 +368,7 @@ export function PlanHistoryModal({ isOpen, onClose, ui, api, onPlanChanged }) {
               ? React.createElement(
                   'span',
                   { style: { fontSize: '12px', fontWeight: 600, color: '#16a34a' } },
-                  '✓ Đang theo dõi'
+                  'Đang theo dõi'
                 )
               : null
           )
