@@ -1036,6 +1036,23 @@ class PlannerStore {
           const detail = await plannerApi.getStudyPlan(api, target.planId);
           this.loadPlanDetail(detail);
         }
+      } else {
+        // Máy chủ chưa có kế hoạch nào: bỏ fixture để không hiển thị kế hoạch mẫu như dữ liệu thật
+        this.history = [];
+        this.plan = {
+          ...clone(INITIAL_MULTI_SEMESTER_PLAN),
+          planId: null,
+          planName: 'Kế hoạch học tập cá nhân',
+          version: 'v1',
+          planVersion: 1,
+          status: PLAN_STATUSES.DRAFT,
+          projectedCpa: null,
+          projectedRank: null,
+          totalCredits: 0,
+          semesters: []
+        };
+        this.baseline = clone(this.plan);
+        this.validation = null;
       }
       return { success: true, count: plans.length };
     } catch (err) {

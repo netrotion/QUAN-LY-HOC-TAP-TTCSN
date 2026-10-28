@@ -123,6 +123,8 @@ export function extractCsrfTokenFromBrowser(cookieName = 'XSRF-TOKEN') {
  * @param {any} body
  * @returns {{ sanitizedBody: any, strippedStudentId: boolean }}
  */
+const CREDENTIAL_ENDPOINTS = new Set(['/auth/login', '/auth/register']);
+
 export function sanitizeRequestBody(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return { sanitizedBody: body, strippedStudentId: false };
@@ -437,8 +439,9 @@ export function createApiClient(customConfig = {}) {
     });
   }
 
-  function setSessionStudent(nextStudent) {
-    state.sessionStudent = { ...state.sessionStudent, ...nextStudent };
+  function setSessionStudent(nextStudent, { replace = false } = {}) {
+    // replace: thay hẳn hồ sơ (backend thật), không trộn với trường của hồ sơ mock trước đó
+    state.sessionStudent = replace ? { ...nextStudent } : { ...state.sessionStudent, ...nextStudent };
     const targetId = nextStudent?.id || (
       String(nextStudent?.studentId || '').includes('normal') || nextStudent?.studentId === '2024604757' ? 'normal' :
       String(nextStudent?.studentId || '').includes('empty') ? 'empty' : 'at-risk'
@@ -512,7 +515,10 @@ export function createApiClient(customConfig = {}) {
   async function request(path, options = {}) {
     const method = (options.method || 'GET').toUpperCase();
     const { fullUrl, normalizedPath } = resolveEndpointUrl(state.baseURL, path);
-    const { sanitizedBody, strippedStudentId } = sanitizeRequestBody(options.body);
+    // Đăng nhập/đăng ký bắt buộc gửi mã sinh viên làm thông tin xác thực, không lọc studentId
+    const { sanitizedBody, strippedStudentId } = CREDENTIAL_ENDPOINTS.has(normalizedPath)
+      ? { sanitizedBody: options.body, strippedStudentId: false }
+      : sanitizeRequestBody(options.body);
 
     const headers = {
       Accept: 'application/json',
@@ -527,7 +533,9 @@ export function createApiClient(customConfig = {}) {
     }
 
     const isMutating = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
-    if (sanitizedBody !== undefined && sanitizedBody !== null) {
+    // FormData (upload file): để trình duyệt tự đặt Content-Type multipart kèm boundary
+    const isFormData = typeof FormData !== 'undefined' && sanitizedBody instanceof FormData;
+    if (sanitizedBody !== undefined && sanitizedBody !== null && !isFormData) {
       headers['Content-Type'] = headers['Content-Type'] || 'application/json';
     }
 
@@ -612,7 +620,7 @@ export function createApiClient(customConfig = {}) {
         credentials: requestContext.credentials,
         body:
           requestContext.body !== undefined && requestContext.body !== null
-            ? typeof requestContext.body === 'string'
+            ? typeof requestContext.body === 'string' || isFormData
               ? requestContext.body
               : JSON.stringify(requestContext.body)
             : undefined,
@@ -721,10 +729,17 @@ export function createApiClient(customConfig = {}) {
     getTranscript: (opts) => get('/academic/transcript', opts),
     getProfile: (opts) => get('/students/me', opts),
     uploadTranscript: (payload, opts) => post('/academic/transcript/imports', payload, opts),
+    uploadTranscriptFile: (file, opts) => {
+      const form = new FormData();
+      form.append('file', file);
+      return post('/academic/transcript/imports', form, opts);
+    },
     startManualImport: (payload, opts) => post('/academic/transcript/imports/manual', payload, opts),
     getImportSession: (sessionId, opts) => get(`/academic/transcript/imports/${sessionId}`, opts),
-    updateImportRows: (sessionId, rows, opts) => put(`/academic/transcript/imports/${sessionId}/rows`, { rows }, opts),
-    confirmImport: (sessionId, opts) => post(`/academic/transcript/imports/${sessionId}/confirm`, {}, opts),
+    // Nhận mảng rows (tương thích cũ) hoặc body đầy đủ { sessionVersion, rows } theo contract backend
+    updateImportRows: (sessionId, rowsOrBody, opts) =>
+      put(`/academic/transcript/imports/${sessionId}/rows`, Array.isArray(rowsOrBody) ? { rows: rowsOrBody } : rowsOrBody, opts),
+    confirmImport: (sessionId, payload = {}, opts) => post(`/academic/transcript/imports/${sessionId}/confirm`, payload, opts),
     ingestTranscript: (payload, opts) => post('/academic/transcript/imports', payload, opts)
   });
 

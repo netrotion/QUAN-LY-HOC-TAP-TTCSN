@@ -17,14 +17,6 @@ const FILTER_TABS = [
   { key: 'archived', label: 'Lưu trữ' }
 ];
 
-const MOCK_HISTORY = [
-  { id: 'plan-v2.4', name: 'Kế hoạch HK7-8 (v2.4)', version: 'v2.4', status: 'active', semesters: 2, credits: 37, cpa: 3.31, date: '15/10/2026 22:00', note: 'Đã tối ưu sau mô phỏng What-if' },
-  { id: 'plan-v2.3', name: 'Kế hoạch HK7-8 (v2.3)', version: 'v2.3', status: 'draft', semesters: 2, credits: 37, cpa: 3.28, date: '14/10/2026 18:30', note: 'Nháp thêm môn tự chọn' },
-  { id: 'plan-v2.2', name: 'Kế hoạch HK7-8 (v2.2)', version: 'v2.2', status: 'verified', semesters: 2, credits: 35, cpa: 3.25, date: '12/10/2026 10:15', note: '' },
-  { id: 'plan-v2.1', name: 'Kế hoạch HK7-8 (v2.1)', version: 'v2.1', status: 'archived', semesters: 2, credits: 34, cpa: 3.20, date: '10/10/2026 09:00', note: 'Phiên bản đầu tiên' },
-  { id: 'plan-v1.0', name: 'Kế hoạch HK5-6 (v1.0)', version: 'v1.0', status: 'archived', semesters: 2, credits: 34, cpa: 3.18, date: '01/03/2025 14:00', note: 'Kế hoạch cũ đã hoàn thành' }
-];
-
 const STATUS_CONFIG = {
   ACTIVE: { label: 'Đang dùng', bg: 'var(--color-ink)', color: 'var(--color-paper)' },
   DRAFT: { label: 'Bản nháp', bg: 'var(--color-canvas)', color: 'var(--color-ink)' },
@@ -54,6 +46,30 @@ export function PlanHistoryPage() {
       setHistoryList(isStudentEmpty ? [] : newState.history || []);
     });
   }, [isStudentEmpty]);
+
+  // Backend thật: nạp danh sách kế hoạch đã lưu (GET /planner/plans)
+  useEffect(() => {
+    if (!api.isMockMode()) {
+      plannerStore.fetchPlansAsync(api).catch(() => {});
+    }
+  }, []);
+
+  const handleRestore = async (h) => {
+    if (api.isMockMode()) {
+      plannerStore.restorePlan(h.planId || h.id);
+      showToast(`Đã khôi phục ${h.name} thành bản nháp mới`);
+      return;
+    }
+    const res = await plannerStore.restorePlanAsync(api, h.planId || h.id);
+    showToast(res?.message || `Đã khôi phục ${h.name} thành bản nháp mới`);
+  };
+
+  const handleActivate = async (h) => {
+    const res = api.isMockMode()
+      ? plannerStore.activatePlan(h.planId || h.id)
+      : await plannerStore.activatePlanAsync(api, h.planId || h.id);
+    showToast(res?.message);
+  };
 
   const filtered = useMemo(() => {
     if (filter === 'all') return historyList;
@@ -212,10 +228,7 @@ export function PlanHistoryPage() {
                     {statusKey === 'ARCHIVED' && (
                       <button
                         style={{ ...s.pill, background: 'var(--color-canvas)', color: 'var(--color-ink)', border: 'none', cursor: 'pointer' }}
-                        onClick={() => {
-                          plannerStore.restorePlan(h.planId || h.id);
-                          showToast(`Đã khôi phục ${h.name} thành bản nháp mới`);
-                        }}
+                        onClick={() => handleRestore(h)}
                       >
                         Khôi phục
                       </button>
@@ -223,10 +236,7 @@ export function PlanHistoryPage() {
                     {statusKey === 'DRAFT' && (
                       <button
                         style={{ ...s.pill, background: 'var(--color-ink)', color: 'var(--color-paper)', border: 'none', cursor: 'pointer' }}
-                        onClick={() => {
-                          const res = plannerStore.activatePlan(h.planId || h.id);
-                          showToast(res.message);
-                        }}
+                        onClick={() => handleActivate(h)}
                       >
                         Kích hoạt
                       </button>

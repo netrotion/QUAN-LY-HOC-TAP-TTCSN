@@ -128,6 +128,10 @@ export function DashboardPage({ mountedRouteSummary }) {
 
   useEffect(() => {
     loadDashboardData();
+    // Backend thật: nạp kế hoạch đã lưu để khối "Học kỳ tới" không hiển thị fixture
+    if (!api.isMockMode()) {
+      plannerStore.fetchPlansAsync(api).catch(() => {});
+    }
     const unsubStore = subscribeAcademicStore(() => {
       loadDashboardData();
     });

@@ -73,8 +73,8 @@ export function Topbar({ collapsed = false, onToggleCollapse }) {
           </span>
         </Link>
 
-        {/* Persona Switcher */}
-        <Select
+        {/* Persona Switcher — chỉ dùng cho mock mode, backend thật lấy danh tính từ session */}
+        {apiConfig.mockEnabled && <Select
           className="haui-topbar__persona-select"
           value={student?.id || 'normal'}
           onChange={(e) => {
@@ -95,7 +95,7 @@ export function Topbar({ collapsed = false, onToggleCollapse }) {
           <option value="normal">Chuẩn</option>
           <option value="at-risk">Nguy cơ</option>
           <option value="empty">Trắng</option>
-        </Select>
+        </Select>}
       </div>
     </header>
   );

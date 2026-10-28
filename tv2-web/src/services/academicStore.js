@@ -302,9 +302,45 @@ export function loginStudent(credentials = {}) {
 }
 
 /**
- * Đăng xuất sinh viên
+ * Khôi phục phiên đăng nhập thật từ Backend (GET /auth/session + GET /students/me).
+ * Mock mode: giữ nguyên persona hiện hành.
+ * @param {Object} [apiInstance]
+ * @returns {Promise<{ authenticated: boolean, student: Object|null }>}
+ */
+export async function syncLiveSession(apiInstance = api) {
+  if (apiInstance.isMockMode()) {
+    return { authenticated: globalState.isAuthenticated, student: globalState.student };
+  }
+
+  const session = await apiInstance.auth.getSession();
+  if (!session?.authenticated) {
+    globalState = { ...globalState, isAuthenticated: false };
+    emitChange();
+    return { authenticated: false, student: null };
+  }
+
+  const profile = await apiInstance.academic.getProfile();
+  const student = {
+    ...profile,
+    role: session.role,
+    hasTranscript: profile.transcriptStatus === 'CONFIRMED'
+  };
+  delete student.__meta;
+  delete student.__mock;
+
+  globalState = { ...globalState, isAuthenticated: true, student };
+  apiInstance.setSessionStudent(student, { replace: true });
+  emitChange();
+  return { authenticated: true, student };
+}
+
+/**
+ * Đăng xuất sinh viên (live: hủy session phía Backend qua POST /auth/logout)
  */
 export function logoutStudent() {
+  if (!api.isMockMode()) {
+    api.auth.logout().catch(() => {});
+  }
   globalState.isAuthenticated = false;
   emitChange();
   return getAcademicSnapshot();
@@ -655,11 +691,16 @@ export function connectApi(apiInstance) {
     'GET /students/me': () => mockAcademicService.getStudentContext()
   });
 
+  // Backend thật: danh tính lấy từ session (syncLiveSession), không đẩy persona mock vào
+  if (!apiInstance.isMockMode()) return;
+
   const snapshot = getAcademicSnapshot();
   apiInstance.setSessionStudent(snapshot.student);
 
   subscribeAcademicStore((nextSnapshot) => {
-    apiInstance.setSessionStudent(nextSnapshot.student);
+    if (apiInstance.isMockMode()) {
+      apiInstance.setSessionStudent(nextSnapshot.student);
+    }
   });
 }
 

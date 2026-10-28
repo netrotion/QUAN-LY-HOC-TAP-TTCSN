@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAnimatedNavigate } from '../components/layout/animatedNavigation.jsx';
 import { Button, Card, EmptyState, Table, Select } from '../components/ui/index.js';
 import {
@@ -31,9 +31,50 @@ const LETTER_GRADE_TO_SCORE4 = Object.freeze({
   F: 0.0
 });
 
+const SEMESTER_CODE = /^(\d{4})_(1|2|SUMMER)$/;
+
+function statusOfLetter(letter) {
+  if (!letter) return 'IN_PROGRESS';
+  if (letter === 'F') return 'FAILED';
+  return letter === 'D' || letter === 'D+' ? 'PASSED_LOW' : 'PASSED';
+}
+
+// Bảng điểm/dòng nhập từ Backend không có trường status: suy ra từ điểm chữ để hiển thị
+function normalizeBackendRows(rows = []) {
+  return rows.map((r) => ({ ...r, status: r.status || statusOfLetter(r.letterGrade) }));
+}
+
+// Năm bắt đầu = năm nhỏ nhất trong bảng điểm; kỳ 1 = YYYY_1, kỳ 2 = YYYY_2, kỳ 3 = (YYYY+1)_1 ...
+function semesterBaseYear(records) {
+  const years = records
+    .map((r) => SEMESTER_CODE.exec(r.semesterCode || '')?.[1])
+    .filter(Boolean)
+    .map(Number);
+  return years.length > 0 ? Math.min(...years) : new Date().getFullYear();
+}
+
+function semesterIndexOf(record, baseYear) {
+  if (record.semester) return Number(record.semester);
+  const m = SEMESTER_CODE.exec(record.semesterCode || '');
+  if (!m) return null;
+  return (Number(m[1]) - baseYear) * 2 + (m[2] === '1' ? 1 : 2);
+}
+
+function semesterCodeOf(index, baseYear) {
+  const i = Math.max(1, Number(index) || 1);
+  return `${baseYear + Math.floor((i - 1) / 2)}_${((i - 1) % 2) + 1}`;
+}
+
 export function TranscriptImportPage() {
   const navigate = useAnimatedNavigate();
+  const isLive = !api.isMockMode();
   const initialSnapshot = getAcademicSnapshot();
+
+  // Backend thật: phiên nhập đang mở và dataRevision của bảng điểm chính thức (dùng khi xác nhận)
+  const [importSession, setImportSession] = useState(null);
+  const [transcriptRevision, setTranscriptRevision] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
   // Wizard Step: 1 = Nạp dữ liệu, 2 = Xem lại (Review), 3 = Xác nhận (Confirm)
   const [currentStep, setCurrentStep] = useState(1);
@@ -52,10 +93,27 @@ export function TranscriptImportPage() {
 
   // Danh sách các môn bóc tách / nhập tay (Editable trong Bước 2)
   const [draftRecords, setDraftRecords] = useState(() => {
+    if (isLive) return [];
     return initialSnapshot.transcriptRecords.length > 0
       ? [...initialSnapshot.transcriptRecords]
       : [];
   });
+
+  // Backend thật: nạp bảng điểm chính thức (GET /academic/transcript) làm điểm xuất phát
+  const loadOfficialTranscript = async () => {
+    const transcript = await api.academic.getTranscript();
+    setTranscriptRevision(transcript.dataRevision || null);
+    setDraftRecords(normalizeBackendRows(transcript.attempts || []));
+    return transcript;
+  };
+
+  useEffect(() => {
+    if (isLive) {
+      loadOfficialTranscript().catch((err) => setUploadError(err.message || 'Không tải được bảng điểm hiện tại'));
+    }
+  }, []);
+
+  const baseYear = semesterBaseYear(draftRecords);
 
   // Form thêm nhanh môn học ở bước nhập tay / bước xem lại
   const [newCourseForm, setNewCourseForm] = useState({
@@ -73,6 +131,12 @@ export function TranscriptImportPage() {
     setUploadError(null);
     setIsProcessingFile(true);
     try {
+      if (isLive) {
+        // Backend không có file mẫu: mở lại bảng điểm chính thức để điều chỉnh
+        await loadOfficialTranscript();
+        setCurrentStep(2);
+        return;
+      }
       const res = await api.academic.ingestTranscript({
         fileName: 'Bang_Diem_eHaUI_Chuan_K17.pdf'
       });
@@ -123,6 +187,22 @@ export function TranscriptImportPage() {
 
     setSelectedFile(file);
     setIsProcessingFile(true);
+
+    if (isLive) {
+      // POST /academic/transcript/imports (multipart): Backend bóc tách và trả các dòng để rà soát
+      api.academic.uploadTranscriptFile(file)
+        .then((session) => {
+          setImportSession(session);
+          setDraftRecords(normalizeBackendRows(session.rows || []));
+          setCurrentStep(2);
+        })
+        .catch((err) => {
+          setSelectedFile(null);
+          setUploadError(err.message || 'Không bóc tách được bảng điểm');
+        })
+        .finally(() => setIsProcessingFile(false));
+      return;
+    }
 
     // Giả lập bóc tách sau 400ms
     setTimeout(() => {
@@ -180,6 +260,7 @@ export function TranscriptImportPage() {
       courseName: newCourseForm.courseName.trim(),
       credits: Number(newCourseForm.credits || 3),
       semester: Number(newCourseForm.semester || 6),
+      semesterCode: semesterCodeOf(newCourseForm.semester || 6, baseYear),
       score4: score4Val,
       gradePoint: score4Val,
       score10: Number((score4Val * 2.5).toFixed(1)),
@@ -200,7 +281,58 @@ export function TranscriptImportPage() {
   };
 
   // Xử lý xác nhận bảng điểm ở Bước 3
-  const handleConfirmAndSave = () => {
+  // Backend thật: mở phiên (nếu chưa có) → PUT rows → POST confirm
+  const saveToBackend = async () => {
+    const session = importSession || (await api.academic.startManualImport());
+    const rows = draftRecords.map((r) => ({
+      rowId: r.rowId ?? null,
+      courseCode: r.courseCode,
+      courseName: r.courseName,
+      credits: r.credits,
+      semesterCode: r.semesterCode || semesterCodeOf(r.semester, baseYear),
+      score10: r.score10 ?? null,
+      letterGrade: r.letterGrade || null,
+      included: r.included !== false
+    }));
+    const updated = await api.academic.updateImportRows(session.importSessionId, {
+      sessionVersion: session.sessionVersion,
+      rows
+    });
+    setImportSession(updated);
+
+    if (updated.blockingIssueCount > 0) {
+      setDraftRecords(normalizeBackendRows(updated.rows || []));
+      const issues = (updated.rows || []).flatMap((row) =>
+        (row.issues || []).filter((i) => i.blocking).map((i) => `${row.courseCode || '(chưa có mã)'}: ${i.message}`)
+      );
+      throw new Error(`Còn ${updated.blockingIssueCount} lỗi cần sửa trước khi xác nhận — ${issues.slice(0, 3).join('; ')}`);
+    }
+
+    const revision = transcriptRevision || (await api.academic.getTranscript()).dataRevision;
+    await api.academic.confirmImport(updated.importSessionId, {
+      sessionVersion: updated.sessionVersion,
+      dataRevision: revision
+    });
+  };
+
+  const handleConfirmAndSave = async () => {
+    if (isLive) {
+      setSaving(true);
+      setSaveError(null);
+      try {
+        await saveToBackend();
+        if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+          window.dispatchEvent(new CustomEvent('haui:academic:transcript-updated', { detail: { source: 'backend' } }));
+        }
+        navigate('/dashboard');
+      } catch (err) {
+        setSaveError(err.message || 'Không lưu được bảng điểm');
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
     commitTranscriptRecords(draftRecords, {
       fileName: selectedFile?.name || 'Nhap_Thu_Cong.csv'
     });
@@ -215,7 +347,8 @@ export function TranscriptImportPage() {
 
   // Lọc môn theo từ khóa tìm kiếm và học kỳ
   const filteredRecords = draftRecords.filter((rec) => {
-    if (selectedSemesterFilter !== 'ALL' && rec.semester && String(rec.semester) !== String(selectedSemesterFilter)) {
+    const semesterIndex = semesterIndexOf(rec, baseYear);
+    if (selectedSemesterFilter !== 'ALL' && semesterIndex && String(semesterIndex) !== String(selectedSemesterFilter)) {
       return false;
     }
     if (searchTerm) {
@@ -766,7 +899,7 @@ export function TranscriptImportPage() {
                         />
                       </td>
                       <td style={{ padding: '12px 14px', textAlign: 'center', color: 'var(--color-mid-gray)' }}>
-                        Kỳ {row.semester || 6}
+                        {row.semesterCode ? `Kỳ ${semesterIndexOf(row, baseYear)} (${row.semesterCode})` : `Kỳ ${row.semester || 6}`}
                       </td>
                       <td style={{ padding: '12px 14px', textAlign: 'center' }}>
                         <input
@@ -927,6 +1060,12 @@ export function TranscriptImportPage() {
               </div>
             )}
 
+            {saveError && (
+              <div style={{ padding: '12px 16px', borderRadius: '16px', backgroundColor: 'var(--color-error-bg)', border: '1px solid var(--color-error-border)', color: 'var(--color-error-text)', fontSize: '13px' }}>
+                <strong>Không lưu được bảng điểm:</strong> {saveError}
+              </div>
+            )}
+
             {/* Nút Hành Động Xác Nhận */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '12px', borderTop: '1px solid var(--color-hairline)' }}>
               <button
@@ -940,8 +1079,9 @@ export function TranscriptImportPage() {
                 type="button"
                 className="haui-pill-btn-dark"
                 onClick={handleConfirmAndSave}
+                disabled={saving}
               >
-                Xác Nhận &amp; Cập Nhật Kết Quả Ngay
+                {saving ? 'Đang lưu vào hệ thống...' : 'Xác Nhận & Cập Nhật Kết Quả Ngay'}
               </button>
             </div>
           </div>

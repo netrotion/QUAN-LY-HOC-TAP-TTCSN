@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAnimatedNavigate } from '../components/layout/animatedNavigation.jsx';
-import { STUDENT_PRESETS, loginStudent } from '../services/academicStore.js';
+import { STUDENT_PRESETS, loginStudent, syncLiveSession } from '../services/academicStore.js';
 import { api } from '../services/apiClient.js';
 import hauiLogo from '@haui/logo';
 
@@ -18,9 +18,11 @@ export function LoginPage() {
   const [activeTab, setActiveTab] = useState('login'); // 'login' | 'register' | 'forgot'
 
   // Form State cho Đăng nhập
+  const isMock = api.isMockMode();
   const [selectedPresetId, setSelectedPresetId] = useState('at-risk');
-  const [studentIdInput, setStudentIdInput] = useState(STUDENT_PRESETS['at-risk'].studentId);
-  const [passwordInput, setPasswordInput] = useState('HaUI@2024Pass');
+  // Backend thật: không điền sẵn tài khoản mock (không tồn tại trên server)
+  const [studentIdInput, setStudentIdInput] = useState(isMock ? STUDENT_PRESETS['at-risk'].studentId : '');
+  const [passwordInput, setPasswordInput] = useState(isMock ? 'HaUI@2024Pass' : '');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -51,6 +53,28 @@ export function LoginPage() {
 
     setLoading(true);
     setAlert(null);
+
+    // Backend thật: lấy cookie XSRF-TOKEN rồi đăng nhập để có session JSESSIONID
+    if (!isMock) {
+      api.auth.getCsrfToken()
+        .then(() => api.auth.login({ studentId: studentIdInput.trim(), password: passwordInput }))
+        .then(() => syncLiveSession())
+        .then(({ student }) => {
+          setAlert({
+            type: 'success',
+            message: `Xác thực thành công! Xin chào ${student?.fullName || student?.studentId}.`
+          });
+          setTimeout(() => navigate('/dashboard'), 400);
+        })
+        .catch((err) => {
+          setAlert({
+            type: 'error',
+            message: err?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại.'
+          });
+        })
+        .finally(() => setLoading(false));
+      return;
+    }
 
     setTimeout(() => {
       // Xác định preset tương ứng hoặc dùng selectedPresetId
@@ -250,8 +274,8 @@ export function LoginPage() {
                 )}
               </button>
 
-              {/* Demo Quick Fill Helper Link (Chuẩn prototype) */}
-              <div style={{ textAlign: 'center', paddingTop: '6px' }}>
+              {/* Demo Quick Fill Helper Link (Chuẩn prototype) — chỉ có ở mock mode */}
+              {isMock && <div style={{ textAlign: 'center', paddingTop: '6px' }}>
                 <button
                   type="button"
                   onClick={() => handleQuickFillDemo('at-risk')}
@@ -261,7 +285,7 @@ export function LoginPage() {
                   <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>bolt</span>
                   <span>Điền tài khoản mẫu</span>
                 </button>
-              </div>
+              </div>}
             </form>
           )}
 

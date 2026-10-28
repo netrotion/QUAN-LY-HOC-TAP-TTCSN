@@ -1,8 +1,10 @@
-import React, { useState, Component } from 'react';
-import { Outlet } from 'react-router-dom';
+import React, { useEffect, useState, Component } from 'react';
+import { Navigate, Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar.jsx';
 import { Topbar } from './Topbar.jsx';
 import { Link } from './animatedNavigation.jsx';
+import { api } from '../../services/apiClient.js';
+import { syncLiveSession } from '../../services/academicStore.js';
 
 /**
  * Error Boundary bảo vệ ứng dụng không bị trắng trang khi bất kỳ component con nào gặp sự cố
@@ -73,6 +75,20 @@ export function MainLayout({ children }) {
     }
   });
 
+  // Backend thật: khôi phục phiên trước khi hiển thị trang; chưa đăng nhập thì về /login
+  const [authState, setAuthState] = useState(() => (api.isMockMode() ? 'ok' : 'checking'));
+
+  useEffect(() => {
+    if (api.isMockMode()) return undefined;
+    let cancelled = false;
+    syncLiveSession()
+      .then((res) => !cancelled && setAuthState(res.authenticated ? 'ok' : 'anonymous'))
+      .catch(() => !cancelled && setAuthState('anonymous'));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const toggleSidebar = () => {
     setIsCollapsed((prev) => {
       const next = !prev;
@@ -84,6 +100,13 @@ export function MainLayout({ children }) {
       return next;
     });
   };
+
+  if (authState === 'anonymous') {
+    return <Navigate to="/login" replace />;
+  }
+  if (authState === 'checking') {
+    return null;
+  }
 
   return (
     <div className="haui-app-shell">
