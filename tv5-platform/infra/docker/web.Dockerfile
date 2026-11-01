@@ -26,6 +26,7 @@ COPY --from=builder /app/tv2-web/dist /usr/share/nginx/html
 # Custom nginx config to support SPA routing and /api proxy
 RUN echo 'server { \
     listen 5173; \
+    client_max_body_size 6m; \
     location / { \
         root /usr/share/nginx/html; \
         index index.html index.htm; \
