@@ -482,6 +482,26 @@ export function ChatAdvisorPage({
   const messagesContainerRef = useRef(null);
   const isInitialMount = useRef(true);
 
+  // Lịch sử hội thoại đã lưu trên server (không có ở chế độ mock)
+  const historyEnabled = Boolean(api) && typeof api.isMockMode === 'function' && !api.isMockMode();
+  const [conversations, setConversations] = useState([]);
+  const [historyError, setHistoryError] = useState(null);
+  const [openingConversationId, setOpeningConversationId] = useState(null);
+
+  const loadConversations = useCallback(async () => {
+    if (!historyEnabled) return;
+    try {
+      setConversations(await plannerApi.listConversations(api));
+      setHistoryError(null);
+    } catch (err) {
+      setHistoryError(err?.message || 'Không tải được lịch sử hội thoại.');
+    }
+  }, [api, historyEnabled]);
+
+  useEffect(() => {
+    loadConversations();
+  }, [loadConversations]);
+
   const showToast = useCallback((msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3500);
@@ -594,6 +614,7 @@ export function ChatAdvisorPage({
 
       setMessages((prev) => [...prev, aiMsg]);
       setLastFailedQuery(null);
+      loadConversations();
     } catch (err) {
       const isUnavailable =
         err?.status === 503 ||
@@ -633,7 +654,24 @@ export function ChatAdvisorPage({
     } finally {
       setLoading(false);
     }
-  }, [api, conversationId, inputValue, student]);
+  }, [api, conversationId, inputValue, student, loadConversations]);
+
+  // Mở lại một hội thoại đã lưu: tin nhắn gửi tiếp sẽ nối vào đúng hội thoại này
+  const handleOpenConversation = useCallback(async (id) => {
+    if (loading || openingConversationId) return;
+    setOpeningConversationId(id);
+    try {
+      const record = await plannerApi.getConversation(api, id);
+      setMessages(plannerApi.conversationToMessages(record, student?.fullName || ''));
+      setConversationId(id);
+      setError(null);
+      setLastFailedQuery(null);
+    } catch (err) {
+      showToast(err?.message || 'Không mở được hội thoại này.');
+    } finally {
+      setOpeningConversationId(null);
+    }
+  }, [api, loading, openingConversationId, showToast, student]);
 
   // Xử lý Thử lại (Retry) khi gửi tin nhắn thất bại
   const handleRetry = useCallback((textToRetry, failedMsgId) => {
@@ -1843,6 +1881,67 @@ export function ChatAdvisorPage({
               style: { justifyContent: 'center', fontSize: '13px' }
             },
             'Xem hồ sơ học tập chi tiết'
+          )
+        ),
+
+        // Card: Lịch sử hội thoại đã lưu (chỉ có với backend thật)
+        historyEnabled && React.createElement(
+          'div',
+          {
+            'data-testid': 'chat-history',
+            style: {
+              backgroundColor: 'var(--color-paper, #ffffff)',
+              borderRadius: 'var(--heroui-radius-xl, 24px)',
+              border: '1px solid var(--color-hairline, #e5e5e5)',
+              padding: '24px',
+              boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04))',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }
+          },
+          React.createElement(
+            'div',
+            { style: { display: 'flex', alignItems: 'center', gap: '8px', paddingBottom: '10px', borderBottom: '1px solid var(--color-hairline)' } },
+            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '20px', color: 'var(--color-ink)' } }, 'history'),
+            React.createElement('h2', { style: { margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--color-ink)' } }, 'Lịch sử hội thoại')
+          ),
+          historyError && React.createElement('p', { style: { margin: 0, fontSize: '13px', color: 'var(--color-ember, #b91c1c)' } }, historyError),
+          !historyError && conversations.length === 0 && React.createElement(
+            'p',
+            { style: { margin: 0, fontSize: '13px', color: 'var(--color-mid-gray, #737373)' } },
+            'Chưa có hội thoại nào được lưu.'
+          ),
+          conversations.length > 0 && React.createElement(
+            'div',
+            { style: { display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '260px', overflowY: 'auto' } },
+            conversations.map((c) => {
+              const active = c.conversationId === conversationId;
+              const updated = c.updatedAt ? new Date(c.updatedAt) : null;
+              return React.createElement(
+                'button',
+                {
+                  key: c.conversationId,
+                  type: 'button',
+                  onClick: () => handleOpenConversation(c.conversationId),
+                  disabled: loading || Boolean(openingConversationId),
+                  'aria-current': active ? 'true' : undefined,
+                  style: {
+                    textAlign: 'left',
+                    padding: '10px 12px',
+                    borderRadius: '12px',
+                    border: `1px solid ${active ? 'var(--color-ink, #0a0a0a)' : 'var(--color-hairline, #e5e5e5)'}`,
+                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2px'
+                  }
+                },
+                React.createElement('span', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, c.title || 'Hội thoại'),
+                updated && !Number.isNaN(updated.getTime()) && React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, updated.toLocaleString('vi-VN'))
+              );
+            })
           )
         ),
 

@@ -132,6 +132,31 @@ export const HAUI_COHORTS = Object.freeze([
   'K21 (2026 - 2030)'
 ]);
 
+/** Backend lưu khóa dạng "K19", form hiển thị "K19 (2024 - 2028)". */
+export function cohortLabel(cohort) {
+  if (!cohort) return '';
+  return HAUI_COHORTS.find((label) => label.split(' ')[0] === cohort) || cohort;
+}
+
+function isLiveProfile(api) {
+  return typeof api?.academic?.updateProfile === 'function' && typeof api?.isMockMode === 'function' && !api.isMockMode();
+}
+
+/**
+ * Body của PUT /students/me (UpdateStudentProfileRequest). Trường null là giữ nguyên giá trị cũ;
+ * curriculumId không gửi vì đổi CTĐT sẽ làm thay đổi dữ liệu học vụ.
+ */
+export function buildProfileUpdate({ fullName, email, className, cohort, dataRevision }) {
+  return {
+    fullName: fullName?.trim() || null,
+    email: email?.trim() || null,
+    className: className?.trim() || null,
+    cohort: cohort?.trim().split(' ')[0] || null,
+    curriculumId: null,
+    dataRevision
+  };
+}
+
 const PROGRAM_SELECT_TRIGGER_STYLE = Object.freeze({
   minHeight: '44px',
   padding: '10px 40px 10px 16px'
@@ -367,9 +392,9 @@ export function StudentProfilePage({
           studentCode: sessionStudent?.studentCode || sessionStudent?.studentId || academicStatus?.studentId || '',
           majorName: hasProgramData ? (sessionStudent?.majorName || '') : '',
           majorCode: sessionStudent?.majorCode || '',
-          cohort: hasProgramData ? (sessionStudent?.cohort || '') : '',
+          cohort: hasProgramData ? cohortLabel(sessionStudent?.cohort) : '',
           faculty: hasProgramData ? (sessionStudent?.faculty || '') : '',
-          advisorClass: hasProgramData ? (sessionStudent?.advisorClass || '') : '',
+          advisorClass: hasProgramData ? (sessionStudent?.advisorClass || sessionStudent?.className || '') : '',
           institutionName: hasEnteredProfileDetails
             ? (sessionStudent?.institutionName || '')
             : (hasProgramData ? 'Đại học Công nghiệp Hà Nội' : ''),
@@ -384,7 +409,7 @@ export function StudentProfilePage({
           warningMessages: academicStatus?.warnings || sessionStudent?.warnings || [],
           dob: sessionStudent?.dob || '',
           gender: sessionStudent?.gender || '',
-          personalEmail: sessionStudent?.personalEmail || '',
+          personalEmail: sessionStudent?.personalEmail || (isLiveProfile(api) ? sessionStudent?.email || '' : ''),
           phone: sessionStudent?.phone || '',
           address: sessionStudent?.address || '',
           specialization: sessionStudent?.specialization || ''
@@ -433,7 +458,33 @@ export function StudentProfilePage({
   }, [showToast]);
 
   // Lưu tùy chọn mục tiêu cá nhân & hồ sơ
-  const handleSavePreferences = useCallback(() => {
+  const handleSavePreferences = useCallback(async () => {
+    // Backend thật: họ tên, email, lớp, khóa lưu qua PUT /students/me; các trường khác backend chưa có nên chỉ giữ trong phiên
+    let savedProfile = null;
+    if (isLiveProfile(api)) {
+      const sessionStudent = api.getConfig?.()?.sessionStudent || {};
+      try {
+        savedProfile = await api.academic.updateProfile(
+          buildProfileUpdate({
+            fullName: fullNameInput,
+            email: personalEmailInput,
+            className: advisorClassInput,
+            cohort: cohortInput,
+            dataRevision: sessionStudent.dataRevision
+          })
+        );
+      } catch (err) {
+        // Hồ sơ đã đổi ở nơi khác (409): nạp lại revision mới để lần lưu sau không bị từ chối tiếp
+        if (err?.status === 409) {
+          api.academic.getProfile?.()
+            .then((profile) => api.setSessionStudent({ ...sessionStudent, ...profile }, { replace: true }))
+            .catch(() => {});
+        }
+        showToast(err?.message || 'Không lưu được hồ sơ. Vui lòng thử lại.');
+        return;
+      }
+    }
+
     const updated = {
       ...(profileData || {}),
       fullName: fullNameInput,
@@ -452,9 +503,30 @@ export function StudentProfilePage({
       specialization
     };
 
+    if (savedProfile) {
+      updated.fullName = savedProfile.fullName || '';
+      updated.email = savedProfile.email || '';
+      updated.personalEmail = savedProfile.email || '';
+      updated.advisorClass = savedProfile.className || '';
+      updated.cohort = cohortLabel(savedProfile.cohort);
+    }
+
     setProfileData(updated);
 
-    if (api && typeof api.setSessionStudent === 'function') {
+    if (savedProfile) {
+      api.setSessionStudent(
+        {
+          ...api.getConfig?.()?.sessionStudent,
+          ...savedProfile,
+          dob: dobInput,
+          gender: genderInput,
+          phone: phoneInput,
+          address: addressInput,
+          specialization
+        },
+        { replace: true }
+      );
+    } else if (api && typeof api.setSessionStudent === 'function') {
       api.setSessionStudent({
         id: api.getConfig?.()?.sessionStudent?.id,
         studentId: profileData?.studentId,
@@ -480,7 +552,11 @@ export function StudentProfilePage({
       }
     }
 
-    showToast(`Đã lưu thành công thông tin hồ sơ và mục tiêu học tập!`);
+    showToast(
+      savedProfile
+        ? 'Đã lưu họ tên, email, lớp và khóa lên hệ thống. Các thông tin khác chỉ được giữ trong phiên đăng nhập này.'
+        : `Đã lưu thành công thông tin hồ sơ và mục tiêu học tập!`
+    );
   }, [profileData, fullNameInput, genderInput, dobInput, personalEmailInput, phoneInput, addressInput, advisorClassInput, institutionInput, facultyInput, majorNameInput, cohortInput, targetCpa, graduationPace, specialization, api, showToast]);
 
   // Hủy thay đổi form

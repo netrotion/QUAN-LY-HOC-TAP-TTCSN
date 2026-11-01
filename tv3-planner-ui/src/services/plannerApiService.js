@@ -195,6 +195,70 @@ export async function chatAdvisor(api, payload = {}, opts = {}) {
 }
 
 /**
+ * Danh sách hội thoại của sinh viên đang đăng nhập (GET /advisor/conversations)
+ * @param {Object} api
+ * @returns {Promise<Array>} ConversationSummaryItem[] (conversationId, title, createdAt, updatedAt)
+ */
+export async function listConversations(api, opts = {}) {
+  const res = api?.advisor && typeof api.advisor.listConversations === 'function'
+    ? await api.advisor.listConversations(opts)
+    : await api.get('/advisor/conversations', opts);
+  return res?.conversations || [];
+}
+
+/**
+ * Chi tiết một hội thoại (GET /advisor/conversations/{conversationId})
+ * @param {Object} api
+ * @param {string} conversationId
+ * @returns {Promise<Object>} ConversationRecord (kèm messagesJson)
+ */
+export async function getConversation(api, conversationId, opts = {}) {
+  if (api?.advisor && typeof api.advisor.getConversation === 'function') {
+    return api.advisor.getConversation(conversationId, opts);
+  }
+  return api.get(`/advisor/conversations/${encodeURIComponent(conversationId)}`, opts);
+}
+
+/**
+ * Chuyển messagesJson (ChatMessageHistoryItem[] do module AI lưu) thành tin nhắn hiển thị của ChatAdvisorPage.
+ * JSON hỏng thì trả về rỗng thay vì làm vỡ màn hình.
+ * @param {Object} record - ConversationRecord
+ * @param {string} [senderName]
+ * @returns {Array}
+ */
+export function conversationToMessages(record, senderName = '') {
+  let items;
+  try {
+    items = JSON.parse(record?.messagesJson || '[]');
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(items)) return [];
+
+  return items.map((item, index) => {
+    const at = item.timestamp || item.at;
+    const date = at ? new Date(at) : null;
+    const timestamp = date && !Number.isNaN(date.getTime())
+      ? date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+      : '';
+    const id = `msg-history-${record.conversationId}-${index}`;
+    if (String(item.role).toLowerCase() === 'user') {
+      return { id, sender: 'user', senderName, text: item.content || '', timestamp, failed: false };
+    }
+    return {
+      id,
+      sender: 'assistant',
+      text: item.content || '',
+      sources: item.sources || [],
+      actions: item.actions || [],
+      warnings: item.warnings || [],
+      planProposal: null,
+      timestamp
+    };
+  });
+}
+
+/**
  * Giả lập điểm What-if (POST /simulation/grades)
  * @param {Object} api
  * @param {Object} payload - SimulateGradesRequest ({ courses, dataRevision })
