@@ -2,13 +2,18 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useAnimatedNavigate } from '../components/layout/animatedNavigation.jsx';
 import { plannerStore } from '@haui/planner-ui';
 import { api } from '../services/apiClient.js';
+import { CertificatesPanel } from './CertificatesPanel.jsx';
 import { HAUI_BUSINESS_RULES } from '../services/mockFixtures.js';
 import { Button, Card, EmptyState, Error as ErrorBox, Loading, Modal, Table } from '../components/ui/index.js';
 import {
   buildAuditRemediationProposal,
+  classifyAcademicRank,
   dispatchAuditRemediationProposal,
   subscribeAcademicStore
 } from '../services/academicStore.js';
+
+// Các nhóm chuẩn đầu ra phi tín chỉ trong kết quả rà soát (trùng danh mục GET /academic/certificates)
+const NON_CREDIT_CATEGORIES = new Set(['NGOẠI NGỮ', 'TIN HỌC', 'GDQP_AN', 'GDTC']);
 
 /**
  * Màn hình 9: Bảng Kiểm toán Tốt nghiệp 100% Tiêu chuẩn HaUI (`/audit` & `/progress`) — TV2
@@ -31,6 +36,7 @@ export function AcademicProgressPage() {
   const [loading, setLoading] = useState(true);
   const [isRechecking, setIsRechecking] = useState(false);
   const [error, setError] = useState(null);
+  const [liveCpa, setLiveCpa] = useState(null);
   const [isRemediationModalOpen, setIsRemediationModalOpen] = useState(false);
   const [snapshotTimestamp] = useState(() =>
     new Date().toLocaleString('vi-VN', {
@@ -49,6 +55,11 @@ export function AcademicProgressPage() {
     try {
       const response = await api.audit.getGraduationAudit({ mode });
       setAuditData(response);
+      // Rà soát không trả CPA: backend thật lấy từ GET /academic/status
+      if (!api.isMockMode()) {
+        const status = await api.academic.getStatus();
+        setLiveCpa(status?.cpa ?? null);
+      }
     } catch (err) {
       setError(err);
     } finally {
@@ -229,13 +240,18 @@ export function AcademicProgressPage() {
   };
 
   const isProjected = reportMode === 'projected' || auditData?.reportType === 'PROJECTED';
+  // Backend thật: 4 nhóm minh họa bên dưới là nội dung tĩnh của chế độ mock, không phải dữ liệu của sinh viên
+  const isLive = !api.isMockMode();
   const pct = auditData?.completedPercentage ?? (isProjected ? 100 : 82);
   const earnedCredits = auditData?.accumulatedCredits ?? (isProjected ? 135 : 112);
   const totalCredits = auditData?.totalCreditsRequired ?? 135;
   const missingCredits = Math.max(0, totalCredits - earnedCredits);
   const creditPct = totalCredits > 0 ? Math.min(100, Math.round((earnedCredits / totalCredits) * 100)) : 0;
   const passedCriteriaCount = auditData?.checklist?.filter((c) => c.completed === true).length ?? (isProjected ? 7 : 5);
-  const currentCpa = isProjected ? 3.25 : 3.18;
+  const currentCpa = isLive ? liveCpa : (isProjected ? 3.25 : 3.18);
+  const liveCertificateItems = (auditData?.checklist || []).filter((c) => NON_CREDIT_CATEGORIES.has(c.category));
+  const liveCertificatesDone = liveCertificateItems.filter((c) => c.completed === true).length;
+  const certificatesComplete = isLive ? liveCertificatesDone === liveCertificateItems.length : isProjected;
 
   if (error && !auditData) {
     const is503 = error.status === 503 || error.code === 'TOOL_NOT_READY';
@@ -733,7 +749,7 @@ export function AcademicProgressPage() {
           </div>
           <div style={{ margin: '14px 0 10px', display: 'flex', alignItems: 'baseline', gap: '6px' }}>
             <span style={{ fontSize: '32px', fontWeight: 700, color: 'var(--color-ink)', letterSpacing: '-0.02em', lineHeight: 1 }}>
-              {currentCpa.toFixed(2)}
+              {currentCpa === null ? '--' : currentCpa.toFixed(2)}
             </span>
             <span style={{ fontSize: '16px', color: 'var(--color-mid-gray)' }}>/ 4.00</span>
             <span
@@ -747,18 +763,22 @@ export function AcademicProgressPage() {
                 marginLeft: '4px'
               }}
             >
-              {isProjected ? 'Xếp loại Giỏi' : 'Xếp loại Khá'}
+              {isLive
+                ? (currentCpa === null ? 'Chưa có điểm' : `Xếp loại ${classifyAcademicRank(currentCpa).rank}`)
+                : (isProjected ? 'Xếp loại Giỏi' : 'Xếp loại Khá')}
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <div className="haui-progress-bar-minimal">
               <div
                 className="haui-progress-bar-minimal__fill"
-                style={{ width: `${(currentCpa / 4.0) * 100}%`, backgroundColor: 'var(--color-ink)' }}
+                style={{ width: `${((currentCpa ?? 0) / 4.0) * 100}%`, backgroundColor: 'var(--color-ink)' }}
               />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--color-mid-gray)' }}>
-              <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>Đạt điều kiện (≥ 2.00)</span>
+              <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>
+                {!isLive || currentCpa >= 2 ? 'Đạt điều kiện (≥ 2.00)' : 'Chưa đạt (cần ≥ 2.00)'}
+              </span>
               <span>Mục tiêu Giỏi ≥ 3.20</span>
             </div>
           </div>
@@ -788,20 +808,25 @@ export function AcademicProgressPage() {
           </div>
           <div style={{ margin: '14px 0 10px', display: 'flex', alignItems: 'baseline', gap: '6px' }}>
             <span style={{ fontSize: '32px', fontWeight: 700, color: 'var(--color-ink)', letterSpacing: '-0.02em', lineHeight: 1 }}>
-              {isProjected ? '4' : '3'}
+              {isLive ? liveCertificatesDone : (isProjected ? '4' : '3')}
             </span>
-            <span style={{ fontSize: '16px', color: 'var(--color-mid-gray)' }}>/ 4</span>
+            <span style={{ fontSize: '16px', color: 'var(--color-mid-gray)' }}>/ {isLive ? liveCertificateItems.length : 4}</span>
             <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>đã nộp</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <div className="haui-progress-bar-minimal">
               <div
                 className="haui-progress-bar-minimal__fill"
-                style={{ width: isProjected ? '100%' : '75%', backgroundColor: 'var(--color-ink)' }}
+                style={{
+                  width: isLive
+                    ? `${liveCertificateItems.length ? (liveCertificatesDone / liveCertificateItems.length) * 100 : 0}%`
+                    : (isProjected ? '100%' : '75%'),
+                  backgroundColor: 'var(--color-ink)'
+                }}
               />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--color-mid-gray)' }}>
-              {isProjected ? (
+              {certificatesComplete ? (
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--color-ink)', fontWeight: 600 }}>
                   <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>check_circle</span>
                   <span>Đã hoàn thành toàn bộ</span>
@@ -809,11 +834,11 @@ export function AcademicProgressPage() {
               ) : (
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--color-ember)' }}>
                   <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>error</span>
-                  <span>Thiếu 1 chứng chỉ (MOS)</span>
+                  <span>{isLive ? `Thiếu ${liveCertificateItems.length - liveCertificatesDone} chuẩn đầu ra` : 'Thiếu 1 chứng chỉ (MOS)'}</span>
                 </span>
               )}
               <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>
-                {isProjected ? 'Hợp lệ' : 'Cần nộp hồ sơ'}
+                {certificatesComplete ? 'Hợp lệ' : 'Cần nộp hồ sơ'}
               </span>
             </div>
           </div>
@@ -827,6 +852,7 @@ export function AcademicProgressPage() {
           {/* NHÓM HẠNG MỤC TIÊU CHÍ & BẢNG CHI TIẾT */}
           <div style={{ gridColumn: 'span 12', display: 'flex', flexDirection: 'column', gap: '24px' }} className="haui-audit-left-col">
 
+            {isLive ? <CertificatesPanel /> : (<>
             {/* NHÓM 1: Khối lượng kiến thức & Tín chỉ tích lũy */}
             <div
               className="haui-audit-group"
@@ -1220,6 +1246,8 @@ export function AcademicProgressPage() {
               </div>
             </div>
 
+            </>)}
+
             {/* BẢNG 7 HẠNG MỤC KIỂM TOÁN TỐT NGHIỆP CHI TIẾT (AUDIT CHECKLIST 100%) */}
             <Card
               className="haui-audit-table-card"
@@ -1298,7 +1326,8 @@ export function AcademicProgressPage() {
           {/* TỔNG HỢP VÀ THAO TÁC BÊN DƯỚI BẢNG */}
           <div style={{ gridColumn: 'span 12', display: 'flex', flexDirection: 'column', gap: '24px' }} className="haui-audit-right-col">
             
-            {/* CARD 1: Tổng hợp việc cần làm (Action Checklist) */}
+            {/* CARD 1: Tổng hợp việc cần làm (Action Checklist) - nội dung tĩnh của chế độ mock */}
+            {!isLive && (
             <div
               className="haui-audit-side-card"
               style={{
@@ -1398,6 +1427,8 @@ export function AcademicProgressPage() {
               </div>
             </div>
 
+            )}
+
             {/* CARD 2: Gợi ý từ AI Advisor (Next Step Advisor Suggestions) */}
             <div
               className="haui-audit-side-card"
@@ -1422,7 +1453,9 @@ export function AcademicProgressPage() {
               </div>
 
               <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-mid-gray)', lineHeight: 1.5 }}>
-                {isProjected
+                {isLive
+                  ? 'Xem các điều kiện còn thiếu ở bảng phía trên, hoặc hỏi Trợ lý AI để được gợi ý bước tiếp theo dựa trên dữ liệu của bạn.'
+                  : isProjected
                   ? 'Bản mô phỏng dự kiến cho thấy sau khi hoàn thành kế hoạch bù đắp 2 học kỳ, bạn sẽ tích lũy đủ 135/135 TC với CPA dự kiến 3.25 (Loại Giỏi). Hãy giữ vững tiến độ này!'
                   : 'Hồ sơ học tập của bạn đang đạt 82% tiến độ. Để tốt nghiệp đúng hạn loại Giỏi, bạn chỉ cần hoàn thành môn nợ Toán rời rạc (MATH1002) và nộp chứng chỉ MOS trước hạn chót 31/03/2027.'}
               </p>
@@ -1432,7 +1465,8 @@ export function AcademicProgressPage() {
                   type="button"
                   className="haui-pill-btn-dark"
                   style={{ width: '100%', justifyContent: 'space-between', padding: '10px 16px' }}
-                  onClick={() => setIsRemediationModalOpen(true)}
+                  // Phương án bù đắp trong modal là nội dung tĩnh của chế độ mock; backend thật lập kế hoạch ở màn Kế hoạch học tập
+                  onClick={() => (isLive ? navigate('/planner') : setIsRemediationModalOpen(true))}
                 >
                   <span style={{ fontSize: '13px' }}>Bố trí môn thiếu vào Kế hoạch học tập</span>
                   <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_forward</span>

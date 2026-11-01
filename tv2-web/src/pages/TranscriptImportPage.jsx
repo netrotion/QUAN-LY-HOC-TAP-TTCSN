@@ -31,6 +31,9 @@ const LETTER_GRADE_TO_SCORE4 = Object.freeze({
   F: 0.0
 });
 
+// Phiên nhập còn mở trên server (giới hạn số phiên mở: phải tiếp tục hoặc hủy mới tạo được phiên mới)
+const OPEN_IMPORT_STATUSES = new Set(['REVIEW_REQUIRED', 'MANUAL_ENTRY_REQUIRED']);
+
 const SEMESTER_CODE = /^(\d{4})_(1|2|SUMMER)$/;
 
 function statusOfLetter(letter) {
@@ -75,6 +78,8 @@ export function TranscriptImportPage() {
   const [transcriptRevision, setTranscriptRevision] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [openSessions, setOpenSessions] = useState([]);
+  const [curriculumCourses, setCurriculumCourses] = useState([]);
 
   // Wizard Step: 1 = Nạp dữ liệu, 2 = Xem lại (Review), 3 = Xác nhận (Confirm)
   const [currentStep, setCurrentStep] = useState(1);
@@ -107,11 +112,58 @@ export function TranscriptImportPage() {
     return transcript;
   };
 
+  // Backend thật: GET /academic/transcript/imports
+  const loadOpenSessions = async () => {
+    const res = await api.academic.listImportSessions();
+    setOpenSessions((res.sessions || []).filter((s) => OPEN_IMPORT_STATUSES.has(s.status)));
+  };
+
   useEffect(() => {
     if (isLive) {
       loadOfficialTranscript().catch((err) => setUploadError(err.message || 'Không tải được bảng điểm hiện tại'));
+      loadOpenSessions().catch((err) => setUploadError(err.message || 'Không tải được các phiên nhập đang mở'));
+      // Chỉ để gợi ý khi nhập tay; không tải được thì vẫn nhập tay bình thường
+      api.academic.getCurriculum().then((c) => setCurriculumCourses(c.courses || [])).catch(() => {});
     }
   }, []);
+
+  // Tiếp tục một phiên đang mở: GET /academic/transcript/imports/{id}
+  const handleResumeSession = async (sessionId) => {
+    setUploadError(null);
+    try {
+      const session = await api.academic.getImportSession(sessionId);
+      setImportSession(session);
+      setDraftRecords(normalizeBackendRows(session.rows || []));
+      setCurrentStep(2);
+    } catch (err) {
+      setUploadError(err.message || 'Không mở được phiên nhập');
+      loadOpenSessions().catch(() => {});
+    }
+  };
+
+  // Hủy phiên trên server: POST /academic/transcript/imports/{id}/cancel
+  const handleCancelSession = async (sessionId) => {
+    setUploadError(null);
+    try {
+      await api.academic.cancelImport(sessionId);
+    } catch (err) {
+      setUploadError(err.message || 'Không hủy được phiên nhập');
+    }
+    await loadOpenSessions().catch(() => {});
+  };
+
+  // Nút "Hủy bỏ" ở bước xem lại: bỏ phiên đang mở (nếu có) và quay về bảng điểm chính thức
+  const handleDiscardReview = async () => {
+    if (isLive) {
+      if (importSession) {
+        await handleCancelSession(importSession.importSessionId);
+        setImportSession(null);
+      }
+      setSelectedFile(null);
+      await loadOfficialTranscript().catch((err) => setUploadError(err.message || 'Không tải được bảng điểm hiện tại'));
+    }
+    setCurrentStep(1);
+  };
 
   const baseYear = semesterBaseYear(draftRecords);
 
@@ -199,6 +251,8 @@ export function TranscriptImportPage() {
         .catch((err) => {
           setSelectedFile(null);
           setUploadError(err.message || 'Không bóc tách được bảng điểm');
+          // Có thể đã chạm giới hạn phiên mở: hiện danh sách để người dùng xử lý
+          loadOpenSessions().catch(() => {});
         })
         .finally(() => setIsProcessingFile(false));
       return;
@@ -513,6 +567,37 @@ export function TranscriptImportPage() {
           ========================================================================= */}
       {currentStep === 1 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {isLive && openSessions.length > 0 && (
+            <div
+              className="haui-stat-card"
+              data-testid="open-import-sessions"
+              style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+            >
+              <strong style={{ fontSize: '15px', color: 'var(--color-ink)' }}>
+                Bạn có {openSessions.length} phiên nhập chưa xác nhận
+              </strong>
+              {openSessions.map((session) => (
+                <div
+                  key={session.importSessionId}
+                  style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}
+                >
+                  <span style={{ fontSize: '13px', color: 'var(--color-mid-gray)' }}>
+                    {session.fileName || 'Nhập tay'} · {(session.rows || []).length} môn
+                    {session.expiresAt ? ` · hết hạn ${new Date(session.expiresAt).toLocaleString('vi-VN')}` : ''}
+                  </span>
+                  <span style={{ display: 'flex', gap: '8px' }}>
+                    <button type="button" className="haui-pill-btn-canvas" onClick={() => handleCancelSession(session.importSessionId)}>
+                      Hủy phiên
+                    </button>
+                    <button type="button" className="haui-pill-btn-dark" onClick={() => handleResumeSession(session.importSessionId)}>
+                      Tiếp tục
+                    </button>
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* 2 Cột Phương thức nạp dữ liệu */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px' }}>
             {/* Phương thức 1: Tải file tự động (7 cols) */}
@@ -767,7 +852,7 @@ export function TranscriptImportPage() {
               <button
                 type="button"
                 className="haui-pill-btn-canvas"
-                onClick={() => setCurrentStep(1)}
+                onClick={handleDiscardReview}
               >
                 Hủy bỏ
               </button>
@@ -1164,7 +1249,17 @@ export function TranscriptImportPage() {
                     className="haui-input"
                     value={newCourseForm.courseCode}
                     placeholder="VD: IT6001, MATH1002"
-                    onChange={(e) => setNewCourseForm({ ...newCourseForm, courseCode: e.target.value })}
+                    list="curriculum-course-options"
+                    onChange={(e) => {
+                      const code = e.target.value;
+                      // Chọn đúng mã trong CTĐT thì điền sẵn tên và tín chỉ
+                      const match = curriculumCourses.find((c) => c.courseCode === code.toUpperCase().trim());
+                      setNewCourseForm({
+                        ...newCourseForm,
+                        courseCode: code,
+                        ...(match ? { courseName: match.courseName, credits: match.credits } : {})
+                      });
+                    }}
                     style={{
                       width: '100%',
                       padding: '10px 16px',
@@ -1174,6 +1269,11 @@ export function TranscriptImportPage() {
                     }}
                     required
                   />
+                  <datalist id="curriculum-course-options">
+                    {curriculumCourses.map((c) => (
+                      <option key={c.courseCode} value={c.courseCode}>{c.courseName}</option>
+                    ))}
+                  </datalist>
                 </div>
 
                 <div>

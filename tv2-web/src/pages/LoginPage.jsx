@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAnimatedNavigate } from '../components/layout/animatedNavigation.jsx';
-import { STUDENT_PRESETS, loginStudent, syncLiveSession } from '../services/academicStore.js';
+import { STUDENT_PRESETS, loginStudent, registerStudent, syncLiveSession } from '../services/academicStore.js';
 import { api } from '../services/apiClient.js';
 import hauiLogo from '@haui/logo';
 
@@ -293,7 +293,7 @@ export function LoginPage() {
               TAB 2: ĐĂNG KÝ (REGISTER)
               ========================================================================= */}
           {activeTab === 'register' && (
-            <RegisterForm onSwitchToLogin={() => setActiveTab('login')} />
+            <RegisterForm onSwitchToLogin={() => setActiveTab('login')} onRegistered={() => navigate('/dashboard')} />
           )}
 
           {/* =========================================================================
@@ -322,9 +322,13 @@ export function LoginPage() {
 /* ──────────────────────────────────────────────────────────────────────────
    Register Sub-component (Đồng bộ UI 100% với Đăng nhập)
    ────────────────────────────────────────────────────────────────────────── */
-function RegisterForm({ onSwitchToLogin }) {
+const REGISTER_COHORTS = ['K16', 'K17', 'K18', 'K19', 'K20', 'K21'];
+
+function RegisterForm({ onSwitchToLogin, onRegistered }) {
   const [fullName, setFullName] = useState('');
   const [studentCode, setStudentCode] = useState('');
+  const [cohort, setCohort] = useState('');
+  const [className, setClassName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -345,12 +349,16 @@ function RegisterForm({ onSwitchToLogin }) {
       setAlert({ type: 'error', message: 'Mã sinh viên HaUI yêu cầu tối thiểu 9-10 chữ số.' });
       return;
     }
+    if (!cohort) {
+      setAlert({ type: 'error', message: 'Vui lòng chọn khóa học của bạn.' });
+      return;
+    }
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setAlert({ type: 'error', message: 'Địa chỉ email không hợp lệ. Vui lòng kiểm tra lại.' });
       return;
     }
-    if (password.length < 6) {
-      setAlert({ type: 'error', message: 'Mật khẩu phải chứa ít nhất 6 ký tự.' });
+    if (password.length < 8) {
+      setAlert({ type: 'error', message: 'Mật khẩu phải chứa ít nhất 8 ký tự.' });
       return;
     }
     if (password !== confirmPassword) {
@@ -363,6 +371,22 @@ function RegisterForm({ onSwitchToLogin }) {
     }
 
     setLoading(true);
+
+    // Backend thật: tạo tài khoản và đăng nhập luôn; lỗi (trùng mã sinh viên...) hiển thị nguyên thông báo của server
+    if (!api.isMockMode()) {
+      setAlert(null);
+      registerStudent({ studentId: studentCode, password, fullName, email, className, cohort })
+        .then(() => {
+          setAlert({ type: 'success', message: 'Tạo tài khoản thành công! Đang vào hệ thống...' });
+          setTimeout(() => onRegistered(), 400);
+        })
+        .catch((err) => {
+          setAlert({ type: 'error', message: err?.message || 'Không tạo được tài khoản. Vui lòng thử lại.' });
+        })
+        .finally(() => setLoading(false));
+      return;
+    }
+
     setAlert({
       type: 'success',
       message: 'Tạo tài khoản thành công! Đang chuyển hướng về trang đăng nhập...'
@@ -418,6 +442,46 @@ function RegisterForm({ onSwitchToLogin }) {
             placeholder="10 chữ số MSSV HaUI, ví dụ: 2020601234"
             required
           />
+        </div>
+      </div>
+
+      {/* Grid: Khóa & Lớp */}
+      <div className="haui-login-field-grid">
+        <div className="haui-login-field">
+          <label className="haui-login-label" htmlFor="registerCohort">
+            <span>Khóa <span className="haui-login-required">*</span></span>
+          </label>
+          <div className="haui-login-input-wrap">
+            <span className="material-symbols-outlined haui-login-input-icon">school</span>
+            <select
+              id="registerCohort"
+              className="haui-login-input"
+              value={cohort}
+              onChange={(e) => setCohort(e.target.value)}
+              required
+            >
+              <option value="">Chọn khóa</option>
+              {REGISTER_COHORTS.map((k) => (
+                <option key={k} value={k}>{k}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="haui-login-field">
+          <label className="haui-login-label" htmlFor="registerClassName">
+            <span>Lớp</span>
+          </label>
+          <div className="haui-login-input-wrap">
+            <span className="material-symbols-outlined haui-login-input-icon">groups</span>
+            <input
+              id="registerClassName"
+              className="haui-login-input"
+              value={className}
+              maxLength={50}
+              onChange={(e) => setClassName(e.target.value)}
+              placeholder="VD: 2024DHKTPM01"
+            />
+          </div>
         </div>
       </div>
 

@@ -716,6 +716,7 @@ export function createApiClient(customConfig = {}) {
 
   const auth = Object.freeze({
     login: (payload = {}, opts) => post('/auth/login', payload, opts),
+    register: (payload = {}, opts) => post('/auth/register', payload, opts),
     logout: (opts) => post('/auth/logout', {}, opts),
     getSession: (opts) => get('/auth/session', opts),
     getCsrfToken: (opts) => get('/auth/csrf', opts)
@@ -728,6 +729,12 @@ export function createApiClient(customConfig = {}) {
     checkEligibility: (payload, opts) => post('/academic/eligibility', payload, opts),
     getTranscript: (opts) => get('/academic/transcript', opts),
     getProfile: (opts) => get('/students/me', opts),
+    updateProfile: (payload = {}, opts) => put('/students/me', payload, opts),
+    listCertificates: (opts) => get('/academic/certificates', opts),
+    declareCertificate: (requirementCode, payload = {}, opts) =>
+      put(`/academic/certificates/${encodeURIComponent(requirementCode)}`, payload, opts),
+    listImportSessions: (opts) => get('/academic/transcript/imports', opts),
+    cancelImport: (sessionId, opts) => post(`/academic/transcript/imports/${encodeURIComponent(sessionId)}/cancel`, {}, opts),
     uploadTranscript: (payload, opts) => post('/academic/transcript/imports', payload, opts),
     uploadTranscriptFile: (file, opts) => {
       const form = new FormData();
@@ -770,7 +777,9 @@ export function createApiClient(customConfig = {}) {
   });
 
   const advisor = Object.freeze({
-    chat: (payload = {}, opts) => post('/advisor/chat', payload, opts)
+    chat: (payload = {}, opts) => post('/advisor/chat', payload, opts),
+    listConversations: (opts) => get('/advisor/conversations', opts),
+    getConversation: (conversationId, opts) => get(`/advisor/conversations/${encodeURIComponent(conversationId)}`, opts)
   });
 
   return Object.freeze({

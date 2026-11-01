@@ -335,6 +335,32 @@ export async function syncLiveSession(apiInstance = api) {
 }
 
 /**
+ * CTĐT gán cho tài khoản mới. Backend chỉ có CTĐT này và danh mục CTĐT cần đăng nhập mới đọc được,
+ * nên form đăng ký chưa thể cho chọn.
+ */
+export const DEFAULT_CURRICULUM_ID = 'curriculum-ktpm-haui-2024';
+
+/**
+ * Đăng ký tài khoản thật (POST /auth/register). Backend đăng nhập luôn sau khi tạo tài khoản,
+ * nên chỉ cần đồng bộ lại phiên.
+ * @param {{ studentId: string, password: string, fullName: string, email: string, className?: string, cohort: string }} form
+ * @param {Object} [apiInstance]
+ */
+export async function registerStudent(form, apiInstance = api) {
+  await apiInstance.auth.getCsrfToken();
+  await apiInstance.auth.register({
+    studentId: form.studentId.trim(),
+    password: form.password,
+    fullName: form.fullName.trim(),
+    email: form.email.trim(),
+    className: form.className?.trim() || null,
+    cohort: form.cohort,
+    curriculumId: DEFAULT_CURRICULUM_ID
+  });
+  return syncLiveSession(apiInstance);
+}
+
+/**
  * Đăng xuất sinh viên (live: hủy session phía Backend qua POST /auth/logout)
  */
 export function logoutStudent() {
