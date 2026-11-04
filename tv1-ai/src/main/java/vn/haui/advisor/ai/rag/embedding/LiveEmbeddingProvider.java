@@ -39,19 +39,26 @@ public class LiveEmbeddingProvider implements EmbeddingProvider {
     private final int dimension;
     private final boolean configured;
     private final Function<String, float[]> customEmbedder;
+    private final Function<List<String>, List<float[]>> customBatchEmbedder;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
     public LiveEmbeddingProvider() {
-        this(null, null, DEFAULT_GEMINI_MODEL, DEFAULT_GEMINI_DIMENSION, null);
+        this(null, null, DEFAULT_GEMINI_MODEL, DEFAULT_GEMINI_DIMENSION, null, null);
     }
 
     public LiveEmbeddingProvider(String endpoint, String apiKey, String modelName, int dimension) {
-        this(endpoint, apiKey, modelName, dimension, null);
+        this(endpoint, apiKey, modelName, dimension, null, null);
     }
 
     public LiveEmbeddingProvider(Function<String, float[]> customEmbedder, int dimension) {
-        this(null, null, "custom-embedder", dimension, customEmbedder);
+        this(null, null, "custom-embedder", dimension, customEmbedder, null);
+    }
+
+    public LiveEmbeddingProvider(Function<String, float[]> customEmbedder,
+                                 Function<List<String>, List<float[]>> customBatchEmbedder,
+                                 int dimension) {
+        this(null, null, "custom-embedder", dimension, customEmbedder, customBatchEmbedder);
     }
 
     public LiveEmbeddingProvider(String endpoint,
@@ -59,13 +66,23 @@ public class LiveEmbeddingProvider implements EmbeddingProvider {
                                  String modelName,
                                  int dimension,
                                  Function<String, float[]> customEmbedder) {
+        this(endpoint, apiKey, modelName, dimension, customEmbedder, null);
+    }
+
+    public LiveEmbeddingProvider(String endpoint,
+                                 String apiKey,
+                                 String modelName,
+                                 int dimension,
+                                 Function<String, float[]> customEmbedder,
+                                 Function<List<String>, List<float[]>> customBatchEmbedder) {
         boolean hasHttpConfig = (endpoint != null && !endpoint.isBlank()) && (apiKey != null && !apiKey.isBlank());
         this.endpoint = (endpoint != null && !endpoint.isBlank()) ? endpoint.trim() : DEFAULT_GEMINI_ENDPOINT;
         this.apiKey = (apiKey != null && !apiKey.isBlank()) ? apiKey.trim() : null;
         this.modelName = (modelName != null && !modelName.isBlank()) ? modelName.trim() : DEFAULT_GEMINI_MODEL;
         this.dimension = dimension > 0 ? dimension : DEFAULT_GEMINI_DIMENSION;
         this.customEmbedder = customEmbedder;
-        this.configured = customEmbedder != null || hasHttpConfig;
+        this.customBatchEmbedder = customBatchEmbedder;
+        this.configured = customEmbedder != null || customBatchEmbedder != null || hasHttpConfig;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
@@ -99,12 +116,138 @@ public class LiveEmbeddingProvider implements EmbeddingProvider {
         if (texts.isEmpty()) {
             return List.of();
         }
-
-        List<float[]> results = new ArrayList<>(texts.size());
         for (String t : texts) {
-            results.add(embed(t));
+            if (t == null || t.trim().isEmpty()) {
+                throw new IllegalArgumentException("Text in batch must not be null or blank");
+            }
         }
-        return results;
+
+        if (customBatchEmbedder != null) {
+            List<float[]> res = customBatchEmbedder.apply(texts);
+            if (res == null || res.size() != texts.size()) {
+                throw new IllegalStateException("Custom batch embedder returned invalid result size");
+            }
+            return res;
+        }
+
+        if (customEmbedder != null) {
+            List<float[]> results = new ArrayList<>(texts.size());
+            for (String t : texts) {
+                results.add(embed(t));
+            }
+            return results;
+        }
+
+        return executeHttpBatchEmbedding(texts);
+    }
+
+    private List<float[]> executeHttpBatchEmbedding(List<String> texts) {
+        List<float[]> allResults = new ArrayList<>(texts.size());
+        int batchSize = 100;
+        for (int i = 0; i < texts.size(); i += batchSize) {
+            List<String> slice = texts.subList(i, Math.min(i + batchSize, texts.size()));
+            allResults.addAll(executeSingleHttpBatch(slice));
+        }
+        return allResults;
+    }
+
+    private List<float[]> executeSingleHttpBatch(List<String> batch) {
+        try {
+            boolean isGemini = endpoint.contains("googleapis.com") || modelName.contains("text-embedding") || modelName.contains("embedding");
+
+            String requestUrl;
+            String requestBody;
+            HttpRequest.Builder reqBuilder = HttpRequest.newBuilder().timeout(Duration.ofSeconds(30));
+
+            if (isGemini) {
+                String cleanEndpoint = endpoint.endsWith("/") ? endpoint.substring(0, endpoint.length() - 1) : endpoint;
+                requestUrl = cleanEndpoint + "/" + modelName + ":batchEmbedContents?key=" + apiKey;
+
+                String effectiveModel = modelName.startsWith("models/") ? modelName : "models/" + modelName;
+                List<Map<String, Object>> requests = new ArrayList<>(batch.size());
+                for (String text : batch) {
+                    requests.add(Map.of(
+                            "model", effectiveModel,
+                            "content", Map.of("parts", List.of(Map.of("text", text)))
+                    ));
+                }
+
+                Map<String, Object> payload = Map.of("requests", requests);
+                requestBody = objectMapper.writeValueAsString(payload);
+                reqBuilder.uri(URI.create(requestUrl))
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(requestBody));
+            } else {
+                requestUrl = endpoint;
+                Map<String, Object> payload = Map.of(
+                        "input", batch,
+                        "model", modelName
+                );
+                requestBody = objectMapper.writeValueAsString(payload);
+                reqBuilder.uri(URI.create(requestUrl))
+                        .header("Content-Type", "application/json")
+                        .header("Authorization", "Bearer " + apiKey)
+                        .POST(HttpRequest.BodyPublishers.ofString(requestBody));
+            }
+
+            HttpResponse<String> response = httpClient.send(reqBuilder.build(), HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                log.warn("Batch embedding failed with HTTP {}, falling back to sequential embed", response.statusCode());
+                List<float[]> fallbackList = new ArrayList<>(batch.size());
+                for (String t : batch) {
+                    fallbackList.add(executeHttpEmbedding(t));
+                }
+                return fallbackList;
+            }
+
+            JsonNode root = objectMapper.readTree(response.body());
+            List<float[]> batchResults = new ArrayList<>(batch.size());
+
+            if (root.has("embeddings") && root.get("embeddings").isArray()) {
+                JsonNode embeddingsArray = root.get("embeddings");
+                for (JsonNode item : embeddingsArray) {
+                    JsonNode valuesNode = item.get("values");
+                    if (valuesNode != null && valuesNode.isArray()) {
+                        float[] vec = new float[valuesNode.size()];
+                        for (int k = 0; k < valuesNode.size(); k++) {
+                            vec[k] = (float) valuesNode.get(k).asDouble();
+                        }
+                        batchResults.add(vec);
+                    }
+                }
+            } else if (root.has("data") && root.get("data").isArray()) {
+                JsonNode dataArray = root.get("data");
+                for (JsonNode item : dataArray) {
+                    JsonNode valuesNode = item.get("embedding");
+                    if (valuesNode != null && valuesNode.isArray()) {
+                        float[] vec = new float[valuesNode.size()];
+                        for (int k = 0; k < valuesNode.size(); k++) {
+                            vec[k] = (float) valuesNode.get(k).asDouble();
+                        }
+                        batchResults.add(vec);
+                    }
+                }
+            }
+
+            if (batchResults.size() != batch.size()) {
+                log.warn("Batch embedding response count mismatch (expected {}, got {}), falling back to sequential embed", batch.size(), batchResults.size());
+                List<float[]> fallbackList = new ArrayList<>(batch.size());
+                for (String t : batch) {
+                    fallbackList.add(executeHttpEmbedding(t));
+                }
+                return fallbackList;
+            }
+
+            return batchResults;
+        } catch (Exception e) {
+            log.warn("Batch embedding encountered exception: {}, falling back to sequential embed", e.getMessage());
+            List<float[]> fallbackList = new ArrayList<>(batch.size());
+            for (String t : batch) {
+                fallbackList.add(executeHttpEmbedding(t));
+            }
+            return fallbackList;
+        }
     }
 
     private float[] executeHttpEmbedding(String text) {

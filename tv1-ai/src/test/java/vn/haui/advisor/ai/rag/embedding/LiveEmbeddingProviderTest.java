@@ -46,4 +46,27 @@ class LiveEmbeddingProviderTest {
         assertThat(provider.getModelName()).isNotBlank();
         assertThat(provider.getDimension()).isGreaterThan(0);
     }
+
+    @Test
+    @DisplayName("embedAll executes batch embedding for multiple texts using customBatchEmbedder")
+    void shouldExecuteBatchEmbeddingEfficiently() {
+        java.util.concurrent.atomic.AtomicInteger batchCallCount = new java.util.concurrent.atomic.AtomicInteger(0);
+        LiveEmbeddingProvider provider = new LiveEmbeddingProvider(
+                null,
+                texts -> {
+                    batchCallCount.incrementAndGet();
+                    java.util.List<float[]> list = new java.util.ArrayList<>();
+                    for (int i = 0; i < texts.size(); i++) {
+                        list.add(new float[768]);
+                    }
+                    return list;
+                },
+                768
+        );
+
+        List<float[]> embeddings = provider.embedAll(List.of("Văn bản 1", "Văn bản 2", "Văn bản 3"));
+
+        assertThat(embeddings).hasSize(3);
+        assertThat(batchCallCount.get()).isEqualTo(1);
+    }
 }
