@@ -50,3 +50,10 @@ pgdata/
 
 # Superpowers temporary workspace
 .superpowers/
+
+# Playwright artifacts
+.playwright-mcp/
+
+# Database Backups
+tv5-platform/infra/backups/
+

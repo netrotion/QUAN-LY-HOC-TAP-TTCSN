@@ -142,6 +142,20 @@ docker compose --env-file .env -f tv5-platform/infra/compose.yaml logs -f
 docker compose --env-file .env -f tv5-platform/infra/compose.yaml down
 ```
 
+### 4.4. Kịch bản sao lưu & phục hồi cơ sở dữ liệu (Task 5.1)
+```bash
+# Sao lưu database (Bash / Linux / macOS)
+./tv5-platform/infra/scripts/backup.sh
+
+# Sao lưu database (PowerShell / Windows)
+.\tv5-platform\infra\scripts\backup.ps1
+
+# Phục hồi database từ tệp sao lưu
+./tv5-platform/infra/scripts/restore.sh tv5-platform/infra/backups/<backup_file>.sql
+.\tv5-platform\infra\scripts\restore.ps1 -BackupPath "tv5-platform\infra\backups\<backup_file>.sql" -Force
+```
+*Chi tiết bàn giao triển khai Task 5.1:* [tv5-platform/docs/task-5.1-deploy-report.md](tv5-platform/docs/task-5.1-deploy-report.md).
+
 ---
 
 ## 5. Hợp đồng API `contracts-v1`
