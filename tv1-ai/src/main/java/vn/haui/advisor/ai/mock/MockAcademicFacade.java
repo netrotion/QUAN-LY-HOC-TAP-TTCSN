@@ -69,7 +69,6 @@ public class MockAcademicFacade implements AcademicFacade {
                 List.of(semester),
                 new BigDecimal("3.25"),
                 Collections.unmodifiableList(simulatedWarnings),
-                1,
                 "MOCK_REVISION_V0"
         );
     }
