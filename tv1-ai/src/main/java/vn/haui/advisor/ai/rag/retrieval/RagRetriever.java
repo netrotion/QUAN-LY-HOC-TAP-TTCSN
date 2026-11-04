@@ -88,13 +88,23 @@ public class RagRetriever {
             return RetrievalResult.empty(query);
         }
 
-        // 3. Khử trùng lặp và xếp hạng:
+        // 3. Xếp hạng lai (Hybrid Ranking): Tăng điểm cho các chunk khớp chính xác từ khóa / mã điều khoản
+        List<String> queryKeywords = extractKeywords(query);
+        List<VectorSearchResult> rankedResults = new ArrayList<>(rawResults);
+        if (!queryKeywords.isEmpty()) {
+            rankedResults.sort((a, b) -> Double.compare(
+                    computeHybridScore(b, queryKeywords),
+                    computeHybridScore(a, queryKeywords)
+            ));
+        }
+
+        // 4. Khử trùng lặp và đa dạng hóa nguồn:
         // Đảm bảo đa dạng nguồn: mỗi sourceId nhận tối đa 2 chunk, mỗi (sourceId, section) nhận tối đa 1 chunk
         Map<String, Integer> sourceCounts = new HashMap<>();
         Set<String> seenSections = new HashSet<>();
         List<VectorSearchResult> deduped = new ArrayList<>();
 
-        for (VectorSearchResult result : rawResults) {
+        for (VectorSearchResult result : rankedResults) {
             if (result.getScore() < similarityThreshold) {
                 continue;
             }
@@ -138,5 +148,41 @@ public class RagRetriever {
 
     public int getDefaultTopK() {
         return defaultTopK;
+    }
+
+    private static final java.util.regex.Pattern IDENTIFIER_PATTERN = java.util.regex.Pattern.compile(
+            "(?i)(?:điều\\s*\\d+|khoản\\s*\\d+|[a-z]{2,4}\\d{4}|cpa|gpa|cảnh báo|buộc thôi học|học lại|cải thiện)"
+    );
+
+    private List<String> extractKeywords(String query) {
+        if (query == null || query.isBlank()) {
+            return Collections.emptyList();
+        }
+        List<String> keywords = new ArrayList<>();
+        java.util.regex.Matcher m = IDENTIFIER_PATTERN.matcher(query);
+        while (m.find()) {
+            keywords.add(m.group(0).toLowerCase(Locale.ROOT).trim());
+        }
+        return keywords;
+    }
+
+    private double computeHybridScore(VectorSearchResult res, List<String> keywords) {
+        double score = res.getScore();
+        if (res.chunk() == null || keywords == null || keywords.isEmpty()) {
+            return score;
+        }
+        String content = (res.chunk().getContent() != null ? res.chunk().getContent() : "").toLowerCase(Locale.ROOT);
+        String section = (res.chunk().getSection() != null ? res.chunk().getSection() : "").toLowerCase(Locale.ROOT);
+        String title = (res.chunk().getTitle() != null ? res.chunk().getTitle() : "").toLowerCase(Locale.ROOT);
+
+        int matches = 0;
+        for (String kw : keywords) {
+            if (section.contains(kw) || title.contains(kw)) {
+                matches += 2;
+            } else if (content.contains(kw)) {
+                matches += 1;
+            }
+        }
+        return score + Math.min(0.3, matches * 0.05);
     }
 }

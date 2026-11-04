@@ -1,5 +1,6 @@
 package vn.haui.advisor.ai.grounding;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 import vn.haui.advisor.ai.model.AdvisorModelInput;
 import vn.haui.advisor.ai.model.AdvisorModelOutput;
@@ -65,7 +66,14 @@ public class ResponseGroundingValidator {
             "(?i)\\b(?:cpa dự kiến|dự kiến cpa|cpa mới)[^\\d\\n.]{0,35}?(\\d+[.,]\\d+)"
     );
 
+    private final ObjectMapper objectMapper;
+
     public ResponseGroundingValidator() {
+        this(new ObjectMapper());
+    }
+
+    public ResponseGroundingValidator(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper != null ? objectMapper : new ObjectMapper();
     }
 
     /**
@@ -105,6 +113,9 @@ public class ResponseGroundingValidator {
         // 3. Thẩm định và bảo toàn tính toàn vẹn số liệu học vụ (CPA, GPA, tín chỉ)
         String validatedAnswer = enforceNumericalIntegrity(rawOutput.getAnswer(), toolResults, validatedWarnings);
 
+        // 4. Thẩm định mã học phần chống ảo giác (Course Code Grounding)
+        validateCourseCodes(validatedAnswer, groundedContext, toolResults, validatedWarnings);
+
         return new AdvisorModelOutput(
                 validatedAnswer,
                 validatedSources,
@@ -112,6 +123,59 @@ public class ResponseGroundingValidator {
                 rawOutput.getPlanProposal(),
                 validatedWarnings
         );
+    }
+
+    private static final Pattern COURSE_CODE_REGEX = Pattern.compile("\\b([A-Z]{2,4}\\d{4})\\b");
+
+    private void validateCourseCodes(String answer, GroundedContext groundedContext, Map<String, Object> toolResults, List<String> warnings) {
+        if (answer == null || answer.isBlank() || toolResults == null || toolResults.isEmpty()) {
+            return;
+        }
+
+        Set<String> knownCourseCodes = new HashSet<>();
+
+        for (Object value : toolResults.values()) {
+            if (value != null) {
+                try {
+                    String json = objectMapper.writeValueAsString(value);
+                    Matcher m = COURSE_CODE_REGEX.matcher(json);
+                    while (m.find()) {
+                        knownCourseCodes.add(m.group(1));
+                    }
+                } catch (Exception e) {
+                    Matcher m = COURSE_CODE_REGEX.matcher(value.toString());
+                    while (m.find()) {
+                        knownCourseCodes.add(m.group(1));
+                    }
+                }
+            }
+        }
+
+        if (groundedContext != null && groundedContext.getEvidenceChunks() != null) {
+            for (RagChunk chunk : groundedContext.getEvidenceChunks()) {
+                if (chunk.getContent() != null) {
+                    Matcher m = COURSE_CODE_REGEX.matcher(chunk.getContent());
+                    while (m.find()) {
+                        knownCourseCodes.add(m.group(1));
+                    }
+                }
+            }
+        }
+
+        if (knownCourseCodes.isEmpty()) {
+            return;
+        }
+
+        Matcher matcher = COURSE_CODE_REGEX.matcher(answer);
+        while (matcher.find()) {
+            String code = matcher.group(1);
+            if (!knownCourseCodes.contains(code)) {
+                String warn = "UNGROUNDED_COURSE_CODE: Course " + code + " is not present in authoritative academic context";
+                if (!warnings.contains(warn)) {
+                    warnings.add(warn);
+                }
+            }
+        }
     }
 
     /**

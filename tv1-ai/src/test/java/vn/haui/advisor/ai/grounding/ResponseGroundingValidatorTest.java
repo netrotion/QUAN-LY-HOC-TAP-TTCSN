@@ -234,4 +234,27 @@ class ResponseGroundingValidatorTest {
         assertThat(validated.getAnswer()).doesNotContain("3.90");
         assertThat(validated.getWarnings()).anyMatch(w -> w.contains("NUMERICAL_OVERWRITE_PREVENTED") && w.contains("3.15"));
     }
+
+    @Test
+    @DisplayName("Validator must flag hallucinated course codes not present in tool results or evidence")
+    void shouldFlagHallucinatedCourseCodes() {
+        ResponseGroundingValidator validator = new ResponseGroundingValidator();
+        AdvisorModelOutput rawOutput = new AdvisorModelOutput(
+                "Bạn nên học môn IT9999 để cải thiện điểm số.",
+                List.of(),
+                List.of(),
+                null,
+                List.of()
+        );
+
+        AcademicStatusResponse status = new AcademicStatusResponse(
+                "SV2021001", new BigDecimal("3.20"), new BigDecimal("3.10"), 80, 150,
+                AcademicRiskLevel.NORMAL, List.of("IT6015"), "REV-1"
+        );
+        Map<String, Object> toolResults = Map.of("academicStatus", status);
+
+        AdvisorModelOutput validated = validator.validate(rawOutput, null, toolResults);
+
+        assertThat(validated.getWarnings()).anyMatch(w -> w.contains("UNGROUNDED_COURSE_CODE") && w.contains("IT9999"));
+    }
 }
