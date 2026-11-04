@@ -35,17 +35,17 @@ public class IntentClassifier {
     );
 
     private static final Pattern NATURAL_SEMESTER_WITH_YEAR = Pattern.compile(
-            "(?:học kỳ|kỳ)\\s*([123]|hè|phụ)\\s*(?:năm\\s*(?:học)?)?\\s*(20\\d{2})",
+            "(?:học kỳ|kỳ)\\s*(\\d+|hè|phụ)\\s*(?:năm\\s*(?:học)?)?\\s*(20\\d{2})",
             Pattern.CASE_INSENSITIVE
     );
 
     private static final Pattern YEAR_THEN_SEMESTER = Pattern.compile(
-            "(?:năm\\s*(?:học)?\\s*(20\\d{2}))\\s*(?:học kỳ|kỳ)\\s*([123]|hè|phụ)",
+            "(?:năm\\s*(?:học)?\\s*(20\\d{2}))\\s*(?:học kỳ|kỳ)\\s*(\\d+|hè|phụ)",
             Pattern.CASE_INSENSITIVE
     );
 
     private static final Pattern SIMPLE_SEMESTER = Pattern.compile(
-            "(?:học kỳ|kỳ)\\s*([123]|hè|phụ)",
+            "(?:học kỳ|kỳ)\\s*(\\d+|hè|phụ)",
             Pattern.CASE_INSENSITIVE
     );
 
@@ -275,13 +275,24 @@ public class IntentClassifier {
             return year + "_" + semCode;
         }
 
-        // 3. Định dạng kỳ đơn lẻ: "kỳ 1", "kỳ 2" -> lấy năm học hiện tại
+        // 3. Định dạng kỳ đơn lẻ: "kỳ 1", "kỳ 2", "kỳ 7"
         Matcher simpleMatcher = SIMPLE_SEMESTER.matcher(text);
         if (simpleMatcher.find()) {
             String sem = simpleMatcher.group(1).toLowerCase(Locale.ROOT);
-            String semCode = ("hè".equals(sem) || "phụ".equals(sem)) ? "S" : sem;
-            int currentYear = java.time.LocalDate.now().getYear();
-            return currentYear + "_" + semCode;
+            if ("hè".equals(sem) || "phụ".equals(sem)) {
+                int currentYear = java.time.LocalDate.now().getYear();
+                return currentYear + "_S";
+            }
+            try {
+                int semNum = Integer.parseInt(sem);
+                if (semNum >= 1 && semNum <= 3) {
+                    int currentYear = java.time.LocalDate.now().getYear();
+                    return currentYear + "_" + semNum;
+                }
+                return "kỳ " + semNum;
+            } catch (NumberFormatException ignored) {
+                return simpleMatcher.group(0).trim();
+            }
         }
 
         return null;
