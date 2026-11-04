@@ -1,10 +1,12 @@
 package vn.haui.advisor.platform.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.jdbc.core.JdbcTemplate;
 import vn.haui.advisor.ai.config.AiMode;
 import vn.haui.advisor.ai.config.AiProperties;
 import vn.haui.advisor.ai.conversation.ConversationHistoryManager;
@@ -26,6 +28,8 @@ import vn.haui.advisor.ai.rag.retrieval.RagRetriever;
 import vn.haui.advisor.ai.rag.retrieval.VietnameseQueryNormalizer;
 import vn.haui.advisor.ai.rag.service.RagAdvisorService;
 import vn.haui.advisor.ai.rag.vector.InMemoryVectorStore;
+import vn.haui.advisor.ai.rag.vector.PgVectorStoreAdapter;
+import vn.haui.advisor.ai.rag.vector.VectorStore;
 import vn.haui.advisor.ai.service.DefaultAdvisorFacade;
 import vn.haui.advisor.ai.tools.DefaultToolAdapter;
 import vn.haui.advisor.contracts.ports.AcademicFacade;
@@ -69,16 +73,22 @@ public class AdvisorConfig {
     }
 
     @Bean
-    public RagAdvisorService ragAdvisorService(AiProperties ai, AdvisorProperties properties) {
+    public RagAdvisorService ragAdvisorService(AiProperties ai, AdvisorProperties properties, ObjectProvider<JdbcTemplate> jdbcTemplateProvider) {
         AiProperties.RagProperties rag = ai.getRag();
-        if (rag.getStoreType() != AiProperties.RagProperties.StoreType.IN_MEMORY) {
-            throw new IllegalStateException("ai.rag.store-type=" + rag.getStoreType() + " chưa được nối ở platform "
-                    + "(cần migration rag_chunks trên PostgreSQL có pgvector); dùng IN_MEMORY");
+        VectorStore store;
+        if (rag.getStoreType() == AiProperties.RagProperties.StoreType.PGVECTOR) {
+            JdbcTemplate jdbcTemplate = jdbcTemplateProvider.getIfAvailable();
+            if (jdbcTemplate != null) {
+                store = new PgVectorStoreAdapter(jdbcTemplate);
+            } else {
+                throw new IllegalStateException("ai.rag.store-type=PGVECTOR requires a valid JdbcTemplate bean in application context.");
+            }
+        } else {
+            store = new InMemoryVectorStore();
         }
         String root = properties.getRagDocumentsRoot();
         RagCatalogReader catalog = root == null || root.isBlank() ? new RagCatalogReader() : new RagCatalogReader(Path.of(root));
         EmbeddingProvider embedding = embeddingProvider(ai);
-        InMemoryVectorStore store = new InMemoryVectorStore();
         RagRetriever retriever = new RagRetriever(embedding, store, new VietnameseQueryNormalizer(),
                 rag.getSimilarityThreshold(), rag.getTopK());
         RagIngestionService ingestion = new RagIngestionService(catalog, new MarkdownDocumentReader(catalog), new SemanticChunker());
