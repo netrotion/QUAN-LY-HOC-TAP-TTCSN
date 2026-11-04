@@ -29,8 +29,23 @@ public class IntentClassifier {
             "\\b([A-Z]{2,4}\\d{4})\\b"
     );
 
-    private static final Pattern SEMESTER_PATTERN = Pattern.compile(
-            "(?:học kỳ|kỳ)\\s*(\\d+|hè|phụ)|\\b(20\\d{2}_[12S]|20\\d{2}[-_]20\\d{2}[-_]HK\\d)\\b",
+    private static final Pattern DIRECT_SEMESTER_CODE = Pattern.compile(
+            "\\b(20\\d{2})_([123S])\\b",
+            Pattern.CASE_INSENSITIVE
+    );
+
+    private static final Pattern NATURAL_SEMESTER_WITH_YEAR = Pattern.compile(
+            "(?:học kỳ|kỳ)\\s*([123]|hè|phụ)\\s*(?:năm\\s*(?:học)?)?\\s*(20\\d{2})",
+            Pattern.CASE_INSENSITIVE
+    );
+
+    private static final Pattern YEAR_THEN_SEMESTER = Pattern.compile(
+            "(?:năm\\s*(?:học)?\\s*(20\\d{2}))\\s*(?:học kỳ|kỳ)\\s*([123]|hè|phụ)",
+            Pattern.CASE_INSENSITIVE
+    );
+
+    private static final Pattern SIMPLE_SEMESTER = Pattern.compile(
+            "(?:học kỳ|kỳ)\\s*([123]|hè|phụ)",
             Pattern.CASE_INSENSITIVE
     );
 
@@ -233,10 +248,42 @@ public class IntentClassifier {
     }
 
     private String extractSemester(String text) {
-        Matcher m = SEMESTER_PATTERN.matcher(text);
-        if (m.find()) {
-            return m.group(0).trim();
+        if (text == null || text.isBlank()) {
+            return null;
         }
+
+        // 1. Mã chuẩn hóa trực tiếp dạng 2025_1, 2025_2, 2025_S
+        Matcher directMatcher = DIRECT_SEMESTER_CODE.matcher(text);
+        if (directMatcher.find()) {
+            return directMatcher.group(1) + "_" + directMatcher.group(2).toUpperCase(Locale.ROOT);
+        }
+
+        // 2. Định dạng tự nhiên có năm: "kỳ 1 năm học 2025-2026", "kỳ 2 năm 2024"
+        Matcher natMatcher = NATURAL_SEMESTER_WITH_YEAR.matcher(text);
+        if (natMatcher.find()) {
+            String sem = natMatcher.group(1).toLowerCase(Locale.ROOT);
+            String year = natMatcher.group(2);
+            String semCode = ("hè".equals(sem) || "phụ".equals(sem)) ? "S" : sem;
+            return year + "_" + semCode;
+        }
+
+        Matcher yearFirstMatcher = YEAR_THEN_SEMESTER.matcher(text);
+        if (yearFirstMatcher.find()) {
+            String year = yearFirstMatcher.group(1);
+            String sem = yearFirstMatcher.group(2).toLowerCase(Locale.ROOT);
+            String semCode = ("hè".equals(sem) || "phụ".equals(sem)) ? "S" : sem;
+            return year + "_" + semCode;
+        }
+
+        // 3. Định dạng kỳ đơn lẻ: "kỳ 1", "kỳ 2" -> lấy năm học hiện tại
+        Matcher simpleMatcher = SIMPLE_SEMESTER.matcher(text);
+        if (simpleMatcher.find()) {
+            String sem = simpleMatcher.group(1).toLowerCase(Locale.ROOT);
+            String semCode = ("hè".equals(sem) || "phụ".equals(sem)) ? "S" : sem;
+            int currentYear = java.time.LocalDate.now().getYear();
+            return currentYear + "_" + semCode;
+        }
+
         return null;
     }
 
