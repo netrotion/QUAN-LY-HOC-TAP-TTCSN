@@ -15,6 +15,7 @@
   "dependencies": {
     "@haui/planner-ui": "*",
     "@heroui/styles": "^3.2.6",
+    "katex": "^0.19.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2"
