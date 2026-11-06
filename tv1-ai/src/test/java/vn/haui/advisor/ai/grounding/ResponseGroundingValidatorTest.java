@@ -11,6 +11,7 @@ import vn.haui.advisor.contracts.dto.AcademicRiskLevel;
 import vn.haui.advisor.contracts.dto.AcademicStatusResponse;
 import vn.haui.advisor.contracts.dto.ChatActionItem;
 import vn.haui.advisor.contracts.dto.ChatSourceItem;
+import vn.haui.advisor.contracts.dto.CourseEligibilityResponse;
 import vn.haui.advisor.contracts.dto.SimulateGradesResponse;
 import vn.haui.advisor.contracts.dto.TrustedStudentContext;
 
@@ -25,6 +26,97 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("ResponseGroundingValidator Unit Tests")
 class ResponseGroundingValidatorTest {
 
+    @Test
+    void diagnosticTwoPassMatrixRecordsWhatTheCurrentGuardrailActuallyChanges() {
+        String advice = "Mình hiểu bạn đang lo.\n\n- Học cải thiện\n- Học môn mới";
+        AdvisorModelInput plain = new AdvisorModelInput("Mình nên làm gì?", studentContext, Map.of());
+        AdvisorModelOutput plainFirst = validator.validate(new AdvisorModelOutput(advice, List.of(), List.of(), null, List.of()), plain);
+        assertThat(validator.validate(plainFirst, plain).getAnswer()).isEqualTo(advice);
+
+        String withPii = advice + "\nMã sinh viên: 2024604757";
+        AdvisorModelOutput piiFirst = validator.validate(new AdvisorModelOutput(withPii, List.of(), List.of(), null, List.of()), plain);
+        AdvisorModelOutput piiSecond = validator.validate(piiFirst, plain);
+        assertThat(piiSecond.getAnswer()).doesNotContain("2024604757").contains("- Học cải thiện");
+        assertThat(piiSecond.getAnswer()).isEqualTo(piiFirst.getAnswer());
+
+        ChatSourceItem source = new ChatSourceItem("REG-HAUI-01", "Quy chế", "Điều 1", "v1", "https://haui.edu.vn");
+        RagChunk chunk = new RagChunk("REG-HAUI-01#01", "REG-HAUI-01", "Quy chế", "Điều 1", "v1",
+                "https://haui.edu.vn", "Nội dung", 1, 10);
+        GroundedContext evidence = new GroundedContext("q", List.of(chunk), List.of(source), "", true, List.of());
+        AdvisorModelInput grounded = new AdvisorModelInput("Quy định gì?", studentContext, Map.of(), evidence);
+        AdvisorModelOutput cited = validator.validate(new AdvisorModelOutput("Theo [REG-HAUI-01], cần kiểm tra.",
+                List.of(source), List.of(), null, List.of()), grounded);
+        assertThat(validator.validate(cited, grounded).getSources()).hasSize(1);
+
+        AdvisorModelOutput unsupported = validator.validate(new AdvisorModelOutput(
+                "Mình hiểu bạn lo. Theo [REG-HAUI-99], tối đa 30 tín. Hãy kiểm tra thời gian rảnh.",
+                List.of(), List.of(), null, List.of()), plain);
+        assertThat(unsupported.getAnswer()).doesNotContain("30 tín", "kiểm tra thời gian rảnh");
+        assertThat(validator.validate(unsupported, plain).getAnswer()).isEqualTo(unsupported.getAnswer());
+
+        CourseEligibilityResponse course = new CourseEligibilityResponse("IT6080", false, List.of("IT6020"), List.of(), "REV-1");
+        course.setCourseName("Lập trình Web bằng Java");
+        AdvisorModelInput courseInput = new AdvisorModelInput("IT6080 là môn gì?", studentContext, Map.of("courseEligibility", course));
+        AdvisorModelOutput wrongName = validator.validate(new AdvisorModelOutput("IT6080 là Đồ án chuyên ngành.",
+                List.of(), List.of(), null, List.of()), courseInput);
+        assertThat(wrongName.getAnswer()).contains("IT6080 là Đồ án chuyên ngành");
+        assertThat(validator.validate(wrongName, courseInput).getAnswer()).isEqualTo(wrongName.getAnswer());
+
+        AcademicStatusResponse status = new AcademicStatusResponse("SV001", new BigDecimal("2.30"),
+                new BigDecimal("2.45"), 95, 150, AcademicRiskLevel.NORMAL, List.of(), "REV-1");
+        AdvisorModelInput numbers = new AdvisorModelInput("CPA của mình?", studentContext, Map.of("academicStatus", status));
+        AdvisorModelOutput numericFirst = validator.validate(new AdvisorModelOutput(
+                "- CPA hiện tại 3.80\n- CPA hiện tại 3.90\n- Đã tích lũy 95 tín chỉ",
+                List.of(), List.of(), null, List.of()), numbers);
+        assertThat(numericFirst.getAnswer()).contains("CPA hiện tại 2.45", "CPA hiện tại 3.90", "- Đã tích lũy 95 tín chỉ");
+        assertThat(validator.validate(numericFirst, numbers).getAnswer()).isEqualTo(numericFirst.getAnswer());
+    }
+
+    @Test
+    void internalToolTagIsNotDisplayedAsAUserFacingCitation() {
+        String raw = "Theo hồ sơ học vụ [academic_tool_results], bạn còn thiếu IT6019.\n\n- Kiểm tra lại trước khi đăng ký.";
+        AdvisorModelInput input = new AdvisorModelInput("Mình còn thiếu gì?", studentContext, Map.of());
+        AdvisorModelOutput first = validator.validate(new AdvisorModelOutput(raw, List.of(), List.of(), null, List.of()), input);
+        assertThat(first.getAnswer()).doesNotContain("[academic_tool_results]")
+                .contains("bạn còn thiếu IT6019", "\n\n- Kiểm tra lại");
+        assertThat(validator.validate(first, input).getAnswer()).isEqualTo(first.getAnswer());
+    }
+
+    @Test
+    void internalEligibilityFieldLabelsDoNotLeakIntoAdvice() {
+        String raw = "IT6020 đã đáp ứng (`priorCourseCodesNotMissing`); IT6019 còn thiếu (`missingEnrollmentRequirements`). "
+                + "Bạn chưa đăng ký được (`eligible=false`).\n\n- Kiểm tra IT6019.";
+        AdvisorModelInput input = new AdvisorModelInput("Mình còn thiếu gì?", studentContext, Map.of());
+        AdvisorModelOutput first = validator.validate(new AdvisorModelOutput(raw, List.of(), List.of(), null, List.of()), input);
+        assertThat(first.getAnswer()).doesNotContain("priorCourseCodesNotMissing", "missingEnrollmentRequirements", "eligible=false")
+                .contains("IT6020 đã đáp ứng", "IT6019 còn thiếu", "\n\n- Kiểm tra IT6019.");
+        assertThat(validator.validate(first, input).getAnswer()).isEqualTo(first.getAnswer());
+    }
+
+    @Test
+    void contradictoryPriorCourseClaimFallsBackToVerifiedEngineFacts() {
+        CourseEligibilityResponse eligibility = new CourseEligibilityResponse("IT6080", false,
+                List.of("IT6019 (chưa đăng ký học phần học trước)"), List.of(), "REV-1");
+        eligibility.setCourseName("Lập trình Web bằng Java");
+        eligibility.setPrerequisiteCourseCodes(List.of());
+        eligibility.setPriorCourseCodes(List.of("IT6019", "IT6020"));
+        eligibility.setCorequisiteCourseCodes(List.of());
+        AdvisorModelInput input = new AdvisorModelInput("Mình chưa học IT6020 thì sao?", studentContext,
+                Map.of("courseEligibility", eligibility));
+        AdvisorModelOutput wrong = new AdvisorModelOutput(
+                "IT6020 không nằm trong yêu cầu học trước của IT6080, nên bạn không cần học môn đó.",
+                List.of(), List.of(), null, List.of());
+        AdvisorModelOutput corrected = validator.validate(wrong, input);
+        assertThat(corrected.getAnswer()).contains("IT6080", "Lập trình Web bằng Java", "IT6019", "IT6020")
+                .doesNotContain("IT6020 không nằm trong yêu cầu học trước");
+        assertThat(corrected.getWarnings()).anyMatch(w -> w.startsWith("COURSE_RELATION_CONTRADICTION"));
+        assertThat(validator.validate(corrected, input).getAnswer()).isEqualTo(corrected.getAnswer());
+
+        AdvisorModelOutput correct = new AdvisorModelOutput(
+                "IT6080 không có môn tiên quyết; IT6020 là môn học trước.", List.of(), List.of(), null, List.of());
+        assertThat(validator.validate(correct, input).getAnswer()).isEqualTo(correct.getAnswer());
+    }
+
     private ResponseGroundingValidator validator;
     private TrustedStudentContext studentContext;
 
@@ -32,6 +124,31 @@ class ResponseGroundingValidatorTest {
     void setUp() {
         validator = new ResponseGroundingValidator();
         studentContext = new TrustedStudentContext("SV001", "SV001", "Nguyễn Văn A", "K16-CNTT", "K16", "2024-V1");
+    }
+
+    @Test
+    void noPiiLeavesMarkdownBytesUnchanged() {
+        String answer = "Mình hiểu bạn đang lo.\n\n- Phương án 1: học cải thiện\n- Phương án 2: học môn mới\n\nBạn còn bao nhiêu giờ mỗi tuần?";
+        assertThat(validator.redactUnsolicitedPii(answer, "Mình nên làm gì?")).isEqualTo(answer);
+    }
+
+    @Test
+    void piiRedactionPreservesSurroundingParagraphsAndList() {
+        String answer = "Mình đã xem hồ sơ (Mã sinh viên: 2024604757).\n\n- Học cải thiện\n- Học môn mới";
+        String redacted = validator.redactUnsolicitedPii(answer, "Mình nên chọn gì?");
+        assertThat(redacted).doesNotContain("2024604757", "Mã sinh viên");
+        assertThat(redacted).contains("\n\n- Học cải thiện\n- Học môn mới");
+    }
+
+    @Test
+    void unusedPolicySourceIsNotShownAsCitation() {
+        RagChunk chunk = new RagChunk("REG-HAUI-01#01", "REG-HAUI-01", "Quy chế", "Điều 1", "v1",
+                "https://haui.edu.vn", "Giới hạn tín chỉ", 1, 10);
+        ChatSourceItem source = new ChatSourceItem("REG-HAUI-01", "Quy chế", "Điều 1", "v1", "https://haui.edu.vn");
+        GroundedContext evidence = new GroundedContext("q", List.of(chunk), List.of(source), "", true, List.of());
+        AdvisorModelOutput raw = new AdvisorModelOutput("Mình cần biết bạn có bao nhiêu thời gian rảnh.",
+                List.of(source), List.of(), null, List.of());
+        assertThat(validator.validate(raw, evidence, Map.of()).getSources()).isEmpty();
     }
 
     @Test
@@ -48,7 +165,7 @@ class ResponseGroundingValidatorTest {
         );
 
         AdvisorModelOutput rawOutput = new AdvisorModelOutput(
-                "Bạn được đăng ký tối đa 24 tín chỉ.",
+                "Theo [REG-HAUI-01], bạn được đăng ký tối đa 24 tín chỉ.",
                 List.of(validSource),
                 List.of(),
                 null,
@@ -78,7 +195,7 @@ class ResponseGroundingValidatorTest {
         );
 
         AdvisorModelOutput rawOutput = new AdvisorModelOutput(
-                "Bạn được đăng ký tối đa 24 tín chỉ.",
+                "Theo [REG-HAUI-01], bạn được đăng ký tối đa 24 tín chỉ.",
                 List.of(validSource, fakeSource),
                 List.of(),
                 null,
@@ -256,5 +373,76 @@ class ResponseGroundingValidatorTest {
         AdvisorModelOutput validated = validator.validate(rawOutput, null, toolResults);
 
         assertThat(validated.getWarnings()).anyMatch(w -> w.contains("UNGROUNDED_COURSE_CODE") && w.contains("IT9999"));
+    }
+
+    @Test
+    @DisplayName("PII Guardrail: Automatically redact unsolicited student code from response")
+    void shouldRedactUnsolicitedStudentCode() {
+        AdvisorModelOutput raw = new AdvisorModelOutput(
+                "Chào bạn Lê Việt Hùng (Mã sinh viên: 2024604757), theo quy định bạn được đăng ký 24 tín chỉ.",
+                List.of(),
+                List.of(),
+                null,
+                List.of()
+        );
+
+        AdvisorModelInput input = new AdvisorModelInput(
+                "Một kỳ được đăng ký tối đa bao nhiêu tín chỉ?",
+                studentContext,
+                Map.of()
+        );
+
+        AdvisorModelOutput validated = validator.validate(raw, input);
+        assertThat(validated.getAnswer()).doesNotContain("2024604757");
+        assertThat(validated.getAnswer()).doesNotContain("Mã sinh viên");
+        assertThat(validated.getAnswer()).contains("Chào bạn Lê Việt Hùng");
+    }
+
+    @Test
+    @DisplayName("PII Guardrail: Preserve student code when user explicitly requests it")
+    void shouldPreserveStudentCodeWhenRequested() {
+        AdvisorModelOutput raw = new AdvisorModelOutput(
+                "Mã sinh viên của bạn là 2024604757.",
+                List.of(),
+                List.of(),
+                null,
+                List.of()
+        );
+
+        AdvisorModelInput input = new AdvisorModelInput(
+                "Cho tôi biết mã sinh viên của tôi",
+                new TrustedStudentContext("STU-1", "2024604757", "Bạn A", "IT", "K19", "REV-1"),
+                Map.of()
+        );
+
+        AdvisorModelOutput validated = validator.validate(raw, input);
+        assertThat(validated.getAnswer()).contains("2024604757");
+    }
+
+    @Test
+    void bareStudentCodeIsRedactedWhenNotRequested() {
+        AdvisorModelOutput raw = new AdvisorModelOutput("Chào bạn (2024604757).", List.of(), List.of(), null, List.of());
+        AdvisorModelInput input = new AdvisorModelInput("Mình nên làm gì?",
+                new TrustedStudentContext("STU-1", "2024604757", "Bạn A", "IT", "K19", "REV-1"), Map.of());
+        assertThat(validator.validate(raw, input).getAnswer()).doesNotContain("2024604757");
+    }
+
+    @Test
+    void requestForOwnCodeDoesNotRevealAnotherStudentCode() {
+        AdvisorModelOutput raw = new AdvisorModelOutput(
+                "Mã sinh viên của bạn là 2024604757. Mã sinh viên khác: 2024604758.",
+                List.of(), List.of(), null, List.of());
+        AdvisorModelInput input = new AdvisorModelInput("Cho mình mã sinh viên của mình",
+                new TrustedStudentContext("STU-1", "2024604757", "Bạn A", "IT", "K19", "REV-1"), Map.of());
+        String answer = validator.validate(raw, input).getAnswer();
+        assertThat(answer).contains("2024604757").doesNotContain("2024604758");
+    }
+
+    @Test
+    void noEvidenceCannotPassThroughRawSourceMetadata() {
+        AdvisorModelOutput raw = new AdvisorModelOutput("Lời khuyên chung", List.of(
+                new ChatSourceItem("REG-HAUI-99", "Fake", "Fake", "v1", "https://example.com")),
+                List.of(), null, List.of());
+        assertThat(validator.validate(raw, null, Map.of()).getSources()).isEmpty();
     }
 }

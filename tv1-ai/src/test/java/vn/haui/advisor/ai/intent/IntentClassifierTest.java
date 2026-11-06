@@ -8,6 +8,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("IntentClassifier Hardening & Dynamic Parameter Extraction Tests")
 class IntentClassifierTest {
 
+    @Test
+    void simulationNeverInventsCourseCreditsOrGrade() {
+        ParsedUserIntent incomplete = new IntentClassifier().classify("Nếu IT6015 được A thì CPA của mình sao?");
+        assertThat(incomplete.getSimulatedGrades()).isEmpty();
+    }
+
+    @Test
+    void aggregateSimulationDoesNotInventCourseCode() {
+        ParsedUserIntent explicit = new IntentClassifier().classify("Nếu học 18 tín chỉ B+ thì CPA sao?");
+        assertThat(explicit.getSimulatedGrades()).hasSize(1);
+        assertThat(explicit.getSimulatedGrades().getFirst().getCourseCode()).isNull();
+        assertThat(explicit.getSimulatedGrades().getFirst().getCredits()).isEqualTo(18);
+    }
+
     private final IntentClassifier classifier = new IntentClassifier();
 
     @Test
@@ -42,6 +56,20 @@ class IntentClassifierTest {
     @DisplayName("Recognizes regulation queries accurately")
     void shouldClassifyRegulationIntent() {
         ParsedUserIntent intent = classifier.classify("Theo Điều 14 quy chế đào tạo, khi nào bị cảnh báo học vụ?");
+        assertThat(intent.getCategory()).isEqualTo(ParsedUserIntent.ScenarioCategory.REGULATION);
+    }
+
+    @Test
+    @DisplayName("Personal inquiry about missing certificates must be GRADUATION_AUDIT even if containing 'theo quy chế'")
+    void shouldClassifyPersonalGraduationAuditEvenWithRegulationKeyword() {
+        ParsedUserIntent intent = classifier.classify("Tôi còn thiếu chứng chỉ chuẩn đầu ra nào theo quy chế?");
+        assertThat(intent.getCategory()).isEqualTo(ParsedUserIntent.ScenarioCategory.GRADUATION_AUDIT);
+    }
+
+    @Test
+    @DisplayName("Generic regulation query about certificates without personal scope remains REGULATION")
+    void shouldClassifyGenericGraduationRegulationAsRegulation() {
+        ParsedUserIntent intent = classifier.classify("Quy định về chuẩn đầu ra ngoại ngữ và tin học của trường như thế nào?");
         assertThat(intent.getCategory()).isEqualTo(ParsedUserIntent.ScenarioCategory.REGULATION);
     }
 }

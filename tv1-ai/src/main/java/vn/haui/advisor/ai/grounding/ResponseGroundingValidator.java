@@ -65,6 +65,7 @@ public class ResponseGroundingValidator {
     private static final Pattern PROJECTED_CPA_PATTERN = Pattern.compile(
             "(?i)\\b(?:cpa dự kiến|dự kiến cpa|cpa mới)[^\\d\\n.]{0,35}?(\\d+[.,]\\d+)"
     );
+    private static final Pattern INLINE_POLICY_ID = Pattern.compile("\\bREG-HAUI-[A-Z0-9-]+\\b");
 
     private final ObjectMapper objectMapper;
 
@@ -81,9 +82,10 @@ public class ResponseGroundingValidator {
      */
     public AdvisorModelOutput validate(AdvisorModelOutput rawOutput, AdvisorModelInput input) {
         if (input == null) {
-            return validate(rawOutput, null, Collections.emptyMap());
+            return validate(rawOutput, null, Collections.emptyMap(), null);
         }
-        return validate(rawOutput, input.getGroundedContext(), input.getToolResults());
+        String studentCode = input.getStudentContext() == null ? null : input.getStudentContext().getStudentCode();
+        return validate(rawOutput, input.getGroundedContext(), input.getToolResults(), input.getUserMessage(), studentCode);
     }
 
     /**
@@ -92,6 +94,24 @@ public class ResponseGroundingValidator {
     public AdvisorModelOutput validate(AdvisorModelOutput rawOutput,
                                        GroundedContext groundedContext,
                                        Map<String, Object> toolResults) {
+        return validate(rawOutput, groundedContext, toolResults, null);
+    }
+
+    /**
+     * Thẩm định chi tiết kết quả thô cùng GroundedContext, toolResults và userMessage.
+     */
+    public AdvisorModelOutput validate(AdvisorModelOutput rawOutput,
+                                       GroundedContext groundedContext,
+                                       Map<String, Object> toolResults,
+                                       String userMessage) {
+        return validate(rawOutput, groundedContext, toolResults, userMessage, null);
+    }
+
+    private AdvisorModelOutput validate(AdvisorModelOutput rawOutput,
+                                       GroundedContext groundedContext,
+                                       Map<String, Object> toolResults,
+                                       String userMessage,
+                                       String studentCode) {
         if (rawOutput == null) {
             return new AdvisorModelOutput(
                     "Không có phản hồi từ mô hình tư vấn.",
@@ -106,6 +126,13 @@ public class ResponseGroundingValidator {
 
         // 1. Thẩm định trích dẫn RAG
         List<ChatSourceItem> validatedSources = validateSources(rawOutput.getSources(), groundedContext, validatedWarnings);
+        if (groundedContext != null && groundedContext.hasEvidence() && groundedContext.getCitations() != null) {
+            String answer = rawOutput.getAnswer() != null ? rawOutput.getAnswer() : "";
+            validatedSources = groundedContext.getCitations().stream()
+                    .filter(source -> source != null && source.getSourceId() != null
+                            && answer.contains(source.getSourceId()))
+                    .toList();
+        }
 
         // 2. Thẩm định hành động giao diện (Allowlist Actions & Routes)
         List<ChatActionItem> validatedActions = validateActions(rawOutput.getActions(), validatedWarnings);
@@ -115,14 +142,118 @@ public class ResponseGroundingValidator {
 
         // 4. Thẩm định mã học phần chống ảo giác (Course Code Grounding)
         validateCourseCodes(validatedAnswer, groundedContext, toolResults, validatedWarnings);
+        String checkedCourseAnswer = correctContradictoryPriorCourse(validatedAnswer, toolResults, validatedWarnings);
+        boolean courseFallback = !checkedCourseAnswer.equals(validatedAnswer);
+        validatedAnswer = checkedCourseAnswer;
+        if (courseFallback) {
+            validatedSources = List.of();
+            validatedActions = List.of();
+        }
+
+        // 5. Khử rò rỉ thông tin cá nhân (PII Redaction Defense-in-depth: loại bỏ Mã SV không được yêu cầu)
+        validatedAnswer = redactUnsolicitedPii(validatedAnswer, userMessage, studentCode);
+        validatedAnswer = validatedAnswer.replace(" [academic_tool_results]", "");
+        // shortcut: remove only observed parenthetical tool labels; broaden if measured output uses other forms.
+        validatedAnswer = validatedAnswer.replace(" (`priorCourseCodesNotMissing`)", "")
+                .replace(" (`missingEnrollmentRequirements`)", "")
+                .replace(" (`eligible=false`)", "")
+                .replace(" (`eligible=true`)", "");
+        if (containsUnsupportedPolicyId(validatedAnswer, groundedContext, validatedWarnings)) {
+            validatedAnswer = "Mình chưa có nguồn quy chế đã xác minh để khẳng định điều này. Bạn có thể hỏi cụ thể quy định cần kiểm tra.";
+            validatedSources = List.of();
+        }
 
         return new AdvisorModelOutput(
                 validatedAnswer,
                 validatedSources,
                 validatedActions,
-                rawOutput.getPlanProposal(),
+                courseFallback ? null : rawOutput.getPlanProposal(),
                 validatedWarnings
         );
+    }
+
+    private String correctContradictoryPriorCourse(String answer, Map<String, Object> toolResults, List<String> warnings) {
+        if (answer == null || toolResults == null) return answer;
+        for (Object result : toolResults.values()) {
+            if (!(result instanceof CourseEligibilityResponse course) || course.getPriorCourseCodes() == null) continue;
+            for (String priorCode : course.getPriorCourseCodes()) {
+                if (priorCode == null) continue;
+                // shortcut: catch measured explicit denials of a prior-course link; expand only for reproduced variants.
+                Pattern denial = Pattern.compile("(?iu)\\b" + Pattern.quote(priorCode)
+                        + "\\b[\\s*]{0,8}không\\s+(?:nằm\\s+trong\\s+(?:(?:danh\\s+sách|yêu\\s+cầu)\\s+)?|(?:phải\\s+là|là)\\s+(?:(?:môn|học\\s+phần)\\s+)?)học\\s+trước\\b");
+                if (!denial.matcher(answer).find()) continue;
+                warnings.add("COURSE_RELATION_CONTRADICTION: " + priorCode);
+                String verified = "Theo CTĐT đã xác minh, " + course.getCourseCode()
+                        + (course.getCourseName() == null ? "" : " (" + course.getCourseName() + ")")
+                        + " có môn học trước: " + String.join(", ", course.getPriorCourseCodes()) + ".";
+                if (course.getPrerequisiteCourseCodes() != null) {
+                    verified += course.getPrerequisiteCourseCodes().isEmpty() ? " Không có môn tiên quyết."
+                            : " Môn tiên quyết: " + String.join(", ", course.getPrerequisiteCourseCodes()) + ".";
+                }
+                if (course.getCorequisiteCourseCodes() != null) {
+                    verified += course.getCorequisiteCourseCodes().isEmpty() ? " Không có môn song hành."
+                            : " Môn song hành: " + String.join(", ", course.getCorequisiteCourseCodes()) + ".";
+                }
+                if (course.getMissingPrerequisites() != null && !course.getMissingPrerequisites().isEmpty()) {
+                    verified += " Theo hồ sơ hiện tại, bạn còn thiếu: "
+                            + String.join("; ", course.getMissingPrerequisites()) + ".";
+                }
+                return verified;
+            }
+        }
+        return answer;
+    }
+
+    private boolean containsUnsupportedPolicyId(String answer, GroundedContext groundedContext, List<String> warnings) {
+        if (answer == null || answer.isBlank()) return false;
+        Set<String> allowed = new HashSet<>();
+        if (groundedContext != null && groundedContext.hasEvidence() && groundedContext.getCitations() != null) {
+            for (ChatSourceItem source : groundedContext.getCitations()) {
+                if (source != null && source.getSourceId() != null) allowed.add(source.getSourceId());
+            }
+        }
+        Matcher matcher = INLINE_POLICY_ID.matcher(answer);
+        boolean unsupported = false;
+        while (matcher.find()) {
+            if (!allowed.contains(matcher.group())) {
+                warnings.add("UNGROUNDED_CITATION: " + matcher.group());
+                unsupported = true;
+            }
+        }
+        return unsupported;
+    }
+
+    private static final Pattern STUDENT_CODE_UNSOLICITED_PATTERN = Pattern.compile(
+            "(?i)[(,]?\\h*(?:mã\\s+sinh\\s+viên|mã\\s+sv|msv)(?:\\s+của\\s+bạn|\\s+khác)?\\s*(?::|là|=)?\\s*([A-Z0-9_-]{5,20})\\h*[),.]?"
+    );
+    private static final Pattern BARE_NUMERIC_STUDENT_CODE = Pattern.compile("(?<![A-Z0-9])\\d{10}(?![A-Z0-9])");
+
+    /**
+     * Tự động loại bỏ Mã sinh viên khỏi nội dung câu trả lời nếu người dùng không hỏi trực tiếp về Mã SV.
+     */
+    public String redactUnsolicitedPii(String answer, String userMessage) {
+        return redactUnsolicitedPii(answer, userMessage, null);
+    }
+
+    private String redactUnsolicitedPii(String answer, String userMessage, String studentCode) {
+        if (answer == null || answer.isBlank()) {
+            return answer;
+        }
+        String lowerQuery = userMessage != null ? userMessage.toLowerCase(Locale.ROOT) : "";
+        boolean userAskedForId = lowerQuery.contains("mã sinh viên") || lowerQuery.contains("mã sv") || lowerQuery.contains("msv");
+        String redacted = STUDENT_CODE_UNSOLICITED_PATTERN.matcher(answer).replaceAll(match ->
+                userAskedForId && studentCode != null && studentCode.equalsIgnoreCase(match.group(1))
+                        ? Matcher.quoteReplacement(match.group()) : "");
+        if (!userAskedForId && studentCode != null && !studentCode.isBlank()) {
+            redacted = redacted.replaceAll("\\(\\h*" + Pattern.quote(studentCode) + "\\h*\\)", "");
+        }
+        redacted = BARE_NUMERIC_STUDENT_CODE.matcher(redacted).replaceAll(match ->
+                userAskedForId && studentCode != null && studentCode.equals(match.group())
+                        ? Matcher.quoteReplacement(match.group()) : "");
+        if (!userAskedForId && studentCode != null && !studentCode.isBlank()) {
+            redacted = redacted.replace(studentCode, "");
+        }
+        return redacted;
     }
 
     private static final Pattern COURSE_CODE_REGEX = Pattern.compile("\\b([A-Z]{2,4}\\d{4})\\b");
@@ -188,9 +319,10 @@ public class ResponseGroundingValidator {
             return Collections.emptyList();
         }
 
-        // Nếu không có groundedContext (legacy bootstrap/unit tests không dùng RAG), bảo toàn rawSources
+        // No retrieved evidence means no authenticated policy metadata.
         if (groundedContext == null) {
-            return rawSources;
+            warnings.add("UNGROUNDED_CITATION_STRIPPED: No retrieved evidence");
+            return Collections.emptyList();
         }
 
         // Nếu có groundedContext nhưng không có evidence, toàn bộ sources phải rỗng

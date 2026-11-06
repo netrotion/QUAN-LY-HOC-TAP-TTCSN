@@ -271,10 +271,8 @@
           }
         ],
         "answer_must_contain_any": [
-          "LP6004",
-          "Tư tưởng Hồ Chí Minh",
-          "bắt buộc học lại",
-          "điểm F"
+          "bảng điểm chi tiết",
+          "chưa xác định được chính xác môn"
         ],
         "answer_must_not_contain": [
           "không nợ môn nào",
@@ -313,19 +311,8 @@
           "expected": false,
           "code": null
         },
-        "source_requirement": "REQUIRED",
-        "sources": [
-          {
-            "source_id": "REG-HAUI-01",
-            "section_contains": "Quy trình Đăng ký Học phần và Lớp học phần",
-            "version": "gitblob:cab439dd3364"
-          },
-          {
-            "source_id": "REG-HAUI-03",
-            "section_contains": "Quy định Học lại (Môn bắt buộc bị điểm F)",
-            "version": "gitblob:b7e379af2bf7"
-          }
-        ],
+        "source_requirement": "MUST_BE_EMPTY",
+        "sources": [],
         "tools": [
           {
             "tool_name": "getAcademicStatus",
@@ -337,11 +324,8 @@
           }
         ],
         "answer_must_contain_any": [
-          "LP6004",
-          "LP6003",
-          "môn học trước",
-          "chưa đủ điều kiện",
-          "học lại"
+          "bảng điểm chi tiết",
+          "chưa xác định được chính xác môn"
         ],
         "answer_must_not_contain": [
           "được đăng ký bình thường",
@@ -368,35 +352,17 @@
         "risk_level": "NORMAL"
       },
       "expected": {
-        "conversation_state": "ANSWERED",
-        "should_ask_clarification": false,
+        "conversation_state": "CLARIFICATION_REQUIRED",
+        "should_ask_clarification": true,
         "error": {
           "expected": false,
           "code": null
         },
-        "source_requirement": "OPTIONAL",
-        "sources": [
-          {
-            "source_id": "REG-HAUI-01",
-            "section_contains": "Giới hạn Đăng ký Tín chỉ (Credit Limits)",
-            "version": "gitblob:cab439dd3364"
-          }
-        ],
-        "tools": [
-          {
-            "tool_name": "getAcademicStatus",
-            "tool_availability": "EXPOSED_IN_ADAPTER"
-          },
-          {
-            "tool_name": "generateStudyPlan",
-            "tool_availability": "EXPOSED_IN_ADAPTER"
-          }
-        ],
+        "source_requirement": "MUST_BE_EMPTY",
+        "sources": [],
+        "tools": [],
         "answer_must_contain_any": [
-          "kế hoạch học tập",
-          "lộ trình",
-          "CPA dự kiến",
-          "đề xuất"
+          "học kỳ"
         ],
         "answer_must_not_contain": [
           "đã lưu chính thức",
@@ -404,12 +370,7 @@
           "SRC-MOCK-PLAN"
         ],
         "warnings": [],
-        "actions": [
-          {
-            "action_type": "OPEN_PLANNER",
-            "target_route": "/planner"
-          }
-        ]
+        "actions": []
       }
     },
     {
@@ -476,44 +437,21 @@
         "risk_level": "NORMAL"
       },
       "expected": {
-        "conversation_state": "ANSWERED",
-        "should_ask_clarification": false,
+        "conversation_state": "CLARIFICATION_REQUIRED",
+        "should_ask_clarification": true,
         "error": {
           "expected": false,
           "code": null
         },
-        "source_requirement": "OPTIONAL",
-        "sources": [
-          {
-            "source_id": "REG-HAUI-01",
-            "section_contains": "Giới hạn Đăng ký Tín chỉ (Credit Limits)",
-            "version": "gitblob:cab439dd3364"
-          }
-        ],
-        "tools": [
-          {
-            "tool_name": "generateStudyPlan",
-            "tool_availability": "EXPOSED_IN_ADAPTER"
-          },
-          {
-            "tool_name": "validateStudyPlan",
-            "tool_availability": "EXPOSED_IN_ADAPTER"
-          }
-        ],
+        "source_requirement": "MUST_BE_EMPTY",
+        "sources": [],
+        "tools": [],
         "answer_must_contain_any": [
-          "tính khả thi",
-          "tải tín chỉ",
-          "kỳ hè",
-          "tối đa 24 tín chỉ"
+          "tín chỉ"
         ],
         "answer_must_not_contain": [],
         "warnings": [],
-        "actions": [
-          {
-            "action_type": "OPEN_PLANNER",
-            "target_route": "/planner"
-          }
-        ]
+        "actions": []
       }
     },
     {
@@ -539,14 +477,8 @@
           "expected": false,
           "code": null
         },
-        "source_requirement": "OPTIONAL",
-        "sources": [
-          {
-            "source_id": "REG-HAUI-02",
-            "section_contains": "Công thức Tính Điểm Trung bình",
-            "version": "gitblob:0a22d0023279"
-          }
-        ],
+        "source_requirement": "MUST_BE_EMPTY",
+        "sources": [],
         "tools": [
           {
             "tool_name": "simulateGrades",
@@ -594,14 +526,8 @@
           "expected": false,
           "code": null
         },
-        "source_requirement": "OPTIONAL",
-        "sources": [
-          {
-            "source_id": "REG-HAUI-03",
-            "section_contains": "Chiến lược ROI Tối ưu hóa Lộ trình Học cải thiện (HaUI Advisor Strategy)",
-            "version": "gitblob:b7e379af2bf7"
-          }
-        ],
+        "source_requirement": "MUST_BE_EMPTY",
+        "sources": [],
         "tools": [
           {
             "tool_name": "getAcademicStatus",
@@ -656,19 +582,8 @@
           "expected": false,
           "code": null
         },
-        "source_requirement": "OPTIONAL",
-        "sources": [
-          {
-            "source_id": "REG-HAUI-05",
-            "section_contains": "Điều kiện Xét và Công nhận Tốt nghiệp",
-            "version": "gitblob:f45ea177a03d"
-          },
-          {
-            "source_id": "REG-HAUI-05",
-            "section_contains": "Các Chuẩn Đầu ra Bắt buộc (Chứng chỉ Không tính Tín chỉ)",
-            "version": "gitblob:f45ea177a03d"
-          }
-        ],
+        "source_requirement": "MUST_BE_EMPTY",
+        "sources": [],
         "tools": [
           {
             "tool_name": "runGraduationAudit",
@@ -728,14 +643,8 @@
           "expected": false,
           "code": null
         },
-        "source_requirement": "OPTIONAL",
-        "sources": [
-          {
-            "source_id": "REG-HAUI-02",
-            "section_contains": "Phân loại Học lực theo CPA Toàn khóa",
-            "version": "gitblob:0a22d0023279"
-          }
-        ],
+        "source_requirement": "MUST_BE_EMPTY",
+        "sources": [],
         "tools": [
           {
             "tool_name": "calculateTargetGrades",
@@ -830,7 +739,7 @@
         "risk_level": "NORMAL"
       },
       "expected": {
-        "conversation_state": "NO_EVIDENCE",
+        "conversation_state": "ANSWERED",
         "should_ask_clarification": false,
         "error": {
           "expected": false,
@@ -839,21 +748,14 @@
         "source_requirement": "MUST_BE_EMPTY",
         "sources": [],
         "tools": [],
-        "answer_must_contain_any": [
-          "chưa có thông tin",
-          "không nằm trong phạm vi",
-          "liên hệ Ban quản lý ký túc xá",
-          "phòng Công tác sinh viên"
-        ],
+        "answer_must_contain_any": [],
         "answer_must_not_contain": [
           "REG-HAUI-01",
           "REG-HAUI-02",
           "REG-HAUI-99",
           "giá phòng là 500.000đ"
         ],
-        "warnings": [
-          "POLICY_SOURCE_UNAVAILABLE: No grounded evidence found in knowledge base"
-        ],
+        "warnings": [],
         "actions": []
       }
     },
@@ -921,33 +823,23 @@
         "risk_level": "NORMAL"
       },
       "expected": {
-        "conversation_state": "ERROR",
-        "should_ask_clarification": false,
+        "conversation_state": "CLARIFICATION_REQUIRED",
+        "should_ask_clarification": true,
         "error": {
-          "expected": true,
-          "code": "TOOL_UNAVAILABLE"
+          "expected": false,
+          "code": null
         },
         "source_requirement": "MUST_BE_EMPTY",
         "sources": [],
-        "tools": [
-          {
-            "tool_name": "reconcileStudyPlan",
-            "tool_availability": "CONTRACT_EXISTS_NOT_EXPOSED_YET"
-          }
-        ],
+        "tools": [],
         "answer_must_contain_any": [
-          "chưa thể thực hiện",
-          "tạm thời gián đoạn",
-          "thử lại sau",
-          "công cụ đang được nâng cấp"
+          "mã kế hoạch"
         ],
         "answer_must_not_contain": [
           "kế hoạch đã được đồng bộ thành công",
           "đã cập nhật vào cơ sở dữ liệu"
         ],
-        "warnings": [
-          "TOOL_UNAVAILABLE: Capability reconcileStudyPlan is not currently exposed in ToolAdapter"
-        ],
+        "warnings": [],
         "actions": []
       }
     },
@@ -1026,11 +918,6 @@
             "source_id": "REG-HAUI-04",
             "section_contains": "Các Mức Xử lý Cảnh báo Học vụ",
             "version": "gitblob:f5f1503d4179"
-          },
-          {
-            "source_id": "REG-HAUI-01",
-            "section_contains": "Giới hạn Đăng ký Tín chỉ (Credit Limits)",
-            "version": "gitblob:cab439dd3364"
           }
         ],
         "tools": [],

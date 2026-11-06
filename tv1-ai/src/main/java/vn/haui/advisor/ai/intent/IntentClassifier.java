@@ -88,10 +88,10 @@ public class IntentClassifier {
         builder.targetSemester(semester);
         builder.maxCredits(maxCredits);
 
-        if (lower.contains("kỳ hè") || lower.contains("học hè")) {
-            builder.includeSummer(true);
-        } else if (lower.contains("không học hè") || lower.contains("bỏ qua hè")) {
+        if (lower.contains("không học hè") || lower.contains("bỏ qua hè")) {
             builder.includeSummer(false);
+        } else if (lower.contains("kỳ hè") || lower.contains("học hè")) {
+            builder.includeSummer(true);
         }
 
         // 2. Kiểm tra Goal Change (Thay đổi mục tiêu đa lượt)
@@ -115,6 +115,21 @@ public class IntentClassifier {
         if (containsAny(lower, "tôi nợ môn nào", "tôi nợ những môn nào", "nợ những môn nào", "tôi đang nợ", "nợ môn nào", "hiện tại tôi đang nợ")
                 || (lower.contains("nợ") && (lower.contains("môn") || lower.contains("học phần")) && !lower.contains("quá 5%"))) {
             builder.category(ScenarioCategory.DEBT_COURSES);
+            return builder.build();
+        }
+
+        // 3b. Personal Graduation Audit (Kiểm tra điều kiện tốt nghiệp/chuẩn đầu ra cá nhân - Ưu tiên cao hơn tra cứu quy chế chung)
+        boolean isPersonalGraduationAudit = (containsAny(lower,
+                "tôi còn thiếu", "tôi thiếu", "em còn thiếu", "em thiếu", "của tôi", "của em",
+                "hồ sơ của tôi", "hồ sơ của em", "tôi đã đủ", "em đã đủ", "tôi đủ", "em đủ", "tôi có đủ",
+                "xét tốt nghiệp của tôi", "kiểm tra tốt nghiệp", "audit tốt nghiệp",
+                "thiếu điều kiện gì tốt nghiệp", "đủ điều kiện tốt nghiệp", "đủ điều kiện ra trường",
+                "ra trường cần gì", "tốt nghiệp chưa", "thiếu chứng chỉ gì", "thiếu chứng chỉ nào")
+                && containsAny(lower, "chứng chỉ", "chuẩn đầu ra", "điều kiện tốt nghiệp", "tốt nghiệp", "ra trường", "xét tốt nghiệp"))
+                || containsAny(lower, "tôi còn thiếu chứng chỉ chuẩn đầu ra", "thiếu chứng chỉ chuẩn đầu ra", "tôi còn thiếu chứng chỉ nào");
+
+        if (isPersonalGraduationAudit) {
+            builder.category(ScenarioCategory.GRADUATION_AUDIT);
             return builder.build();
         }
 
@@ -299,6 +314,7 @@ public class IntentClassifier {
     }
 
     private Integer extractMaxCredits(String text) {
+        if (text.toLowerCase(Locale.ROOT).matches("(?s).*tối\\s+thiểu\\s*\\d{1,2}\\s*(?:tín chỉ|tc|tín).*")) return null;
         Matcher m = MAX_CREDITS_PATTERN.matcher(text);
         if (m.find()) {
             try {
@@ -315,17 +331,9 @@ public class IntentClassifier {
             int credits = Integer.parseInt(m.group(1));
             String grade = m.group(2).toUpperCase(Locale.ROOT);
             BigDecimal points = gradeToPoints(grade);
-            result.add(new SimulatedCourseGrade("SIMULATED", credits, grade, points));
+            result.add(new SimulatedCourseGrade(extractCourseCode(text), credits, grade, points));
             return result;
         }
-
-        // Thử tìm mã môn cụ thể kèm điểm: ví dụ "IT6015 được A"
-        Matcher codeMatcher = COURSE_CODE_PATTERN.matcher(text);
-        while (codeMatcher.find()) {
-            String code = codeMatcher.group(1);
-            result.add(new SimulatedCourseGrade(code, 3, "A", new BigDecimal("4.0")));
-        }
-
         return result;
     }
 

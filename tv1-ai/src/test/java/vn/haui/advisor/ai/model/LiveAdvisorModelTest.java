@@ -1,5 +1,6 @@
 package vn.haui.advisor.ai.model;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,12 +14,71 @@ import vn.haui.advisor.contracts.dto.*;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("LiveAdvisorModel Unit Tests")
 class LiveAdvisorModelTest {
+
+    private static final ObjectMapper JSON = new ObjectMapper();
+
+    @Test
+    void joinsAllVisibleGeminiTextPartsWithoutChangingSpacing() throws Exception {
+        var onePart = JSON.readTree("""
+                {"candidates":[{"finishReason":"STOP","content":{"parts":[{"text":"Hoàn chỉnh."}]}}]}
+                """);
+        assertThat(LiveAdvisorModel.extractGeminiAnswer(onePart)).isEqualTo("Hoàn chỉnh.");
+
+        var response = JSON.readTree("""
+                {"candidates":[{"finishReason":"STOP","content":{"parts":[
+                  {"text":"Môn IT6080 yêu cầu hoàn"},{"text":" thành IT6020."}
+                ]}}]}
+                """);
+        assertThat(LiveAdvisorModel.extractGeminiAnswer(response))
+                .isEqualTo("Môn IT6080 yêu cầu hoàn thành IT6020.");
+
+        var withThought = JSON.readTree("""
+                {"candidates":[{"finishReason":"STOP","content":{"parts":[
+                  {"thought":true,"text":"internal"},{"text":"Môn "},{"text":"IT6080"},{"text":"."}
+                ]}}]}
+                """);
+        assertThat(LiveAdvisorModel.extractGeminiAnswer(withThought)).isEqualTo("Môn IT6080.");
+    }
+
+    @Test
+    void rejectsIncompleteOrEmptyGeminiCandidates() throws Exception {
+        for (String json : List.of(
+                "{\"candidates\":[{\"finishReason\":\"MAX_TOKENS\",\"content\":{\"parts\":[{\"text\":\"prefix\"}]}}]}",
+                "{\"candidates\":[{\"finishReason\":\"SAFETY\",\"content\":{\"parts\":[{\"text\":\"prefix\"}]}}]}",
+                "{\"candidates\":[]}",
+                "{\"candidates\":[{\"finishReason\":\"STOP\",\"content\":{\"parts\":[]}}]}"
+        )) {
+            var response = JSON.readTree(json);
+            assertThatThrownBy(() -> LiveAdvisorModel.extractGeminiAnswer(response))
+                    .isInstanceOf(IllegalStateException.class);
+        }
+    }
+
+    @Test
+    void multipartExtractionHasNegligibleLocalOverhead() throws Exception {
+        var response = JSON.readTree("""
+                {"candidates":[{"finishReason":"STOP","content":{"parts":[
+                  {"text":"Môn IT6080 yêu cầu hoàn"},{"text":" thành IT6020."}
+                ]}}]}
+                """);
+        for (int i = 0; i < 1_000; i++) LiveAdvisorModel.extractGeminiAnswer(response);
+        long[] nanos = new long[1_000];
+        for (int i = 0; i < nanos.length; i++) {
+            long start = System.nanoTime();
+            LiveAdvisorModel.extractGeminiAnswer(response);
+            nanos[i] = System.nanoTime() - start;
+        }
+        Arrays.sort(nanos);
+        assertThat(nanos[949]).as("p95 of 1,000 local extractions").isLessThan(5_000_000L);
+    }
 
     private ResponseGroundingValidator validator;
     private TrustedStudentContext studentContext;
@@ -107,7 +167,7 @@ class LiveAdvisorModelTest {
 
         assertThat(output).isNotNull();
         assertThat(output.getAnswer()).contains("[LIVE_ADVISOR]");
-        assertThat(output.getWarnings()).anyMatch(w -> w.contains("MODEL_PROVIDER_ERROR") && w.contains("503"));
+        assertThat(output.getWarnings()).containsExactly("MODEL_PROVIDER_ERROR");
         assertThat(output.getSources()).isEmpty();
         assertThat(output.getActions()).isEmpty();
     }
@@ -124,7 +184,7 @@ class LiveAdvisorModelTest {
 
         // LLM hallucinated JSON with fabricated source REG-HAUI-99 and invalid action route
         Function<String, String> hallucinatingProvider = prompt ->
-                "{\"answer\":\"Bạn được đăng ký 24 tín chỉ.\"," +
+                "{\"answer\":\"Theo [REG-HAUI-01], bạn được đăng ký 24 tín chỉ.\"," +
                         "\"sources\":[{\"sourceId\":\"REG-HAUI-01\"},{\"sourceId\":\"REG-HAUI-99\"}]," +
                         "\"actions\":[{\"actionType\":\"NAVIGATE\",\"label\":\"Xem chi tiết\",\"targetRoute\":\"/academic/rules\"}," +
                         "{\"actionType\":\"EXECUTE_CMD\",\"label\":\"Lệnh nguy hiểm\",\"targetRoute\":\"https://evil.com\"}]}";

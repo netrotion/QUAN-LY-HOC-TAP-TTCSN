@@ -38,6 +38,7 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
     private final ConversationHistoryManager conversationHistoryManager;
     private final IntentClassifier intentClassifier;
     private final ResponseGroundingValidator responseGroundingValidator;
+    private final ConversationTurnPlanner turnPlanner;
     private final ExecutorService executorService;
     private final long toolTimeoutMs;
 
@@ -71,6 +72,7 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
         this.conversationHistoryManager = conversationHistoryManager != null ? conversationHistoryManager : new ConversationHistoryManager();
         this.intentClassifier = intentClassifier != null ? intentClassifier : new IntentClassifier();
         this.responseGroundingValidator = responseGroundingValidator != null ? responseGroundingValidator : new ResponseGroundingValidator();
+        this.turnPlanner = new ConversationTurnPlanner(this.intentClassifier);
         this.toolTimeoutMs = toolTimeoutMs;
         this.executorService = Executors.newCachedThreadPool(r -> {
             Thread t = new Thread(r, "advisor-tool-runner");
@@ -126,7 +128,8 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
         }
 
         // 4. Phân loại ý định và bóc tách tham số (Context & Intent Understanding)
-        ParsedUserIntent userIntent = intentClassifier.classify(userMessage, history);
+        ConversationTurnPlanner.TurnDecision decision = turnPlanner.decide(userMessage, history);
+        ParsedUserIntent userIntent = decision.intent();
         boolean isTranscriptMissing = context.getStudentId() != null &&
                 (context.getStudentId().contains("ANONYMOUS") || "REV-0".equals(context.getDataRevision()) || "REV-EMPTY".equals(context.getDataRevision()));
         if (isTranscriptMissing && userIntent.getCategory() != ParsedUserIntent.ScenarioCategory.REGULATION) {
@@ -135,6 +138,10 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                     .targetCpa(userIntent.getTargetCpa())
                     .targetSemester(userIntent.getTargetSemester())
                     .courseCode(userIntent.getCourseCode())
+                    .maxCredits(userIntent.getMaxCredits())
+                    .includeSummer(userIntent.getIncludeSummer())
+                    .retakeSuggestions(userIntent.getRetakeSuggestions())
+                    .simulatedGrades(userIntent.getSimulatedGrades())
                     .isTranscriptMissing(true)
                     .build();
         }
@@ -142,14 +149,20 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
         // 5. Truy xuất RAG và neo chứng cứ quy chế
         GroundedContext groundedContext = null;
         List<String> combinedWarnings = new ArrayList<>();
-        if (ragAdvisorService != null) {
-            groundedContext = ragAdvisorService.retrieveAndGround(userMessage, 5, 0.35);
+        if (isTranscriptMissing && decision.mode() != ConversationTurnPlanner.Mode.POLICY
+                && decision.mode() != ConversationTurnPlanner.Mode.DIRECT) {
+            combinedWarnings.add("TRANSCRIPT_REQUIRED");
+        }
+        if (ragAdvisorService != null && decision.policyEvidenceNeeded() && decision.clarificationQuestion() == null) {
+            groundedContext = ragAdvisorService.retrieveAndGround(decision.retrievalQuery(), 5, 0.35);
             combinedWarnings.addAll(groundedContext.getWarnings());
         }
 
         // 6. Điều phối công cụ học vụ (Academic Tool Calling với Budget & Timeout)
         Map<String, Object> toolResults = new HashMap<>();
-        executeAcademicTools(userMessage, context, userIntent, toolResults, combinedWarnings);
+        if (decision.clarificationQuestion() == null) {
+            executeAcademicTools(context, userIntent, decision, toolResults, combinedWarnings);
+        }
 
         // 7. Đóng gói Input và gọi AdvisorModel (Mock hoặc Live)
         AdvisorModelInput modelInput = new AdvisorModelInput(
@@ -161,10 +174,19 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                 userIntent
         );
 
-        AdvisorModelOutput rawModelOutput = advisorModel.generate(modelInput);
+        AdvisorModelOutput rawModelOutput = decision.clarificationQuestion() != null
+                ? new AdvisorModelOutput(
+                        isTranscriptMissing
+                                ? "Mình chưa có bảng điểm đã xác nhận để lập kế hoạch cá nhân. Bạn vui lòng nhập bảng điểm trước; sau đó cho mình biết "
+                                    + decision.clarificationQuestion().toLowerCase(Locale.ROOT)
+                                : decision.clarificationQuestion(),
+                        List.of(),
+                        isTranscriptMissing ? List.of(new ChatActionItem("OPEN_TRANSCRIPT_IMPORT", "Nhập bảng điểm", "/academic/import", "{}")) : List.of(),
+                        null, List.of())
+                : advisorModel.generate(modelInput);
 
-        // 8. Hậu kiểm định neo nguồn và chuẩn hóa phản hồi (Response Grounding Validation)
-        AdvisorModelOutput validatedOutput = responseGroundingValidator.validate(rawModelOutput, groundedContext, toolResults);
+        // 8. Hậu kiểm định neo nguồn và chuẩn hóa phản hồi (Response Grounding Validation kèm PII redaction)
+        AdvisorModelOutput validatedOutput = responseGroundingValidator.validate(rawModelOutput, modelInput);
 
         // Gộp cảnh báo từ model và tool results
         for (String w : validatedOutput.getWarnings()) {
@@ -215,296 +237,67 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
     /**
      * Điều phối thực thi các công cụ học vụ dựa trên ý định đã phân tích.
      */
-    private void executeAcademicTools(String userMessage,
-                                      TrustedStudentContext context,
-                                      ParsedUserIntent userIntent,
+    private void executeAcademicTools(TrustedStudentContext context,
+                                      ParsedUserIntent intent,
+                                      ConversationTurnPlanner.TurnDecision decision,
                                       Map<String, Object> toolResults,
-                                      List<String> combinedWarnings) {
-        // Kiểm tra trường hợp thiếu bảng điểm
-        if (userIntent.isTranscriptMissing()) {
-            if (!combinedWarnings.contains("TRANSCRIPT_REQUIRED")) {
-                combinedWarnings.add("TRANSCRIPT_REQUIRED");
-            }
+                                      List<String> warnings) {
+        if (intent.isTranscriptMissing()) {
+            warnings.add("TRANSCRIPT_REQUIRED");
             return;
         }
-
-        // Kiểm tra trường hợp cần làm rõ tham số học kỳ khi học vượt
-        if (userIntent.isClarificationNeeded()) {
-            if (userIntent.getClarificationReason() != null && !combinedWarnings.contains(userIntent.getClarificationReason())) {
-                combinedWarnings.add(userIntent.getClarificationReason());
-            }
-            return;
-        }
-
-        // Kiểm tra trường hợp đồng bộ kế hoạch học tập (Reconcile)
-        String lowerMsg = userMessage != null ? userMessage.toLowerCase() : "";
-        if (lowerMsg.contains("đồng bộ") || lowerMsg.contains("reconcile")) {
-            ReconcileStudyPlanResponse recResp = executeWithTimeout(
-                    () -> toolAdapter.reconcileStudyPlan(context, "PLAN-CURRENT", "2024_1", 1),
-                    AcademicCapability.RECONCILE_STUDY_PLAN,
-                    combinedWarnings
-            );
-            if (recResp != null) {
-                toolResults.put("reconcileStudyPlan", recResp);
-                collectToolWarnings(recResp, toolResults, combinedWarnings);
-            } else {
+        int calls = 0;
+        for (AcademicCapability capability : decision.capabilities()) {
+            if (calls++ >= TOOL_EXECUTION_BUDGET) break;
+            Object result = switch (capability) {
+                case GET_ACADEMIC_STATUS -> executeWithTimeout(
+                        () -> toolAdapter.getAcademicStatus(context), capability, warnings);
+                case CHECK_COURSE_ELIGIBILITY -> executeWithTimeout(
+                        () -> toolAdapter.checkCourseEligibility(context, intent.getCourseCode(), intent.getTargetSemester()),
+                        capability, warnings);
+                case GENERATE_STUDY_PLAN -> executeWithTimeout(
+                        () -> toolAdapter.generateStudyPlan(context, intent.getTargetSemester(), intent.getTargetCpa(),
+                                intent.getMaxCredits(), intent.getIncludeSummer(), null), capability, warnings);
+                case SIMULATE_GRADES -> executeWithTimeout(
+                        () -> toolAdapter.simulateGrades(context, intent.getSimulatedGrades()), capability, warnings);
+                case RANK_RETAKE_COURSES -> executeWithTimeout(
+                        () -> toolAdapter.rankRetakeCourses(context, intent.getRetakeSuggestions()), capability, warnings);
+                case CALCULATE_TARGET_GRADES -> executeWithTimeout(
+                        () -> toolAdapter.calculateTargetGrades(context, intent.getTargetCpa(), intent.getTargetSemester()),
+                        capability, warnings);
+                case RUN_GRADUATION_AUDIT -> executeWithTimeout(
+                        () -> toolAdapter.runGraduationAudit(context), capability, warnings);
+                case RECONCILE_STUDY_PLAN -> executeWithTimeout(
+                        () -> toolAdapter.reconcileStudyPlan(context, decision.planId(), intent.getTargetSemester(),
+                                decision.planVersion()), capability, warnings);
+                case VALIDATE_STUDY_PLAN -> null; // Requires an owned, concrete draft payload.
+            };
+            if (result == null) {
                 toolResults.put("toolUnavailable", true);
+                continue;
             }
-            return;
-        }
-
-        ParsedUserIntent.ScenarioCategory category = userIntent.getCategory();
-        int toolCallsExecuted = 0;
-
-        switch (category) {
-            case DEBT_COURSES -> {
-                // 1. getAcademicStatus
-                if (toolCallsExecuted < TOOL_EXECUTION_BUDGET) {
-                    AcademicStatusResponse status = executeWithTimeout(
-                            () -> toolAdapter.getAcademicStatus(context),
-                            AcademicCapability.GET_ACADEMIC_STATUS,
-                            combinedWarnings
-                    );
-                    if (status != null) {
-                        toolResults.put("academicStatus", status);
-                        collectToolWarnings(status, toolResults, combinedWarnings);
-                        toolCallsExecuted++;
-                    }
-                }
-                // 2. checkCourseEligibility (nếu có mã học phần)
-                if (userIntent.getCourseCode() != null && toolCallsExecuted < TOOL_EXECUTION_BUDGET) {
-                    CourseEligibilityResponse elig = executeWithTimeout(
-                            () -> toolAdapter.checkCourseEligibility(context, userIntent.getCourseCode(), userIntent.getTargetSemester() != null ? userIntent.getTargetSemester() : "2024_2"),
-                            AcademicCapability.CHECK_COURSE_ELIGIBILITY,
-                            combinedWarnings
-                    );
-                    if (elig != null) {
-                        toolResults.put("courseEligibility", elig);
-                        collectToolWarnings(elig, toolResults, combinedWarnings);
-                        toolCallsExecuted++;
-                    }
-                }
-            }
-            case STUDY_PLAN -> {
-                // 1. getAcademicStatus
-                if (toolCallsExecuted < TOOL_EXECUTION_BUDGET) {
-                    AcademicStatusResponse status = executeWithTimeout(
-                            () -> toolAdapter.getAcademicStatus(context),
-                            AcademicCapability.GET_ACADEMIC_STATUS,
-                            combinedWarnings
-                    );
-                    if (status != null) {
-                        toolResults.put("academicStatus", status);
-                        collectToolWarnings(status, toolResults, combinedWarnings);
-                        toolCallsExecuted++;
-                    }
-                }
-                // 2. generateStudyPlan
-                if (toolCallsExecuted < TOOL_EXECUTION_BUDGET) {
-                    String targetSemester = userIntent.getTargetSemester() != null ? userIntent.getTargetSemester() : "2025_2";
-                    BigDecimal targetCpa = userIntent.getTargetCpa() != null ? userIntent.getTargetCpa() : new BigDecimal("3.0");
-                    int maxCredits = userIntent.getMaxCredits() != null ? userIntent.getMaxCredits() : 18;
-                    boolean summer = Boolean.TRUE.equals(userIntent.getIncludeSummer());
-
-                    GenerateStudyPlanResponse plan = executeWithTimeout(
-                            () -> toolAdapter.generateStudyPlan(context, targetSemester, targetCpa, maxCredits, summer, null),
-                            AcademicCapability.GENERATE_STUDY_PLAN,
-                            combinedWarnings
-                    );
-                    if (plan != null) {
-                        toolResults.put("studyPlan", plan);
-                        collectToolWarnings(plan, toolResults, combinedWarnings);
-                        if (plan.getSemesters() != null && !plan.getSemesters().isEmpty()) {
-                            ChatPlanProposal proposal = new ChatPlanProposal(
-                                    plan.getProposalId(),
-                                    "Đề xuất kế hoạch học tập mục tiêu CPA " + targetCpa.toPlainString(),
-                                    plan.getSemesters(),
-                                    plan.getProjectedCpa() != null ? plan.getProjectedCpa() : targetCpa
-                            );
-                            toolResults.put("planProposal", proposal);
-                        }
-                        toolCallsExecuted++;
-                    }
-                }
-            }
-            case ACCELERATED_STUDY -> {
-                // Đã có học kỳ mục tiêu -> sinh và thẩm định kế hoạch
-                if (toolCallsExecuted < TOOL_EXECUTION_BUDGET) {
-                    String targetSemester = userIntent.getTargetSemester() != null ? userIntent.getTargetSemester() : "2026_1";
-                    BigDecimal targetCpa = userIntent.getTargetCpa() != null ? userIntent.getTargetCpa() : new BigDecimal("3.2");
-                    int maxCredits = userIntent.getMaxCredits() != null ? userIntent.getMaxCredits() : 22;
-
-                    GenerateStudyPlanResponse plan = executeWithTimeout(
-                            () -> toolAdapter.generateStudyPlan(context, targetSemester, targetCpa, maxCredits, true, null),
-                            AcademicCapability.GENERATE_STUDY_PLAN,
-                            combinedWarnings
-                    );
-                    if (plan != null) {
-                        toolResults.put("studyPlan", plan);
-                        collectToolWarnings(plan, toolResults, combinedWarnings);
-                        if (plan.getSemesters() != null && !plan.getSemesters().isEmpty()) {
-                            ChatPlanProposal proposal = new ChatPlanProposal(
-                                    plan.getProposalId(),
-                                    "Đề xuất lộ trình học vượt tốt nghiệp tại học kỳ " + targetSemester,
-                                    plan.getSemesters(),
-                                    plan.getProjectedCpa() != null ? plan.getProjectedCpa() : targetCpa
-                            );
-                            toolResults.put("planProposal", proposal);
-                        }
-                        toolCallsExecuted++;
-                    }
-                }
-                if (toolCallsExecuted < TOOL_EXECUTION_BUDGET) {
-                    ValidateStudyPlanRequest valReq = new ValidateStudyPlanRequest();
-                    valReq.setStudentId(context.getStudentId());
-                    valReq.setDataRevision(context.getDataRevision());
-                    ValidateStudyPlanResponse valResp = executeWithTimeout(
-                            () -> toolAdapter.validateStudyPlan(context, valReq),
-                            AcademicCapability.VALIDATE_STUDY_PLAN,
-                            combinedWarnings
-                    );
-                    if (valResp != null) {
-                        toolResults.put("validateStudyPlan", valResp);
-                        collectToolWarnings(valResp, toolResults, combinedWarnings);
-                        toolCallsExecuted++;
-                    }
-                }
-            }
-            case WHAT_IF -> {
-                if (toolCallsExecuted < TOOL_EXECUTION_BUDGET) {
-                    List<SimulatedCourseGrade> simGrades = userIntent.getSimulatedGrades() != null ?
-                            userIntent.getSimulatedGrades() :
-                            List.of(new SimulatedCourseGrade("GEN_SIM", 18, "B+", new BigDecimal("3.5")));
-
-                    SimulateGradesResponse simResp = executeWithTimeout(
-                            () -> toolAdapter.simulateGrades(context, simGrades),
-                            AcademicCapability.SIMULATE_GRADES,
-                            combinedWarnings
-                    );
-                    if (simResp != null) {
-                        toolResults.put("simulateGrades", simResp);
-                        collectToolWarnings(simResp, toolResults, combinedWarnings);
-                        toolCallsExecuted++;
-                    }
-                }
-            }
-            case RETAKE_IMPROVEMENT -> {
-                if (toolCallsExecuted < TOOL_EXECUTION_BUDGET) {
-                    AcademicStatusResponse status = executeWithTimeout(
-                            () -> toolAdapter.getAcademicStatus(context),
-                            AcademicCapability.GET_ACADEMIC_STATUS,
-                            combinedWarnings
-                    );
-                    if (status != null) {
-                        toolResults.put("academicStatus", status);
-                        collectToolWarnings(status, toolResults, combinedWarnings);
-                        toolCallsExecuted++;
-                    }
-                }
-                if (toolCallsExecuted < TOOL_EXECUTION_BUDGET) {
-                    int maxSuggestions = userIntent.getRetakeSuggestions() != null ? userIntent.getRetakeSuggestions() : 5;
-                    RankRetakeCoursesResponse rankResp = executeWithTimeout(
-                            () -> toolAdapter.rankRetakeCourses(context, maxSuggestions),
-                            AcademicCapability.RANK_RETAKE_COURSES,
-                            combinedWarnings
-                    );
-                    if (rankResp != null) {
-                        toolResults.put("rankRetakeCourses", rankResp);
-                        collectToolWarnings(rankResp, toolResults, combinedWarnings);
-                        toolCallsExecuted++;
-                    }
-                }
-            }
-            case GRADUATION_AUDIT -> {
-                if (toolCallsExecuted < TOOL_EXECUTION_BUDGET) {
-                    GraduationAuditResponse auditResp = executeWithTimeout(
-                            () -> toolAdapter.runGraduationAudit(context),
-                            AcademicCapability.RUN_GRADUATION_AUDIT,
-                            combinedWarnings
-                    );
-                    if (auditResp != null) {
-                        toolResults.put("graduationAudit", auditResp);
-                        collectToolWarnings(auditResp, toolResults, combinedWarnings);
-                        toolCallsExecuted++;
-                    }
-                }
-            }
-            case GOAL_CHANGE -> {
-                BigDecimal targetCpa = userIntent.getTargetCpa() != null ? userIntent.getTargetCpa() : new BigDecimal("3.5");
-                String targetSemester = userIntent.getTargetSemester() != null ? userIntent.getTargetSemester() : "2026_1";
-
-                if (toolCallsExecuted < TOOL_EXECUTION_BUDGET) {
-                    CalculateTargetGradesResponse targetResp = executeWithTimeout(
-                            () -> toolAdapter.calculateTargetGrades(context, targetCpa, targetSemester),
-                            AcademicCapability.CALCULATE_TARGET_GRADES,
-                            combinedWarnings
-                    );
-                    if (targetResp != null) {
-                        toolResults.put("calculateTargetGrades", targetResp);
-                        collectToolWarnings(targetResp, toolResults, combinedWarnings);
-                        toolCallsExecuted++;
-                    }
-                }
-                if (toolCallsExecuted < TOOL_EXECUTION_BUDGET) {
-                    GenerateStudyPlanResponse plan = executeWithTimeout(
-                            () -> toolAdapter.generateStudyPlan(context, targetSemester, targetCpa, 18, false, null),
-                            AcademicCapability.GENERATE_STUDY_PLAN,
-                            combinedWarnings
-                    );
-                    if (plan != null) {
-                        toolResults.put("studyPlan", plan);
-                        collectToolWarnings(plan, toolResults, combinedWarnings);
-                        if (plan.getSemesters() != null && !plan.getSemesters().isEmpty()) {
-                            ChatPlanProposal proposal = new ChatPlanProposal(
-                                    plan.getProposalId(),
-                                    "Kế hoạch học tập điều chỉnh theo mục tiêu CPA " + targetCpa.toPlainString(),
-                                    plan.getSemesters(),
-                                    plan.getProjectedCpa() != null ? plan.getProjectedCpa() : targetCpa
-                            );
-                            toolResults.put("planProposal", proposal);
-                        }
-                        toolCallsExecuted++;
-                    }
-                }
-            }
-            case GENERAL -> {
-                // Fallback nếu có từ khóa lộ trình/tình trạng mà chưa bắt được ở intent
-                String msg = userMessage.toLowerCase();
-                if (msg.contains("lộ trình") || msg.contains("kế hoạch")) {
-                    GenerateStudyPlanResponse plan = executeWithTimeout(
-                            () -> toolAdapter.generateStudyPlan(context, "2025_2", new BigDecimal("3.0"), 18, false, null),
-                            AcademicCapability.GENERATE_STUDY_PLAN,
-                            combinedWarnings
-                    );
-                    if (plan != null) {
-                        collectToolWarnings(plan, toolResults, combinedWarnings);
-                        if (plan.getSemesters() != null && !plan.getSemesters().isEmpty()) {
-                            toolResults.put("planProposal", new ChatPlanProposal(
-                                    plan.getProposalId(),
-                                    "Đề xuất kế hoạch học tập",
-                                    plan.getSemesters(),
-                                    plan.getProjectedCpa()
-                            ));
-                        }
-                    }
-                } else if (msg.contains("tình trạng") || msg.contains("điểm")) {
-                    AcademicStatusResponse status = executeWithTimeout(
-                            () -> toolAdapter.getAcademicStatus(context),
-                            AcademicCapability.GET_ACADEMIC_STATUS,
-                            combinedWarnings
-                    );
-                    if (status != null) {
-                        toolResults.put("academicStatus", status);
-                        collectToolWarnings(status, toolResults, combinedWarnings);
-                    }
-                }
-            }
-            case REGULATION -> {
-                // Không gọi công cụ cá nhân cho câu hỏi thuần quy chế
+            String key = switch (capability) {
+                case GET_ACADEMIC_STATUS -> "academicStatus";
+                case CHECK_COURSE_ELIGIBILITY -> "courseEligibility";
+                case GENERATE_STUDY_PLAN -> "studyPlan";
+                case VALIDATE_STUDY_PLAN -> "validateStudyPlan";
+                case SIMULATE_GRADES -> "simulateGrades";
+                case RANK_RETAKE_COURSES -> "rankRetakeCourses";
+                case CALCULATE_TARGET_GRADES -> "calculateTargetGrades";
+                case RUN_GRADUATION_AUDIT -> "graduationAudit";
+                case RECONCILE_STUDY_PLAN -> "reconcileStudyPlan";
+            };
+            toolResults.put(key, result);
+            collectToolWarnings(result, toolResults, warnings);
+            if (result instanceof GenerateStudyPlanResponse plan
+                    && plan.getSemesters() != null && !plan.getSemesters().isEmpty()) {
+                String label = intent.getTargetCpa() == null ? "Đề xuất kế hoạch học tập"
+                        : "Đề xuất kế hoạch học tập mục tiêu CPA " + intent.getTargetCpa().toPlainString();
+                toolResults.put("planProposal", new ChatPlanProposal(
+                        plan.getProposalId(), label, plan.getSemesters(), plan.getProjectedCpa()));
             }
         }
     }
-
     /**
      * Thu thập các cảnh báo học vụ từ phản hồi của công cụ và đưa vào danh sách cảnh báo tập trung.
      */

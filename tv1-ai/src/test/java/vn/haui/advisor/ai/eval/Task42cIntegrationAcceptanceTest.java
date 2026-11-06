@@ -139,7 +139,7 @@ public class Task42cIntegrationAcceptanceTest {
         @DisplayName("A2. NOT_READY capability returns explicit TOOL_UNAVAILABLE and does NOT produce fake success")
         void testNotReadyCapabilityEnforcement() {
             // GENERATE_STUDY_PLAN không có trong readyCapabilities()
-            ChatRequest request = new ChatRequest("CONV-A2", "Lập kế hoạch học tập kỳ tới", Instant.now().toString());
+            ChatRequest request = new ChatRequest("CONV-A2", "Lập kế hoạch học tập đến kỳ 2026_2, tối đa 18 tín chỉ", Instant.now().toString());
             ChatResponse response = advisorFacade.chat(request, contextStudentA);
 
             assertThat(response).isNotNull();

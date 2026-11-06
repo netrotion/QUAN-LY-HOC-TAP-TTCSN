@@ -42,7 +42,7 @@ class AdvisorFacadeTest {
     }
 
     @Test
-    @DisplayName("Case A: General inquiry returns mock answer, sources, actions, and null planProposal")
+    @DisplayName("Case A: General inquiry returns mock answer and action without unsupported source")
     void testCaseAGeneralAcademicStatusInquiry() {
         ChatRequest request = new ChatRequest("CONV-001", "Cho tôi xem tình trạng học tập", "2024-09-25T10:00:00Z");
 
@@ -55,11 +55,8 @@ class AdvisorFacadeTest {
                 .contains("[MOCK_ADVISOR]")
                 .contains("Nguyễn Văn A");
 
-        // 2. Sources contains fixture source
-        assertThat(response.getSources()).isNotEmpty();
-        ChatSourceItem source = response.getSources().getFirst();
-        assertThat(source.getTitle()).contains("Fixture");
-        assertThat(source.getSourceId()).isEqualTo("SRC-MOCK-POLICY");
+        // 2. No policy evidence was retrieved for this personal status question.
+        assertThat(response.getSources()).isEmpty();
 
         // 3. Actions contains navigation action
         assertThat(response.getActions()).isNotEmpty();
@@ -74,9 +71,9 @@ class AdvisorFacadeTest {
     }
 
     @Test
-    @DisplayName("Case B: Study plan inquiry returns ChatPlanProposal and action to planner without persisting")
+    @DisplayName("Case B: Confirmed study plan request returns a proposal without persisting")
     void testCaseBStudyPlanInquiry() {
-        ChatRequest request = new ChatRequest("CONV-002", "Lập kế hoạch học kỳ tới", "2024-09-25T10:01:00Z");
+        ChatRequest request = new ChatRequest("CONV-002", "Lập kế hoạch đến kỳ 2026_2, tối đa 18 tín chỉ", "2024-09-25T10:01:00Z");
 
         ChatResponse response = advisorFacade.chat(request, trustedContext);
 
@@ -116,7 +113,7 @@ class AdvisorFacadeTest {
                 "Sinh viên chưa hoàn thành môn học phần tiên quyết: Giải tích 1"
         ));
 
-        ChatRequest request = new ChatRequest("CONV-003", "Lập kế hoạch học kỳ tới", "2024-09-25T10:02:00Z");
+        ChatRequest request = new ChatRequest("CONV-003", "Lập kế hoạch đến kỳ 2026_2, tối đa 18 tín chỉ", "2024-09-25T10:02:00Z");
 
         ChatResponse response = advisorFacade.chat(request, trustedContext);
 

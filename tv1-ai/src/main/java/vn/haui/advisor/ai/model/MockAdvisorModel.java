@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Triển khai mock deterministic của AdvisorModel phục vụ phát triển cục bộ và kiểm thử tích hợp.
@@ -50,14 +51,13 @@ public class MockAdvisorModel implements AdvisorModel {
         String studentCode = context != null && context.getStudentCode() != null ? context.getStudentCode() : "Chưa xác định";
 
         GroundedContext effectiveGrounded = groundedContext;
-        if (effectiveGrounded == null && ragAdvisorService != null) {
-            effectiveGrounded = ragAdvisorService.retrieveAndGround(rawMsg);
-        }
 
         // ==========================================
         // 1. TOOL_ERROR / TOOL_UNAVAILABLE SCENARIO
         // ==========================================
-        if (toolResults.containsKey("toolError") || toolResults.containsKey("toolUnavailable") || toolResults.containsKey("error")) {
+        boolean hasUsefulToolResult = toolResults.keySet().stream()
+                .anyMatch(key -> !List.of("toolError", "toolUnavailable", "error", "warnings").contains(key));
+        if (!hasUsefulToolResult && (toolResults.containsKey("toolError") || toolResults.containsKey("toolUnavailable") || toolResults.containsKey("error"))) {
             List<String> warnings = List.of("TOOL_UNAVAILABLE", "TOOL_UNAVAILABLE: Capability reconcileStudyPlan is not currently exposed in ToolAdapter");
             String answer = String.format(
                     "[MOCK_ADVISOR] Công cụ học vụ tạm thời không khả dụng hoặc gặp sự cố xử lý dữ liệu của sinh viên %s (%s). Yêu cầu chưa thể thực hiện hoặc dịch vụ tạm thời gián đoạn. Vui lòng thử lại sau hoặc liên hệ phòng đào tạo HaUI.",
@@ -180,9 +180,9 @@ public class MockAdvisorModel implements AdvisorModel {
                 return validator.validate(new AdvisorModelOutput(answer, List.of(), List.of(), null, warnings), input);
             } else {
                 ChatPlanProposal proposal = toolResults.get("planProposal") instanceof ChatPlanProposal p ? p : null;
-                String targetSem = userIntent != null && userIntent.getTargetSemester() != null ? userIntent.getTargetSemester() : "kỳ 7";
+                String targetSem = userIntent != null && userIntent.getTargetSemester() != null ? userIntent.getTargetSemester() : "chưa xác định";
                 String answer = String.format(
-                        "[MOCK_ADVISOR] Đã thẩm định tính khả thi lộ trình học vượt tốt nghiệp tại %s cho sinh viên %s (%s). Kế hoạch tối ưu tải tín chỉ yêu cầu học thêm kỳ hè và phân bổ tối đa 24 tín chỉ mỗi kỳ chính.",
+                        "[MOCK_ADVISOR] Kế hoạch học vượt cho mốc %s của sinh viên %s (%s) cần được xem xét theo kết quả Academic Tool; chưa thể khẳng định số tín chỉ hay kỳ hè chỉ từ yêu cầu này.",
                         targetSem, studentName, studentCode
                 );
                 List<ChatActionItem> actions = List.of(
@@ -200,11 +200,18 @@ public class MockAdvisorModel implements AdvisorModel {
                 || userMsg.contains("đổi mục tiêu") || userMsg.contains("đổi thành");
         if (isGoalChange) {
             BigDecimal targetCpa = userIntent != null ? userIntent.getTargetCpa() : null;
-            String targetStr = targetCpa != null ? targetCpa.toPlainString() : "3.5";
-            String answer = String.format(
-                    "[MOCK_ADVISOR] Đã ghi nhận bạn thay đổi mục tiêu CPA thành %s để tốt nghiệp bằng Giỏi cho sinh viên %s (%s). Kế hoạch học tập sẽ được tính lại theo mục tiêu mới.",
-                    targetStr, studentName, studentCode
-            );
+            if (targetCpa == null) {
+                return validator.validate(new AdvisorModelOutput("Bạn muốn đổi CPA mục tiêu thành bao nhiêu?",
+                        List.of(), List.of(), null, List.of()), input);
+            }
+            String targetStr = targetCpa.toPlainString();
+            String answer = "[MOCK_ADVISOR] Mục tiêu CPA bạn nêu là " + targetStr + ".";
+            CalculateTargetGradesResponse calculation = toolResults.get("calculateTargetGrades") instanceof CalculateTargetGradesResponse c ? c : null;
+            if (calculation != null && calculation.getRequiredAverageGpa() != null) {
+                answer += " Theo Academic Tool, GPA trung bình cần đạt ở phần tín chỉ còn lại là "
+                        + calculation.getRequiredAverageGpa().toPlainString() + ".";
+            }
+            if (toolResults.containsKey("toolUnavailable")) answer += " Phần kế hoạch chưa tạo được; bạn có thể thử lại sau.";
             ChatPlanProposal proposal = toolResults.get("planProposal") instanceof ChatPlanProposal p ? p : null;
             List<ChatActionItem> actions = List.of(
                     new ChatActionItem("OPEN_PLANNER", "Xem kế hoạch điều chỉnh trên Study Planner", "/planner", "{}")
@@ -221,10 +228,15 @@ public class MockAdvisorModel implements AdvisorModel {
                 || userMsg.contains("nếu kỳ tới") || userMsg.contains("mô phỏng") || userMsg.contains("what-if");
         if (isWhatIf) {
             SimulateGradesResponse sim = toolResults.get("simulateGrades") instanceof SimulateGradesResponse s ? s : null;
-            String simGpa = sim != null && sim.getExpectedGpa() != null ? sim.getExpectedGpa().toPlainString() : "3.50";
-            String simCpa = sim != null && sim.getProjectedCpa() != null ? sim.getProjectedCpa().toPlainString() : "3.20";
-            String currentCpa = sim != null && sim.getCurrentCpa() != null ? sim.getCurrentCpa().toPlainString() : "3.00";
-            String delta = sim != null && sim.getCpaDelta() != null ? sim.getCpaDelta().toPlainString() : "+0.20";
+            if (sim == null) {
+                return validator.validate(new AdvisorModelOutput(
+                        "Mình cần môn hoặc số tín chỉ và điểm dự kiến để mô phỏng CPA; bạn cho mình các dữ kiện đó nhé?",
+                        List.of(), List.of(), null, List.of()), input);
+            }
+            String simGpa = sim.getExpectedGpa() != null ? sim.getExpectedGpa().toPlainString() : "chưa xác định";
+            String simCpa = sim.getProjectedCpa() != null ? sim.getProjectedCpa().toPlainString() : "chưa xác định";
+            String currentCpa = sim.getCurrentCpa() != null ? sim.getCurrentCpa().toPlainString() : "chưa xác định";
+            String delta = sim.getCpaDelta() != null ? sim.getCpaDelta().toPlainString() : "chưa xác định";
 
             String answer = String.format(
                     "[MOCK_ADVISOR] Kết quả mô phỏng điểm số (What-if) theo công thức tính điểm trung bình gia quyền cho sinh viên %s (%s): Điểm trung bình học kỳ dự kiến (GPA) đạt %s, CPA dự kiến tăng lên %s (biến động %s so với CPA hiện tại %s).",
@@ -245,16 +257,19 @@ public class MockAdvisorModel implements AdvisorModel {
                 || userMsg.contains("học cải thiện") || userMsg.contains("cải thiện điểm") || userMsg.contains("kéo điểm");
         if (isRetake) {
             RankRetakeCoursesResponse rank = toolResults.get("rankRetakeCourses") instanceof RankRetakeCoursesResponse r ? r : null;
+            if (rank == null) {
+                return validator.validate(new AdvisorModelOutput(
+                        "Nếu thời gian hạn chế, bạn nên cân nhắc môn cải thiện theo mục tiêu CPA và khối lượng học. Bạn muốn ưu tiên nâng điểm hay hoàn thành môn mới trước?",
+                        List.of(), List.of(), null, List.of()), input);
+            }
             StringBuilder details = new StringBuilder();
             if (rank != null && rank.getRecommendations() != null && !rank.getRecommendations().isEmpty()) {
                 for (RetakeCourseRecommendation rec : rank.getRecommendations()) {
-                    details.append(String.format("\n- %s (%s, %d tín chỉ, điểm hiện tại %s, mục tiêu %s, ROI CPA +%s)",
-                            rec.getCourseCode(), rec.getCourseName(), rec.getCredits() != null ? rec.getCredits() : 3,
-                            rec.getCurrentGrade(), rec.getTargetGrade(), rec.getCpaDelta()));
+                    details.append(String.format("\n- %s (%s, điểm hiện tại %s, mục tiêu %s, ROI CPA +%s)",
+                            rec.getCourseCode(), rec.getCourseName(), rec.getCurrentGrade(), rec.getTargetGrade(), rec.getCpaDelta()));
                 }
             } else {
-                details.append("\n- LP6010 (Triết học Mác-Lênin, 3 tín chỉ, điểm hiện tại D, mục tiêu B+, ROI cao nhất)");
-                details.append("\n- LP6012 (Chủ nghĩa xã hội khoa học, 2 tín chỉ, điểm hiện tại D+, mục tiêu A, ROI cao)");
+                details.append("\nChưa có môn cải thiện nào được công cụ xếp hạng.");
             }
 
             String answer = String.format(
@@ -271,24 +286,29 @@ public class MockAdvisorModel implements AdvisorModel {
         // ==========================================
         // 7. GRADUATION_AUDIT SCENARIO
         // ==========================================
-        boolean isGraduationAudit = (userIntent != null && userIntent.getCategory() == ScenarioCategory.GRADUATION_AUDIT)
-                || toolResults.containsKey("graduationAudit")
-                || userMsg.contains("tốt nghiệp") || userMsg.contains("chuẩn đầu ra") || userMsg.contains("điều kiện ra trường");
+        boolean isGraduationAudit = toolResults.containsKey("graduationAudit");
         if (isGraduationAudit) {
             GraduationAuditResponse audit = toolResults.get("graduationAudit") instanceof GraduationAuditResponse a ? a : null;
-            int accCredits = audit != null && audit.getAccumulatedCredits() != null ? audit.getAccumulatedCredits() : 61;
-            int totalCredits = audit != null && audit.getTotalCreditsRequired() != null ? audit.getTotalCreditsRequired() : 150;
-            int pct = audit != null && audit.getCompletedPercentage() != null ? audit.getCompletedPercentage() : 40;
-
-            String answer = String.format(
-                    "[MOCK_ADVISOR] Kết quả kiểm toán tốt nghiệp cho sinh viên %s (%s): Tín chỉ tích lũy %d/%d tín chỉ (%d%% tiến độ). Đánh giá: Chưa đủ điều kiện tốt nghiệp. Bạn còn thiếu các điều kiện: chứng chỉ tin học MOS, đồ án tốt nghiệp.",
-                    studentName, studentCode, accCredits, totalCredits, pct
-            );
+            if (audit == null) {
+                return validator.validate(new AdvisorModelOutput("Chưa có kết quả kiểm tra tốt nghiệp đáng tin cậy.",
+                        List.of(), List.of(), null, List.of()), input);
+            }
+            StringBuilder answer = new StringBuilder("Kết quả kiểm tra tốt nghiệp: ")
+                    .append(audit.isEligibleForGraduation() ? "đã đủ điều kiện." : "chưa đủ điều kiện.");
+            if (audit.getAccumulatedCredits() != null && audit.getTotalCreditsRequired() != null) {
+                answer.append(" Tín chỉ tích lũy ").append(audit.getAccumulatedCredits())
+                        .append("/").append(audit.getTotalCreditsRequired()).append(".");
+            }
+            if (audit.getChecklist() != null) {
+                audit.getChecklist().stream().filter(item -> item != null && !item.isCompleted())
+                        .map(AuditChecklistItem::getName).filter(Objects::nonNull)
+                        .forEach(name -> answer.append(" Còn thiếu: ").append(name).append("."));
+            }
             List<ChatActionItem> actions = List.of(
                     new ChatActionItem("OPEN_AUDIT", "Xem bảng kiểm toán tốt nghiệp", "/academic/audit", "{\"studentCode\":\"" + studentCode + "\"}")
             );
             List<ChatSourceItem> sources = (effectiveGrounded != null && effectiveGrounded.hasEvidence()) ? effectiveGrounded.getCitations() : List.of();
-            return validator.validate(new AdvisorModelOutput(answer, sources, actions, null, List.of()), input);
+            return validator.validate(new AdvisorModelOutput(answer.toString(), sources, actions, null, List.of()), input);
         }
 
         // ==========================================
@@ -297,23 +317,17 @@ public class MockAdvisorModel implements AdvisorModel {
         boolean isDebt = (userIntent != null && userIntent.getCategory() == ScenarioCategory.DEBT_COURSES)
                 || userMsg.contains("nợ môn") || userMsg.contains("môn nợ") || userMsg.contains("chặn môn") || userMsg.contains("điểm f");
         if (isDebt || (toolResults.containsKey("academicStatus") && (userMsg.contains("nợ") || userMsg.contains("môn nợ")))) {
-            if (userMsg.contains("lp6003") || userMsg.contains("pháp luật đại cương")) {
-                String answer = String.format(
-                        "[MOCK_ADVISOR] Sinh viên %s (%s) đang nợ môn Tư tưởng Hồ Chí Minh (LP6004) bị điểm F và bắt buộc phải học lại. Do LP6004 là môn học trước của Pháp luật đại cương (LP6003), bạn chưa đủ điều kiện để đăng ký môn LP6003 cho đến khi hoàn thành học phần này.",
-                        studentName, studentCode
-                );
-                List<ChatSourceItem> sources = (effectiveGrounded != null && effectiveGrounded.hasEvidence()) ? effectiveGrounded.getCitations() : List.of();
-                return validator.validate(new AdvisorModelOutput(answer, sources, List.of(), null, List.of()), input);
-            }
-
             AcademicStatusResponse status = (AcademicStatusResponse) toolResults.get("academicStatus");
             String cpaInfo = (status != null && status.getCpa() != null)
                     ? String.format(", CPA hiện tại %s", status.getCpa().toPlainString())
                     : "";
             String answer = String.format(
-                    "[MOCK_ADVISOR] Tình trạng môn nợ của sinh viên %s (%s)%s: Bạn đang nợ học phần Tư tưởng Hồ Chí Minh (LP6004) với điểm F. Theo quy chế đào tạo HaUI, bạn bắt buộc học lại học phần này để đủ điều kiện xét tốt nghiệp.",
-                    studentName, studentCode, cpaInfo
+                    "[MOCK_ADVISOR] Dữ liệu tổng quan%s chưa xác định được chính xác môn nào bạn đang nợ. Hãy kiểm tra bảng điểm chi tiết để chọn môn cần xử lý.",
+                    cpaInfo
             );
+            if (effectiveGrounded != null && effectiveGrounded.hasEvidence() && !effectiveGrounded.getCitations().isEmpty()) {
+                answer += " Quy định liên quan có tại [" + effectiveGrounded.getCitations().getFirst().getSourceId() + "].";
+            }
             List<ChatActionItem> actions = List.of(
                     new ChatActionItem("NAVIGATE", "Kiểm tra bảng điểm và học phần nợ", "/academic/transcript", "{\"studentCode\":\"" + studentCode + "\"}")
             );
@@ -327,17 +341,18 @@ public class MockAdvisorModel implements AdvisorModel {
         if (ragAdvisorService == null && groundedContext == null && !toolResults.containsKey("planProposal") && !toolResults.containsKey("studyPlan")) {
             if (userIntent == null || userIntent.getCategory() == ScenarioCategory.GENERAL) {
                 if (userMsg.contains("tình trạng") || userMsg.contains("học tập") || userMsg.contains("điểm") || userMsg.contains("gpa") || userMsg.contains("cpa")) {
+                AcademicStatusResponse status = toolResults.get("academicStatus") instanceof AcademicStatusResponse s ? s : null;
                 String answer = String.format(
-                        "[MOCK_ADVISOR] Xin chào %s (%s). Tình trạng học tập hiện tại của bạn được ghi nhận ở trạng thái bình thường. Hãy theo dõi lịch học và rà soát các điều kiện tích lũy tín chỉ thường xuyên.",
-                        studentName, studentCode
-                );
-                List<ChatSourceItem> sources = List.of(
-                        new ChatSourceItem("SRC-MOCK-POLICY", "Quy chế đào tạo đại học chính quy HaUI (Bản mẫu Fixture)", "Điều 14 - Cảnh báo học tập", "2024-FIXTURE", "https://haui.edu.vn/mock-policy")
+                    "[MOCK_ADVISOR] %s (%s), %s",
+                    studentName, studentCode,
+                    status == null ? "mình chưa có kết quả học vụ đã xác minh để đánh giá tình trạng hiện tại."
+                            : "CPA hiện tại theo Academic Tool là " + (status.getCpa() == null ? "chưa xác định" : status.getCpa().toPlainString())
+                            + "; mức cảnh báo là " + (status.getRiskLevel() == null ? "chưa xác định" : status.getRiskLevel()) + "."
                 );
                 List<ChatActionItem> actions = List.of(
                         new ChatActionItem("NAVIGATE", "Xem bảng điểm chi tiết", "/academic/transcript", "{\"studentCode\":\"" + studentCode + "\"}")
                 );
-                return validator.validate(new AdvisorModelOutput(answer, sources, actions, null, List.of()), input);
+                return validator.validate(new AdvisorModelOutput(answer, List.of(), actions, null, List.of()), input);
             }
         }
         }
@@ -354,9 +369,6 @@ public class MockAdvisorModel implements AdvisorModel {
             List<ChatSourceItem> sources;
             if (groundedContext != null && groundedContext.hasEvidence()) {
                 sources = groundedContext.getCitations();
-            } else if (ragAdvisorService != null) {
-                GroundedContext grounded = ragAdvisorService.retrieveAndGround("kế hoạch đào tạo đăng ký tín chỉ học kỳ chính");
-                sources = grounded.hasEvidence() ? grounded.getCitations() : List.of();
             } else {
                 sources = List.of();
             }

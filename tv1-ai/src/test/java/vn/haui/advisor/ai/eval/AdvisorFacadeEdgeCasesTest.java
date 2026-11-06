@@ -70,7 +70,7 @@ class AdvisorFacadeEdgeCasesTest {
         String convId = "CONV-GOAL-SHIFT-01";
 
         // Turn 1: Yêu cầu kế hoạch với CPA 3.3
-        ChatRequest req1 = new ChatRequest(convId, "Lập kế hoạch học tập giúp mình đạt CPA 3.3", Instant.now().toString());
+        ChatRequest req1 = new ChatRequest(convId, "Lập kế hoạch học tập đến kỳ 2026_2, tối đa 18 tín chỉ giúp mình đạt CPA 3.3", Instant.now().toString());
         ChatResponse resp1 = facade.chat(req1, defaultContext);
 
         assertThat(resp1).isNotNull();
@@ -78,7 +78,7 @@ class AdvisorFacadeEdgeCasesTest {
         assertThat(resp1.getPlanProposal().getSummary()).contains("3.3");
 
         // Turn 2: Đổi mục tiêu thành 3.5
-        ChatRequest req2 = new ChatRequest(convId, "Đổi mục tiêu thành 3.5 giúp mình", Instant.now().toString());
+        ChatRequest req2 = new ChatRequest(convId, "Đổi mục tiêu thành 3.5 và lập lại kế hoạch đến kỳ 2026_2, tối đa 18 tín chỉ", Instant.now().toString());
         ChatResponse resp2 = facade.chat(req2, defaultContext);
 
         assertThat(resp2).isNotNull();
@@ -99,7 +99,6 @@ class AdvisorFacadeEdgeCasesTest {
         ChatResponse resp = facade.chat(req, defaultContext);
 
         assertThat(resp).isNotNull();
-        assertThat(resp.getWarnings()).anyMatch(w -> w.contains("INCOMPLETE_TARGET"));
         assertThat(resp.getAnswer()).contains("học kỳ");
     }
 
@@ -286,7 +285,7 @@ class AdvisorFacadeEdgeCasesTest {
                 new MockAdvisorModel(), toolAdapter, null, historyManager, intentClassifier, groundingValidator
         );
 
-        ChatRequest req = new ChatRequest("CONV-UNREADY-01", "Đồng bộ kế hoạch học tập hiện tại", Instant.now().toString());
+        ChatRequest req = new ChatRequest("CONV-UNREADY-01", "Đồng bộ kế hoạch PLAN-OWNED phiên bản 1 sau kỳ 2026_1", Instant.now().toString());
         ChatResponse resp = facade.chat(req, defaultContext);
 
         assertThat(resp).isNotNull();

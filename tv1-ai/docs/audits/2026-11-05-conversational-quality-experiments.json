@@ -1,0 +1,331 @@
+{
+  "timestamp_utc": "2026-11-05T05:40:55.815360+00:00",
+  "model": "gemini-3.5-flash-lite",
+  "prompt_hashes": {
+    "current": "6d8e9d12c30c",
+    "old": "c264958ee483",
+    "minimal": "31d0ef0ceaec"
+  },
+  "rag_fixture": "[REG-HAUI-03] Học cải thiện: Nếu điểm mới cao hơn điểm cũ, điểm mới dùng tính lại CPA; ưu tiên cân nhắc môn điểm D nhiều tín chỉ, nhưng cần cân đối môn chuyên ngành.\n[REG-HAUI-04] Cảnh báo học vụ: Sinh viên bị cảnh báo mức 1 giới hạn đăng ký tối đa 14 tín chỉ ở kỳ sau.\n[REG-HAUI-01] Đăng ký tín chỉ: kỳ chính thường tối thiểu 10, tối đa 24 tín chỉ; trường hợp cảnh báo tối đa 14.",
+  "results": [
+    {
+      "name": "concern_minimal",
+      "variant": "minimal",
+      "query": "CPA của mình đang thấp quá, giờ nên làm sao?",
+      "rag": true,
+      "history_turns": 0,
+      "temperature": 0.2,
+      "response": "Chào bạn, tôi là HaUI Advisor - trợ lý cố vấn học vụ của Trường Đại học Công nghiệp Hà Nội. \n\nĐể cải thiện điểm CPA đang ở mức thấp, bạn có thể áp dụng các giải pháp và lưu ý sau đây theo quy định của nhà trường:\n\n1. **Đăng ký học cải thiện điểm:**\n   * Bạn có thể đăng ký học cải thiện đối với những môn có điểm số thấp. Nếu điểm mới cao hơn điểm cũ, hệ thống sẽ lấy điểm mới để tính lại CPA cho bạn `[REG-HAUI-03]`.\n   * **Chiến lược chọn môn:** Nên ưu tiên cân nhắc cải thiện các môn có số tín chỉ lớn (môn điểm D nhiều tín chỉ) để kéo CPA lên nhanh chóng, nhưng đồng thời cần cân đối thời gian và khối lượng cho các môn chuyên ngành `[REG-HAUI-03]`.\n\n2. **Lưu ý về khối lượng học tập (số tín chỉ đăng ký ở kỳ tới):**\n   * Trong học kỳ chính, số tín chỉ bạn được phép đăng ký thường dao động từ tối thiểu 10 đến tối đa 24 tín chỉ `[REG-HAUI-01]`.\n   * **Đặc biệt lưu ý:** Nếu CPA thấp dẫn đến việc bạn đang bị **cảnh báo học vụ mức 1**, giới hạn đăng ký tối đa ở học kỳ tiếp theo của bạn sẽ bị giới hạn ở mức **14 tín chỉ** `[REG-HAUI-04]`. Hãy kiểm tra kỹ trạng thái học vụ hiện tại của mình trên cổng thông tin sinh viên để lên kế hoạch đăng ký môn học cho phù hợp.\n\nBạn hãy xem lại bảng điểm cá nhân, xác định các môn cần cải thiện và sắp xếp lộ trình học tập cho thật hợp lý nhé. Nếu bạn cần hỗ trợ thêm thông tin gì, cứ trao đổi với tôi!",
+      "elapsed_s": 2.2,
+      "usage": {
+        "promptTokenCount": 290,
+        "candidatesTokenCount": 394,
+        "totalTokenCount": 684,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 290
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "finish": "STOP"
+    },
+    {
+      "name": "choice_current",
+      "variant": "current",
+      "query": "Mình đang phân vân giữa học cải thiện và học môn mới.",
+      "rag": true,
+      "history_turns": 0,
+      "temperature": 0.2,
+      "response": "Khi phân vân giữa học cải thiện và học môn mới, bạn cần cân nhắc dựa trên tiến độ học tập và quy định của trường:\n\n1. **Học cải thiện:** \n   - Dành cho các môn có điểm số thấp (điểm D, C) để kéo điểm trung bình tích lũy (CPA) lên. \n   - Theo quy định, nếu điểm mới cao hơn, điểm mới sẽ được dùng để tính lại CPA. Bạn nên ưu tiên cải thiện các môn điểm D có số tín chỉ lớn [REG-HAUI-03], nhưng cần cân đối với các môn chuyên ngành trong kỳ [REG-HAUI-03].\n\n2. **Học môn mới:** \n   - Dành cho việc đảm bảo tiến độ ra trường đúng hạn theo chương trình đào tạo.\n   - Bạn cần chú ý giới hạn số tín chỉ đăng ký trong học kỳ chính (tối thiểu 10, tối đa 24 tín chỉ). Đặc biệt, nếu bạn đang diện cảnh báo học vụ, số tín chỉ tối đa được đăng ký ở kỳ sau chỉ là 14 tín chỉ [REG-HAUI-01], [REG-HAUI-04].\n\nBạn có thể xem xét kết quả học tập hiện tại của mình (CPA, số tín chỉ đã tích lũy) và các môn còn nợ để đưa ra lựa chọn phù hợp nhất cho học kỳ tới.",
+      "elapsed_s": 1.6,
+      "usage": {
+        "promptTokenCount": 741,
+        "candidatesTokenCount": 297,
+        "totalTokenCount": 1038,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 741
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "finish": "STOP"
+    },
+    {
+      "name": "concern_current",
+      "variant": "current",
+      "query": "CPA của mình đang thấp quá, giờ nên làm sao?",
+      "rag": true,
+      "history_turns": 0,
+      "temperature": 0.2,
+      "response": "Để cải thiện CPA thấp, bạn có thể thực hiện các giải pháp sau:\n\n1. **Học cải thiện các môn điểm thấp:** Bạn nên đăng ký học cải thiện những môn đạt điểm D hoặc điểm thấp. Khi điểm mới cao hơn, hệ thống sẽ lấy điểm cao hơn để tính lại CPA. Nên ưu tiên cân nhắc các môn có số lượng tín chỉ nhiều và các môn chuyên ngành [REG-HAUI-03].\n2. **Cải thiện phương pháp học tập:** Xác định rõ nguyên nhân dẫn đến kết quả thấp ở các kỳ trước (như thiếu thời gian tự học, hổng kiến thức nền tảng, hoặc chưa nắm rõ phương pháp làm bài) để điều chỉnh cách nghe giảng, ghi chép và ôn tập.\n3. **Quản lý khối lượng học tập hợp lý:** \n   - Trong các kỳ học tới, hãy cân đối số lượng tín chỉ đăng ký vừa sức để đảm bảo chất lượng tiếp thu [REG-HAUI-01].\n   - Lưu ý trường hợp nếu bạn bị rơi vào diện cảnh báo học vụ (ví dụ: cảnh báo mức 1), số lượng tín chỉ đăng ký tối đa ở kỳ tiếp theo sẽ bị giới hạn ở mức 14 tín chỉ [REG-HAUI-01, REG-HAUI-04].\n4. **Chủ động xin hỗ trợ:** Trao đổi trực tiếp với giảng viên bộ môn trong giờ giải đáp thắc mắc hoặc tham gia các nhóm học tập cùng bạn bè để được hỗ trợ giải quyết các phần kiến thức chưa hiểu rõ.",
+      "elapsed_s": 4.3,
+      "usage": {
+        "promptTokenCount": 741,
+        "candidatesTokenCount": 326,
+        "totalTokenCount": 1067,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 741
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "finish": "STOP"
+    },
+    {
+      "name": "concern_old",
+      "variant": "old",
+      "query": "CPA của mình đang thấp quá, giờ nên làm sao?",
+      "rag": true,
+      "history_turns": 0,
+      "temperature": 0.2,
+      "response": "Chào bạn, tôi là Trợ lý Cố vấn Học vụ Thông minh (HaUI Advisor) của Trường Đại học Công nghiệp Hà Nội. Tôi rất hiểu sự lo lắng của bạn khi điểm CPA (Điểm trung bình tích lũy) đang ở mức thấp. \n\nĐể cải thiện tình hình học tập và nâng cao CPA theo đúng quy chế của nhà trường, bạn có thể tham khảo và áp dụng các giải pháp sau:\n\n1. **Đăng ký học cải thiện điểm:**\n   * Theo quy định [REG-HAUI-03], nếu điểm học phần mới cao hơn điểm cũ, điểm mới sẽ được dùng để tính lại CPA của bạn.\n   * **Chiến lược chọn môn:** Bạn nên ưu tiên cân nhắc cải thiện những môn đạt điểm D (hoặc điểm thấp) có số lượng tín chỉ lớn trước, vì những môn này có trọng số ảnh hưởng nhiều nhất đến CPA. Tuy nhiên, cần cân đối thời gian và sức lực với các môn chuyên ngành trong kỳ học hiện tại để tránh quá tải.\n\n2. **Lưu ý về khối lượng đăng ký tín chỉ trong kỳ tới:**\n   * Hãy kiểm tra xem hiện tại bạn có đang nằm trong diện cảnh báo học vụ hay không. \n   * Theo quy định [REG-HAUI-04] và [REG-HAUI-01], trong các học kỳ chính, sinh viên bình thường được đăng ký tối đa 24 tín chỉ (tối thiểu 10 tín chỉ). Tuy nhiên, nếu bạn **bị cảnh báo học vụ mức 1**, hệ thống sẽ giới hạn số tín chỉ đăng ký tối đa ở kỳ sau là **14 tín chỉ**. Do đó, bạn cần tính toán thật kỹ số lượng môn học cải thiện và môn học mới cho phù hợp với giới hạn này.\n\n3. **Xây dựng phương pháp học tập hiệu quả:**\n   * **Xem lại phương pháp ôn tập:** Xác định rõ nguyên nhân vì sao các kỳ trước điểm chưa cao (thiếu kiến thức nền tảng, chưa quản lý tốt thời gian, hay ôn thi muộn).\n   * **Tận dụng sự hỗ trợ:** Chủ động trao đổi với giảng viên trong giờ hướng dẫn (giờ office hours), tham gia các nhóm học tập cùng bạn bè, hoặc tận dụng tài liệu từ thư viện HaUI.\n\nNếu bạn muốn tôi tra cứu chi tiết hơn về bảng điểm hoặc trạng thái học tập hiện tại của bạn trên hệ thống, bạn có thể cung cấp thêm thông tin nhé! Chúc bạn giữ vững tinh thần và cải thiện kết quả học tập trong thời gian tới.",
+      "elapsed_s": 4.5,
+      "usage": {
+        "promptTokenCount": 579,
+        "candidatesTokenCount": 538,
+        "totalTokenCount": 1117,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 579
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "finish": "STOP"
+    },
+    {
+      "name": "choice_minimal",
+      "variant": "minimal",
+      "query": "Mình đang phân vân giữa học cải thiện và học môn mới.",
+      "rag": true,
+      "history_turns": 0,
+      "temperature": 0.2,
+      "response": "Chào bạn, tôi là HaUI Advisor - trợ lý cố vấn học vụ của Trường Đại học Công nghiệp Hà Nội. Tôi rất sẵn lòng hỗ trợ bạn gỡ rối trong việc lựa chọn giữa học cải thiện và học môn mới.\n\nĐể giúp bạn đưa ra quyết định phù hợp nhất với tình hình học tập hiện tại, chúng ta cùng xem xét các yếu tố sau nhé:\n\n**1. Về việc Học cải thiện:**\n* **Quy định tính điểm:** Nếu điểm học cải thiện mới của bạn cao hơn điểm cũ, điểm mới sẽ được dùng để tính lại điểm trung bình tích lũy (CPA).\n* **Chiến lược lựa chọn môn:** Bạn nên ưu tiên cân nhắc cải thiện những môn có **điểm chữ D và có số tín chỉ lớn** (vì những môn này ảnh hưởng nhiều đến CPA). Tuy nhiên, cũng cần cân đối với các môn chuyên ngành trong kỳ để đảm bảo khối lượng học tập vừa sức.\n* **Giới hạn số tín chỉ:** Hãy lưu ý nếu bạn đang bị cảnh báo học vụ (ví dụ: cảnh báo mức 1 thì kỳ sau chỉ được đăng ký tối đa 14 tín chỉ), việc phân bổ số tín chỉ cho môn cải thiện và môn mới cần tính toán rất cẩn thận.\n\n**2. Về việc Học môn mới:**\n* Giúp bạn đi đúng tiến độ chương trình đào tạo, không bị chậm ra trường.\n* Mở rộng kiến thức mới và tích lũy thêm tín chỉ tích lũy cho các học kỳ tiếp theo.\n* Tuy nhiên, nếu bạn đang chịu áp lực về thời gian, khối lượng bài tập hoặc điểm số các kỳ trước chưa thực sự tốt, việc ôm đồm quá nhiều môn mới có thể gây quá tải.\n\n---\n\n**Lời khuyên dành cho bạn:**\n* **Nên chọn học cải thiện khi:** Điểm số hiện tại của bạn ở một số môn quan trọng quá thấp (điểm D), việc kéo điểm lên sẽ giúp cải thiện đáng kể CPA (rất quan trọng cho việc xét học bổng, xét tốt nghiệp hoặc xin việc sau này).\n* **Nên chọn học môn mới khi:** Điểm số các kỳ trước của bạn đã ổn định, bạn muốn đảm bảo tiến độ ra trường đúng hạn và có đủ thời gian, năng lượng để tiếp thu kiến thức mới.\n* **Hoặc kết hợp cả hai:** Bạn hoàn toàn có thể đăng ký một số môn mới kết hợp với 1-2 môn cải thiện, miễn là tổng số tín chỉ nằm trong giới hạn cho phép của trường (thông thường kỳ chính từ 10 - 24 tín chỉ, riêng trường hợp bị cảnh báo học vụ tối đa là 14 tín chỉ).\n\nĐể tôi tư vấn chính xác hơn cho trường hợp của bạn, bạn có thể chia sẻ thêm:\n1. CPA hiện tại của bạn khoảng bao nhiêu?\n2. Bạn đang có ý định cải thiện những môn nào (điểm hiện tại là gì, mấy tín chỉ)?\n3. Bạn có đang gặp cảnh báo học vụ nào không?",
+      "elapsed_s": 6.6,
+      "usage": {
+        "promptTokenCount": 290,
+        "candidatesTokenCount": 636,
+        "totalTokenCount": 926,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 290
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "finish": "STOP"
+    },
+    {
+      "name": "choice_old",
+      "variant": "old",
+      "query": "Mình đang phân vân giữa học cải thiện và học môn mới.",
+      "rag": true,
+      "history_turns": 0,
+      "temperature": 0.2,
+      "response": "Chào bạn, tôi là Trợ lý Cố vấn Học vụ Thông minh (HaUI Advisor) của Trường Đại học Công nghiệp Hà Nội. Rất sẵn lòng hỗ trợ bạn giải đáp thắc mắc liên quan đến việc định hướng học tập!\n\nViệc phân vân giữa **học cải thiện** (học lại một môn đã qua nhưng điểm thấp để nâng cao điểm trung bình) và **học môn mới** (đăng ký môn học theo tiến độ chương trình) là tình huống rất phổ biến của sinh viên, đặc biệt là khi bước vào giai đoạn lập kế hoạch đăng ký tín chỉ cho học kỳ tới. \n\nĐể giúp bạn đưa ra quyết định phù hợp nhất với tình hình học tập hiện tại, tôi xin chia sẻ một số định hướng theo quy chế của HaUI như sau:\n\n### 1. Khi nào nên cân nhắc học cải thiện?\nTheo quy định tại **[REG-HAUI-03]**:\n* **Nguyên tắc tính điểm:** Nếu điểm học cải thiện mới cao hơn điểm cũ, điểm mới sẽ được dùng để tính lại Điểm trung bình tích lũy (CPA) của bạn.\n* **Chiến lược lựa chọn môn:** Bạn nên ưu tiên cân nhắc cải thiện những **môn có điểm chữ D (điểm đạt thấp) và có số lượng tín chỉ nhiều**. Những môn này khi được cải thiện thành công sẽ có tác động tích cực lớn nhất trong việc kéo điểm CPA của bạn lên.\n* **Lưu ý quan trọng:** Cần cân đối thời gian và khối lượng học tập, đặc biệt ưu tiên các môn chuyên ngành quan trọng hoặc các môn là tiền đề cho đồ án/khóa luận tốt nghiệp.\n\n### 2. Khi nào nên ưu tiên học môn mới?\n* **Đảm bảo tiến độ tốt nghiệp:** Học môn mới giúp bạn đi đúng tiến độ đào tạo của toàn khóa học, tránh bị dồn môn hoặc kéo dài thời gian học tập.\n* **Giới hạn khối lượng học tập (nếu có):** \n  * Trong các học kỳ chính, số tín chỉ đăng ký thường dao động từ tối thiểu **10 tín chỉ** đến tối đa **24 tín chỉ** **[REG-HAUI-01]**.\n  * Tuy nhiên, nếu bạn không may rơi vào diện **cảnh báo học vụ**, bạn cần đặc biệt lưu ý: Sinh viên bị cảnh báo học vụ mức 1 sẽ bị giới hạn đăng ký **tối đa là 14 tín chỉ** ở học kỳ tiếp theo **[REG-HAUI-01, REG-HAUI-04]**. Khi đó, khối lượng đăng ký sẽ phải cực kỳ tinh gọn và bạn cần cân nhắc kỹ xem nên ưu tiên học cải thiện hay học môn mới trước.\n\n---\n\n**Để tôi có thể tư vấn chi tiết và chính xác hơn cho trường hợp của bạn, bạn có thể chia sẻ thêm:**\n1. Điểm CPA hiện tại của bạn là bao nhiêu và bạn đang học năm thứ mấy?\n2. Bạn có đang gặp phải tình trạng cảnh báo học vụ hay môn học nào bị điểm D cần cân nhắc không?\n3. Số lượng tín chỉ tích lũy hiện tại của bạn khoảng bao nhiêu?\n\nHãy cho tôi biết thêm thông tin nhé!",
+      "elapsed_s": 7.6,
+      "usage": {
+        "promptTokenCount": 579,
+        "candidatesTokenCount": 679,
+        "totalTokenCount": 1258,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 579
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "finish": "STOP"
+    },
+    {
+      "name": "rag_off",
+      "error": "HTTP 503: {\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  }\n}\n",
+      "elapsed_s": 7.8
+    },
+    {
+      "name": "history_on",
+      "variant": "current",
+      "query": "Nhưng nếu mình không đủ thời gian thì sao?",
+      "rag": true,
+      "history_turns": 4,
+      "temperature": 0.2,
+      "response": "Nếu thời gian hạn hẹp, bạn nên ưu tiên học cải thiện các môn đã có điểm D (đặc biệt là các môn nhiều tín chỉ) để kéo CPA lên nhanh nhất với khối lượng học tập vừa phải thay vì dàn trải sang môn mới. \n\nTuy nhiên, bạn cần lưu ý:\n- Nếu quỹ thời gian quá ít, hãy đăng ký số lượng tín chỉ vừa phải để đảm bảo chất lượng, tránh tình trạng điểm số tiếp tục thấp.\n- Nếu bạn đang thuộc diện cảnh báo học vụ, giới hạn đăng ký tối đa chỉ là 14 tín chỉ/kỳ. \n\nBạn có thể chia sẻ cụ thể hơn về quỹ thời gian rảnh hoặc số môn bạn dự định học để mình gợi ý phương án sắp xếp lịch phù hợp hơn nhé.",
+      "elapsed_s": 3.3,
+      "usage": {
+        "promptTokenCount": 852,
+        "candidatesTokenCount": 161,
+        "totalTokenCount": 1013,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 852
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "finish": "STOP"
+    },
+    {
+      "name": "history_off",
+      "variant": "current",
+      "query": "Nhưng nếu mình không đủ thời gian thì sao?",
+      "rag": true,
+      "history_turns": 0,
+      "temperature": 0.2,
+      "response": "Do câu hỏi của bạn chưa có ngữ cảnh cụ thể về vấn đề bạn đang gặp phải (ví dụ: việc đăng ký tín chỉ, cải thiện điểm số hay khối lượng học tập), mình chưa thể đưa ra câu trả lời chính xác nhất. \n\nBạn có thể chia sẻ cụ thể hơn về khó khăn hiện tại (như số lượng tín chỉ muốn giảm, thời gian gặp vướng mắc, hay tình trạng học tập) để mình hỗ trợ bạn giải pháp phù hợp theo đúng quy chế của trường nhé.",
+      "elapsed_s": 4.7,
+      "usage": {
+        "promptTokenCount": 739,
+        "candidatesTokenCount": 105,
+        "totalTokenCount": 844,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 739
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "finish": "STOP"
+    },
+    {
+      "name": "temp_high",
+      "error": "HTTP 503: {\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  }\n}\n",
+      "elapsed_s": 6.2
+    },
+    {
+      "name": "dialogue_cpa_choice_1",
+      "variant": "current",
+      "query": "CPA của mình đang thấp quá, giờ nên làm sao?",
+      "rag": true,
+      "history_turns": 0,
+      "temperature": 0.2,
+      "response": "Để cải thiện CPA thấp, bạn có thể thực hiện các giải pháp sau:\n\n1. **Học cải thiện các môn điểm thấp:** Bạn nên đăng ký học cải thiện những môn đạt điểm D hoặc điểm thấp để nâng cao điểm trung bình tích lũy. Theo quy định, nếu điểm mới cao hơn điểm cũ, điểm mới sẽ được dùng để tính lại CPA [REG-HAUI-03]. Bạn nên ưu tiên cân nhắc các môn có số tín chỉ nhiều và các môn chuyên ngành [REG-HAUI-03].\n2. **Cải thiện phương pháp học tập:** Xác định nguyên nhân dẫn đến kết quả thấp ở các kỳ trước (thiếu hụt kiến thức nền tảng, thời gian tự học chưa hợp lý,...) để điều chỉnh cách ôn tập, chú ý nghe giảng và chủ động trao đổi với giảng viên.\n3. **Lập kế hoạch đăng ký tín chỉ hợp lý:** Trong các kỳ tới, hãy cân đối khối lượng học tập vừa sức để đảm bảo chất lượng. *Lưu ý:* Nếu bạn đang thuộc diện cảnh báo học vụ, số lượng tín chỉ đăng ký tối đa cho mỗi kỳ chính sẽ bị giới hạn (mức 1 được đăng ký tối đa 14 tín chỉ) [REG-HAUI-01, REG-HAUI-04].",
+      "elapsed_s": 2.2,
+      "usage": {
+        "promptTokenCount": 741,
+        "candidatesTokenCount": 275,
+        "totalTokenCount": 1016,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 741
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "finish": "STOP"
+    },
+    {
+      "name": "dialogue_cpa_choice_2",
+      "variant": "current",
+      "query": "Mình đang phân vân giữa học cải thiện và học môn mới.",
+      "rag": true,
+      "history_turns": 2,
+      "temperature": 0.2,
+      "response": "Khi phân vân giữa học cải thiện và học môn mới để nâng cao CPA, bạn nên ưu tiên cân nhắc các yếu tố sau:\n\n1. **Ưu tiên học cải thiện trước:** Bạn nên chọn học cải thiện các môn đạt điểm D hoặc điểm thấp, đặc biệt là các môn có số tín chỉ nhiều và các môn chuyên ngành [REG-HAUI-03]. Nếu điểm mới cao hơn điểm cũ, điểm số này sẽ được dùng để tính lại CPA [REG-HAUI-03], giúp điểm tích lũy tăng nhanh hơn so với việc học các môn mới chưa chắc đã đạt điểm cao.\n2. **Cân đối khối lượng tín chỉ:** Khi đã quyết định học cải thiện kết hợp với môn mới, bạn cần chú ý đến giới hạn số tín chỉ được phép đăng ký trong kỳ chính (tối đa 24 tín chỉ) [REG-HAUI-01]. Đặc biệt, nếu bạn đang thuộc diện cảnh báo học vụ, số tín chỉ tối đa cho phép đăng ký ở kỳ sau sẽ bị giới hạn nghiêm ngặt hơn (ví dụ: cảnh báo mức 1 tối đa 14 tín chỉ) [REG-HAUI-01, REG-HAUI-04] nhằm đảm bảo thời gian và sức lực để cải thiện kết quả.",
+      "elapsed_s": 2.3,
+      "usage": {
+        "promptTokenCount": 1024,
+        "candidatesTokenCount": 269,
+        "totalTokenCount": 1293,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 1024
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "finish": "STOP"
+    },
+    {
+      "name": "dialogue_cpa_choice_3",
+      "variant": "current",
+      "query": "Nhưng nếu mình không đủ thời gian thì sao?",
+      "rag": true,
+      "history_turns": 4,
+      "temperature": 0.2,
+      "response": "Khi thời gian hạn chế, bạn nên ưu tiên giải pháp học cải thiện cho các môn điểm D có số lượng tín chỉ lớn hoặc các môn chuyên ngành quan trọng trước [REG-HAUI-03]. Những môn này sẽ tác động mạnh nhất đến việc kéo CPA lên với ít môn phải học lại nhất. \n\nBên cạnh đó, bạn cần điều chỉnh lại kế hoạch đăng ký tín chỉ trong kỳ học tới cho vừa sức, tránh ôm đồm quá nhiều môn dẫn đến quá tải. Hãy lưu ý khối lượng đăng ký tối thiểu cho một kỳ chính là 10 tín chỉ [REG-HAUI-01]. Đặc biệt, nếu bạn đang trong diện cảnh báo học vụ, số tín chỉ tối đa được phép đăng ký sẽ bị giới hạn (mức 1 tối đa 14 tín chỉ) [REG-HAUI-01, REG-HAUI-04], giúp bạn tập trung hoàn thành tốt nhất các môn đã chọn trong quỹ thời gian cho phép.",
+      "elapsed_s": 1.9,
+      "usage": {
+        "promptTokenCount": 1322,
+        "candidatesTokenCount": 205,
+        "totalTokenCount": 1527,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 1322
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "finish": "STOP"
+    },
+    {
+      "name": "dialogue_cpa_choice_4",
+      "variant": "current",
+      "query": "Bạn nghĩ phương án nào hợp lý hơn với tình trạng của mình?",
+      "rag": true,
+      "history_turns": 6,
+      "temperature": 0.2,
+      "response": "Vì mình chưa nắm được bảng điểm chi tiết cũng như số lượng tín chỉ tích lũy hiện tại của bạn, mình đề xuất phương án tối ưu dựa trên quỹ thời gian hạn chế như sau:\n\nBạn nên ưu tiên **học cải thiện các môn có số tín chỉ nhiều và các môn chuyên ngành** đã đạt điểm D [REG-HAUI-03]. \n\nLý do là phương án này giúp bạn tập trung tối đa thời gian vào một số ít môn quan trọng, tác động mạnh nhất đến việc kéo CPA lên mà không bị quá tải [REG-HAUI-03]. Khi đăng ký, hãy đảm bảo khối lượng phù hợp với quỹ thời gian của bạn nhưng vẫn phải đáp ứng mức tối thiểu 10 tín chỉ/kỳ chính (và lưu ý giới hạn tối đa 14 tín chỉ nếu bạn đang bị cảnh báo học vụ mức 1) [REG-HAUI-01, REG-HAUI-04].",
+      "elapsed_s": 1.5,
+      "usage": {
+        "promptTokenCount": 1559,
+        "candidatesTokenCount": 199,
+        "totalTokenCount": 1758,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 1559
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "finish": "STOP"
+    },
+    {
+      "name": "dialogue_graduation_1",
+      "variant": "current",
+      "query": "Mình sợ không tốt nghiệp đúng hạn.",
+      "rag": true,
+      "history_turns": 0,
+      "temperature": 0.2,
+      "response": "Để giải tỏa lo lắng về việc tốt nghiệp đúng hạn, bạn cần nắm rõ một số quy định và chiến lược học tập quan trọng tại HaUI:\n\n1. **Khối lượng đăng ký tín chỉ:** Trong các học kỳ chính, bạn được phép đăng ký tối thiểu 10 tín chỉ và tối đa 24 tín chỉ. Trường hợp bị cảnh báo học vụ, giới hạn tối đa là 14 tín chỉ [REG-HAUI-01, REG-HAUI-04]. Bạn có thể tận dụng các học kỳ phụ (nếu trường mở) để học bù hoặc trả nợ môn.\n2. **Cải thiện điểm số:** Nếu có các học phần điểm thấp, bạn có quyền đăng ký học cải thiện. Điểm mới cao hơn sẽ được dùng để tính lại CPA. Nên ưu tiên cải thiện các môn điểm D có số tín chỉ lớn và cân đối với các môn chuyên ngành [REG-HAUI-03].\n3. **Lập kế hoạch tiến độ:** Hãy kiểm tra lại chương trình đào tạo của ngành, đối chiếu với số tín chỉ đã tích lũy thực tế để lập kế hoạch hoàn thành các học phần điều kiện, đồ án/khóa luận tốt nghiệp và chứng chỉ chuẩn đầu ra.\n\nNếu bạn chia sẻ thêm về số tín chỉ đã tích lũy hoặc tình trạng học tập hiện tại, mình sẽ hỗ trợ bạn xây dựng lộ trình cụ thể hơn.",
+      "elapsed_s": 5.0,
+      "usage": {
+        "promptTokenCount": 736,
+        "candidatesTokenCount": 296,
+        "totalTokenCount": 1032,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 736
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "finish": "STOP"
+    },
+    {
+      "name": "dialogue_graduation_2",
+      "error": "HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15,",
+      "elapsed_s": 0.3
+    },
+    {
+      "name": "dialogue_graduation_3",
+      "error": "HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15,",
+      "elapsed_s": 0.3
+    }
+  ]
+}
