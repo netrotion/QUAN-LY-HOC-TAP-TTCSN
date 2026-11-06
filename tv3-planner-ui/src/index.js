@@ -1,5 +1,5 @@
 import { StudyPlannerPage } from './pages/StudyPlannerPage.js';
-import { ChatAdvisorPage, generateMockChatResponse, QUICK_PROMPTS_MAN_2 } from './pages/ChatAdvisorPage.js';
+import { ChatAdvisorPage, QUICK_PROMPTS_MAN_2 } from './pages/ChatAdvisorPage.js';
 import { WhatIfSimulatorPage, WHAT_IF_TOOLS } from './pages/WhatIfSimulatorPage.js';
 import {
   StudentProfilePage,
@@ -13,6 +13,7 @@ import { PlanHistoryModal } from './components/PlanHistoryModal.js';
 import { CurriculumTreeModal } from './components/CurriculumTreeModal.js';
 import { DatePicker } from './components/DatePicker.js';
 import { Select } from './components/Select.js';
+import { MarkdownContent } from './components/MarkdownContent.js';
 import {
   plannerStore,
   PLAN_STATUSES,
@@ -83,6 +84,7 @@ export {
   StudentProfilePage,
   DatePicker,
   Select,
+  MarkdownContent,
   PlanHistoryModal,
   CurriculumTreeModal,
   plannerStore,
@@ -90,7 +92,6 @@ export {
   PLAN_STATUSES,
   validatePlanFormat,
   evaluatePlanRules,
-  generateMockChatResponse,
   QUICK_PROMPTS_MAN_2,
   SAMPLE_K16_PROFILE,
   HAUI_MEMBER_SCHOOLS,

@@ -11,8 +11,7 @@ import {
   PlanHistoryModal,
   CurriculumTreeModal,
   plannerStore,
-  PLAN_STATUSES,
-  generateMockChatResponse
+  PLAN_STATUSES
 } from '../src/index.js';
 
 test('createStudentRoutes returns an array of route definitions with 4 core pages', () => {
@@ -122,46 +121,6 @@ test('ChatAdvisorPage is a valid React component and can be instantiated as a Re
   assert.equal(element.type, ChatAdvisorPage);
   assert.equal(element.props.api, mockApi);
   assert.equal(element.props.ui, mockUi);
-});
-
-test('F23-008 (P04 vs P05): Mock Chat không tự động gắn card đề xuất kế hoạch cho câu hỏi quy chế', () => {
-  assert.equal(typeof generateMockChatResponse, 'function');
-
-  // Kịch bản P04: Hỏi quy chế thuần túy -> planProposal: null (không ép mở Planner)
-  const regQueries = [
-    'Điều kiện cảnh báo học vụ mức 1 là gì?',
-    'Điều kiện cảnh báo học vụ mức 1 của trường là gì?',
-    'Một học kỳ chính tại HaUI tôi được đăng ký tối đa bao nhiêu tín chỉ? Kỳ hè thì sao?',
-    'CPA và GPA khác nhau như thế nào trong quy chế của trường?',
-    'Môn Kỹ thuật lập trình tôi được điểm A (hoặc B), tôi có được đăng ký học cải thiện không?'
-  ];
-
-  for (const q of regQueries) {
-    const res = generateMockChatResponse(q);
-    assert.equal(
-      res.planProposal,
-      null,
-      `Câu hỏi quy chế "${q}" tuyệt đối không được gắn planProposal (vi phạm nguyên tắc hỏi quy chế không ép mở Planner)`
-    );
-    assert.ok(res.sources && res.sources.length > 0, `Câu hỏi quy chế "${q}" phải có nguồn trích dẫn quy chế`);
-    assert.ok(res.answer && res.answer.includes('[AI Advisor]'), 'Phải có câu trả lời từ AI Advisor');
-  }
-
-  // Kịch bản P05: Yêu cầu lập lộ trình / kế hoạch học tập -> planProposal: Object
-  const planQueries = [
-    'Tư vấn lộ trình kéo CPA lên >= 3.20 để tốt nghiệp bằng Giỏi.',
-    'Lên lộ trình học vượt 3.5 năm ngành CNTT/KTPM.',
-    'Lập kế hoạch học tập kỳ tới cho tôi với 18 tín chỉ'
-  ];
-
-  for (const q of planQueries) {
-    const res = generateMockChatResponse(q);
-    assert.ok(
-      res.planProposal,
-      `Câu hỏi lập lộ trình "${q}" phải gắn planProposal để hiển thị thẻ đề xuất phương án`
-    );
-    assert.ok(res.sources && res.sources.length > 0, 'Phải có nguồn trích dẫn');
-  }
 });
 
 test('WhatIfSimulatorPage is a valid React component and can be instantiated as a React element', () => {

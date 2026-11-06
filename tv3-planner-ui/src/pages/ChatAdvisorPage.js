@@ -1,401 +1,17 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { plannerStore, PLAN_STATUSES } from '../services/plannerStore.js';
 import * as plannerApi from '../services/plannerApiService.js';
+import { MarkdownContent } from '../components/MarkdownContent.js';
 
 /**
  * 4 Gợi ý câu hỏi thông minh (Quick Prompt Pills) chuẩn Màn hình 2 UI Flow & prototype `ai_advisor`
  */
 export const QUICK_PROMPTS_MAN_2 = Object.freeze([
   'Dự báo điểm GPA Kỳ 7 để tốt nghiệp loại Giỏi (CPA ≥ 3.20)?',
-  'Môn IT6080 - Đồ án chuyên ngành cần những môn tiên quyết nào?',
+  'Mình muốn kiểm tra môn học trước và tiên quyết của một học phần.',
   'Kế hoạch Kỳ 8 nếu đăng ký 15 TC có bị quá tải không?',
   'Tôi còn thiếu chứng chỉ chuẩn đầu ra nào theo quy chế?'
 ]);
-
-/**
- * Mẫu hội thoại ban đầu chuẩn xác theo Stitch Prototype `ai_advisor/code.html`
- */
-const DEFAULT_PROTOTYPE_MESSAGES = Object.freeze([
-  {
-    id: 'proto-msg-1',
-    sender: 'user',
-    senderName: 'Nguyễn Văn An',
-    text: 'Em đang có CPA 3.18, tích lũy 108 tín chỉ sau kỳ 6. Kỳ 7 em dự định đăng ký 18 tín chỉ thì cần đạt GPA kỳ 7 bao nhiêu để kéo CPA lên mức 3.20 (bằng Giỏi) ạ?',
-    timestamp: '14:22'
-  },
-  {
-    id: 'proto-msg-2',
-    sender: 'assistant',
-    text: 'Chào bạn Nguyễn Văn An, dựa vào kết quả 108 tín chỉ đã tích lũy trong hồ sơ sinh viên, dưới đây là thuật toán tính toán cụ thể để bạn đạt ngưỡng bằng Giỏi ở Kỳ 7:',
-    timestamp: '14:23',
-    calculationData: {
-      title: 'Phân tích công thức tính điểm tích lũy:',
-      items: [
-        'Điểm trọng số hiện tại (Kỳ 1 → Kỳ 6): 108 tín chỉ × 3.18 = 343.44 điểm.',
-        'Sau khi tích lũy 18 tín chỉ ở Kỳ 7, tổng số tín chỉ sẽ đạt: 108 + 18 = 126 tín chỉ.',
-        'Mục tiêu CPA ≥ 3.20 yêu cầu tổng điểm trọng số đạt tối thiểu: 126 × 3.20 = 403.20 điểm.',
-        'Tổng điểm trọng số cần đạt riêng ở Kỳ 7: 403.20 - 343.44 = 59.76 điểm.'
-      ]
-    },
-    targetData: {
-      label: 'Mục tiêu cần hoàn thành ở Kỳ 7',
-      target: 'Bạn cần đạt GPA Kỳ 7 tối thiểu 3.32 / 4.00',
-      description: 'Tương đương điểm trung bình B+ (3.5) cho phần lớn các môn và không có môn nào dưới B (3.0) trong 6 học phần dự kiến (18 tín chỉ).'
-    },
-    subcards: [
-      {
-        icon: 'folder_shared',
-        title: 'Dữ liệu học tập sử dụng',
-        items: [
-          'Bảng điểm Kỳ 1 - Kỳ 6 (28 môn hợp lệ, CPA 3.18)',
-          'Dự thảo kế hoạch học tập v2.4 (Kỳ 7: 6 môn - 18 TC)',
-          'Hệ số quy đổi thang điểm 4 theo Quy chế HaUI'
-        ],
-        footer: 'Đồng bộ: 12 phút trước'
-      },
-      {
-        icon: 'menu_book',
-        title: 'Nguồn tham khảo & Quy chế minh họa',
-        items: [
-          'Chương trình đào tạo chính quy — Đại học Công nghiệp Hà Nội (HaUI)',
-          'QĐ Hướng dẫn tính điểm trung bình chung tích lũy HaUI'
-        ],
-        note: 'Lưu ý: Các ngưỡng tính toán trên mang tính chất tham khảo học thuật từ dữ liệu hồ sơ sinh viên HaUI, vui lòng đối chiếu bảng điểm chính thức tại sv.haui.edu.vn.'
-      }
-    ],
-    sources: [
-      {
-        title: 'Chương trình đào tạo chính quy — Đại học Công nghiệp Hà Nội (HaUI)',
-        section: 'Quy định đào tạo & Quản lý học vụ'
-      },
-      {
-        title: 'Quy chế đào tạo trình độ đại học theo hệ thống tín chỉ — HaUI',
-        section: 'Quy định tính điểm trung bình chung tích lũy'
-      }
-    ],
-    executionTime: '1.1s'
-  },
-  {
-    id: 'proto-msg-3',
-    sender: 'user',
-    senderName: 'Nguyễn Văn An',
-    text: 'Thế còn điều kiện học phần Thực tập doanh nghiệp thì sao ạ?',
-    timestamp: '14:25'
-  },
-  {
-    id: 'proto-msg-4',
-    sender: 'assistant',
-    text: 'Thông tin điều kiện học phần Thực tập doanh nghiệp theo Quy chế đào tạo HaUI:',
-    timestamp: '14:26',
-    warningData: {
-      title: 'Cần bổ sung thêm thông tin dữ liệu!',
-      description: "Hệ thống nhận thấy trong hồ sơ của bạn chưa có thông tin đăng ký cơ sở thực tập hoặc xác nhận chuyên ngành đào tạo. Vui lòng cập nhật mục 'Hồ sơ sinh viên' hoặc tải lên giấy xác nhận thực tập để AI có thể tư vấn lộ trình phân bổ tín chỉ chính xác nhất."
-    },
-    checklistData: {
-      title: 'Điều kiện cơ bản theo Quy chế đào tạo HaUI:',
-      items: [
-        { done: true, text: 'Đã hoàn thành tối thiểu 90 tín chỉ (Hiện có: 108 TC)' },
-        { done: false, text: 'Chưa có xác nhận cơ sở thực tập doanh nghiệp' }
-      ]
-    },
-    actions: [
-      {
-        id: 'act-profile',
-        label: 'Cập nhật hồ sơ thực tập',
-        icon: 'edit_document',
-        route: '/profile',
-        primary: true
-      },
-      {
-        id: 'act-transcript',
-        label: 'Tải lên văn bản xác nhận',
-        icon: 'upload_file',
-        route: '/transcript',
-        primary: false
-      }
-    ],
-    sources: [
-      {
-        title: 'Quy chế đào tạo & Điều kiện tốt nghiệp — Đại học Công nghiệp Hà Nội (HaUI)',
-        section: 'Điều kiện học phần Thực tập doanh nghiệp'
-      }
-    ]
-  }
-]);
-
-/**
- * Tạo phản hồi mô phỏng cho AI Advisor Chat khi chưa kết nối API Backend Spring Boot.
- * Tuân thủ quy tắc F23-008:
- * - Câu hỏi tra cứu quy chế học vụ thuần túy (Kịch bản P04): planProposal: null, trích dẫn điều khoản quy chế, không ép mở Planner.
- * - Câu hỏi yêu cầu lập lộ trình / kế hoạch học tập (Kịch bản P05): gắn planProposal kèm thẻ đề xuất phương án.
- *
- * @param {string} queryText - Nội dung tin nhắn của sinh viên
- * @param {Object} [plan] - Bản kế hoạch hiện hành từ plannerStore (nếu có)
- * @returns {Object} { answer, sources, actions, warnings, planProposal }
- */
-export function generateMockChatResponse(queryText, plan = null) {
-  const trimmed = (queryText || '').trim();
-  const lower = trimmed.toLowerCase();
-
-  // 1. Nhận diện ý định lập lộ trình / kế hoạch học tập (Kịch bản P05)
-  const isPlanRequest =
-    lower.includes('lộ trình') ||
-    lower.includes('kế hoạch') ||
-    lower.includes('học vượt') ||
-    lower.includes('lên lịch') ||
-    lower.includes('lập lịch') ||
-    lower.includes('phân bổ') ||
-    lower.includes('đề xuất môn') ||
-    lower.includes('phương án');
-
-  // 2. Nhận diện câu hỏi tra cứu quy chế / quy định / điều kiện học vụ thuần túy (Kịch bản P04)
-  const isRegulationQuery =
-    lower.includes('quy chế') ||
-    lower.includes('quy định') ||
-    lower.includes('cảnh báo') ||
-    lower.includes('thôi học') ||
-    lower.includes('chuẩn đầu ra') ||
-    lower.includes('điều kiện tốt nghiệp') ||
-    lower.includes('thang điểm') ||
-    lower.includes('cách tính') ||
-    lower.includes('rút học phần') ||
-    lower.includes('tối đa bao nhiêu tín chỉ') ||
-    lower.includes('hạn mức tín chỉ') ||
-    lower.includes('điều kiện') ||
-    lower.includes('tiêu chuẩn');
-
-  // Xử lý câu hỏi tính toán GPA/CPA mục tiêu (như trong Prototype)
-  if (lower.includes('dự báo điểm gpa') || (lower.includes('gpa') && lower.includes('kỳ 7')) || lower.includes('3.20')) {
-    if (!isPlanRequest) {
-      return {
-        answer: `[AI Advisor]: Chào bạn Nguyễn Văn An, dựa vào kết quả 108 tín chỉ đã tích lũy trong hồ sơ sinh viên, dưới đây là thuật toán tính toán cụ thể để bạn đạt ngưỡng bằng Giỏi ở Kỳ 7:`,
-        calculationData: {
-          title: 'Phân tích công thức tính điểm tích lũy:',
-          items: [
-            'Điểm trọng số hiện tại (Kỳ 1 → Kỳ 6): 108 tín chỉ × 3.18 = 343.44 điểm.',
-            'Sau khi tích lũy 18 tín chỉ ở Kỳ 7, tổng số tín chỉ sẽ đạt: 108 + 18 = 126 tín chỉ.',
-            'Mục tiêu CPA ≥ 3.20 yêu cầu tổng điểm trọng số đạt tối thiểu: 126 × 3.20 = 403.20 điểm.',
-            'Tổng điểm trọng số cần đạt riêng ở Kỳ 7: 403.20 - 343.44 = 59.76 điểm.'
-          ]
-        },
-        targetData: {
-          label: 'Mục tiêu cần hoàn thành ở Kỳ 7',
-          target: 'Bạn cần đạt GPA Kỳ 7 tối thiểu 3.32 / 4.00',
-          description: 'Tương đương điểm trung bình B+ (3.5) cho phần lớn các môn và không có môn nào dưới B (3.0) trong 6 học phần dự kiến (18 tín chỉ).'
-        },
-        subcards: [
-          {
-            icon: 'folder_shared',
-            title: 'Dữ liệu học tập sử dụng',
-            items: [
-              'Bảng điểm Kỳ 1 - Kỳ 6 (28 môn hợp lệ, CPA 3.18)',
-              'Dự thảo kế hoạch học tập v2.4 (Kỳ 7: 6 môn - 18 TC)',
-              'Hệ số quy đổi thang điểm 4 theo Quy chế HaUI'
-            ],
-            footer: 'Đồng bộ: Vừa xong'
-          },
-          {
-            icon: 'menu_book',
-            title: 'Nguồn tham khảo & Quy chế minh họa',
-            items: [
-              'Chương trình đào tạo chính quy — Đại học Công nghiệp Hà Nội (HaUI)',
-              'Quy chế đào tạo tín chỉ Đại học Công nghiệp Hà Nội (HaUI)'
-            ],
-            note: 'Lưu ý: Các ngưỡng tính toán trên mang tính chất tham khảo học thuật từ dữ liệu hồ sơ sinh viên HaUI, vui lòng đối chiếu bảng điểm chính thức tại sv.haui.edu.vn.'
-          }
-        ],
-        sources: [
-          {
-            title: 'Chương trình đào tạo chính quy — Đại học Công nghiệp Hà Nội (HaUI)',
-            section: 'Quy định đào tạo & Quản lý học vụ'
-          },
-          {
-            title: 'Quy chế đào tạo tín chỉ Đại học Công nghiệp Hà Nội (HaUI)',
-            section: 'Điều 14 - Giới hạn tín chỉ & Thang điểm'
-          }
-        ],
-        actions: [],
-        warnings: [],
-        planProposal: null
-      };
-    }
-  }
-
-  // Xử lý câu hỏi môn tiên quyết IT6080
-  if (lower.includes('it6080') || lower.includes('đồ án chuyên ngành')) {
-    return {
-      answer: `[AI Advisor]: Học phần IT6080 (Đồ án chuyên ngành KTPM - 3 TC) yêu cầu hoàn thành các học phần tiên quyết sau theo khung CTĐT K16:\n` +
-        `• IT6001 - Cấu trúc dữ liệu và giải thuật (Đã đạt)\n` +
-        `• SE3001 - Công nghệ phần mềm (Yêu cầu điểm ≥ C)\n` +
-        `• MATH1002 - Toán rời rạc: Hiện bạn đang nợ điểm F môn này. Do MATH1002 là tiên quyết trực tiếp, bạn bắt buộc phải học lại và đạt trước khi hệ thống sv.haui.edu.vn cho phép đăng ký IT6080.`,
-      sources: [
-        {
-          title: 'Chương trình đào tạo chính quy — Đại học Công nghiệp Hà Nội (HaUI)',
-          section: 'Cây tiên quyết chuyên ngành & Học phần đồ án'
-        }
-      ],
-      actions: [
-        {
-          id: 'act-curriculum',
-          label: 'Xem sơ đồ cây tiên quyết',
-          icon: 'account_tree',
-          route: '/curriculum',
-          primary: true
-        }
-      ],
-      warnings: ['Bạn đang nợ môn Toán rời rạc (MATH1002) - Cần gỡ nợ gấp ở Kỳ 7.'],
-      planProposal: null
-    };
-  }
-
-  // Xử lý câu hỏi về Thực tập doanh nghiệp
-  if (lower.includes('thực tập') || lower.includes('doanh nghiệp')) {
-    return {
-      answer: `[AI Advisor]: Căn cứ quy chế học phần Thực tập doanh nghiệp (IT6090 - 4 TC) ngành CNTT/KTPM:\n` +
-        `• Điều kiện: Sinh viên phải tích lũy tối thiểu 90 tín chỉ và không bị cảnh báo học vụ.\n` +
-        `• Hồ sơ: Cần nộp giấy tiếp nhận thực tập của doanh nghiệp trước tuần 2 của học kỳ.`,
-      warningData: {
-        title: 'Cần bổ sung thêm thông tin dữ liệu!',
-        description: "Hệ thống nhận thấy trong hồ sơ của bạn chưa có thông tin đăng ký cơ sở thực tập hoặc xác nhận chuyên ngành hẹp. Vui lòng cập nhật mục 'Hồ sơ sinh viên' hoặc tải lên giấy xác nhận thực tập để AI có thể tư vấn lộ trình phân bổ tín chỉ chính xác nhất."
-      },
-      checklistData: {
-        title: 'Điều kiện cơ bản theo Quy chế đào tạo HaUI:',
-        items: [
-          { done: true, text: 'Đã hoàn thành tối thiểu 90 tín chỉ (Hiện có: 108 TC)' },
-          { done: false, text: 'Chưa có xác nhận cơ sở thực tập doanh nghiệp' }
-        ]
-      },
-      actions: [
-        {
-          id: 'act-profile',
-          label: 'Cập nhật hồ sơ thực tập',
-          icon: 'edit_document',
-          route: '/profile',
-          primary: true
-        },
-        {
-          id: 'act-transcript',
-          label: 'Tải lên văn bản xác nhận',
-          icon: 'upload_file',
-          route: '/transcript',
-          primary: false
-        }
-      ],
-      sources: [
-        {
-          title: 'Quy chế đào tạo & Điều kiện tốt nghiệp — Đại học Công nghiệp Hà Nội (HaUI)',
-          section: 'Điều kiện học phần Thực tập doanh nghiệp'
-        }
-      ],
-      warnings: ['Chưa có thông tin cơ sở thực tập được phê duyệt.'],
-      planProposal: null
-    };
-  }
-
-  // Quy tắc F23-008: Nếu là câu hỏi quy chế hoặc KHÔNG có yêu cầu lập lộ trình -> KHÔNG ép mở Planner
-  if (!isPlanRequest || (isRegulationQuery && !lower.includes('lộ trình') && !lower.includes('kế hoạch') && !lower.includes('lập lịch') && !lower.includes('lên lịch') && !lower.includes('phương án'))) {
-    let answerText = `[AI Advisor]: Theo Quy chế đào tạo tín chỉ Đại học Công nghiệp Hà Nội (HaUI):`;
-    let sources = [
-      {
-        title: 'Quy chế đào tạo trình độ đại học theo hệ thống tín chỉ - HaUI',
-        section: 'Quy định đào tạo & Quản lý học vụ'
-      }
-    ];
-    let actions = [];
-    let warnings = [];
-
-    if (lower.includes('cảnh báo')) {
-      answerText = `[AI Advisor]: Căn cứ Điều 16 Quy chế đào tạo HaUI (REG-HAUI-04 / BR-02):\n` +
-        `• Cảnh báo học vụ mức 1: Áp dụng khi điểm trung bình chung tích lũy (CPA) < 1.20 (Năm 1), < 1.40 (Năm 2), < 1.60 (Năm 3), < 1.80 (Năm 4 trở đi), hoặc tổng số tín chỉ nợ F vượt quá 24 tín chỉ.\n` +
-        `• Giới hạn khối lượng: Sinh viên bị cảnh báo học vụ chỉ được đăng ký tối đa 14 tín chỉ trong học kỳ chính tiếp theo để tập trung cải thiện kết quả.`;
-      sources = [
-        {
-          title: 'Quy chế đào tạo tín chỉ Đại học Công nghiệp Hà Nội (HaUI)',
-          section: 'Điều 16 - Cảnh báo kết quả học tập & Buộc thôi học (REG-HAUI-04)'
-        }
-      ];
-    } else if (lower.includes('tín chỉ') || lower.includes('tối đa') || lower.includes('hạn mức')) {
-      answerText = `[AI Advisor]: Căn cứ Điều 14 Quy chế đào tạo HaUI (REG-HAUI-01 / BR-03, BR-04):\n` +
-        `• Học kỳ chính: Sinh viên được đăng ký tối thiểu 10 tín chỉ và tối đa 24 tín chỉ (đối với sinh viên có học lực bình thường).\n` +
-        `• Học kỳ hè: Sinh viên được đăng ký tối đa 12 tín chỉ để học lại hoặc học vượt.`;
-      sources = [
-        {
-          title: 'Quy chế đào tạo tín chỉ Đại học Công nghiệp Hà Nội (HaUI)',
-          section: 'Điều 14 - Đăng ký khối lượng học tập (REG-HAUI-01)'
-        }
-      ];
-    } else if (lower.includes('cải thiện') || lower.includes('học lại')) {
-      answerText = `[AI Advisor]: Căn cứ Điều 15 Quy chế đào tạo HaUI (REG-HAUI-03):\n` +
-        `• Học lại: Bắt buộc đối với các học phần bị điểm F (chưa đạt).\n` +
-        `• Học cải thiện: Chỉ áp dụng cho các học phần đạt điểm D, D+, C để nâng điểm CPA. Sinh viên đã đạt điểm B trở lên không được phép đăng ký học cải thiện.`;
-      sources = [
-        {
-          title: 'Quy chế đào tạo tín chỉ Đại học Công nghiệp Hà Nội (HaUI)',
-          section: 'Điều 15 - Học lại và học cải thiện điểm (REG-HAUI-03)'
-        }
-      ];
-    } else if (lower.includes('chuẩn đầu ra') || lower.includes('tốt nghiệp')) {
-      answerText = `[AI Advisor]: Căn cứ Điều kiện tốt nghiệp và Chuẩn đầu ra Đại học Công nghiệp Hà Nội (HaUI):\n` +
-        `• Tích lũy tối thiểu 145 tín chỉ (bao gồm 100% môn bắt buộc và đủ số tín chỉ tự chọn chuyên ngành).\n` +
-        `• Đạt chứng chỉ Chuẩn đầu ra Ngoại ngữ (TOEIC >= 450/550 hoặc VSTEP B1) và Chuẩn Tin học (MOS/IC3).\n` +
-        `• Hoàn thành GDQP-AN, GDTC và đạt Điểm rèn luyện tích lũy >= 50 (loại Trung bình trở lên).\n` +
-        `• Hoàn thành học phần Thực tập doanh nghiệp và Đồ án tốt nghiệp.`;
-      sources = [
-        {
-          title: 'Quy chế xét và công nhận tốt nghiệp đại học chính quy - HaUI',
-          section: 'Chuẩn đầu ra & Điều kiện xét tốt nghiệp (REG-HAUI-05)'
-        }
-      ];
-      warnings = [
-        'Hệ thống nhận thấy trong hồ sơ của bạn chưa có thông tin cơ sở thực tập hoặc chứng chỉ ngoại ngữ.'
-      ];
-      actions = [
-        {
-          id: 'act-profile',
-          label: 'Xem và cập nhật Hồ sơ sinh viên',
-          icon: 'badge',
-          route: '/profile',
-          primary: true
-        },
-        {
-          id: 'act-transcript',
-          label: 'Đính kèm/Cập nhật bảng điểm mới (TV2)',
-          icon: 'upload_file',
-          route: '/transcript',
-          primary: false
-        }
-      ];
-    } else {
-      answerText = `[AI Advisor]: Theo Quy chế đào tạo tín chỉ HaUI, các quy định học vụ áp dụng cho câu hỏi "${trimmed}" được quy định chi tiết tại các văn bản quy chế hiện hành của nhà trường. Bạn có thể tra cứu chi tiết trong sổ tay sinh viên hoặc mục Quy chế đào tạo.`;
-    }
-
-    return {
-      answer: answerText,
-      sources,
-      actions,
-      warnings,
-      planProposal: null
-    };
-  }
-
-  // Trường hợp yêu cầu lập lộ trình / kế hoạch học tập (Kịch bản P05)
-  return {
-    answer: `[AI Advisor]: Dựa trên hồ sơ của bạn (CPA 3.18, 108/145 TC), để đạt mục tiêu cho câu hỏi "${trimmed}", AI đề xuất bạn nên phân bổ 18 tín chỉ ở Kỳ 7: ưu tiên gỡ môn Toán rời rạc (3 TC), cải thiện OOP (4 TC) và 4 môn chuyên ngành.`,
-    sources: [
-      {
-        title: 'Quy chế đào tạo tín chỉ Đại học Công nghiệp Hà Nội (HaUI)',
-        section: 'Điều 14 - Điều kiện tiên quyết & Giới hạn 10-24 TC (BR-03/BR-04)'
-      },
-      {
-        title: 'Chương trình đào tạo chính quy — Đại học Công nghiệp Hà Nội (HaUI)',
-        section: 'Cấu trúc môn kiến thức & Phân bổ học kỳ gợi ý'
-      }
-    ],
-    actions: [],
-    warnings: [],
-    planProposal: plan || (typeof plannerStore !== 'undefined' ? plannerStore.getPlan() : null)
-  };
-}
 
 /**
  * Màn hình 2: Trợ lý ảo AI Chatbot Tư vấn Học vụ (AI Advisor Chat) — TV3
@@ -588,8 +204,7 @@ export function ChatAdvisorPage({
           clientTimestamp: new Date().toISOString()
         });
       } else {
-        // Fallback response mô phỏng thuần JSON tuân thủ F23-008: P04 quy chế vs P05 lộ trình khi không có API
-        response = generateMockChatResponse(trimmed, plannerStore.getPlan());
+        throw new Error('Chưa cấu hình kết nối API cố vấn học vụ.');
       }
 
       // 2. Thêm tin nhắn phản hồi của AI vào hội thoại (chỉ khi có câu trả lời thật từ server)
@@ -608,8 +223,7 @@ export function ChatAdvisorPage({
         proposalAccepted: false,
         proposalDismissed: false,
         warnings: response?.warnings || [],
-        timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-        executionTime: '0.8s'
+        timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
       };
 
       setMessages((prev) => [...prev, aiMsg]);
@@ -1203,12 +817,8 @@ export function ChatAdvisorPage({
                         )
                       ),
 
-                      // Text body
-                      React.createElement(
-                        'div',
-                        { style: { fontSize: '14px', lineHeight: 1.6, color: 'var(--color-ink)' } },
-                        React.createElement('p', { style: { margin: 0, whiteSpace: 'pre-line' } }, msg.text)
-                      ),
+                      // Text body (Render Markdown, GFM tables, and LaTeX math formulas safely)
+                      React.createElement(MarkdownContent, { content: msg.text }),
 
                       // KHỐI 1: Công thức tính toán chi tiết (Calculation Data Breakdown)
                       msg.calculationData
@@ -1568,11 +1178,6 @@ export function ChatAdvisorPage({
                             color: 'var(--color-mid-gray)'
                           }
                         },
-                        React.createElement(
-                          'span',
-                          null,
-                          `Mô hình hoàn thành phản hồi trong ${msg.executionTime || '1.1s'}`
-                        ),
                         React.createElement(
                           'div',
                           { style: { display: 'flex', alignItems: 'center', gap: '6px' } },
@@ -1972,9 +1577,9 @@ export function ChatAdvisorPage({
             [
               {
                 icon: 'account_tree',
-                title: 'Tiên quyết môn Đồ án',
-                desc: 'Chuỗi môn IT6080 & IT6090',
-                prompt: 'Môn IT6080 - Đồ án chuyên ngành cần những môn tiên quyết nào?'
+                title: 'Điều kiện học phần',
+                desc: 'Cho mình biết mã học phần cần kiểm tra',
+                prompt: 'Mình muốn kiểm tra môn học trước và tiên quyết của một học phần.'
               },
               {
                 icon: 'translate',

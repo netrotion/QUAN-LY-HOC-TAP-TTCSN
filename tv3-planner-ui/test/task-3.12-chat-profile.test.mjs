@@ -9,7 +9,6 @@ import {
   PLAN_STATUSES,
   ChatAdvisorPage,
   StudentProfilePage,
-  generateMockChatResponse,
   QUICK_PROMPTS_MAN_2,
   SAMPLE_K16_PROFILE,
   HAUI_COHORTS
@@ -17,6 +16,15 @@ import {
 
 beforeEach(() => {
   plannerStore.resetToDefault();
+});
+
+test('live chat does not offer a false course name or fabricate an answer or timing', () => {
+  const source = fs.readFileSync(new URL('../src/pages/ChatAdvisorPage.js', import.meta.url), 'utf8');
+  assert.ok(QUICK_PROMPTS_MAN_2.some((prompt) => prompt.includes('môn học trước và tiên quyết')));
+  assert.ok(!source.includes('IT6080 - Đồ án chuyên ngành'));
+  assert.ok(!source.includes('generateMockChatResponse'));
+  assert.ok(!source.includes('executionTime'));
+  assert.ok(!source.includes('Mô hình hoàn thành phản hồi trong'));
 });
 
 const mockUi = {
@@ -69,45 +77,6 @@ test('Task 3.12 - 1: Chat Advisor render thành công với injected api/ui và 
   assert.equal(QUICK_PROMPTS_MAN_2.length, 4, 'Phải có đúng 4 Quick Prompts chuẩn Màn 2 UI Flow');
 });
 
-test('Task 3.12 - 2: Hỏi quy chế học vụ (P04) ở nguyên hội thoại, trích dẫn văn bản, planProposal là null', () => {
-  const regQuestions = [
-    'Điều kiện cảnh báo học vụ mức 1 và mức 2 tại HaUI là gì?',
-    'Số tín chỉ tối đa được đăng ký trong một học kỳ chính là bao nhiêu?',
-    'Quy định học lại môn F và học cải thiện điểm D/D+/C như thế nào?',
-    'Chuẩn đầu ra và điều kiện xét tốt nghiệp K16 gồm những gì?'
-  ];
-
-  for (const q of regQuestions) {
-    const res = generateMockChatResponse(q, plannerStore.getPlan());
-    assert.equal(
-      res.planProposal,
-      null,
-      `Câu hỏi quy chế "${q}" tuyệt đối không được có planProposal (ở nguyên hội thoại, không ép mở Planner)`
-    );
-    assert.ok(res.sources && res.sources.length > 0, `Câu hỏi "${q}" phải có nguồn trích dẫn quy chế HaUI`);
-    assert.ok(
-      res.sources[0].title.includes('Quy chế') || res.sources[0].title.includes('Chương trình đào tạo'),
-      'Nguồn trích dẫn phải nêu rõ tên văn bản quy chế đào tạo'
-    );
-    assert.ok(res.answer.startsWith('[AI Advisor]:'), 'Câu trả lời phải có định danh [AI Advisor]');
-  }
-});
-
-test('Task 3.12 - 3: Yêu cầu lập lộ trình / kế hoạch (P05) sinh proposal gắn thẻ đề xuất phương án', () => {
-  const planQuestions = [
-    'Tư vấn lộ trình kéo CPA lên >= 3.20 để tốt nghiệp bằng Giỏi.',
-    'Lên lộ trình học vượt 3.5 năm ngành CNTT/KTPM.',
-    'Lập kế hoạch phân bổ môn học kỳ 7 cho tôi'
-  ];
-
-  for (const q of planQuestions) {
-    const res = generateMockChatResponse(q, plannerStore.getPlan());
-    assert.ok(res.planProposal, `Câu hỏi lập lộ trình "${q}" bắt buộc phải có planProposal`);
-    assert.ok(Array.isArray(res.planProposal.semesters), 'Proposal phải chứa danh sách học kỳ');
-    assert.ok(res.sources && res.sources.length > 0, 'Proposal vẫn phải trích dẫn nguồn quy chế hạn mức tín chỉ');
-  }
-});
-
 test('Task 3.12 - 4: Thẻ đề xuất kế hoạch (Plan Proposal Card) hỗ trợ đầy đủ 3 nhánh hành động', () => {
   const mockProposal = {
     planId: 'prop-test-312',
@@ -131,11 +100,7 @@ test('Task 3.12 - 4: Thẻ đề xuất kế hoạch (Plan Proposal Card) hỗ t
   assert.equal(plannerStore.getIncomingProposal(), null, 'Sau khi chấp nhận, incoming proposal phải được xóa');
   assert.equal(plannerStore.getPlan().status, PLAN_STATUSES.DRAFT, 'Kế hoạch sau khi nhận đề xuất chuyển về DRAFT để thẩm định');
 
-  // 2. Nhánh 2: Phương án khác -> Tái prompt AI
-  const altRes = generateMockChatResponse('Hãy đề xuất cho tôi một phương án khác nhẹ tải hơn dưới 16 tín chỉ');
-  assert.ok(altRes.planProposal, 'Phương án thay thế phải tạo proposal mới');
-
-  // 3. Nhánh 3: Hủy đề xuất -> Bỏ qua proposal, không sửa kế hoạch hiện hành
+  // Nhánh hủy đề xuất: bỏ qua proposal, không sửa kế hoạch hiện hành.
   plannerStore.setIncomingProposal(mockProposal, 'AI Advisor Chat Test 2');
   plannerStore.rejectProposal();
   assert.equal(plannerStore.getIncomingProposal(), null, 'Sau khi hủy, incoming proposal phải bị hủy');
