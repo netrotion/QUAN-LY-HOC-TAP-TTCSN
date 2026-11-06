@@ -104,6 +104,27 @@ class AcademicSpecV1Test {
     class Capability2CourseEligibilitySpec {
 
         @Test
+        void returnsCourseDefinitionFromTheEvaluatedCurriculum() {
+            CourseEligibilityResponse web = academicFacade.checkCourseEligibility(
+                    new CourseEligibilityRequest("2024604757", "IT6080", "2025_1", "rev-ktpm-v1"));
+            assertThat(web.getCourseName()).isEqualTo("Lập trình Web bằng Java");
+            assertThat(web.getPrerequisiteCourseCodes()).isEmpty();
+            assertThat(web.getPriorCourseCodes()).containsExactly("IT6019", "IT6020");
+            assertThat(web.getCorequisiteCourseCodes()).isEmpty();
+
+            CourseEligibilityResponse project = academicFacade.checkCourseEligibility(
+                    new CourseEligibilityRequest("2024604757", "IT6150", "2025_1", "rev-ktpm-v1"));
+            assertThat(project.getCourseName()).isEqualTo("Đồ án chuyên ngành");
+            assertThat(project.getPriorCourseCodes()).containsExactly("IT6040");
+
+            CourseEligibilityResponse unknown = academicFacade.checkCourseEligibility(
+                    new CourseEligibilityRequest("2024604757", "UNKNOWN", "2025_1", "rev-ktpm-v1"));
+            assertThat(unknown.isEligible()).isFalse();
+            assertThat(unknown.getCourseName()).isNull();
+            assertThat(unknown.getPrerequisiteCourseCodes()).isNull();
+        }
+
+        @Test
         @DisplayName("2.1 Đủ điều kiện: Sinh viên đã đạt các môn học trước LP6010, LP6011 -> Được đăng ký LP6013")
         void testCheckCourseEligibility_EligibleWhenPriorCourseSatisfied() {
             CourseEligibilityRequest req = new CourseEligibilityRequest("2024604757", "LP6013", "2025_1", "rev-ktpm-v1");

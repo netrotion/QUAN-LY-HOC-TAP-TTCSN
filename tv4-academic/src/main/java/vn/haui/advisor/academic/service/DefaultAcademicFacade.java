@@ -227,7 +227,19 @@ public class DefaultAcademicFacade implements AcademicFacade {
         }
 
         CurriculumFixture targetCurriculum = resolveCurriculum(profile, courseCode);
-        return RuleEvaluator.checkEligibility(courseCode, profile, transcriptAttempts, targetCurriculum, Collections.emptyList(), revision);
+        CourseEligibilityResponse result = RuleEvaluator.checkEligibility(courseCode, profile, transcriptAttempts, targetCurriculum, Collections.emptyList(), revision);
+        if (courseCode != null && targetCurriculum != null && targetCurriculum.getCourses() != null) {
+            targetCurriculum.getCourses().stream()
+                    .filter(course -> courseCode.equalsIgnoreCase(course.getCourseCode()))
+                    .findFirst()
+                    .ifPresent(course -> {
+                        result.setCourseName(course.getCourseName());
+                        result.setPrerequisiteCourseCodes(course.getPrerequisites() == null ? null : List.copyOf(course.getPrerequisites()));
+                        result.setPriorCourseCodes(course.getPriorCourses() == null ? null : List.copyOf(course.getPriorCourses()));
+                        result.setCorequisiteCourseCodes(course.getCorequisites() == null ? null : List.copyOf(course.getCorequisites()));
+                    });
+        }
+        return result;
     }
 
     @Override
