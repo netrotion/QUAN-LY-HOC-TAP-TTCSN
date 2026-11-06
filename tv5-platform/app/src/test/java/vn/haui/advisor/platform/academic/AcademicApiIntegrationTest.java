@@ -153,8 +153,7 @@ class AcademicApiIntegrationTest {
             }
             ObjectNode expected = (ObjectNode) objectMapper.valueToTree(academicFacade.checkCourseEligibility(
                     new CourseEligibilityRequest(a, node.get("courseCode").asText(), null, revisionA)));
-            expected.remove("dataRevision");
-            expected.remove("policyVersion");
+            expected.retain("courseCode", "eligible", "missingPrerequisites", "warnings");
             assertThat(actual).as("nút %s", node.get("courseCode")).isEqualTo(expected);
         }
         assertNode(treeA, "IT6015", "PASSED", "A");

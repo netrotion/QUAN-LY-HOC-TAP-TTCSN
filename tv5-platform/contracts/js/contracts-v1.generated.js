@@ -2079,6 +2079,13 @@ export const FIXTURES = Object.freeze({
     "responseSchema": "CourseEligibilityResponse",
     "response": {
       "courseCode": "IT6083",
+      "courseName": "Mạng máy tính",
+      "prerequisiteCourseCodes": [],
+      "priorCourseCodes": [
+        "IT6067",
+        "IT6203"
+      ],
+      "corequisiteCourseCodes": [],
       "eligible": false,
       "missingPrerequisites": [
         "IT6203 (chưa đăng ký học phần học trước)"

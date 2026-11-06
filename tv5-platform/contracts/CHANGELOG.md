@@ -3,6 +3,12 @@
 Mọi thay đổi hợp đồng sau mốc `contracts-v1` phải có mục ở đây, trong cùng PR của TV5 với thay đổi.
 Quy trình: [docs/task-2.4-contracts-v1.md §6](../docs/task-2.4-contracts-v1.md).
 
+## [1.5.0 additive] — 2026-11-06 — Metadata học phần đã xác minh
+
+`CourseEligibilityResponse` thêm bốn trường tùy chọn `courseName`, `prerequisiteCourseCodes`,
+`priorCourseCodes`, `corequisiteCourseCodes` từ cùng CTĐT mà Academic Engine dùng để kiểm tra.
+Null là chưa xác minh; danh sách rỗng là CTĐT xác nhận không có quan hệ đó. Các trường và constructor cũ giữ nguyên.
+
 ## [1.5.0] — 2026-10-23 — What-if, đối chiếu kế hoạch và Chat (Task 4.3b)
 
 Nối nốt các operation còn 501: What-if, xếp hạng học cải thiện (ROI), mục tiêu ngược, đối chiếu kế hoạch và Chat. Không còn

@@ -14,6 +14,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import vn.haui.advisor.contracts.dto.ChatRequest;
+import vn.haui.advisor.contracts.dto.CourseEligibilityRequest;
 import vn.haui.advisor.contracts.dto.ConversationRecord;
 import vn.haui.advisor.contracts.dto.SimulateGradesRequest;
 import vn.haui.advisor.contracts.dto.SimulatedCourseGrade;
@@ -74,6 +75,29 @@ class AdvisorChatApiTest {
         return new StudentApi(mockMvc, objectMapper);
     }
 
+    @Test
+    void courseEligibilityUsesVerifiedDefinitionAndKeepsConversationContext() throws Exception {
+        String sv = "sv-course-metadata";
+        accounts.ensure(sv);
+        JsonNode eligibility = api().call(post("/api/v1/academic/eligibility"), sv, 200,
+                "CourseEligibilityResponse", new CourseEligibilityRequest(sv, "IT6080", null, null));
+        assertThat(eligibility.path("courseName").asText()).isEqualTo("Lập trình Web bằng Java");
+        assertThat(eligibility.path("prerequisiteCourseCodes").toString()).isEqualTo("[]");
+        assertThat(eligibility.path("priorCourseCodes").toString()).contains("IT6019", "IT6020");
+
+        provider.answer(prompt -> "{\"answer\":\"IT6080 là Lập trình Web bằng Java.\"}");
+        String conversation = "conv-course-metadata";
+        api().call(post("/api/v1/advisor/chat"), sv, 200, "ChatResponse",
+                new ChatRequest(conversation, "Môn IT6080 - Đồ án chuyên ngành cần những môn tiên quyết nào?", null));
+        assertThat(provider.lastPrompt()).contains("courseName=Lập trình Web bằng Java",
+                "prerequisiteCourseCodes=[]", "priorCourseCodes=[IT6019, IT6020]");
+
+        api().call(post("/api/v1/advisor/chat"), sv, 200, "ChatResponse",
+                new ChatRequest(conversation, "Vậy môn đó cần học trước môn nào?", null));
+        assertThat(provider.lastPrompt()).contains("courseCode=IT6080", "courseName=Lập trình Web bằng Java");
+        assertThat(messages(sv, conversation)).hasSize(4);
+    }
+
     @AfterEach
     void reset() {
         provider.reset();
@@ -94,7 +118,8 @@ class AdvisorChatApiTest {
                 new ChatRequest("conv-chat-a-1", STATUS_QUESTION, null));
         assertThat(answer.get("answer").asText()).contains("CPA hiện tại của bạn là " + status.get("cpa").asText());
         assertThat(provider.lastPrompt()).as("công cụ học vụ thật chạy trên hồ sơ của người hỏi")
-                .contains("academicStatus: studentId=" + sv, "CPA=" + status.get("cpa").asText())
+                .contains("academicStatus: CPA=" + status.get("cpa").asText())
+                .doesNotContain("studentId=" + sv)
                 .contains(STATUS_QUESTION);
 
         JsonNode list = api().call(get("/api/v1/advisor/conversations"), sv, 200, "ConversationListResponse");
@@ -189,7 +214,7 @@ class AdvisorChatApiTest {
         accounts.ensure(a);
         accounts.ensure(b);
         api().call(post("/api/v1/advisor/chat"), a, 200, "ChatResponse", new ChatRequest("conv-chat-owner", STATUS_QUESTION, null));
-        assertThat(provider.lastPrompt()).contains("studentId=" + a).doesNotContain(b);
+        assertThat(provider.lastPrompt()).contains("Sinh viên " + a).doesNotContain(b, "studentId=" + a);
         int calls = provider.calls();
 
         JsonNode denied = api().call(post("/api/v1/advisor/chat"), b, 404, "ApiErrorResponse",
@@ -201,7 +226,7 @@ class AdvisorChatApiTest {
         assertThat(messages(a, "conv-chat-owner")).hasSize(2);
 
         api().call(post("/api/v1/advisor/chat"), b, 200, "ChatResponse", new ChatRequest("conv-chat-other", STATUS_QUESTION, null));
-        assertThat(provider.lastPrompt()).contains("studentId=" + b).doesNotContain("studentId=" + a);
+        assertThat(provider.lastPrompt()).contains("Sinh viên " + b).doesNotContain(a, "studentId=" + b);
     }
 
     @Test

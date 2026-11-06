@@ -68,7 +68,11 @@ public class AdvisorConfig {
                     + "runtime dùng ai.mode=live và GEMINI_API_KEY");
         }
         String apiKey = ai.getModel().getApiKey();
-        return new AdvisorReadiness(ai.getMode(), () -> apiKey != null && !apiKey.isBlank(), properties.getDegradedWindow(),
+        if ((apiKey == null || apiKey.isBlank()) && LiveAdvisorModel.loadDotEnv().containsKey("GEMINI_API_KEY")) {
+            apiKey = LiveAdvisorModel.loadDotEnv().get("GEMINI_API_KEY");
+        }
+        final String effectiveKey = apiKey;
+        return new AdvisorReadiness(ai.getMode(), () -> effectiveKey != null && !effectiveKey.isBlank(), properties.getDegradedWindow(),
                 Clock.systemUTC());
     }
 
@@ -111,7 +115,7 @@ public class AdvisorConfig {
                                      ResponseGroundingValidator validator) {
         return readiness.mode() == AiMode.MOCK
                 ? new MockAdvisorModel(rag, validator)
-                : new LiveAdvisorModel(null, validator, false);
+                : new LiveAdvisorModel(null, validator, true);
     }
 
     @Bean

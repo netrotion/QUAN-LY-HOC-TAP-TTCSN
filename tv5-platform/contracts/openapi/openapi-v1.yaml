@@ -1384,6 +1384,28 @@ components:
         courseCode:
           type: string
           description: "Mã học phần."
+        courseName:
+          type: string
+          nullable: true
+          description: "Tên học phần trong CTĐT đã dùng để kiểm tra; null nếu chưa xác minh."
+        prerequisiteCourseCodes:
+          type: array
+          nullable: true
+          description: "Toàn bộ mã môn tiên quyết trong CTĐT; null nếu chưa xác minh."
+          items:
+            type: string
+        priorCourseCodes:
+          type: array
+          nullable: true
+          description: "Toàn bộ mã môn học trước trong CTĐT; null nếu chưa xác minh."
+          items:
+            type: string
+        corequisiteCourseCodes:
+          type: array
+          nullable: true
+          description: "Toàn bộ mã môn song hành trong CTĐT; null nếu chưa xác minh."
+          items:
+            type: string
         eligible:
           type: boolean
           description: "Đủ điều kiện đăng ký."
