@@ -1,5 +1,7 @@
 package vn.haui.advisor.ai.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import vn.haui.advisor.ai.conversation.ChatMessageHistoryItem;
 import vn.haui.advisor.ai.conversation.ConversationHistoryManager;
 import vn.haui.advisor.ai.grounding.ResponseGroundingValidator;
@@ -28,6 +30,7 @@ import java.util.concurrent.*;
  */
 public class DefaultAdvisorFacade implements AdvisorFacade {
 
+    private static final Logger log = LoggerFactory.getLogger(DefaultAdvisorFacade.class);
     private static final int DEFAULT_MAX_HISTORY_TURNS = 10;
     private static final int TOOL_EXECUTION_BUDGET = 3;
     private static final long DEFAULT_TOOL_TIMEOUT_MS = 2500;
@@ -129,6 +132,10 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
 
         // 4. Phân loại ý định và bóc tách tham số (Context & Intent Understanding)
         ConversationTurnPlanner.TurnDecision decision = turnPlanner.decide(userMessage, history);
+        log.info("advisor_route mode={} category={} capabilities={} policy={} clarify={} provenance={}",
+                decision.mode(), decision.intent().getCategory(), decision.capabilities(),
+                decision.policyEvidenceNeeded(), decision.clarificationQuestion() != null,
+                decision.argumentProvenance());
         ParsedUserIntent userIntent = decision.intent();
         boolean isTranscriptMissing = context.getStudentId() != null &&
                 (context.getStudentId().contains("ANONYMOUS") || "REV-0".equals(context.getDataRevision()) || "REV-EMPTY".equals(context.getDataRevision()));
@@ -244,11 +251,17 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                                       List<String> warnings) {
         if (intent.isTranscriptMissing()) {
             warnings.add("TRANSCRIPT_REQUIRED");
+            for (AcademicCapability capability : decision.capabilities()) {
+                log.info("advisor_tool capability={} outcome=SKIPPED_TRANSCRIPT elapsedMs=0", capability);
+            }
             return;
         }
         int calls = 0;
         for (AcademicCapability capability : decision.capabilities()) {
-            if (calls++ >= TOOL_EXECUTION_BUDGET) break;
+            if (calls++ >= TOOL_EXECUTION_BUDGET) {
+                log.info("advisor_tool capability={} outcome=SKIPPED_BUDGET elapsedMs=0", capability);
+                break;
+            }
             Object result = switch (capability) {
                 case GET_ACADEMIC_STATUS -> executeWithTimeout(
                         () -> toolAdapter.getAcademicStatus(context), capability, warnings);
@@ -338,8 +351,10 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
      * Thực thi một lệnh gọi công cụ trong ranh giới timeout và ghi nhận cảnh báo.
      */
     private <T> T executeWithTimeout(Callable<T> task, AcademicCapability capability, List<String> warnings) {
+        long started = System.nanoTime();
         // Kiểm tra độ sẵn sàng trước khi gọi
         if (!toolAdapter.isCapabilityReady(capability)) {
+            logToolOutcome(capability, "NOT_READY", started);
             String notReadyWarning = (capability == AcademicCapability.RECONCILE_STUDY_PLAN)
                     ? "TOOL_UNAVAILABLE: Capability reconcileStudyPlan is not currently exposed in ToolAdapter"
                     : "TOOL_UNAVAILABLE: Capability " + capability.name() + " is not ready in AcademicFacade";
@@ -351,9 +366,12 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
 
         Future<T> future = executorService.submit(task);
         try {
-            return future.get(toolTimeoutMs, TimeUnit.MILLISECONDS);
+            T result = future.get(toolTimeoutMs, TimeUnit.MILLISECONDS);
+            logToolOutcome(capability, result == null ? "EMPTY" : "SUCCESS", started);
+            return result;
         } catch (TimeoutException te) {
             future.cancel(true);
+            logToolOutcome(capability, "TIMEOUT", started);
             String timeoutWarning = "TOOL_TIMEOUT: Academic tool call exceeded deadline (" + toolTimeoutMs + "ms)";
             if (!warnings.contains(timeoutWarning)) {
                 warnings.add(timeoutWarning);
@@ -362,6 +380,7 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
         } catch (ExecutionException ee) {
             Throwable cause = ee.getCause();
             if (cause instanceof ToolNotReadyException tnre) {
+                logToolOutcome(capability, "NOT_READY", started);
                 String notReadyWarning = "TOOL_UNAVAILABLE: " + tnre.getMessage();
                 if (!warnings.contains(notReadyWarning)) {
                     warnings.add(notReadyWarning);
@@ -369,14 +388,21 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                 return null;
             }
             String errorWarning = "TOOL_ERROR: " + (cause != null ? cause.getMessage() : "Unknown error");
+            logToolOutcome(capability, "ERROR", started);
             if (!warnings.contains(errorWarning)) {
                 warnings.add(errorWarning);
             }
             return null;
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
+            logToolOutcome(capability, "INTERRUPTED", started);
             warnings.add("TOOL_ERROR: Execution interrupted");
             return null;
         }
+    }
+
+    private static void logToolOutcome(AcademicCapability capability, String outcome, long started) {
+        log.info("advisor_tool capability={} outcome={} elapsedMs={}", capability, outcome,
+                TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started));
     }
 }

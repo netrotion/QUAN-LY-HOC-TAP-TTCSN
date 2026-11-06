@@ -164,6 +164,13 @@ class ConversationTurnPlannerTest {
     }
 
     @Test
+    void eligibilityUsesRequestedCourseWhenTwoCodesAreLowercase() {
+        var decision = planner.decide("Mình nợ it6019, có đăng ký it6080 được không?", List.of());
+        assertThat(decision.capabilities()).containsExactly(AcademicCapability.CHECK_COURSE_ELIGIBILITY);
+        assertThat(decision.intent().getCourseCode()).isEqualTo("IT6080");
+    }
+
+    @Test
     void reconciliationClarificationCanBeCompletedInNextTurn() {
         var history = List.of(ChatMessageHistoryItem.ofUser("Đồng bộ kế hoạch sau kỳ này"),
                 ChatMessageHistoryItem.ofAssistant("Bạn cho mình mã kế hoạch, học kỳ và phiên bản để đối soát nhé?",

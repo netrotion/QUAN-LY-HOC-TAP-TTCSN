@@ -1,6 +1,9 @@
 package vn.haui.advisor.ai.service;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import vn.haui.advisor.ai.conversation.ChatMessageHistoryItem;
 import vn.haui.advisor.ai.conversation.ConversationHistoryManager;
 import vn.haui.advisor.ai.model.AdvisorModel;
@@ -57,6 +60,38 @@ class ConversationalAdvisorFacadeTest {
     }
 
     @Test
+    void comparisonUsesStatusAndRankingOnceThenReusesTheConversation() {
+        AcademicStatusResponse status = new AcademicStatusResponse();
+        status.setCpa(new BigDecimal("2.1"));
+        RankRetakeCoursesResponse ranking = new RankRetakeCoursesResponse();
+        ranking.setRecommendations(List.of());
+        when(tools.getAcademicStatus(student)).thenReturn(status);
+        when(tools.rankRetakeCourses(eq(student), anyInt())).thenReturn(ranking);
+        DefaultAdvisorFacade facade = facade();
+
+        facade.chat(new ChatRequest("conv-compare", "Mình phân vân giữa học cải thiện và học môn mới", null), student);
+        assertThat(modelInput.get().getToolResults()).containsKeys("academicStatus", "rankRetakeCourses");
+        facade.chat(new ChatRequest("conv-compare", "Nhưng nếu mình không đủ thời gian thì sao?", null), student);
+
+        verify(tools, times(1)).getAcademicStatus(student);
+        verify(tools, times(1)).rankRetakeCourses(eq(student), anyInt());
+        verifyNoInteractions(rag);
+    }
+
+    @Test
+    @ExtendWith(OutputCaptureExtension.class)
+    void routeTraceContainsDecisionsButNoStudentData(CapturedOutput output) {
+        TrustedStudentContext privateStudent = new TrustedStudentContext(
+                "PRIVATE_STUDENT_59283", "SECRET_CODE_59283", "Private Name", "IT", "K19", "REV-1");
+        facade().chat(new ChatRequest("conv-trace", "IT9999 có đăng ký được không? PRIVATE_QUERY_59283", null),
+                privateStudent);
+
+        assertThat(output.getOut()).contains("advisor_route mode=PERSONAL_ANALYSIS")
+                .contains("advisor_tool capability=CHECK_COURSE_ELIGIBILITY")
+                .doesNotContain("PRIVATE_STUDENT_59283", "SECRET_CODE_59283", "PRIVATE_QUERY_59283", "IT9999");
+    }
+
+    @Test
     void confirmedGoalFromUserHistoryReachesPlanWithoutDefaults() {
         history.saveTurn("conv-goal", student.getStudentId(),
                 ChatMessageHistoryItem.ofUser("Mục tiêu CPA của mình là 3.2"),
@@ -99,6 +134,25 @@ class ConversationalAdvisorFacadeTest {
     void missingSimulationInputDoesNotExecuteEngineWithFabricatedGrades() {
         ChatResponse response = facade().chat(new ChatRequest("conv-sim", "Nếu kỳ tới mình được điểm cao thì CPA sao?", null), student);
         assertThat(response.getAnswer()).contains("điểm");
+        verify(tools, never()).simulateGrades(any(), any());
+    }
+
+    @Test
+    void twoCourseSimulationPassesBothConfirmedGradesToEngine() {
+        facade().chat(new ChatRequest("conv-two-grades",
+                "Nếu IT6019 3 tín chỉ B và IT6020 4 tín chỉ A thì CPA sao?", null), student);
+        verify(tools).simulateGrades(eq(student), argThat(grades -> grades != null && grades.size() == 2
+                && "IT6019".equals(grades.get(0).getCourseCode())
+                && "B".equals(grades.get(0).getExpectedGrade())
+                && "IT6020".equals(grades.get(1).getCourseCode())
+                && "A".equals(grades.get(1).getExpectedGrade())));
+    }
+
+    @Test
+    void incompleteSecondSimulationAsksBeforeCallingEngine() {
+        ChatResponse response = facade().chat(new ChatRequest("conv-incomplete-grades",
+                "Nếu IT6019 3 tín chỉ B và IT6020 được A thì CPA sao?", null), student);
+        assertThat(response.getAnswer()).contains("mô phỏng");
         verify(tools, never()).simulateGrades(any(), any());
     }
 

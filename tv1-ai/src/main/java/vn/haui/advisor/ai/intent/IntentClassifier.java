@@ -26,7 +26,7 @@ public class IntentClassifier {
     );
 
     private static final Pattern COURSE_CODE_PATTERN = Pattern.compile(
-            "\\b([A-Z]{2,4}\\d{4})\\b"
+            "\\b([A-Z]{2,4}\\d{4})\\b", Pattern.CASE_INSENSITIVE
     );
 
     private static final Pattern DIRECT_SEMESTER_CODE = Pattern.compile(
@@ -50,7 +50,8 @@ public class IntentClassifier {
     );
 
     private static final Pattern WHAT_IF_CREDITS_GRADE = Pattern.compile(
-            "(\\d+)\\s*(?:tín chỉ|tín|tc)\\s*([A-Da-d][+]?|[Ff])",
+            "(?:\\b([A-Z]{2,4}\\d{4})\\b\\s*)?(\\d+)\\s*(?:tín chỉ|tín|tc)\\s*([A-D][+]?|F)"
+                    + "(?:\\s*(?:môn|học phần)\\s*\\b([A-Z]{2,4}\\d{4})\\b)?",
             Pattern.CASE_INSENSITIVE
     );
 
@@ -257,7 +258,7 @@ public class IntentClassifier {
     private String extractCourseCode(String text) {
         Matcher m = COURSE_CODE_PATTERN.matcher(text);
         if (m.find()) {
-            return m.group(1);
+            return m.group(1).toUpperCase(Locale.ROOT);
         }
         return null;
     }
@@ -326,15 +327,26 @@ public class IntentClassifier {
 
     private List<SimulatedCourseGrade> extractSimulatedGrades(String text) {
         List<SimulatedCourseGrade> result = new ArrayList<>();
+        Set<String> mentionedCodes = new HashSet<>();
+        Matcher codes = COURSE_CODE_PATTERN.matcher(text);
+        while (codes.find()) mentionedCodes.add(codes.group(1).toUpperCase(Locale.ROOT));
+        Set<String> matchedCodes = new HashSet<>();
         Matcher m = WHAT_IF_CREDITS_GRADE.matcher(text);
-        if (m.find()) {
-            int credits = Integer.parseInt(m.group(1));
-            String grade = m.group(2).toUpperCase(Locale.ROOT);
+        while (m.find()) {
+            String before = m.group(1);
+            String after = m.group(4);
+            if (before != null && after != null && !before.equalsIgnoreCase(after)) return List.of();
+            String courseCode = before != null ? before.toUpperCase(Locale.ROOT)
+                    : after != null ? after.toUpperCase(Locale.ROOT) : null;
+            if (courseCode == null && !mentionedCodes.isEmpty()) return List.of();
+            int credits = Integer.parseInt(m.group(2));
+            String grade = m.group(3).toUpperCase(Locale.ROOT);
             BigDecimal points = gradeToPoints(grade);
-            result.add(new SimulatedCourseGrade(extractCourseCode(text), credits, grade, points));
-            return result;
+            if (points == null) return List.of();
+            if (courseCode != null) matchedCodes.add(courseCode);
+            result.add(new SimulatedCourseGrade(courseCode, credits, grade, points));
         }
-        return result;
+        return matchedCodes.equals(mentionedCodes) ? result : List.of();
     }
 
     private BigDecimal gradeToPoints(String grade) {
@@ -346,7 +358,8 @@ public class IntentClassifier {
             case "C" -> new BigDecimal("2.0");
             case "D+" -> new BigDecimal("1.5");
             case "D" -> new BigDecimal("1.0");
-            default -> BigDecimal.ZERO;
+            case "F" -> BigDecimal.ZERO;
+            default -> null;
         };
     }
 

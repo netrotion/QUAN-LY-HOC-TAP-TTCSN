@@ -21,7 +21,7 @@ public class ConversationTurnPlanner {
     private static final Pattern VERSION = Pattern.compile("(?:phiên bản|version|v)\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
     private static final Pattern TARGET_CPA = Pattern.compile(
             "(?i)(?:mục tiêu(?:\\s+cpa)?|đạt\\s+cpa|đổi(?:\\s+mục tiêu)?(?:\\s+cpa)?(?:\\s+thành)?|cpa\\s+mục tiêu|cpa\\s+lên)\\D{0,30}?([0-3](?:\\.\\d{1,2})?|4(?:\\.0{1,2})?)\\b");
-    private static final Pattern COURSE_CODE = Pattern.compile("\\b[A-Z]{2,4}\\d{4}\\b");
+    private static final Pattern COURSE_CODE = Pattern.compile("\\b[A-Z]{2,4}\\d{4}\\b", Pattern.CASE_INSENSITIVE);
     private final IntentClassifier classifier;
 
     public enum Mode { DIRECT, CLARIFY, POLICY, PERSONAL_ANALYSIS, PLAN }
@@ -66,7 +66,7 @@ public class ConversationTurnPlanner {
         FactSource courseSource = courseCode == null ? FactSource.UNKNOWN : FactSource.CURRENT_USER;
         if (lower.contains("đăng ký")) {
             Matcher codes = COURSE_CODE.matcher(current);
-            while (codes.find()) courseCode = codes.group();
+            while (codes.find()) courseCode = codes.group().toUpperCase(Locale.ROOT);
         }
         Boolean includeSummer = parsed.getIncludeSummer();
         if (semester == null && containsAny(lower, "kỳ đó", "học kỳ đó")) {
@@ -165,6 +165,9 @@ public class ConversationTurnPlanner {
         FactSource planIdSource = FactSource.UNKNOWN;
         FactSource planVersionSource = FactSource.UNKNOWN;
         boolean unresolvedGoal = targetCpa == null && containsAny(lower, "mục tiêu đó", "mục tiêu này", "cpa đó");
+        boolean comparesRetakeWithNewCourse = containsAny(lower, "học cải thiện", "học lại", "cải thiện điểm")
+                && containsAny(lower, "môn mới", "học phần mới")
+                && containsAny(lower, "phân vân", "hay", "so với", "nên");
 
         boolean reconcileFollowUp = history != null && !history.isEmpty()
                 && "assistant".equalsIgnoreCase(history.getLast().getRole())
@@ -226,10 +229,16 @@ public class ConversationTurnPlanner {
             clarification = unresolvedGoal ? "Bạn nhắc lại CPA mục tiêu để mình lập kế hoạch đúng nhé?"
                     : planClarification(semester, maxCredits);
             if (clarification == null) capabilities.add(AcademicCapability.GENERATE_STUDY_PLAN);
-        } else if (containsAny(lower, "đăng ký được", "có thể đăng ký", "đủ điều kiện đăng ký", "học được")
+        } else if (comparesRetakeWithNewCourse) {
+            capabilities.add(AcademicCapability.GET_ACADEMIC_STATUS);
+            capabilities.add(AcademicCapability.RANK_RETAKE_COURSES);
+        } else if ((containsAny(lower, "đăng ký được", "được đăng ký", "có thể đăng ký", "đủ điều kiện đăng ký", "học được")
+                || (lower.contains("đăng ký") && lower.contains("được không")))
                 && (courseCode != null || containsAny(lower, "môn đó", "học phần đó"))) {
             if (courseCode == null) clarification = "Bạn cho mình mã học phần cần kiểm tra đăng ký nhé?";
             else capabilities.add(AcademicCapability.CHECK_COURSE_ELIGIBILITY);
+        } else if (courseCode != null && containsAny(lower, "tên gì", "là môn gì", "là học phần gì")) {
+            capabilities.add(AcademicCapability.CHECK_COURSE_ELIGIBILITY);
         } else if (containsAny(lower, "tiên quyết", "học trước", "song hành")
                 && (courseCode != null || containsAny(lower, "môn đó", "học phần đó"))) {
             if (courseCode == null) clarification = "Bạn cho mình mã học phần cần kiểm tra nhé?";
@@ -252,7 +261,7 @@ public class ConversationTurnPlanner {
             }
         } else if (parsed.getCategory() != ParsedUserIntent.ScenarioCategory.REGULATION
                 && containsAny(lower, "cpa của mình", "gpa của mình", "tình trạng học tập", "điểm của mình",
-                "cpa hiện tại", "xem điểm", "điểm học tập", "tiến độ học tập")) {
+                "cpa hiện tại", "xem điểm", "điểm học tập", "tiến độ học tập", "cpa thấp", "gpa thấp")) {
             capabilities.add(AcademicCapability.GET_ACADEMIC_STATUS);
         }
 

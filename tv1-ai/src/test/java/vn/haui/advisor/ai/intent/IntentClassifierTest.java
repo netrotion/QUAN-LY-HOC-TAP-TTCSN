@@ -3,6 +3,8 @@ package vn.haui.advisor.ai.intent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("IntentClassifier Hardening & Dynamic Parameter Extraction Tests")
@@ -20,6 +22,67 @@ class IntentClassifierTest {
         assertThat(explicit.getSimulatedGrades()).hasSize(1);
         assertThat(explicit.getSimulatedGrades().getFirst().getCourseCode()).isNull();
         assertThat(explicit.getSimulatedGrades().getFirst().getCredits()).isEqualTo(18);
+    }
+
+    @Test
+    void simulationKeepsEveryNamedCourseAndGrade() {
+        var grades = classifier.classify("Nếu IT6019 3 tín chỉ B và IT6020 4 tín chỉ A thì CPA sao?")
+                .getSimulatedGrades();
+        assertThat(grades).hasSize(2);
+        assertThat(grades.get(0).getCourseCode()).isEqualTo("IT6019");
+        assertThat(grades.get(0).getCredits()).isEqualTo(3);
+        assertThat(grades.get(0).getExpectedGrade()).isEqualTo("B");
+        assertThat(grades.get(0).getExpectedGradePoints()).isEqualByComparingTo(new BigDecimal("3.0"));
+        assertThat(grades.get(1).getCourseCode()).isEqualTo("IT6020");
+        assertThat(grades.get(1).getCredits()).isEqualTo(4);
+        assertThat(grades.get(1).getExpectedGrade()).isEqualTo("A");
+        assertThat(grades.get(1).getExpectedGradePoints()).isEqualByComparingTo(new BigDecimal("4.0"));
+    }
+
+    @Test
+    void simulationAssociatesCourseCodeAfterGrade() {
+        var grades = classifier.classify("Nếu 3 tín chỉ B+ môn IT6019 và 4 tín chỉ A môn IT6020 thì CPA sao?")
+                .getSimulatedGrades();
+        assertThat(grades).hasSize(2);
+        assertThat(grades.get(0).getCourseCode()).isEqualTo("IT6019");
+        assertThat(grades.get(0).getExpectedGrade()).isEqualTo("B+");
+        assertThat(grades.get(1).getCourseCode()).isEqualTo("IT6020");
+    }
+
+    @Test
+    void simulationDoesNotSilentlyDropIncompleteSecondCourse() {
+        var grades = classifier.classify("Nếu IT6019 3 tín chỉ B và IT6020 được A thì CPA sao?")
+                .getSimulatedGrades();
+        assertThat(grades).isEmpty();
+    }
+
+    @Test
+    void simulationDoesNotAssignOneGradeToTwoCourses() {
+        var grades = classifier.classify("Nếu IT6019 và IT6020 cùng 3 tín chỉ B thì CPA sao?")
+                .getSimulatedGrades();
+        assertThat(grades).isEmpty();
+    }
+
+    @Test
+    void simulationCanUseTwoAggregateGradeGroupsWithoutInventingCodes() {
+        var grades = classifier.classify("Nếu 3 tín chỉ B và 4 tín chỉ A thì CPA sao?")
+                .getSimulatedGrades();
+        assertThat(grades).hasSize(2);
+        assertThat(grades.get(0).getCourseCode()).isNull();
+        assertThat(grades.get(1).getCourseCode()).isNull();
+    }
+
+    @Test
+    void simulationNormalizesLowercaseCourseCode() {
+        var grades = classifier.classify("Nếu it6019 3 tín chỉ B thì CPA sao?").getSimulatedGrades();
+        assertThat(grades).hasSize(1);
+        assertThat(grades.getFirst().getCourseCode()).isEqualTo("IT6019");
+    }
+
+    @Test
+    void unsupportedGradeIsNotConvertedToZero() {
+        var grades = classifier.classify("Nếu IT6019 3 tín chỉ A+ thì CPA sao?").getSimulatedGrades();
+        assertThat(grades).isEmpty();
     }
 
     private final IntentClassifier classifier = new IntentClassifier();
