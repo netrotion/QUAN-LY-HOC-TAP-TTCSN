@@ -10,8 +10,11 @@ import vn.haui.advisor.ai.intent.ParsedUserIntent;
 import vn.haui.advisor.ai.model.AdvisorModel;
 import vn.haui.advisor.ai.model.AdvisorModelInput;
 import vn.haui.advisor.ai.model.AdvisorModelOutput;
+import vn.haui.advisor.ai.model.GeminiToolCall;
+import vn.haui.advisor.ai.model.LiveAdvisorModel;
 import vn.haui.advisor.ai.rag.service.GroundedContext;
 import vn.haui.advisor.ai.rag.service.RagAdvisorService;
+import vn.haui.advisor.ai.tools.GeminiToolDeclarations;
 import vn.haui.advisor.ai.tools.ToolAdapter;
 import vn.haui.advisor.ai.tools.ToolNotReadyException;
 import vn.haui.advisor.contracts.dto.*;
@@ -130,85 +133,170 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
             }
         }
 
-        // 4. Phân loại ý định và bóc tách tham số (Context & Intent Understanding)
-        ConversationTurnPlanner.TurnDecision decision = turnPlanner.decide(userMessage, history);
-        log.info("advisor_route mode={} category={} capabilities={} policy={} clarify={} provenance={}",
-                decision.mode(), decision.intent().getCategory(), decision.capabilities(),
-                decision.policyEvidenceNeeded(), decision.clarificationQuestion() != null,
-                decision.argumentProvenance());
-        ParsedUserIntent userIntent = decision.intent();
-        boolean isTranscriptMissing = context.getStudentId() != null &&
-                (context.getStudentId().contains("ANONYMOUS") || "REV-0".equals(context.getDataRevision()) || "REV-EMPTY".equals(context.getDataRevision()));
-        if (isTranscriptMissing && userIntent.getCategory() != ParsedUserIntent.ScenarioCategory.REGULATION) {
-            userIntent = ParsedUserIntent.builder()
-                    .category(userIntent.getCategory())
-                    .targetCpa(userIntent.getTargetCpa())
-                    .targetSemester(userIntent.getTargetSemester())
-                    .courseCode(userIntent.getCourseCode())
-                    .maxCredits(userIntent.getMaxCredits())
-                    .includeSummer(userIntent.getIncludeSummer())
-                    .retakeSuggestions(userIntent.getRetakeSuggestions())
-                    .simulatedGrades(userIntent.getSimulatedGrades())
-                    .isTranscriptMissing(true)
-                    .build();
-        }
+        // Native Gemini Function Calling Orchestration
+        ChatResponse response = null;
+        if (advisorModel instanceof LiveAdvisorModel liveModel) {
+            try {
+                LiveAdvisorModel.GeminiTurnResult turnResult = liveModel.inspectTurn(
+                        userMessage, history, GeminiToolDeclarations.getToolDeclarations()
+                );
 
-        // 5. Truy xuất RAG và neo chứng cứ quy chế
-        GroundedContext groundedContext = null;
-        List<String> combinedWarnings = new ArrayList<>();
-        if (isTranscriptMissing && decision.mode() != ConversationTurnPlanner.Mode.POLICY
-                && decision.mode() != ConversationTurnPlanner.Mode.DIRECT) {
-            combinedWarnings.add("TRANSCRIPT_REQUIRED");
-        }
-        if (ragAdvisorService != null && decision.policyEvidenceNeeded() && decision.clarificationQuestion() == null) {
-            groundedContext = ragAdvisorService.retrieveAndGround(decision.retrievalQuery(), 5, 0.35);
-            combinedWarnings.addAll(groundedContext.getWarnings());
-        }
+                if (turnResult.hasToolCalls()) {
+                    Map<String, Object> toolResults = new LinkedHashMap<>();
+                    GroundedContext groundedContext = null;
+                    List<String> combinedWarnings = new ArrayList<>();
 
-        // 6. Điều phối công cụ học vụ (Academic Tool Calling với Budget & Timeout)
-        Map<String, Object> toolResults = new HashMap<>();
-        if (decision.clarificationQuestion() == null) {
-            executeAcademicTools(context, userIntent, decision, toolResults, combinedWarnings);
-        }
+                    int count = 0;
+                    for (GeminiToolCall call : turnResult.toolCalls()) {
+                        if (count++ >= TOOL_EXECUTION_BUDGET) break;
+                        String toolName = call.name();
+                        Map<String, Object> args = call.arguments();
 
-        // 7. Đóng gói Input và gọi AdvisorModel (Mock hoặc Live)
-        AdvisorModelInput modelInput = new AdvisorModelInput(
-                userMessage,
-                context,
-                toolResults,
-                groundedContext,
-                history,
-                userIntent
-        );
+                        if ("search_regulations".equals(toolName)) {
+                            String query = args.getOrDefault("query", userMessage).toString();
+                            if (ragAdvisorService != null) {
+                                groundedContext = ragAdvisorService.retrieveAndGround(query, 5, 0.35);
+                                combinedWarnings.addAll(groundedContext.getWarnings());
+                                toolResults.put("search_regulations", groundedContext.getFormattedPromptContext());
+                            }
+                        } else {
+                            dispatchAcademicToolByName(context, toolName, args, toolResults, combinedWarnings);
+                        }
+                    }
 
-        AdvisorModelOutput rawModelOutput = decision.clarificationQuestion() != null
-                ? new AdvisorModelOutput(
-                        isTranscriptMissing
-                                ? "Mình chưa có bảng điểm đã xác nhận để lập kế hoạch cá nhân. Bạn vui lòng nhập bảng điểm trước; sau đó cho mình biết "
-                                    + decision.clarificationQuestion().toLowerCase(Locale.ROOT)
-                                : decision.clarificationQuestion(),
-                        List.of(),
-                        isTranscriptMissing ? List.of(new ChatActionItem("OPEN_TRANSCRIPT_IMPORT", "Nhập bảng điểm", "/academic/import", "{}")) : List.of(),
-                        null, List.of())
-                : advisorModel.generate(modelInput);
+                    String finalAnswer = liveModel.completeTurnWithToolResults(
+                            userMessage, history, turnResult.toolCalls(), toolResults
+                    );
 
-        // 8. Hậu kiểm định neo nguồn và chuẩn hóa phản hồi (Response Grounding Validation kèm PII redaction)
-        AdvisorModelOutput validatedOutput = responseGroundingValidator.validate(rawModelOutput, modelInput);
+                    List<ChatSourceItem> sources = (groundedContext != null && groundedContext.hasEvidence())
+                            ? groundedContext.getCitations()
+                            : List.of();
 
-        // Gộp cảnh báo từ model và tool results
-        for (String w : validatedOutput.getWarnings()) {
-            if (!combinedWarnings.contains(w)) {
-                combinedWarnings.add(w);
+                    ChatPlanProposal planProposal = toolResults.get("planProposal") instanceof ChatPlanProposal p ? p : null;
+
+                    AdvisorModelOutput modelOutput = new AdvisorModelOutput(
+                            finalAnswer, sources, List.of(), planProposal, combinedWarnings
+                    );
+
+                    AdvisorModelInput modelInput = new AdvisorModelInput(
+                            userMessage, context, toolResults, groundedContext, history, null
+                    );
+
+                    AdvisorModelOutput validatedOutput = responseGroundingValidator.validate(modelOutput, modelInput);
+
+                    response = new ChatResponse(
+                            validatedOutput.getAnswer(),
+                            validatedOutput.getSources(),
+                            validatedOutput.getActions(),
+                            validatedOutput.getPlanProposal(),
+                            validatedOutput.getWarnings()
+                    );
+                } else if (turnResult.directText() != null && !turnResult.directText().isBlank()) {
+                    AdvisorModelOutput modelOutput = new AdvisorModelOutput(
+                            turnResult.directText(), List.of(), List.of(), null, List.of()
+                    );
+                    AdvisorModelInput modelInput = new AdvisorModelInput(
+                            userMessage, context, Collections.emptyMap(), null, history, null
+                    );
+                    AdvisorModelOutput validatedOutput = responseGroundingValidator.validate(modelOutput, modelInput);
+
+                    response = new ChatResponse(
+                            validatedOutput.getAnswer(),
+                            validatedOutput.getSources(),
+                            validatedOutput.getActions(),
+                            validatedOutput.getPlanProposal(),
+                            validatedOutput.getWarnings()
+                    );
+                }
+            } catch (Exception ex) {
+                log.warn("gemini_native_orchestration_failed error={}", ex.getMessage());
+                List<String> warnings = List.of("MODEL_PROVIDER_ERROR: " + ex.getMessage());
+                String safeAnswer = "[LIVE_ADVISOR] Rất tiếc, hệ thống kết nối mô hình ngôn ngữ trực tuyến gặp sự cố gián đoạn tạm thời. Vui lòng thử lại sau giây lát hoặc liên hệ hỗ trợ.";
+                response = new ChatResponse(safeAnswer, List.of(), List.of(), null, warnings);
             }
         }
 
-        ChatResponse response = new ChatResponse(
-                validatedOutput.getAnswer(),
-                validatedOutput.getSources(),
-                validatedOutput.getActions(),
-                validatedOutput.getPlanProposal(),
-                combinedWarnings
-        );
+        if (response == null) {
+            // 4. Phân loại ý định và bóc tách tham số (Context & Intent Understanding)
+            ConversationTurnPlanner.TurnDecision decision = turnPlanner.decide(userMessage, history);
+            log.info("advisor_route mode={} category={} capabilities={} policy={} clarify={} provenance={}",
+                    decision.mode(), decision.intent().getCategory(), decision.capabilities(),
+                    decision.policyEvidenceNeeded(), decision.clarificationQuestion() != null,
+                    decision.argumentProvenance());
+            ParsedUserIntent userIntent = decision.intent();
+            boolean isTranscriptMissing = context.getStudentId() != null &&
+                    (context.getStudentId().contains("ANONYMOUS") || "REV-0".equals(context.getDataRevision()) || "REV-EMPTY".equals(context.getDataRevision()));
+            if (isTranscriptMissing && userIntent.getCategory() != ParsedUserIntent.ScenarioCategory.REGULATION) {
+                userIntent = ParsedUserIntent.builder()
+                        .category(userIntent.getCategory())
+                        .targetCpa(userIntent.getTargetCpa())
+                        .targetSemester(userIntent.getTargetSemester())
+                        .courseCode(userIntent.getCourseCode())
+                        .maxCredits(userIntent.getMaxCredits())
+                        .includeSummer(userIntent.getIncludeSummer())
+                        .retakeSuggestions(userIntent.getRetakeSuggestions())
+                        .simulatedGrades(userIntent.getSimulatedGrades())
+                        .isTranscriptMissing(true)
+                        .build();
+            }
+
+            // 5. Truy xuất RAG và neo chứng cứ quy chế
+            GroundedContext groundedContext = null;
+            List<String> combinedWarnings = new ArrayList<>();
+            if (isTranscriptMissing && decision.mode() != ConversationTurnPlanner.Mode.POLICY
+                    && decision.mode() != ConversationTurnPlanner.Mode.DIRECT) {
+                combinedWarnings.add("TRANSCRIPT_REQUIRED");
+            }
+            if (ragAdvisorService != null && decision.policyEvidenceNeeded() && decision.clarificationQuestion() == null) {
+                groundedContext = ragAdvisorService.retrieveAndGround(decision.retrievalQuery(), 5, 0.35);
+                combinedWarnings.addAll(groundedContext.getWarnings());
+            }
+
+            // 6. Điều phối công cụ học vụ (Academic Tool Calling với Budget & Timeout)
+            Map<String, Object> toolResults = new HashMap<>();
+            if (decision.clarificationQuestion() == null) {
+                executeAcademicTools(context, userIntent, decision, toolResults, combinedWarnings);
+            }
+
+            // 7. Đóng gói Input và gọi AdvisorModel (Mock hoặc Live)
+            AdvisorModelInput modelInput = new AdvisorModelInput(
+                    userMessage,
+                    context,
+                    toolResults,
+                    groundedContext,
+                    history,
+                    userIntent
+            );
+
+            AdvisorModelOutput rawModelOutput = decision.clarificationQuestion() != null
+                    ? new AdvisorModelOutput(
+                            isTranscriptMissing
+                                    ? "Mình chưa có bảng điểm đã xác nhận để lập kế hoạch cá nhân. Bạn vui lòng nhập bảng điểm trước; sau đó cho mình biết "
+                                        + decision.clarificationQuestion().toLowerCase(Locale.ROOT)
+                                    : decision.clarificationQuestion(),
+                            List.of(),
+                            isTranscriptMissing ? List.of(new ChatActionItem("OPEN_TRANSCRIPT_IMPORT", "Nhập bảng điểm", "/academic/import", "{}")) : List.of(),
+                            null, List.of())
+                    : advisorModel.generate(modelInput);
+
+            // 8. Hậu kiểm định neo nguồn và chuẩn hóa phản hồi (Response Grounding Validation kèm PII redaction)
+            AdvisorModelOutput validatedOutput = responseGroundingValidator.validate(rawModelOutput, modelInput);
+
+            // Gộp cảnh báo từ model và tool results
+            for (String w : validatedOutput.getWarnings()) {
+                if (!combinedWarnings.contains(w)) {
+                    combinedWarnings.add(w);
+                }
+            }
+
+            response = new ChatResponse(
+                    validatedOutput.getAnswer(),
+                    validatedOutput.getSources(),
+                    validatedOutput.getActions(),
+                    validatedOutput.getPlanProposal(),
+                    combinedWarnings
+            );
+        }
 
         // 9. Lưu trữ trạng thái hội thoại đa lượt (Conversation Persistence)
         if (conversationId != null && !conversationId.trim().isEmpty()) {
@@ -232,9 +320,25 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                             List.of("SECURITY_ERROR: Access denied to conversation " + conversationId)
                     );
                 }
-                combinedWarnings.add("PERSISTENCE_ERROR: " + se.getMessage());
+                List<String> updatedWarnings = new ArrayList<>(response.getWarnings());
+                updatedWarnings.add("PERSISTENCE_ERROR: " + se.getMessage());
+                response = new ChatResponse(
+                        response.getAnswer(),
+                        response.getSources(),
+                        response.getActions(),
+                        response.getPlanProposal(),
+                        updatedWarnings
+                );
             } catch (Exception e) {
-                combinedWarnings.add("PERSISTENCE_ERROR: Failed to save turn: " + e.getMessage());
+                List<String> updatedWarnings = new ArrayList<>(response.getWarnings());
+                updatedWarnings.add("PERSISTENCE_ERROR: Failed to save turn: " + e.getMessage());
+                response = new ChatResponse(
+                        response.getAnswer(),
+                        response.getSources(),
+                        response.getActions(),
+                        response.getPlanProposal(),
+                        updatedWarnings
+                );
             }
         }
 
@@ -399,6 +503,98 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
             warnings.add("TOOL_ERROR: Execution interrupted");
             return null;
         }
+    }
+
+    private void dispatchAcademicToolByName(TrustedStudentContext context,
+                                            String toolName,
+                                            Map<String, Object> args,
+                                            Map<String, Object> toolResults,
+                                            List<String> warnings) {
+        if (toolAdapter == null) return;
+        long started = System.currentTimeMillis();
+        try {
+            switch (toolName) {
+                case "run_graduation_audit" -> {
+                    GraduationAuditResponse audit = toolAdapter.runGraduationAudit(context);
+                    if (audit != null) toolResults.put("run_graduation_audit", audit);
+                }
+                case "get_academic_status" -> {
+                    AcademicStatusResponse status = toolAdapter.getAcademicStatus(context);
+                    if (status != null) toolResults.put("get_academic_status", status);
+                }
+                case "check_course_eligibility" -> {
+                    String courseCode = (String) args.get("course_code");
+                    String semester = (String) args.get("semester");
+                    if (courseCode != null && !courseCode.isBlank()) {
+                        CourseEligibilityResponse eligibility = toolAdapter.checkCourseEligibility(context, courseCode.trim().toUpperCase(Locale.ROOT), semester);
+                        if (eligibility != null) toolResults.put("check_course_eligibility", eligibility);
+                    }
+                }
+                case "rank_retake_courses" -> {
+                    Integer maxSuggestions = args.get("max_suggestions") != null
+                            ? Integer.valueOf(args.get("max_suggestions").toString()) : 3;
+                    RankRetakeCoursesResponse rank = toolAdapter.rankRetakeCourses(context, maxSuggestions);
+                    if (rank != null) toolResults.put("rank_retake_courses", rank);
+                }
+                case "simulate_grades" -> {
+                    List<SimulatedCourseGrade> simList = new ArrayList<>();
+                    if (args.get("simulations") instanceof List<?> list) {
+                        for (Object o : list) {
+                            if (o instanceof Map<?, ?> m) {
+                                String code = m.get("course_code") != null ? m.get("course_code").toString() : null;
+                                String grade = m.get("expected_grade") != null ? m.get("expected_grade").toString() : null;
+                                if (code != null && grade != null) {
+                                    BigDecimal points = gradeToPoints(grade);
+                                    simList.add(new SimulatedCourseGrade(code.trim().toUpperCase(Locale.ROOT), 3, grade.trim().toUpperCase(Locale.ROOT), points));
+                                }
+                            }
+                        }
+                    }
+                    if (!simList.isEmpty()) {
+                        SimulateGradesResponse sim = toolAdapter.simulateGrades(context, simList);
+                        if (sim != null) toolResults.put("simulate_grades", sim);
+                    }
+                }
+                case "generate_study_plan" -> {
+                    String targetSemester = (String) args.get("target_semester");
+                    Integer maxCredits = args.get("max_credits") != null
+                            ? Integer.valueOf(args.get("max_credits").toString()) : 18;
+                    BigDecimal targetCpa = args.get("target_cpa") != null
+                            ? new BigDecimal(args.get("target_cpa").toString()) : null;
+                    GenerateStudyPlanResponse plan = toolAdapter.generateStudyPlan(context, targetSemester, targetCpa, maxCredits, false, List.of());
+                    if (plan != null) {
+                        toolResults.put("generate_study_plan", plan);
+                        if (plan.getSemesters() != null && !plan.getSemesters().isEmpty()) {
+                            String label = targetCpa == null ? "Đề xuất kế hoạch học tập"
+                                    : "Đề xuất kế hoạch học tập mục tiêu CPA " + targetCpa.toPlainString();
+                            toolResults.put("planProposal", new ChatPlanProposal(
+                                    plan.getProposalId(), label, plan.getSemesters(), plan.getProjectedCpa()));
+                        }
+                    }
+                }
+                default -> log.warn("Unknown native tool call: {}", toolName);
+            }
+            long elapsed = System.currentTimeMillis() - started;
+            log.info("advisor_native_tool capability={} outcome=SUCCESS elapsedMs={}", toolName, elapsed);
+        } catch (Exception ex) {
+            long elapsed = System.currentTimeMillis() - started;
+            log.warn("advisor_native_tool capability={} outcome=FAILURE elapsedMs={} error={}", toolName, elapsed, ex.getMessage());
+            warnings.add("TOOL_FAILURE: " + toolName);
+        }
+    }
+
+    private static BigDecimal gradeToPoints(String grade) {
+        if (grade == null) return BigDecimal.ZERO;
+        return switch (grade.trim().toUpperCase(Locale.ROOT)) {
+            case "A" -> new BigDecimal("4.0");
+            case "B+" -> new BigDecimal("3.5");
+            case "B" -> new BigDecimal("3.0");
+            case "C+" -> new BigDecimal("2.5");
+            case "C" -> new BigDecimal("2.0");
+            case "D+" -> new BigDecimal("1.5");
+            case "D" -> new BigDecimal("1.0");
+            default -> BigDecimal.ZERO;
+        };
     }
 
     private static void logToolOutcome(AcademicCapability capability, String outcome, long started) {
