@@ -165,7 +165,7 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                     }
 
                     String finalAnswer = liveModel.completeTurnWithToolResults(
-                            userMessage, history, turnResult.toolCalls(), toolResults
+                            userMessage, history, turnResult.toolCalls(), turnResult.rawModelParts(), toolResults
                     );
 
                     List<ChatSourceItem> sources = (groundedContext != null && groundedContext.hasEvidence())

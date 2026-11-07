@@ -10,6 +10,7 @@ import vn.haui.advisor.ai.grounding.ResponseGroundingValidator;
 import vn.haui.advisor.ai.intent.ParsedUserIntent;
 import vn.haui.advisor.ai.rag.model.RagChunk;
 import vn.haui.advisor.contracts.dto.*;
+import vn.haui.advisor.ai.tools.GeminiToolDeclarations;
 
 import java.util.*;
 import java.util.function.Function;
@@ -105,7 +106,11 @@ public class LiveAdvisorModel implements AdvisorModel {
         }
     }
 
-    public record GeminiTurnResult(List<GeminiToolCall> toolCalls, String directText) {
+    public record GeminiTurnResult(List<GeminiToolCall> toolCalls, String directText, JsonNode rawModelParts) {
+        public GeminiTurnResult(List<GeminiToolCall> toolCalls, String directText) {
+            this(toolCalls, directText, null);
+        }
+
         public boolean hasToolCalls() {
             return toolCalls != null && !toolCalls.isEmpty();
         }
@@ -137,6 +142,14 @@ public class LiveAdvisorModel implements AdvisorModel {
                                               List<ChatMessageHistoryItem> history,
                                               List<GeminiToolCall> toolCalls,
                                               Map<String, Object> toolResults) {
+        return completeTurnWithToolResults(userMessage, history, toolCalls, null, toolResults);
+    }
+
+    public String completeTurnWithToolResults(String userMessage,
+                                              List<ChatMessageHistoryItem> history,
+                                              List<GeminiToolCall> toolCalls,
+                                              JsonNode rawModelParts,
+                                              Map<String, Object> toolResults) {
         List<Map<String, Object>> contents = new ArrayList<>();
         if (history != null) {
             for (ChatMessageHistoryItem item : history) {
@@ -147,13 +160,17 @@ public class LiveAdvisorModel implements AdvisorModel {
         }
         contents.add(Map.of("role", "user", "parts", List.of(Map.of("text", userMessage != null ? userMessage : ""))));
 
-        List<Map<String, Object>> callParts = new ArrayList<>();
-        if (toolCalls != null) {
-            for (GeminiToolCall call : toolCalls) {
-                callParts.add(Map.of("functionCall", Map.of("name", call.name(), "args", call.arguments())));
+        if (rawModelParts != null && rawModelParts.isArray() && !rawModelParts.isEmpty()) {
+            contents.add(Map.of("role", "model", "parts", rawModelParts));
+        } else {
+            List<Map<String, Object>> callParts = new ArrayList<>();
+            if (toolCalls != null) {
+                for (GeminiToolCall call : toolCalls) {
+                    callParts.add(Map.of("functionCall", Map.of("name", call.name(), "args", call.arguments())));
+                }
             }
+            contents.add(Map.of("role", "model", "parts", callParts));
         }
-        contents.add(Map.of("role", "model", "parts", callParts));
 
         List<Map<String, Object>> responseParts = new ArrayList<>();
         if (toolCalls != null) {
@@ -165,12 +182,12 @@ public class LiveAdvisorModel implements AdvisorModel {
                 )));
             }
         }
-        contents.add(Map.of("role", "function", "parts", responseParts));
+        contents.add(Map.of("role", "user", "parts", responseParts));
 
-        Map<String, Object> payload = Map.of(
-                "contents", contents,
-                "generationConfig", Map.of("temperature", 0.2)
-        );
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("contents", contents);
+        payload.put("tools", GeminiToolDeclarations.getToolDeclarations());
+        payload.put("generationConfig", Map.of("temperature", 0.2));
 
         String rawResponse = executeModelRequest(payload);
         try {
@@ -228,10 +245,10 @@ public class LiveAdvisorModel implements AdvisorModel {
                 }
             }
 
-            return new GeminiTurnResult(calls, textBuilder.toString().trim());
+            return new GeminiTurnResult(calls, textBuilder.toString().trim(), parts);
         } catch (Exception e) {
             log.warn("Failed to parse Gemini turn result as JSON, returning raw text: {}", e.getMessage());
-            return new GeminiTurnResult(List.of(), rawResponse.trim());
+            return new GeminiTurnResult(List.of(), rawResponse.trim(), null);
         }
     }
 
@@ -240,14 +257,14 @@ public class LiveAdvisorModel implements AdvisorModel {
         try {
             return doSendGeminiHttpRaw(requestJson, apiKey, model);
         } catch (Exception e) {
-            log.warn("gemini_raw_call_failed model={} errorType={}", model, e.getClass().getSimpleName());
+            log.warn("gemini_raw_call_failed model={} error={}", model, e.getMessage());
             List<String> fallbacks = List.of("gemini-2.5-flash", "gemini-flash-latest", "gemini-3.5-flash-lite");
             for (String fallbackModel : fallbacks) {
                 if (!fallbackModel.equalsIgnoreCase(model)) {
                     try {
                         return doSendGeminiHttpRaw(requestJson, apiKey, fallbackModel);
                     } catch (Exception fbEx) {
-                        log.warn("gemini_raw_fallback_failed model={} errorType={}", fallbackModel, fbEx.getClass().getSimpleName());
+                        log.warn("gemini_raw_fallback_failed model={} error={}", fallbackModel, fbEx.getMessage());
                     }
                 }
             }
