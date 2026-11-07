@@ -567,9 +567,6 @@ export function DashboardPage({ mountedRouteSummary }) {
           <h1 style={{ fontSize: '30px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
             Tổng quan học tập
           </h1>
-          <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-mid-gray)', maxWidth: '640px' }}>
-            Chào <strong style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{studentSession?.fullName || 'Sinh viên'}</strong> &bull; MSSV: {studentSession?.studentId || '2024604757'} &bull; {studentSession?.cohort || 'Khóa đào tạo chính quy'} &bull; {studentSession?.majorName || 'Chương trình đào tạo Đại học'} &bull; {studentSession?.faculty || 'Đại học Công nghiệp Hà Nội'}
-          </p>
         </div>
 
         {/* Quick Actions Pills */}

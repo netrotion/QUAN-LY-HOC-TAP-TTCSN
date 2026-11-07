@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from './animatedNavigation.jsx';
 import { api } from '../../services/apiClient.js';
-import {
-  STUDENT_PRESETS,
-  selectStudentPreset
-} from '../../services/academicStore.js';
-import { Select } from '../ui/Select.jsx';
 
 /**
  * Topbar Component (TV2 — design-base-v1)
@@ -13,7 +8,6 @@ import { Select } from '../ui/Select.jsx';
  * - Nút thu gọn / mở rộng menu (onToggleCollapse)
  * - Nút Tư vấn lộ trình nhanh với AI (dark pill)
  * - Avatar sinh viên
- * - Menu chuyển nhanh Persona mẫu cho reviewer
  *
  * @param {{ collapsed?: boolean, onToggleCollapse?: () => void }} props
  */
@@ -45,10 +39,9 @@ export function Topbar({ collapsed = false, onToggleCollapse }) {
             </span>
           </button>
         )}
-
       </div>
 
-      {/* 2. Right: AI CTA + Avatar + Persona Switcher */}
+      {/* 2. Right: AI CTA + Avatar */}
       <div className="haui-topbar__right">
         {/* Quick AI Action Pill */}
         <Link
@@ -72,30 +65,6 @@ export function Topbar({ collapsed = false, onToggleCollapse }) {
             person
           </span>
         </Link>
-
-        {/* Persona Switcher — chỉ dùng cho mock mode, backend thật lấy danh tính từ session */}
-        {apiConfig.mockEnabled && <Select
-          className="haui-topbar__persona-select"
-          value={student?.id || 'normal'}
-          onChange={(e) => {
-            const presetKey = e.target.value;
-            selectStudentPreset(presetKey);
-            const p = STUDENT_PRESETS[presetKey];
-            if (p) api.setSessionStudent(p);
-          }}
-          style={{ width: '130px' }}
-          triggerStyle={{
-            fontSize: '11px',
-            padding: '4px 32px 4px 10px',
-            borderRadius: '9999px',
-            backgroundColor: 'var(--color-canvas)',
-            color: 'var(--color-ink)'
-          }}
-        >
-          <option value="normal">Chuẩn</option>
-          <option value="at-risk">Nguy cơ</option>
-          <option value="empty">Trắng</option>
-        </Select>}
       </div>
     </header>
   );
