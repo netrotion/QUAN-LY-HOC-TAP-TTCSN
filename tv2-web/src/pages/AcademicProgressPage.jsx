@@ -527,7 +527,7 @@ export function AcademicProgressPage() {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-mid-gray)' }}>
-            Chế độ Báo cáo Học vụ (Task 3.9):
+            Chế độ Báo cáo Học vụ:
           </span>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
@@ -991,7 +991,7 @@ export function AcademicProgressPage() {
                       </span>
                     </div>
                     <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>
-                      Điều kiện: Tích lũy tối thiểu &ge; 85% CTĐT (115 TC) và không nợ môn tiên quyết (BR-09). Dự kiến Kỳ 8
+                      Điều kiện: Tích lũy tối thiểu &ge; 85% CTĐT (115 TC) và không nợ môn tiên quyết. Dự kiến Kỳ 8
                     </span>
                   </div>
                   {isProjected ? (
@@ -1084,7 +1084,7 @@ export function AcademicProgressPage() {
                     <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>
                       {isProjected
                         ? 'Đã trả nợ thành công môn Toán rời rạc (MATH1002) trong kế hoạch học kỳ tới'
-                        : 'Toán rời rạc (3 TC - MATH1002) bị điểm F; cần học lại để gỡ nợ và mở khóa học phần sau (BR-01)'}
+                        : 'Toán rời rạc (3 TC - MATH1002) bị điểm F; cần học lại để gỡ nợ và mở khóa học phần sau'}
                     </span>
                   </div>
                   {isProjected ? (
@@ -1597,10 +1597,10 @@ export function AcademicProgressPage() {
           </p>
           <ul style={{ margin: 0, paddingLeft: '20px', lineHeight: 1.6, color: 'var(--color-ink)' }}>
             <li>
-              <strong>Học kỳ 1 (2026-2027):</strong> Đăng ký học lại <code>MATH1002</code> (3 TC) + 2 môn Tự chọn chuyên ngành <code>IT6010</code>, <code>IT6015</code> (6 TC) để hoàn thành 100% khối tự chọn và vượt mốc 85% tín chỉ nhận Đồ án (BR-09).
+              <strong>Học kỳ 1 (2026-2027):</strong> Đăng ký học lại <code>MATH1002</code> (3 TC) + 2 môn Tự chọn chuyên ngành <code>IT6010</code>, <code>IT6015</code> (6 TC) để hoàn thành 100% khối tự chọn và vượt mốc 85% tín chỉ nhận Đồ án.
             </li>
             <li>
-              <strong>Chứng chỉ Tin học MOS/IC3 (AC-05):</strong> Đặt lịch nhắc thi chứng chỉ MOS trước hạn chót <code>2027-03-31</code> (trước đợt xét tốt nghiệp 3 tháng).
+              <strong>Chứng chỉ Tin học MOS/IC3:</strong> Đặt lịch nhắc thi chứng chỉ MOS trước hạn chót <code>2027-03-31</code> (trước đợt xét tốt nghiệp 3 tháng).
             </li>
             <li>
               <strong>Học kỳ cuối:</strong> Bố trí nhẹ nhàng làm Đồ án tốt nghiệp <code>IT7008</code> (10 TC).

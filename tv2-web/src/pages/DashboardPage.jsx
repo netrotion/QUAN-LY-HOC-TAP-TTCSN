@@ -489,7 +489,7 @@ export function DashboardPage({ mountedRouteSummary }) {
         </div>
 
         <ErrorBox
-          title={is503 ? 'Công cụ học vụ chưa sẵn sàng (503 TOOL_NOT_READY)' : 'Lỗi kết nối dịch vụ học vụ (Academic Service Unavailable — BR-503)'}
+          title={is503 ? 'Công cụ học vụ chưa sẵn sàng' : 'Lỗi kết nối dịch vụ học vụ'}
           message={
             is503
               ? 'Hệ thống đang chuẩn bị công cụ tính toán học vụ thật từ Rule Engine. Kết quả học vụ chưa có sẵn, không hiển thị số giả.'
@@ -1623,7 +1623,7 @@ export function DashboardPage({ mountedRouteSummary }) {
                   { key: 'letterGrade', title: 'Điểm chữ', align: 'center', width: '90px' },
                   {
                     key: 'status',
-                    title: 'Phân loại (FR-04)',
+                    title: 'Phân loại',
                     width: '140px',
                     render: (st) => {
                       const map = {

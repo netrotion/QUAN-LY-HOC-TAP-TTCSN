@@ -1111,7 +1111,7 @@ export function CurriculumTreePage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)' }}>
-                      Môn tiên quyết &amp; Môn học trước (TIÊN QUYẾT)
+                      Môn tiên quyết &amp; Môn học trước {/* TIÊN QUYẾT */}
                     </span>
                     <span style={{ fontSize: '11px', color: selectedCourse.missingPrerequisites?.length ? 'var(--color-ember)' : '#16a34a', fontWeight: 500 }}>
                       {selectedCourse.missingPrerequisites?.length ? `Thiếu ${selectedCourse.missingPrerequisites.length} điều kiện` : 'Đã đáp ứng tất cả'}
@@ -1168,7 +1168,7 @@ export function CurriculumTreePage() {
                 {/* Unlocks / Dependent Courses Section */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)' }}>
-                    Học phần mở khóa tiếp theo (CHUỖI ẢNH HƯỞNG)
+                    Học phần mở khóa tiếp theo {/* CHUỖI ẢNH HƯỞNG */}
                   </span>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {activeUnlockCodes.size === 0 ? (
@@ -1221,7 +1221,7 @@ export function CurriculumTreePage() {
                     style={{ justifyContent: 'center', padding: '10px 16px' }}
                   >
                     <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add_task</span>
-                    <span>Thêm vào Kế hoạch học tập (TV3 Planner)</span>
+                    <span>Thêm vào Kế hoạch học tập</span>
                   </button>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
