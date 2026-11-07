@@ -1329,7 +1329,7 @@ export function StudentProfilePage({
                 placeholder: 'Chọn ngày sinh (Ngày/Tháng/Năm)',
                 onChange: (e) => setDobInput(e.target.value)
               }),
-              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Định dạng Ngày/Tháng/Năm (HeroUI v3 DatePicker)')
+              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, 'Định dạng Ngày/Tháng/Năm')
             ),
 
             // Field: Giới tính

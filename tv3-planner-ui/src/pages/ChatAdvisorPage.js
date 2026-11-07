@@ -1260,7 +1260,7 @@ export function ChatAdvisorPage({
                 'button',
                 {
                   type: 'button',
-                  title: 'Đính kèm bảng điểm hoặc minh chứng (Mở luồng nhập bảng điểm TV2)',
+                  title: 'Đính kèm bảng điểm hoặc minh chứng',
                   onClick: handleAttachmentClick,
                   style: {
                     width: '38px',

@@ -500,7 +500,7 @@ export function StudyPlannerPage({ api, ui, onNavigate } = {}) {
           ? React.createElement(
               Button,
               { variant: 'ghost', size: 'sm', onClick: () => setIsTreeModalOpen(true) },
-              'Xem Cây môn học (Tùy chọn)'
+              'Xem Cây môn học'
             )
           : null,
         Button

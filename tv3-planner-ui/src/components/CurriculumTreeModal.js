@@ -142,7 +142,7 @@ export function CurriculumTreeModal({ isOpen, onClose, ui }) {
       {
         isOpen,
         onClose,
-        title: 'Cây môn học & Sơ đồ Tiên quyết (Tra cứu tùy chọn)',
+        title: 'Cây môn học & Sơ đồ Tiên quyết',
         subtitle: 'Đối chiếu đồ thị học phần tiên quyết mà không ảnh hưởng tới tiến trình chỉnh sửa kế hoạch.',
         size: 'lg',
         footer: React.createElement(

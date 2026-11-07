@@ -676,7 +676,7 @@ export function WhatIfSimulatorPage({ api, ui, initialTool, tool, onNavigate } =
         },
         h('span', { className: 'material-symbols-outlined', style: { fontSize: '48px', color: 'var(--color-mid-gray, #737373)', marginBottom: '4px' } }, 'insights'),
         h('h2', { style: { fontSize: '20px', fontWeight: 600, color: 'var(--color-ink, #0a0a0a)', margin: 0 } }, 'Chưa có dữ liệu bảng điểm để chạy What-if'),
-        h('p', { style: { fontSize: '14px', color: 'var(--color-mid-gray, #737373)', margin: '0 0 16px', lineHeight: 1.6, maxWidth: '480px' } }, 'Bộ công cụ mô phỏng điểm số (Màn 6), tối ưu hóa ROI học cải thiện (Màn 7) và tính điểm mục tiêu ngược (Màn 8) cần dữ liệu bảng điểm cá nhân để tính toán. Vui lòng nạp bảng điểm từ sv.haui.edu.vn để kích hoạt.'),
+        h('p', { style: { fontSize: '14px', color: 'var(--color-mid-gray, #737373)', margin: '0 0 16px', lineHeight: 1.6, maxWidth: '480px' } }, 'Bộ công cụ mô phỏng điểm số, tối ưu hóa ROI học cải thiện và tính điểm mục tiêu ngược cần dữ liệu bảng điểm cá nhân để tính toán. Vui lòng nạp bảng điểm từ sv.haui.edu.vn để kích hoạt.'),
         h(
           'button',
           {
