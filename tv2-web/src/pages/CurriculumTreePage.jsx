@@ -925,8 +925,22 @@ export function CurriculumTreePage() {
                         border: isCurrent ? '2px solid rgba(10, 10, 10, 0.15)' : 'none'
                       }}
                     >
-                      {/* Semester Column Header */}
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid var(--color-hairline)' }}>
+                      {/* Semester Column Header (Sticky on vertical scroll) */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          position: 'sticky',
+                          top: 0,
+                          zIndex: 5,
+                          backgroundColor: isCurrent ? 'rgba(240, 240, 240, 0.96)' : 'var(--color-paper)',
+                          backdropFilter: 'blur(8px)',
+                          paddingTop: '4px',
+                          paddingBottom: '8px',
+                          borderBottom: '1px solid var(--color-hairline)'
+                        }}
+                      >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           {isCurrent && (
                             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-ink)' }} />
@@ -1020,6 +1034,7 @@ export function CurriculumTreePage() {
           <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: '16px', position: 'sticky', top: '80px' }}>
             {selectedCourse ? (
               <div
+                className="haui-tree-timeline-scroll"
                 style={{
                   backgroundColor: 'var(--color-paper)',
                   borderRadius: '24px',
@@ -1028,7 +1043,9 @@ export function CurriculumTreePage() {
                   boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '16px'
+                  gap: '16px',
+                  maxHeight: 'calc(100vh - 100px)',
+                  overflowY: 'auto'
                 }}
               >
                 {/* Drawer Header */}

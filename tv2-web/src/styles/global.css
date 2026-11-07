@@ -2883,14 +2883,20 @@ select.haui-select:focus {
 }
 
 .haui-tree-timeline-scroll {
-  overflow-x: auto;
+  overflow: auto;
+  max-height: calc(100vh - 270px);
+  min-height: 520px;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 var(--color-canvas);
   padding-bottom: 16px;
-  padding-top: 10px;
+  padding-top: 6px;
+  padding-right: 6px;
 }
 
 .haui-tree-timeline-scroll::-webkit-scrollbar {
+  width: 6px;
   height: 6px;
   display: block;
 }
@@ -2903,10 +2909,15 @@ select.haui-select:focus {
 .haui-tree-timeline-scroll::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 9999px;
+  transition: background-color var(--transition-fast, 150ms);
 }
 
 .haui-tree-timeline-scroll::-webkit-scrollbar-thumb:hover {
   background: var(--color-ink);
+}
+
+.haui-tree-timeline-scroll::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* Keep content opaque while each page settles into place. */
