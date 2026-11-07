@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useAnimatedNavigate } from '../components/layout/animatedNavigation.jsx';
 import { logoutStudent, getAcademicSnapshot } from '../services/academicStore.js';
 import { Select } from '../components/ui/Select.jsx';
@@ -26,7 +26,6 @@ const S = {
 const TABS = [
   { id: 'account', icon: 'person', label: 'Tài khoản' },
   { id: 'security', icon: 'lock', label: 'Bảo mật' },
-  { id: 'appearance', icon: 'palette', label: 'Giao diện' },
   { id: 'notifications', icon: 'notifications', label: 'Thông báo' },
   { id: 'preferences', icon: 'tune', label: 'Tùy chọn học tập' },
   { id: 'privacy', icon: 'shield_person', label: 'Quyền riêng tư & Dữ liệu' },
@@ -69,14 +68,41 @@ export function SettingsPage() {
   // Settings state — persisted in localStorage
   const [email, setEmail] = useState(() => { try { return localStorage.getItem('haui_email') || 'an.nguyen@example.com'; } catch { return 'an.nguyen@example.com'; } });
   const [notifs, setNotifs] = useState(() => { try { const s = localStorage.getItem('haui_notifs'); return s ? JSON.parse(s) : { plan: true, prereq: true, progress: true, planUpdate: true, grad: true }; } catch { return { plan: true, prereq: true, progress: true, planUpdate: true, grad: true }; } });
-  const [theme, setTheme] = useState('light');
-  const [fontSize, setFontSize] = useState('14');
-  const [sidebarLayout, setSidebarLayout] = useState('expanded');
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem('haui_theme') || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+    } catch {
+      return 'light';
+    }
+  });
   const [semester, setSemester] = useState('sem7');
   const [language, setLanguage] = useState('vi');
   const [targetCpa, setTargetCpa] = useState('3.40');
   const [creditsLimit, setCreditsLimit] = useState('18');
   const [avatarSrc, setAvatarSrc] = useState(null);
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    try {
+      localStorage.setItem('haui_theme', next);
+      if (next === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+    } catch {}
+    showToast(next === 'dark' ? 'Đã bật chế độ tối (Dark mode)!' : 'Đã chuyển về giao diện sáng (Light mode)!');
+  };
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('haui_theme');
+      if (saved === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    } catch {}
+  }, []);
 
   // Password state
   const [oldPass, setOldPass] = useState('');
@@ -111,7 +137,8 @@ export function SettingsPage() {
     try {
       localStorage.setItem('haui_email', email);
       localStorage.setItem('haui_notifs', JSON.stringify(notifs));
-      localStorage.setItem('haui_settings', JSON.stringify({ semester, language, targetCpa, creditsLimit, theme, fontSize, sidebarLayout }));
+      localStorage.setItem('haui_theme', theme);
+      localStorage.setItem('haui_settings', JSON.stringify({ semester, language, targetCpa, creditsLimit, theme }));
     } catch {}
     showToast('Đã lưu tất cả các thay đổi cài đặt thành công!');
   };
@@ -123,8 +150,12 @@ export function SettingsPage() {
     setTargetCpa('3.40');
     setCreditsLimit('18');
     setTheme('light');
-    setFontSize('14');
-    setSidebarLayout('expanded');
+    try {
+      localStorage.setItem('haui_theme', 'light');
+      if (typeof document !== 'undefined') {
+        document.documentElement.removeAttribute('data-theme');
+      }
+    } catch {}
     setNotifs({ plan: true, prereq: true, progress: true, planUpdate: true, grad: true });
     setModal(null);
     showToast('Đã khôi phục toàn bộ cài đặt mặc định!');
@@ -180,13 +211,29 @@ export function SettingsPage() {
           <p style={{ fontSize: 14, color: 'var(--color-mid-gray)', margin: 0 }}>Quản lý thông tin tài khoản và tùy chỉnh trải nghiệm học tập.</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            style={{
+              ...S.btnSecondary,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              cursor: 'pointer'
+            }}
+            title={theme === 'dark' ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
+            aria-label={theme === 'dark' ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
+          >
+            <Icon name={theme === 'dark' ? 'light_mode' : 'dark_mode'} size={18} />
+            <span>{theme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối'}</span>
+          </button>
           <button style={S.btnGhost} onClick={() => setModal('reset')}><Icon name="restart_alt" size={18} />Khôi phục mặc định</button>
           <button style={S.btnPrimary} onClick={handleSave}><Icon name="save" size={18} />Lưu cài đặt</button>
         </div>
       </div>
 
       {/* Sticky Tab Nav */}
-      <div style={{ position: 'sticky', top: 64, zIndex: 30, background: 'rgba(245,245,245,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--color-hairline)', padding: '10px 0', overflowX: 'auto' }}>
+      <div style={{ position: 'sticky', top: 64, zIndex: 30, background: 'var(--color-canvas)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--color-hairline)', padding: '10px 0', overflowX: 'auto' }}>
         <nav style={{ display: 'flex', gap: 8, minWidth: 'max-content' }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => scrollTo(t.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 16px', borderRadius: 9999, fontSize: 12, fontWeight: 500, border: 'none', cursor: 'pointer', transition: 'all 150ms', background: activeTab === t.id ? 'var(--color-ink)' : 'var(--color-canvas)', color: activeTab === t.id ? 'var(--color-paper)' : 'var(--color-mid-gray)' }}>
@@ -285,65 +332,7 @@ export function SettingsPage() {
           </div>
         </section>
 
-        {/* 3. Appearance */}
-        <section ref={el => sectionRefs.current.appearance = el} style={S.section} id="section-appearance">
-          <div style={S.sectionHeader}>
-            <div style={S.iconCircle}><Icon name="palette" /></div>
-            <div><h2 style={S.h2}>Tùy chỉnh giao diện</h2><p style={S.caption}>Điều chỉnh độ sáng, cỡ chữ và hiển thị thanh điều hướng</p></div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 32 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {/* Theme */}
-              <div><span style={S.label}>Chế độ hiển thị (Theme)</span>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 8 }}>
-                  <ThemeCard mode="light" active={theme === 'light'} onSelect={() => { setTheme('light'); showToast('Đã chuyển về giao diện sáng!'); }} />
-                  <ThemeCard mode="dark" active={theme === 'dark'} onSelect={() => { setTheme('dark'); showToast('Đã kích hoạt chế độ mô phỏng giao diện tối!'); }} />
-                </div>
-              </div>
-              {/* Font size */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={S.label}>Cỡ chữ hệ thống</span>
-                  <span style={{ fontSize: 12, color: 'var(--color-mid-gray)' }}>{fontSize}px ({fontSize === '14' ? 'Chuẩn' : fontSize === '13' ? 'Nhỏ' : 'Lớn'})</span>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', padding: 4, borderRadius: 9999, background: 'var(--color-canvas)', border: '1px solid var(--color-hairline)', marginTop: 8, maxWidth: 400 }}>
-                  {[['13', 'Nhỏ (13px)'], ['14', 'Vừa (14px - Chuẩn)'], ['16', 'Lớn (16px)']].map(([v, l]) => (
-                    <button key={v} onClick={() => { setFontSize(v); showToast(`Đã áp dụng cỡ chữ ${v}px`); }} style={{ padding: '6px 0', borderRadius: 9999, fontSize: 12, fontWeight: 500, border: 'none', cursor: 'pointer', background: fontSize === v ? 'var(--color-paper)' : 'transparent', color: fontSize === v ? 'var(--color-ink)' : 'var(--color-mid-gray)', boxShadow: fontSize === v ? 'var(--shadow-sm)' : 'none', transition: 'all 150ms' }}>{l}</button>
-                  ))}
-                </div>
-              </div>
-              {/* Sidebar layout */}
-              <div>
-                <span style={S.label}>Bố cục Sidebar danh mục</span>
-                <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-                  {[['expanded', 'dock_to_right', 'Mở rộng đầy đủ (Chuẩn 288px)'], ['collapsed', 'view_sidebar', 'Thu gọn icon']].map(([v, ic, l]) => (
-                    <button key={v} onClick={() => { setSidebarLayout(v); showToast(v === 'collapsed' ? 'Đã thu gọn thanh Sidebar' : 'Đã chuyển về Sidebar mở rộng'); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 9999, fontSize: 12, fontWeight: 500, border: sidebarLayout === v ? 'none' : '1px solid var(--color-hairline)', cursor: 'pointer', background: sidebarLayout === v ? 'var(--color-ink)' : 'var(--color-canvas)', color: sidebarLayout === v ? 'var(--color-paper)' : 'var(--color-ink)', transition: 'all 150ms' }}>
-                      <Icon name={ic} size={16} />{l}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            {/* Live Preview */}
-            <div style={{ padding: 16, borderRadius: 20, background: 'var(--color-canvas)', border: '1px solid var(--color-hairline)' }}>
-              <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-mid-gray)', marginBottom: 8, display: 'block' }}>Xem trước giao diện</span>
-              <div style={{ borderRadius: 12, background: theme === 'dark' ? 'var(--color-ink)' : 'var(--color-paper)', color: theme === 'dark' ? 'var(--color-paper)' : 'var(--color-ink)', border: '1px solid var(--color-hairline)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8, borderBottom: '1px solid var(--color-hairline)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--color-ink)', color: 'var(--color-paper)', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>HA</div>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>HaUI Blueprint</span>
-                  </div>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-ember)' }} />
-                </div>
-                <p style={{ fontSize: parseInt(fontSize), color: theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'var(--color-mid-gray)', lineHeight: 1.5, margin: 0 }}>
-                  Kế hoạch học kỳ 7: Đạt 18 tín chỉ, GPA kỳ ≥ 3.50.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 4. Notifications */}
+        {/* 3. Notifications */}
         <section ref={el => sectionRefs.current.notifications = el} style={S.section} id="section-notifications">
           <div style={{ ...S.sectionHeader, justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -503,30 +492,6 @@ function SelectField({ label, value, onChange, hint, options }) {
       />
       {hint && <span style={{ fontSize: 12, color: 'var(--color-mid-gray)' }}>{hint}</span>}
     </div>
-  );
-}
-
-function ThemeCard({ mode, active, onSelect }) {
-  const isLight = mode === 'light';
-  return (
-    <label style={{ display: 'flex', flexDirection: 'column', padding: 16, borderRadius: 18, border: active ? '2px solid var(--color-ink)' : '1px solid var(--color-hairline)', background: isLight ? 'var(--color-paper)' : 'var(--color-surface-alt)', cursor: 'pointer', transition: 'all 150ms', boxShadow: active ? 'var(--shadow-sm)' : 'none' }}>
-      <input type="radio" name="app-theme" value={mode} checked={active} onChange={onSelect} style={{ position: 'absolute', opacity: 0 }} />
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600 }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>{isLight ? 'light_mode' : 'dark_mode'}</span>
-          {isLight ? 'Sáng (Light)' : 'Tối (Mô phỏng)'}
-        </span>
-        {active ? <span className="material-symbols-outlined" style={{ fontSize: 20, color: 'var(--color-ink)' }}>check_circle</span> : <span style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid var(--color-hairline)' }} />}
-      </div>
-      <div style={{ height: 64, borderRadius: 12, background: isLight ? 'var(--color-canvas)' : 'var(--color-ink)', border: '1px solid var(--color-hairline)', padding: 8, display: 'flex', gap: 8 }}>
-        <div style={{ width: '25%', height: '100%', borderRadius: 8, background: isLight ? 'var(--color-surface-alt)' : '#171717', border: isLight ? '1px solid var(--color-hairline)' : 'none' }} />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'center' }}>
-          <div style={{ width: '75%', height: 8, borderRadius: 9999, background: isLight ? 'var(--color-hairline)' : '#444' }} />
-          <div style={{ width: '50%', height: 8, borderRadius: 9999, background: isLight ? '#e8e8e8' : '#333' }} />
-        </div>
-      </div>
-      <span style={{ fontSize: 12, color: 'var(--color-mid-gray)', marginTop: 10 }}>{isLight ? 'Tối ưu cho hiển thị phòng học và tài liệu' : 'Phiên bản Dark Blueprint đang hoàn thiện'}</span>
-    </label>
   );
 }
 

@@ -316,3 +316,50 @@
   --heroui-scale-pressed: 0.98;
   --heroui-transition-timing: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
+/* ==========================================================================
+   Dark Theme Overrides (data-theme="dark")
+   ========================================================================== */
+[data-theme="dark"] {
+  --color-canvas: #0f0f11;
+  --color-paper: #18181b;
+  --color-surface-alt: #202024;
+  --color-surface-card: #18181b;
+  --color-bg-app: #0f0f11;
+  --color-bg-surface: #18181b;
+  --color-bg-elevated: #27272a;
+  --color-bg-muted: #202024;
+  --color-bg-subtle: #141416;
+  --color-bg-code: #000000;
+
+  --color-bg-sidebar: #141416;
+  --color-bg-sidebar-hover: #222226;
+  --color-bg-sidebar-active: #ffffff;
+  --color-text-sidebar: #a1a1aa;
+  --color-text-sidebar-active: #09090b;
+  --color-border-sidebar: #27272a;
+
+  --color-ink: #f4f4f5;
+  --color-ink-soft: #e4e4e7;
+  --color-mid-gray: #a1a1aa;
+  --color-hairline: #27272a;
+
+  --color-text-primary: #f4f4f5;
+  --color-text-secondary: #d4d4d8;
+  --color-text-muted: #a1a1aa;
+  --color-text-disabled: #71717a;
+  --color-text-inverse: #09090b;
+  --color-text-code: #f4f4f5;
+
+  --color-primary: #ffffff;
+  --color-primary-hover: #e4e4e7;
+  --color-primary-active: #d4d4d8;
+  --color-primary-light: #27272a;
+  --color-primary-subtle: #18181b;
+  --color-primary-border: #ffffff;
+
+  --field-background: #202024;
+  --field-foreground: #f4f4f5;
+  --field-border: #27272a;
+}
+
