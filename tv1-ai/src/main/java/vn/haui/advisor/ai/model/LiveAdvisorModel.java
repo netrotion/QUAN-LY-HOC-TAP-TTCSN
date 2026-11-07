@@ -326,6 +326,9 @@ public class LiveAdvisorModel implements AdvisorModel {
 
     public static Map<String, String> loadDotEnv() {
         Map<String, String> env = new HashMap<>();
+        if (isTestRuntime()) {
+            return env;
+        }
         List<java.nio.file.Path> candidates = new ArrayList<>(List.of(
                 java.nio.file.Paths.get(".env"),
                 java.nio.file.Paths.get("..", ".env"),
@@ -362,6 +365,19 @@ public class LiveAdvisorModel implements AdvisorModel {
             }
         }
         return env;
+    }
+
+    private static boolean isTestRuntime() {
+        if (System.getProperty("surefire.test.class.path") != null) {
+            return true;
+        }
+        for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
+            String cn = ste.getClassName();
+            if (cn.startsWith("org.junit.") || cn.startsWith("org.testng.") || cn.startsWith("org.springframework.test.")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String resolveApiKey() {
