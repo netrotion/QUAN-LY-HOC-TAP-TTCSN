@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useAnimatedNavigate } from '../components/layout/animatedNavigation.jsx';
-import { logoutStudent, getAcademicSnapshot } from '../services/academicStore.js';
+import { logoutStudent } from '../services/academicStore.js';
 import { Select } from '../components/ui/Select.jsx';
 
 // ponytail: all styles inline using CSS vars — no new CSS file needed
@@ -13,7 +13,6 @@ const S = {
   caption: { fontSize: 12, color: 'var(--color-mid-gray)', margin: '2px 0 0' },
   label: { fontSize: 12, fontWeight: 500, letterSpacing: '0.01em', color: 'var(--color-ink)' },
   labelMuted: { fontSize: 12, fontWeight: 500, letterSpacing: '0.01em', color: 'var(--color-mid-gray)' },
-  inputRO: { width: '100%', background: 'var(--field-background, var(--color-surface-alt))', border: '1px solid var(--color-hairline)', borderRadius: 'var(--heroui-radius-lg, 18px)', padding: '8px 16px', fontSize: 14, color: 'var(--color-ink)', cursor: 'not-allowed', boxSizing: 'border-box' },
   input: { width: '100%', background: 'var(--field-background, var(--color-surface-alt))', border: '1px solid var(--color-hairline)', borderRadius: 'var(--heroui-radius-lg, 18px)', padding: '8px 16px', fontSize: 14, color: 'var(--color-ink)', outline: 'none', boxSizing: 'border-box', transition: 'border-color 150ms, box-shadow 150ms' },
   btnPrimary: { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 20px', borderRadius: 'var(--heroui-radius-lg, 18px)', background: 'var(--color-ink)', color: 'var(--color-paper)', fontSize: 14, fontWeight: 500, border: 'none', cursor: 'pointer', transition: 'all 150ms cubic-bezier(0.4, 0, 0.2, 1)', boxShadow: 'var(--heroui-shadow-sm)' },
   btnSecondary: { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 'var(--heroui-radius-lg, 18px)', background: 'var(--color-canvas)', color: 'var(--color-ink)', fontSize: 14, fontWeight: 500, border: '1px solid var(--color-hairline)', cursor: 'pointer', transition: 'all 150ms' },
@@ -24,7 +23,6 @@ const S = {
 };
 
 const TABS = [
-  { id: 'account', icon: 'person', label: 'Tài khoản' },
   { id: 'security', icon: 'lock', label: 'Bảo mật' },
   { id: 'notifications', icon: 'notifications', label: 'Thông báo' },
   { id: 'preferences', icon: 'tune', label: 'Tùy chọn học tập' },
@@ -51,7 +49,7 @@ function Toast({ message, onClose }) {
 
 export function SettingsPage() {
   const navigate = useAnimatedNavigate();
-  const [activeTab, setActiveTab] = useState('account');
+  const [activeTab, setActiveTab] = useState('security');
   const [toast, setToast] = useState('');
   const sectionRefs = useRef({});
 
@@ -79,7 +77,6 @@ export function SettingsPage() {
   const [language, setLanguage] = useState('vi');
   const [targetCpa, setTargetCpa] = useState('3.40');
   const [creditsLimit, setCreditsLimit] = useState('18');
-  const [avatarSrc, setAvatarSrc] = useState(null);
 
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
@@ -169,14 +166,6 @@ export function SettingsPage() {
     showToast('Mật khẩu đã được cập nhật thành công!');
   };
 
-  const handleAvatarChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => { setAvatarSrc(ev.target.result); showToast('Đã cập nhật ảnh đại diện!'); };
-    reader.readAsDataURL(file);
-  };
-
   const handleDeleteData = () => {
     if (deleteConfirm.trim().toUpperCase() !== 'XOA DU LIEU') { showToast('Vui lòng nhập đúng cụm từ "XOA DU LIEU" để xác nhận!'); return; }
     try { localStorage.clear(); } catch {}
@@ -208,7 +197,6 @@ export function SettingsPage() {
             <span className="haui-breadcrumb__current" aria-current="page">Cài đặt</span>
           </nav>
           <h1 style={{ fontSize: 30, fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.5px' }}>Cài đặt</h1>
-          <p style={{ fontSize: 14, color: 'var(--color-mid-gray)', margin: 0 }}>Quản lý thông tin tài khoản và tùy chỉnh trải nghiệm học tập.</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button
@@ -246,56 +234,7 @@ export function SettingsPage() {
       {/* Sections */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%' }}>
 
-        {/* 1. Account */}
-        <section ref={el => sectionRefs.current.account = el} style={S.section} id="section-account">
-          <div style={{ ...S.sectionHeader, justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={S.iconCircle}><Icon name="badge" /></div>
-              <div><h2 style={S.h2}>Thông tin tài khoản</h2><p style={S.caption}>Dữ liệu đồng bộ theo hệ thống quản lý sinh viên HaUI</p></div>
-            </div>
-            <Link to="/profile" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 500, color: 'var(--color-ink)' }}>Chỉnh sửa hồ sơ chi tiết <Icon name="arrow_forward" size={15} /></Link>
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32 }}>
-            {/* Avatar */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-              <div style={{ position: 'relative' }}>
-                <div style={{ width: 96, height: 96, borderRadius: '50%', background: 'var(--color-ink)', color: 'var(--color-paper)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, overflow: 'hidden' }}>
-                  {avatarSrc ? <img src={avatarSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : 'NA'}
-                </div>
-                <button onClick={() => document.getElementById('avatar-file-input')?.click()} style={{ position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: '50%', background: 'var(--color-paper)', border: '1px solid var(--color-hairline)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                  <Icon name="photo_camera" size={16} />
-                </button>
-                <input id="avatar-file-input" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
-              </div>
-              <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--color-mid-gray)' }}><div>Định dạng JPG, PNG</div><div>Tối đa 2.0 MB</div></div>
-            </div>
-            {/* Fields */}
-            {(() => {
-              const currentStudent = getAcademicSnapshot().student;
-              return (
-                <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
-                  <Field label="Họ và tên sinh viên" value={currentStudent?.fullName || 'Nguyễn Văn An'} readOnly />
-                  <Field label="Mã số sinh viên" value={currentStudent?.studentId || '2024604757'} readOnly locked />
-                  <Field label="Ngành đào tạo" value={currentStudent?.majorName || 'Kỹ thuật phần mềm'} readOnly />
-                  <Field label="Lớp sinh hoạt & Khóa" value={`${currentStudent?.className || '2022DHKTPM01'} • ${currentStudent?.faculty || 'Đại học Công nghiệp Hà Nội'}`} readOnly />
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      <label style={S.label}>Email liên hệ / Nhận thông báo cá nhân</label>
-                      <div style={{ position: 'relative' }}>
-                        <span className="material-symbols-outlined" style={{ position: 'absolute', left: 14, top: 10, fontSize: 18, color: 'var(--color-mid-gray)' }}>mail</span>
-                        <input style={{ ...S.input, paddingLeft: 40, paddingRight: 96 }} value={email} onChange={e => setEmail(e.target.value)} type="email" />
-                        <span style={{ position: 'absolute', right: 14, top: 10, fontSize: 12, color: 'var(--color-mid-gray)' }}>Đã xác minh</span>
-                      </div>
-                      <p style={{ fontSize: 12, color: 'var(--color-mid-gray)', margin: 0 }}>Hệ thống sẽ gửi các thông báo nhắc nhở tiến độ tốt nghiệp và cảnh báo môn học tới địa chỉ này.</p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        </section>
-
-        {/* 2. Security */}
+        {/* 1. Security */}
         <section ref={el => sectionRefs.current.security = el} style={S.section} id="section-security">
           <div style={S.sectionHeader}>
             <div style={S.iconCircle}><Icon name="security" /></div>
@@ -453,18 +392,6 @@ export function SettingsPage() {
 }
 
 /* ── Tiny sub-components ── */
-
-function Field({ label, value, readOnly, locked }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-mid-gray)' }}>{label}</label>
-        {locked && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 9999, background: 'var(--color-canvas)', border: '1px solid var(--color-hairline)', fontSize: 11, fontWeight: 500, color: 'var(--color-mid-gray)' }}><span className="material-symbols-outlined" style={{ fontSize: 12 }}>lock</span>Cố định</span>}
-      </div>
-      <input style={S.inputRO} value={value} readOnly={readOnly} tabIndex={readOnly ? -1 : 0} />
-    </div>
-  );
-}
 
 function PasswordField({ label, value, onChange, placeholder }) {
   const [show, setShow] = useState(false);
