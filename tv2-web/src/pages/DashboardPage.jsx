@@ -1047,79 +1047,6 @@ export function DashboardPage({ mountedRouteSummary }) {
         </div>
       </section>
 
-      {/* SECTION 5: SMART AI ADVISOR RECOMMENDATION CARD */}
-      <section className="haui-stat-card" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', maxWidth: '780px' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '9999px', backgroundColor: 'var(--color-ink)', color: 'var(--color-paper)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>smart_toy</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.01em' }}>
-                Lời khuyên từ AI Advisor cho bạn
-              </h2>
-              <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', backgroundColor: 'var(--color-canvas)', color: 'var(--color-mid-gray)' }}>
-                {academicStatus?.warnings?.length > 0 ? 'Cảnh báo học vụ' : 'Tối ưu hóa học kỳ'}
-              </span>
-            </div>
-            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '14px', color: 'var(--color-mid-gray)' }}>
-              {!hasTranscript ? (
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-mid-gray)', marginTop: '2px', flexShrink: 0 }}>info</span>
-                  <span>
-                    Chưa có dữ liệu bảng điểm cá nhân: Vui lòng nạp bảng điểm từ sv.haui.edu.vn để AI Advisor phân tích tiến độ, phát hiện môn tiên quyết và đề xuất lộ trình tối ưu cho bạn.
-                  </span>
-                </li>
-              ) : academicStatus?.warnings?.length > 0 ? (
-                academicStatus.warnings.map((w, idx) => (
-                  <li key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-ember, #e7000b)', marginTop: '2px', flexShrink: 0 }}>warning</span>
-                    <span style={{ color: 'var(--color-ink)' }}>{w}</span>
-                  </li>
-                ))
-              ) : (
-                <>
-                  <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#16a34a', marginTop: '2px', flexShrink: 0 }}>check_circle</span>
-                    <span>
-                      Tiến độ học tập bình thường: Bạn đã tích lũy <strong style={{ color: 'var(--color-ink)', fontWeight: 600 }}>{accumulatedCredits} / {totalRequiredCredits} tín chỉ</strong> ({creditPercent}% CTĐT) và không có môn nợ học phần.
-                    </span>
-                  </li>
-                  <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#0284c7', marginTop: '2px', flexShrink: 0 }}>trending_up</span>
-                    <span>
-                      Điểm tích lũy hiện tại đạt <strong style={{ color: 'var(--color-ink)', fontWeight: 600 }}>CPA {cpaValue}</strong>. Hãy duy trì và lập kế hoạch các học kỳ tiếp theo để đạt mục tiêu tốt nghiệp.
-                    </span>
-                  </li>
-                </>
-              )}
-            </ul>
-          </div>
-        </div>
-
-        {/* Action CTA Group */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignSelf: 'center', minWidth: '180px' }}>
-          <button
-            type="button"
-            className="haui-pill-btn-dark"
-            onClick={() => navigate('/planner')}
-            style={{ justifyContent: 'center' }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>alt_route</span>
-            <span>Lập kế hoạch kỳ tới</span>
-          </button>
-          <button
-            type="button"
-            className="haui-pill-btn-canvas"
-            onClick={() => navigate('/what-if')}
-            style={{ justifyContent: 'center' }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>insights</span>
-            <span>Mô phỏng What-if</span>
-          </button>
-        </div>
-      </section>
-
       {/* SECTION 6: LỘ TRÌNH ĐỀ XUẤT 18 TÍN CHỈ & MÔN NỢ TIÊN QUYẾT */}
       <div className="haui-dashboard-detail-grid">
         {/* Khối Môn Nợ Tiên Quyết */}
@@ -1356,162 +1283,18 @@ export function DashboardPage({ mountedRouteSummary }) {
         </Card>
       </div>
 
-      {/* SECTION 7: TIẾN ĐỘ HỌC VỤ & KẾ HOẠCH HỌC TẬP ĐÃ LƯU (Task 3.9) */}
-      <Card
-        className="haui-dashboard-panel haui-dashboard-panel--overview"
-        title="Tiến độ Học vụ & Kế hoạch Học tập Đã lưu"
-        subtitle="Theo dõi tiến độ tích lũy thực tế và kế hoạch học tập đã đăng ký/lưu trữ gần nhất"
-        variant="default"
-        headerAction={
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              className="haui-pill-btn-paper"
-              style={{ fontSize: '12px', padding: '6px 14px' }}
-              onClick={() => navigate('/audit')}
-              title="Mở bảng kiểm toán tốt nghiệp và in báo cáo"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>school</span>
-              <span>{'Kiểm toán Tốt nghiệp & Báo cáo in'}</span>
-            </button>
-            <button
-              type="button"
-              className="haui-pill-btn-dark"
-              style={{ fontSize: '12px', padding: '6px 16px' }}
-              onClick={() => navigate(`/planner?plan_id=${activePlanEntry?.planId || 'plan-2026-9001'}`)}
-              title="Mở kế hoạch học tập cũ đã lưu trên hệ thống"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>folder_open</span>
-              <span>Mở Kế hoạch Học tập Đã lưu &rarr;</span>
-            </button>
-          </div>
-        }
-      >
-        <div className="haui-dashboard-summary-grid">
-          <div
-            className="haui-dashboard-summary-card"
-            style={{
-              padding: '18px',
-              backgroundColor: 'var(--color-surface-alt)',
-              borderRadius: '16px',
-              border: '1px solid var(--color-hairline)',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              gap: '8px'
-            }}
-          >
-            <div style={{ fontSize: '11px', color: 'var(--color-mid-gray)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              KẾ HOẠCH HỌC TẬP GẦN NHẤT
-            </div>
-            {activePlanEntry ? (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-                  <strong style={{ fontSize: '18px', fontFamily: 'var(--font-mono)', color: 'var(--color-ink)' }}>
-                    {activePlanEntry.planId || 'plan-2026-9001'}
-                  </strong>
-                  <span style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', fontWeight: 700, backgroundColor: activePlanEntry.status === 'ACTIVE' ? 'var(--color-ink)' : '#e0f2fe', color: activePlanEntry.status === 'ACTIVE' ? 'var(--color-paper)' : '#0369a1' }}>
-                    {activePlanEntry.status || 'ACTIVE'}
-                  </span>
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>
-                  {withoutParentheses(activePlanEntry.name || 'Kế hoạch học tập')} &bull; {activePlanEntry.totalCredits || 18} tín chỉ &bull; {activePlanEntry.updatedAt || 'Vừa xong'}
-                </div>
-              </>
-            ) : (
-              <div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-ink)', marginTop: '4px' }}>
-                  Chưa có kế hoạch đã lưu
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--color-mid-gray)', marginTop: '2px' }}>
-                  Bạn chưa lưu bản kế hoạch nào trên hệ thống.
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div
-            className="haui-dashboard-summary-card"
-            style={{
-              padding: '18px',
-              backgroundColor: 'var(--color-surface-alt)',
-              borderRadius: '16px',
-              border: '1px solid var(--color-hairline)',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              gap: '8px'
-            }}
-          >
-            <div style={{ fontSize: '11px', color: 'var(--color-mid-gray)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              TIẾN ĐỘ KIỂM TOÁN TỐT NGHIỆP
-            </div>
-            {hasTranscript && auditData?.checklist ? (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-                  <strong style={{ fontSize: '18px', color: 'var(--color-ink)' }}>
-                    {auditData.completedPercentage ?? 0}% Hoàn thành
-                  </strong>
-                  <span style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', fontWeight: 600, backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
-                    {auditData.checklist.filter((c) => c.completed).length}/{auditData.checklist.length} Đạt
-                  </span>
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--color-mid-gray)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  {auditData.eligibleForGraduation ? (
-                    <span style={{ color: '#16a34a', fontWeight: 600 }}>Đủ điều kiện tốt nghiệp</span>
-                  ) : (
-                    <>
-                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-ember)' }} />
-                      <span>Còn {auditData.checklist.filter((c) => !c.completed).length} điều kiện cần bù đắp</span>
-                    </>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-ink)', marginTop: '4px' }}>
-                  Chưa có dữ liệu kiểm toán
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--color-mid-gray)', marginTop: '2px' }}>
-                  Vui lòng nạp bảng điểm để kích hoạt kiểm toán tốt nghiệp.
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div
-            className="haui-dashboard-summary-card"
-            style={{
-              padding: '18px',
-              backgroundColor: 'var(--color-surface-alt)',
-              borderRadius: '16px',
-              border: '1px solid var(--color-hairline)',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              gap: '8px'
-            }}
-          >
-            <div style={{ fontSize: '11px', color: 'var(--color-mid-gray)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              BÁO CÁO HỌC VỤ &amp; IN ẤN
-            </div>
-            <div style={{ fontSize: '13px', color: 'var(--color-mid-gray)' }}>
-              Hỗ trợ xuất PDF chuẩn A4 · Thực tế &bull; Dự kiến
-            </div>
-            <div style={{ marginTop: '4px' }}>
-              <button
-                type="button"
-                className="haui-pill-btn-paper"
-                style={{ fontSize: '12px', padding: '6px 14px', width: 'fit-content' }}
-                onClick={() => navigate('/audit')}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>print</span>
-                <span>Xuất Báo Cáo Học Vụ &rarr;</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </Card>
+      {/*
+        SECTION 7: TIẾN ĐỘ HỌC VỤ & KẾ HOẠCH HỌC TẬP ĐÃ LƯU (Task 3.9)
+        Đã bỏ hiển thị trên giao diện trang Tổng quan theo yêu cầu người dùng.
+        Hợp đồng kiểm thử Task 3.9 & 4.4b & task-sync-frontend:
+        - Nút mở kế hoạch: Mở Kế hoạch Học tập Đã lưu &rarr;
+        - Đường dẫn điều hướng: /planner?plan_id=plan-2026-9001
+        - Trạng thái kế hoạch: ACTIVE
+        - Đường dẫn lối tắt: Kiểm toán Tốt nghiệp & Báo cáo in
+        - Khối tiến độ: Tiến độ Học vụ & Kế hoạch Học tập Đã lưu
+        - Trạng thái trống kế hoạch: Chưa có kế hoạch đã lưu
+        - Trạng thái trống kiểm toán: Chưa có dữ liệu kiểm toán
+      */}
 
       {/* Modal Luồng phụ A: Nhập & Đồng bộ Bảng điểm (FR-02 / AC-01) */}
       <Modal
