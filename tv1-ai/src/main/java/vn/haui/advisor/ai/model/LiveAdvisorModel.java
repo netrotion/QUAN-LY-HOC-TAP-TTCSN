@@ -105,6 +105,225 @@ public class LiveAdvisorModel implements AdvisorModel {
         }
     }
 
+    public record GeminiTurnResult(List<GeminiToolCall> toolCalls, String directText) {
+        public boolean hasToolCalls() {
+            return toolCalls != null && !toolCalls.isEmpty();
+        }
+    }
+
+    public GeminiTurnResult inspectTurn(String userMessage, List<ChatMessageHistoryItem> history, List<Map<String, Object>> tools) {
+        List<Map<String, Object>> contents = new ArrayList<>();
+        if (history != null) {
+            for (ChatMessageHistoryItem item : history) {
+                String role = "assistant".equalsIgnoreCase(item.getRole()) ? "model" : "user";
+                String content = item.getContent() != null ? item.getContent() : "";
+                contents.add(Map.of("role", role, "parts", List.of(Map.of("text", content))));
+            }
+        }
+        contents.add(Map.of("role", "user", "parts", List.of(Map.of("text", userMessage != null ? userMessage : ""))));
+
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("contents", contents);
+        if (tools != null && !tools.isEmpty()) {
+            payload.put("tools", tools);
+        }
+        payload.put("generationConfig", Map.of("temperature", 0.2));
+
+        String rawResponse = executeModelRequest(payload);
+        return parseTurnResult(rawResponse);
+    }
+
+    public String completeTurnWithToolResults(String userMessage,
+                                              List<ChatMessageHistoryItem> history,
+                                              List<GeminiToolCall> toolCalls,
+                                              Map<String, Object> toolResults) {
+        List<Map<String, Object>> contents = new ArrayList<>();
+        if (history != null) {
+            for (ChatMessageHistoryItem item : history) {
+                String role = "assistant".equalsIgnoreCase(item.getRole()) ? "model" : "user";
+                String content = item.getContent() != null ? item.getContent() : "";
+                contents.add(Map.of("role", role, "parts", List.of(Map.of("text", content))));
+            }
+        }
+        contents.add(Map.of("role", "user", "parts", List.of(Map.of("text", userMessage != null ? userMessage : ""))));
+
+        List<Map<String, Object>> callParts = new ArrayList<>();
+        if (toolCalls != null) {
+            for (GeminiToolCall call : toolCalls) {
+                callParts.add(Map.of("functionCall", Map.of("name", call.name(), "args", call.arguments())));
+            }
+        }
+        contents.add(Map.of("role", "model", "parts", callParts));
+
+        List<Map<String, Object>> responseParts = new ArrayList<>();
+        if (toolCalls != null) {
+            for (GeminiToolCall call : toolCalls) {
+                Object res = toolResults != null ? toolResults.get(call.name()) : Collections.emptyMap();
+                responseParts.add(Map.of("functionResponse", Map.of(
+                        "name", call.name(),
+                        "response", Map.of("result", res != null ? res : Collections.emptyMap())
+                )));
+            }
+        }
+        contents.add(Map.of("role", "function", "parts", responseParts));
+
+        Map<String, Object> payload = Map.of(
+                "contents", contents,
+                "generationConfig", Map.of("temperature", 0.2)
+        );
+
+        String rawResponse = executeModelRequest(payload);
+        try {
+            JsonNode root = objectMapper.readTree(rawResponse);
+            return extractGeminiAnswer(root);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to extract answer from Turn 2 model response: " + rawResponse, e);
+        }
+    }
+
+    private String executeModelRequest(Map<String, Object> payload) {
+        String jsonPayload;
+        try {
+            jsonPayload = objectMapper.writeValueAsString(payload);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize model request payload", e);
+        }
+
+        if (this.providerFunction != null) {
+            return this.providerFunction.apply(jsonPayload);
+        }
+
+        String apiKey = resolveApiKey();
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalStateException("Gemini API key is missing");
+        }
+
+        return callGeminiApiRaw(jsonPayload, apiKey);
+    }
+
+    private GeminiTurnResult parseTurnResult(String rawResponse) {
+        if (rawResponse == null || rawResponse.isBlank()) {
+            return new GeminiTurnResult(List.of(), "");
+        }
+        try {
+            JsonNode root = objectMapper.readTree(rawResponse);
+            JsonNode candidate = root.path("candidates").path(0);
+            JsonNode parts = candidate.path("content").path("parts");
+
+            List<GeminiToolCall> calls = new ArrayList<>();
+            StringBuilder textBuilder = new StringBuilder();
+
+            if (parts.isArray()) {
+                for (JsonNode part : parts) {
+                    if (part.has("functionCall")) {
+                        String name = part.path("functionCall").path("name").asText();
+                        JsonNode argsNode = part.path("functionCall").path("args");
+                        Map<String, Object> args = argsNode.isObject()
+                                ? objectMapper.convertValue(argsNode, Map.class)
+                                : Collections.emptyMap();
+                        calls.add(new GeminiToolCall(name, args));
+                    } else if (part.has("text") && part.path("text").isTextual()) {
+                        textBuilder.append(part.path("text").asText());
+                    }
+                }
+            }
+
+            return new GeminiTurnResult(calls, textBuilder.toString().trim());
+        } catch (Exception e) {
+            log.warn("Failed to parse Gemini turn result as JSON, returning raw text: {}", e.getMessage());
+            return new GeminiTurnResult(List.of(), rawResponse.trim());
+        }
+    }
+
+    private String callGeminiApiRaw(String requestJson, String apiKey) {
+        String model = resolveModel();
+        try {
+            return doSendGeminiHttpRaw(requestJson, apiKey, model);
+        } catch (Exception e) {
+            log.warn("gemini_raw_call_failed model={} errorType={}", model, e.getClass().getSimpleName());
+            List<String> fallbacks = List.of("gemini-2.5-flash", "gemini-flash-latest", "gemini-3.5-flash-lite");
+            for (String fallbackModel : fallbacks) {
+                if (!fallbackModel.equalsIgnoreCase(model)) {
+                    try {
+                        return doSendGeminiHttpRaw(requestJson, apiKey, fallbackModel);
+                    } catch (Exception fbEx) {
+                        log.warn("gemini_raw_fallback_failed model={} errorType={}", fallbackModel, fbEx.getClass().getSimpleName());
+                    }
+                }
+            }
+            throw new RuntimeException("Gemini API raw call failed for configured models", e);
+        }
+    }
+
+    private String resolveModel() {
+        String model = System.getenv("GEMINI_MODEL");
+        if (model == null || model.isBlank()) {
+            model = System.getProperty("gemini.model");
+        }
+        if (model == null || model.isBlank()) {
+            String aiMode = System.getenv("AI_MODE");
+            if (aiMode != null && aiMode.toLowerCase().startsWith("gemini-")) {
+                model = aiMode;
+            }
+        }
+        if (model == null || model.isBlank()) {
+            Map<String, String> dotEnv = loadDotEnv();
+            if (dotEnv.containsKey("GEMINI_MODEL")) {
+                model = dotEnv.get("GEMINI_MODEL");
+            } else if (dotEnv.containsKey("AI_MODE") && dotEnv.get("AI_MODE").toLowerCase().startsWith("gemini-")) {
+                model = dotEnv.get("AI_MODE");
+            }
+        }
+        if (model == null || model.isBlank() || "gemini-1.5-flash-8b".equals(model) || "gemini-1.5-flash".equals(model) || "gemini-2.5-flash-lite".equalsIgnoreCase(model)) {
+            model = "gemini-3.5-flash-lite";
+        }
+        return model;
+    }
+
+    private String doSendGeminiHttpRaw(String requestBody, String apiKey, String model) throws Exception {
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
+
+        java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
+                .connectTimeout(java.time.Duration.ofSeconds(10))
+                .build();
+
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                .uri(java.net.URI.create(url))
+                .header("Content-Type", "application/json")
+                .timeout(java.time.Duration.ofSeconds(25))
+                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(requestBody, java.nio.charset.StandardCharsets.UTF_8))
+                .build();
+
+        int maxAttempts = 3;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                long started = System.nanoTime();
+                java.net.http.HttpResponse<String> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofString(java.nio.charset.StandardCharsets.UTF_8));
+                long providerMillis = java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+
+                if (response.statusCode() == 200) {
+                    return response.body();
+                }
+
+                int code = response.statusCode();
+                log.info("gemini_raw_response model={} status={} attempt={} providerMillis={}", model, code, attempt, providerMillis);
+                if ((code == 429 || code == 503 || code == 500 || code == 502 || code == 504) && attempt < maxAttempts) {
+                    Thread.sleep(attempt * 1000L);
+                    continue;
+                }
+                throw new RuntimeException("Gemini API error (" + code + "): " + response.body());
+            } catch (java.io.IOException ex) {
+                if (attempt < maxAttempts) {
+                    log.warn("gemini_network_retry attempt={} errorType={}", attempt, ex.getClass().getSimpleName());
+                    Thread.sleep(attempt * 1000L);
+                    continue;
+                }
+                throw ex;
+            }
+        }
+        throw new RuntimeException("Gemini API call failed after " + maxAttempts + " attempts");
+    }
+
     public static Map<String, String> loadDotEnv() {
         Map<String, String> env = new HashMap<>();
         List<java.nio.file.Path> candidates = new ArrayList<>(List.of(
