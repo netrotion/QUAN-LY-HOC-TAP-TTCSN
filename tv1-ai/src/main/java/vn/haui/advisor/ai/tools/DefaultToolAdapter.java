@@ -22,18 +22,47 @@ public class DefaultToolAdapter implements ToolAdapter {
 
     private final AcademicFacade academicFacade;
     private final boolean strictReadiness;
+    private final java.util.function.Function<TrustedStudentContext, TranscriptResponse> transcriptProvider;
+    private final java.util.function.Function<TrustedStudentContext, CurriculumTreeResponse> curriculumTreeProvider;
 
     public DefaultToolAdapter(AcademicFacade academicFacade) {
-        this(academicFacade, false);
+        this(academicFacade, false, null, null);
     }
 
     public DefaultToolAdapter(AcademicFacade academicFacade, boolean strictReadiness) {
+        this(academicFacade, strictReadiness, null, null);
+    }
+
+    public DefaultToolAdapter(AcademicFacade academicFacade,
+                              boolean strictReadiness,
+                              java.util.function.Function<TrustedStudentContext, TranscriptResponse> transcriptProvider,
+                              java.util.function.Function<TrustedStudentContext, CurriculumTreeResponse> curriculumTreeProvider) {
         this.academicFacade = Objects.requireNonNull(academicFacade, "academicFacade must not be null");
         this.strictReadiness = strictReadiness;
+        this.transcriptProvider = transcriptProvider;
+        this.curriculumTreeProvider = curriculumTreeProvider;
     }
 
     public boolean isStrictReadiness() {
         return strictReadiness;
+    }
+
+    @Override
+    public TranscriptResponse getTranscript(TrustedStudentContext context) {
+        Objects.requireNonNull(context, "context must not be null");
+        if (context.getStudentId() == null || context.getStudentId().isBlank()) {
+            throw new NullPointerException("studentId must not be null or blank");
+        }
+        return transcriptProvider != null ? transcriptProvider.apply(context) : null;
+    }
+
+    @Override
+    public CurriculumTreeResponse getCurriculumTree(TrustedStudentContext context) {
+        Objects.requireNonNull(context, "context must not be null");
+        if (context.getStudentId() == null || context.getStudentId().isBlank()) {
+            throw new NullPointerException("studentId must not be null or blank");
+        }
+        return curriculumTreeProvider != null ? curriculumTreeProvider.apply(context) : null;
     }
 
     @Override

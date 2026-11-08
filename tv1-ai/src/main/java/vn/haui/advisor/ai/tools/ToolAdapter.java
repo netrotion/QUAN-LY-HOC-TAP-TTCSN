@@ -75,6 +75,20 @@ public interface ToolAdapter {
     ReconcileStudyPlanResponse reconcileStudyPlan(TrustedStudentContext context, String planId, String completedSemester, Integer planVersion);
 
     /**
+     * Tra cứu bảng điểm và lịch sử học tập đã xác nhận của sinh viên.
+     */
+    default TranscriptResponse getTranscript(TrustedStudentContext context) {
+        return null;
+    }
+
+    /**
+     * Tra cứu toàn bộ cây chương trình đào tạo của sinh viên kèm trạng thái và điều kiện đăng ký.
+     */
+    default CurriculumTreeResponse getCurriculumTree(TrustedStudentContext context) {
+        return null;
+    }
+
+    /**
      * Kiểm tra xem một capability học vụ cụ thể đã sẵn sàng (được AcademicFacade khai báo là công cụ thật) hay chưa.
      */
     boolean isCapabilityReady(AcademicCapability capability);

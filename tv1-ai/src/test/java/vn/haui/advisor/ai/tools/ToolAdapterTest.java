@@ -621,4 +621,69 @@ class ToolAdapterTest {
             assertThat(captured.getDataRevision()).isEqualTo("REV-2024-V1");
         }
     }
+
+    // =========================================================================
+    // 5. Student Journey Provider Tests
+    // =========================================================================
+
+    @Nested
+    @DisplayName("Student Journey Providers Tests")
+    class StudentJourneyProviderTests {
+
+        @Test
+        @DisplayName("getTranscript delegates to transcriptProvider when supplied")
+        void testGetTranscriptDelegation() {
+            TranscriptResponse mockTranscript = new TranscriptResponse();
+            mockTranscript.setStudentId(trustedContext.getStudentId());
+            TranscriptAttemptItem attempt = new TranscriptAttemptItem();
+            attempt.setCourseCode("IT6011");
+            attempt.setCourseName("Nhập môn lập trình");
+            attempt.setCredits(new BigDecimal("3.0"));
+            attempt.setSemesterCode("2024_1");
+            attempt.setScore10(new BigDecimal("9.0"));
+            attempt.setLetterGrade("A");
+            mockTranscript.setAttempts(List.of(attempt));
+
+            ToolAdapter adapterWithProviders = new DefaultToolAdapter(
+                    academicFacade, false,
+                    ctx -> mockTranscript,
+                    ctx -> null
+            );
+
+            TranscriptResponse res = adapterWithProviders.getTranscript(trustedContext);
+            assertThat(res).isNotNull();
+            assertThat(res.getStudentId()).isEqualTo("STU-2021600123");
+            assertThat(res.getAttempts()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("getCurriculumTree delegates to curriculumTreeProvider when supplied")
+        void testGetCurriculumTreeDelegation() {
+            CurriculumTreeResponse mockTree = new CurriculumTreeResponse();
+            mockTree.setStudentId(trustedContext.getStudentId());
+            CurriculumTreeCourseItem course = new CurriculumTreeCourseItem();
+            course.setCourseCode("IT6080");
+            course.setEligible(true);
+            mockTree.setCourses(List.of(course));
+
+            ToolAdapter adapterWithProviders = new DefaultToolAdapter(
+                    academicFacade, false,
+                    ctx -> null,
+                    ctx -> mockTree
+            );
+
+            CurriculumTreeResponse res = adapterWithProviders.getCurriculumTree(trustedContext);
+            assertThat(res).isNotNull();
+            assertThat(res.getStudentId()).isEqualTo("STU-2021600123");
+            assertThat(res.getCourses()).hasSize(1);
+            assertThat(res.getCourses().get(0).isEligible()).isTrue();
+        }
+
+        @Test
+        @DisplayName("Default implementation returns null when providers are not configured")
+        void testDefaultReturnsNullWhenProvidersMissing() {
+            assertThat(toolAdapter.getTranscript(trustedContext)).isNull();
+            assertThat(toolAdapter.getCurriculumTree(trustedContext)).isNull();
+        }
+    }
 }
