@@ -238,4 +238,137 @@ class NaturalLanguageToolCallingTest {
         verifyNoInteractions(ragService);
         assertThat(response.getAnswer()).contains("HaUI Advisor");
     }
+
+    @Test
+    @DisplayName("Grade query: 'có môn nào của tôi được A không' triggers get_transcript")
+    void shouldHandleTranscriptQueryAndReportGradeA() {
+        String turn1Response = """
+                {
+                  "candidates": [
+                    {
+                      "content": {
+                        "parts": [
+                          {
+                            "functionCall": {
+                              "name": "get_transcript",
+                              "args": {
+                                "filter": "ALL"
+                              }
+                            }
+                          }
+                        ],
+                        "role": "model"
+                      },
+                      "finishReason": "STOP"
+                    }
+                  ]
+                }
+                """;
+        String turn2Response = """
+                {
+                  "candidates": [
+                    {
+                      "content": {
+                        "parts": [
+                          {
+                            "text": "Bạn có 2 môn đạt điểm A xuất sắc: IT6011 (Nhập môn lập trình) và MA6001 (Giải tích 1)."
+                          }
+                        ],
+                        "role": "model"
+                      },
+                      "finishReason": "STOP"
+                    }
+                  ]
+                }
+                """;
+
+        AtomicBoolean isTurn1 = new AtomicBoolean(true);
+        LiveAdvisorModel liveModel = new LiveAdvisorModel(req -> isTurn1.getAndSet(false) ? turn1Response : turn2Response);
+        ToolAdapter toolAdapter = mock(ToolAdapter.class);
+
+        TranscriptResponse transcript = new TranscriptResponse();
+        transcript.setStudentId(context.getStudentId());
+        TranscriptAttemptItem a1 = new TranscriptAttemptItem();
+        a1.setCourseCode("IT6011");
+        a1.setCourseName("Nhập môn lập trình");
+        a1.setCredits(new java.math.BigDecimal("3.0"));
+        a1.setLetterGrade("A");
+        transcript.setAttempts(List.of(a1));
+
+        when(toolAdapter.getTranscript(any())).thenReturn(transcript);
+
+        DefaultAdvisorFacade facade = new DefaultAdvisorFacade(liveModel, toolAdapter);
+        ChatRequest request = new ChatRequest("conv-nl-5", "có môn nào của tôi được A không", "2026-11-08T00:00:00Z");
+
+        ChatResponse response = facade.chat(request, context);
+
+        verify(toolAdapter, times(1)).getTranscript(eq(context));
+        assertThat(response.getAnswer()).contains("IT6011");
+    }
+
+    @Test
+    @DisplayName("Future courses query: 'kỳ tới tôi được đăng ký những môn gì' triggers get_curriculum_tree")
+    void shouldHandleCurriculumTreeQueryAndReportEligibleCourses() {
+        String turn1Response = """
+                {
+                  "candidates": [
+                    {
+                      "content": {
+                        "parts": [
+                          {
+                            "functionCall": {
+                              "name": "get_curriculum_tree",
+                              "args": {
+                                "scope": "ELIGIBLE_NEXT_SEMESTER"
+                              }
+                            }
+                          }
+                        ],
+                        "role": "model"
+                      },
+                      "finishReason": "STOP"
+                    }
+                  ]
+                }
+                """;
+        String turn2Response = """
+                {
+                  "candidates": [
+                    {
+                      "content": {
+                        "parts": [
+                          {
+                            "text": "Trong kỳ tới, bạn đủ điều kiện đăng ký các môn sau: IT6080 (Kiến trúc phần mềm)."
+                          }
+                        ],
+                        "role": "model"
+                      },
+                      "finishReason": "STOP"
+                    }
+                  ]
+                }
+                """;
+
+        AtomicBoolean isTurn1 = new AtomicBoolean(true);
+        LiveAdvisorModel liveModel = new LiveAdvisorModel(req -> isTurn1.getAndSet(false) ? turn1Response : turn2Response);
+        ToolAdapter toolAdapter = mock(ToolAdapter.class);
+
+        CurriculumTreeResponse tree = new CurriculumTreeResponse();
+        tree.setStudentId(context.getStudentId());
+        CurriculumTreeCourseItem item = new CurriculumTreeCourseItem();
+        item.setCourseCode("IT6080");
+        item.setCourseName("Kiến trúc phần mềm");
+        item.setEligible(true);
+        tree.setCourses(List.of(item));
+
+        when(toolAdapter.getCurriculumTree(any())).thenReturn(tree);
+
+        DefaultAdvisorFacade facade = new DefaultAdvisorFacade(liveModel, toolAdapter);
+        ChatRequest request = new ChatRequest("conv-nl-6", "kỳ tới tôi được đăng ký những môn gì", "2026-11-08T00:00:00Z");
+
+        ChatResponse response = facade.chat(request, context);
+
+        verify(toolAdapter, times(1)).getCurriculumTree(eq(context));
+        assertThat(response.getAnswer()).contains("IT6080");
+    }
 }

@@ -572,6 +572,22 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                         }
                     }
                 }
+                case "get_transcript" -> {
+                    String filter = args.get("filter") != null ? args.get("filter").toString() : "ALL";
+                    TranscriptResponse transcript = toolAdapter.getTranscript(context);
+                    if (transcript != null) {
+                        String summary = vn.haui.advisor.ai.tools.StudentJourneySummarizer.summarizeTranscript(transcript, filter);
+                        toolResults.put("get_transcript", summary);
+                    }
+                }
+                case "get_curriculum_tree" -> {
+                    String scope = args.get("scope") != null ? args.get("scope").toString() : "ELIGIBLE_NEXT_SEMESTER";
+                    CurriculumTreeResponse tree = toolAdapter.getCurriculumTree(context);
+                    if (tree != null) {
+                        String summary = vn.haui.advisor.ai.tools.StudentJourneySummarizer.summarizeCurriculumTree(tree, scope);
+                        toolResults.put("get_curriculum_tree", summary);
+                    }
+                }
                 default -> log.warn("Unknown native tool call: {}", toolName);
             }
             long elapsed = System.currentTimeMillis() - started;
