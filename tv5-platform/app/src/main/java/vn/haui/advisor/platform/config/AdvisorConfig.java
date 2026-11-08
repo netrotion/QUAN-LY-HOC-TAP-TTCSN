@@ -36,6 +36,8 @@ import vn.haui.advisor.contracts.ports.AcademicFacade;
 import vn.haui.advisor.contracts.ports.AdvisorFacade;
 import vn.haui.advisor.platform.advisor.AdvisorReadiness;
 import vn.haui.advisor.platform.conversation.ConversationTurns;
+import vn.haui.advisor.platform.academic.AcademicApiService;
+import vn.haui.advisor.platform.student.StudentDataService;
 
 import java.nio.file.Path;
 import java.time.Clock;
@@ -121,9 +123,17 @@ public class AdvisorConfig {
     @Bean
     public AdvisorFacade advisorFacade(AdvisorModel model, AcademicFacade academicFacade, RagAdvisorService rag,
                                        ConversationTurns turns, ObjectMapper objectMapper, AiProperties ai,
-                                       ResponseGroundingValidator validator) {
+                                       ResponseGroundingValidator validator,
+                                       StudentDataService studentDataService,
+                                       AcademicApiService academicApiService) {
         ConversationHistoryManager history = new ConversationHistoryManager(turns.advisorStore(), objectMapper, true);
-        return new DefaultAdvisorFacade(model, new DefaultToolAdapter(academicFacade, ai.getAdvisor().isStrictReadiness()), rag,
+        DefaultToolAdapter adapter = new DefaultToolAdapter(
+                academicFacade,
+                ai.getAdvisor().isStrictReadiness(),
+                studentDataService::transcript,
+                academicApiService::tree
+        );
+        return new DefaultAdvisorFacade(model, adapter, rag,
                 history, new IntentClassifier(), validator, ai.getAdvisor().getToolTimeoutMs());
     }
 
