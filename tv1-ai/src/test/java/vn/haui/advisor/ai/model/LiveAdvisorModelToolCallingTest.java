@@ -125,5 +125,56 @@ class LiveAdvisorModelToolCallingTest {
         assertThat(answer).contains("59/150 tín chỉ");
         assertThat(capturedRequest.get()).contains("functionResponse");
         assertThat(capturedRequest.get()).contains("run_graduation_audit");
+        assertThat(capturedRequest.get()).contains("systemInstruction");
+        assertThat(capturedRequest.get()).contains("GRACEFUL PIVOT");
+    }
+
+    @Test
+    void shouldIncludeSystemInstructionInInspectTurnRequest() {
+        AtomicReference<String> capturedRequest = new AtomicReference<>();
+        String mockResponse = """
+                {
+                  "candidates": [
+                    {
+                      "content": {
+                        "parts": [
+                          {
+                            "text": "Nghe đến phở bò Hà Nội nóng hổi là thấy ấm bụng..."
+                          }
+                        ],
+                        "role": "model"
+                      },
+                      "finishReason": "STOP"
+                    }
+                  ]
+                }
+                """;
+
+        LiveAdvisorModel model = new LiveAdvisorModel(req -> {
+            capturedRequest.set(req);
+            return mockResponse;
+        });
+
+        LiveAdvisorModel.GeminiTurnResult result = model.inspectTurn(
+                "Chỉ cho tôi công thức nấu phở bò gia truyền Hà Nội ngon chuẩn vị",
+                List.of(),
+                GeminiToolDeclarations.getToolDeclarations()
+        );
+
+        assertThat(result.hasToolCalls()).isFalse();
+        assertThat(capturedRequest.get()).contains("systemInstruction");
+        assertThat(capturedRequest.get()).contains("GRACEFUL PIVOT");
+        assertThat(capturedRequest.get()).contains("bạn có thấy tôi đẹp trai không");
+        assertThat(capturedRequest.get()).contains("Chỉ cho tôi công thức nấu phở bò gia truyền Hà Nội");
+    }
+
+    @Test
+    void systemPromptMustContainGracefulPivotRuleAndFewShotExamples() {
+        assertThat(LiveAdvisorModel.SYSTEM_PROMPT).contains("GRACEFUL PIVOT");
+        assertThat(LiveAdvisorModel.SYSTEM_PROMPT).contains("bạn có thấy tôi đẹp trai không");
+        assertThat(LiveAdvisorModel.SYSTEM_PROMPT).contains("công thức nấu phở bò");
+        assertThat(LiveAdvisorModel.SYSTEM_PROMPT).contains("BƯỚC 1 - HƯỞNG ỨNG TỰ NHIÊN");
+        assertThat(LiveAdvisorModel.SYSTEM_PROMPT).contains("BƯỚC 2 - GIỮ VỮNG RANH GIỚI");
+        assertThat(LiveAdvisorModel.SYSTEM_PROMPT).contains("BƯỚC 3 - KHÉO LÉO LÁI VỀ HỌC VỤ");
     }
 }
