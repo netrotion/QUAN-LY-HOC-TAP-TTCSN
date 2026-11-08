@@ -139,6 +139,36 @@ public final class GeminiToolDeclarations {
                 )
         ));
 
+        // 8. get_transcript
+        Map<String, Object> transcriptProps = new LinkedHashMap<>();
+        transcriptProps.put("filter", Map.of(
+                "type", "STRING",
+                "description", "Bộ lọc học phần: 'ALL' (tất cả), 'GRADE_A' (chỉ môn điểm A/A+), 'FAILED' (môn nợ/trượt), 'PASSED' (môn đã qua). Mặc định là 'ALL'."
+        ));
+        functions.add(Map.of(
+                "name", "get_transcript",
+                "description", "Tra cứu toàn bộ lịch sử học tập và bảng điểm chi tiết của sinh viên: danh sách các học phần đã học, điểm chữ (A, B, C, D, F), điểm thang 10, số tín chỉ và học kỳ hoàn thành. Dùng khi sinh viên hỏi về các môn đã học, môn điểm cao/thấp, môn điểm A, hoặc phân tích kết quả học tập trong quá khứ.",
+                "parameters", Map.of(
+                        "type", "OBJECT",
+                        "properties", transcriptProps
+                )
+        ));
+
+        // 9. get_curriculum_tree
+        Map<String, Object> treeProps = new LinkedHashMap<>();
+        treeProps.put("scope", Map.of(
+                "type", "STRING",
+                "description", "Phạm vi tra cứu: 'ELIGIBLE_NEXT_SEMESTER' (các môn đủ điều kiện đăng ký ngay kỳ tới), 'REMAINING_COURSES' (toàn bộ môn chưa học trong CTĐT), 'ALL' (toàn bộ cây CTĐT). Mặc định là 'ELIGIBLE_NEXT_SEMESTER'."
+        ));
+        functions.add(Map.of(
+                "name", "get_curriculum_tree",
+                "description", "Tra cứu toàn bộ cây chương trình đào tạo (CTĐT) của sinh viên: danh sách các môn chưa học (bắt buộc/tự chọn), danh sách các môn ĐỦ ĐIỀU KIỆN ĐĂNG KÝ trong học kỳ tới, điều kiện tiên quyết và học kỳ gợi ý. Dùng khi sinh viên hỏi về các môn học trong tương lai, kỳ tới nên/được học môn gì, hoặc lộ trình các môn còn lại.",
+                "parameters", Map.of(
+                        "type", "OBJECT",
+                        "properties", treeProps
+                )
+        ));
+
         return List.of(Map.of("functionDeclarations", functions));
     }
 }

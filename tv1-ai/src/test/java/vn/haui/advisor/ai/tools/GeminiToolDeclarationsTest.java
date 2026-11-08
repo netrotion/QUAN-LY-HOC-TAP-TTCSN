@@ -17,7 +17,7 @@ class GeminiToolDeclarationsTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void shouldDeclareAllSevenToolsForGeminiApi() {
+    void shouldDeclareAllNineToolsForGeminiApi() {
         List<Map<String, Object>> tools = GeminiToolDeclarations.getToolDeclarations();
         assertThat(tools).isNotNull().hasSize(1);
 
@@ -26,7 +26,7 @@ class GeminiToolDeclarationsTest {
 
         JsonNode declarations = root.get("functionDeclarations");
         assertThat(declarations.isArray()).isTrue();
-        assertThat(declarations).hasSize(7);
+        assertThat(declarations).hasSize(9);
 
         Set<String> names = StreamSupport.stream(declarations.spliterator(), false)
                 .map(node -> node.get("name").asText())
@@ -39,7 +39,9 @@ class GeminiToolDeclarationsTest {
                 "rank_retake_courses",
                 "simulate_grades",
                 "generate_study_plan",
-                "search_regulations"
+                "search_regulations",
+                "get_transcript",
+                "get_curriculum_tree"
         );
     }
 
