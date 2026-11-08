@@ -98,12 +98,40 @@ export function MarkdownContent({ content, className = '' }) {
               style: { marginBottom: '4px' }
             });
           },
-          code: ({ node, inline, className: codeClass, children, ...props }) => {
-            if (inline) {
+          pre: ({ node, children, ...props }) => {
+            return React.createElement(
+              'pre',
+              {
+                ...props,
+                style: {
+                  backgroundColor: 'var(--color-canvas, #f1f5f9)',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  overflowX: 'auto',
+                  margin: '10px 0'
+                }
+              },
+              React.isValidElement(children)
+                ? React.cloneElement(children, { isBlock: true })
+                : children
+            );
+          },
+          code: ({ node, inline, className: codeClass, children, isBlock, ...props }) => {
+            // Trong react-markdown v9/v10, inline prop đã bị loại bỏ.
+            // Phân biệt inline code vs code block thông qua:
+            // 1) isBlock được truyền từ custom pre component (React.cloneElement)
+            // 2) hoặc className có format 'language-*' (fenced code block có language)
+            // 3) hoặc nội dung children có chứa ký tự xuống dòng '\n' (fenced code block không có language)
+            const isCodeBlock = Boolean(isBlock) ||
+              Boolean(codeClass && /language-(\w+)/.test(codeClass)) ||
+              (typeof children === 'string' && children.endsWith('\n'));
+
+            if (!isCodeBlock) {
               return React.createElement(
                 'code',
                 {
                   ...props,
+                  className: codeClass,
                   style: {
                     backgroundColor: 'var(--color-canvas, #f1f5f9)',
                     color: 'var(--color-ink, #0f172a)',
@@ -116,25 +144,15 @@ export function MarkdownContent({ content, className = '' }) {
                 children
               );
             }
+
             return React.createElement(
-              'pre',
+              'code',
               {
-                style: {
-                  backgroundColor: 'var(--color-canvas, #f1f5f9)',
-                  padding: '12px',
-                  borderRadius: '8px',
-                  overflowX: 'auto',
-                  margin: '10px 0'
-                }
+                ...props,
+                className: codeClass,
+                style: { fontFamily: 'Consolas, Monaco, monospace', fontSize: '13px' }
               },
-              React.createElement(
-                'code',
-                {
-                  ...props,
-                  style: { fontFamily: 'Consolas, Monaco, monospace', fontSize: '13px' }
-                },
-                children
-              )
+              children
             );
           },
           blockquote: ({ node, ...props }) => {

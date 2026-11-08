@@ -64,3 +64,27 @@ test('MarkdownContent: sanitizes untrusted raw script HTML to prevent XSS', () =
   assert.ok(!html.includes('<script>alert'), 'tuyệt đối không render thực thi thẻ <script>');
   assert.ok(!html.includes('onerror="alert(1)"'), 'tuyệt đối không render thuộc tính onerror');
 });
+
+test('MarkdownContent: renders inline code as <code> without breaking into <pre> block', () => {
+  const content = 'Môn học `IT6033` và môn `IT6010` trong chương trình đào tạo.';
+  const el = React.createElement(MarkdownContent, { content });
+  const html = renderToStaticMarkup(el);
+
+  // Inline code must not contain <pre>
+  assert.ok(!html.includes('<pre>'), 'inline code tuyệt đối không được bọc trong thẻ <pre>');
+  assert.ok(html.includes('<code'), 'phải render thẻ <code> cho inline code');
+  assert.ok(html.includes('IT6033'), 'phải có mã môn IT6033');
+  assert.ok(html.includes('IT6010'), 'phải có mã môn IT6010');
+  // Check that inline code stays inside the paragraph
+  assert.ok(html.includes('<p style="margin:0 0 10px 0;line-height:1.6">Môn học <code'), 'inline code phải nằm trong thẻ <p>');
+});
+
+test('MarkdownContent: renders fenced code block with single <pre> and no nested <pre><pre>', () => {
+  const content = '```js\nconsole.log("hello");\n```';
+  const el = React.createElement(MarkdownContent, { content });
+  const html = renderToStaticMarkup(el);
+
+  assert.ok(html.includes('<pre style="background-color:var(--color-canvas, #f1f5f9)'), 'code block phải có thẻ <pre>');
+  assert.ok(!html.includes('<pre><pre>') && !html.includes('<pre style="background-color:var(--color-canvas, #f1f5f9);padding:12px;border-radius:8px;overflow-x:auto;margin:10px 0"><pre'), 'code block tuyệt đối không bị lồng 2 lần <pre>');
+  assert.ok(html.includes('console.log'), 'phải có nội dung code block');
+});
