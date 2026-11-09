@@ -9,18 +9,27 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Tầng tái xếp hạng ngữ cảnh (Contextual Re-Ranker) đánh giá Top-K ứng viên sau khi dung hợp RRF:
+ * Tầng tái xếp hạng ngữ cảnh (Contextual Re-Ranker) đánh giá các ứng viên sau khi dung hợp RRF:
  * <ul>
- *   <li>Tính toán mức độ trùng khớp thực thể điều khoản ("Điều X", "Khoản Y", mã quyết định).</li>
- *   <li>Tính toán độ phủ từ khóa ngữ nghĩa giữa câu hỏi và nội dung văn bản.</li>
- *   <li>Áp dụng ngưỡng lọc tối thiểu (minScoreThreshold) để loại bỏ các đoạn gây nhiễu trước khi nạp vào Prompt.</li>
+ *   <li>Tối ưu độ chính xác cho thực thể số hiệu văn bản ("Điều X", "Khoản Y", mã quy chế).</li>
+ *   <li>Chuẩn hóa dấu tiếng Việt có xử lý ký tự 'đ'/'Đ' sang ASCII 'd'.</li>
+ *   <li>Khử trùng lặp theo mục quy chế và bảo vệ điểm tương đồng ngữ nghĩa.</li>
  * </ul>
  */
 @Component
 public class ContextualReRanker {
 
-    private static final Pattern ARTICLE_PATTERN = Pattern.compile("(?i)(điều|dieu)\\s+(\\d+)");
-    private static final Pattern CLAUSE_PATTERN = Pattern.compile("(?i)(khoản|khoan)\\s+(\\d+)");
+    private static final Pattern ARTICLE_PATTERN = Pattern.compile("dieu\\s+(\\d+)");
+    private static final Pattern CLAUSE_PATTERN = Pattern.compile("khoan\\s+(\\d+)");
+
+    private static final Set<String> STOPWORDS = Set.of(
+            "và", "va", "hoặc", "hoac", "của", "cua", "cho", "với", "voi",
+            "được", "duoc", "có", "co", "không", "khong", "các", "cac", "những", "nhung",
+            "trong", "ngày", "ngay", "mai", "hôm", "hom", "là", "la", "thì", "thi",
+            "ở", "o", "tại", "tai", "nào", "nao", "gì", "gi", "sao", "thế", "the",
+            "này", "nay", "đó", "do", "ra", "vào", "vao", "lại", "lai", "đi", "di",
+            "đến", "den", "như", "nhu", "về", "ve", "hỏi", "hoi"
+    );
 
     /**
      * Tái xếp hạng danh sách ứng viên FusedCandidate.
@@ -44,11 +53,11 @@ public class ContextualReRanker {
         String normalizedQuery = normalizeForMatching(query);
         List<String> queryTokens = extractSignificantTokens(normalizedQuery);
 
-        Matcher qArticleMatcher = ARTICLE_PATTERN.matcher(query);
-        String queriedArticle = qArticleMatcher.find() ? qArticleMatcher.group(2) : null;
+        Matcher qArticleMatcher = ARTICLE_PATTERN.matcher(normalizedQuery);
+        String queriedArticle = qArticleMatcher.find() ? qArticleMatcher.group(1) : null;
 
-        Matcher qClauseMatcher = CLAUSE_PATTERN.matcher(query);
-        String queriedClause = qClauseMatcher.find() ? qClauseMatcher.group(2) : null;
+        Matcher qClauseMatcher = CLAUSE_PATTERN.matcher(normalizedQuery);
+        String queriedClause = qClauseMatcher.find() ? qClauseMatcher.group(1) : null;
 
         List<ReRankedResult> results = new ArrayList<>();
 
@@ -71,7 +80,7 @@ public class ContextualReRanker {
                 }
             }
 
-            // 2. Độ phủ từ vựng (Token Overlap)
+            // 2. Độ phủ từ vựng có ý nghĩa (bỏ stopwords)
             double overlapRatio = 0.0;
             if (!queryTokens.isEmpty()) {
                 int matched = 0;
@@ -87,11 +96,17 @@ public class ContextualReRanker {
             double denseScore = candidate.denseScore();
             double finalScore;
 
-            if (denseScore > 0.0) {
-                finalScore = (0.40 * denseScore) + (0.35 * entityScore) + (0.25 * overlapRatio);
+            if (entityScore > 0.0) {
+                finalScore = Math.min(1.0, 0.40 * Math.max(denseScore, 0.50) + 0.50 * entityScore + 0.10);
+            } else if (denseScore > 0.0) {
+                finalScore = denseScore;
             } else {
                 double lexScore = Math.min(1.0, candidate.lexicalScore() / 5.0);
-                finalScore = (0.35 * lexScore) + (0.40 * entityScore) + (0.25 * overlapRatio);
+                if (overlapRatio >= 0.40) {
+                    finalScore = (0.50 * lexScore) + (0.50 * overlapRatio);
+                } else {
+                    finalScore = 0.0;
+                }
             }
 
             finalScore = Math.min(1.0, Math.max(0.0, finalScore));
@@ -106,18 +121,48 @@ public class ContextualReRanker {
             }
         }
 
-        results.sort((a, b) -> Double.compare(b.score(), a.score()));
+        results.sort((a, b) -> {
+            double aEntity = a.explanation().contains("entity=1.") ? 1.0 : (a.explanation().contains("entity=0.6") ? 0.6 : (a.explanation().contains("entity=0.4") ? 0.4 : 0.0));
+            double bEntity = b.explanation().contains("entity=1.") ? 1.0 : (b.explanation().contains("entity=0.6") ? 0.6 : (b.explanation().contains("entity=0.4") ? 0.4 : 0.0));
+            if (Double.compare(aEntity, bEntity) != 0) {
+                return Double.compare(bEntity, aEntity);
+            }
+            int rrfCmp = Double.compare(b.rrfScore(), a.rrfScore());
+            if (rrfCmp != 0) return rrfCmp;
+            return Double.compare(b.score(), a.score());
+        });
 
-        int limit = Math.min(topK, results.size());
-        return Collections.unmodifiableList(results.subList(0, limit));
+        // Khử trùng lặp và đa dạng hóa nguồn: tối đa 1 chunk cùng (sourceId, section), tối đa 2 chunk cùng sourceId
+        Set<String> seenSections = new HashSet<>();
+        Map<String, Integer> sourceCounts = new HashMap<>();
+        List<ReRankedResult> deduped = new ArrayList<>();
+
+        for (ReRankedResult res : results) {
+            String sid = res.chunk().getSourceId();
+            String secKey = sid + "::" + (res.chunk().getSection() != null ? res.chunk().getSection().trim() : "");
+
+            if (sourceCounts.getOrDefault(sid, 0) >= 2) {
+                continue;
+            }
+            if (seenSections.add(secKey)) {
+                sourceCounts.merge(sid, 1, Integer::sum);
+                deduped.add(res);
+                if (deduped.size() >= topK) {
+                    break;
+                }
+            }
+        }
+
+        return Collections.unmodifiableList(deduped);
     }
 
     private String normalizeForMatching(String text) {
         if (text == null || text.isBlank()) {
             return "";
         }
-        String nfc = Normalizer.normalize(text.toLowerCase(Locale.ROOT), Normalizer.Form.NFD);
-        return nfc.replaceAll("\\p{M}", "").replaceAll("[^a-z0-9\\s]", " ").replaceAll("\\s+", " ").trim();
+        String replaced = text.toLowerCase(Locale.ROOT).replace('đ', 'd').replace('Đ', 'd');
+        String nfd = Normalizer.normalize(replaced, Normalizer.Form.NFD);
+        return nfd.replaceAll("\\p{M}", "").replaceAll("[^a-z0-9\\s]", " ").replaceAll("\\s+", " ").trim();
     }
 
     private List<String> extractSignificantTokens(String text) {
@@ -127,7 +172,7 @@ public class ContextualReRanker {
         String[] parts = text.split("\\s+");
         List<String> tokens = new ArrayList<>();
         for (String p : parts) {
-            if (p.length() >= 2) {
+            if (p.length() >= 2 && !STOPWORDS.contains(p)) {
                 tokens.add(p);
             }
         }

@@ -11,19 +11,22 @@ import vn.haui.advisor.ai.rag.model.RagChunk;
 import vn.haui.advisor.ai.rag.retrieval.RagRetriever;
 import vn.haui.advisor.ai.rag.retrieval.RetrievalResult;
 import vn.haui.advisor.ai.rag.retrieval.VietnameseQueryNormalizer;
+import vn.haui.advisor.ai.rag.search.*;
 import vn.haui.advisor.ai.rag.vector.InMemoryVectorStore;
 import vn.haui.advisor.ai.rag.vector.VectorSearchResult;
 import vn.haui.advisor.ai.rag.vector.VectorStore;
 import vn.haui.advisor.contracts.dto.ChatSourceItem;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Service tích hợp RAG và Citation Grounding phục vụ Cố vấn Học vụ HaUI Advisor:
  * <ul>
- *   <li>Tự động khởi tạo và lập chỉ mục VectorStore từ toàn bộ tài liệu chính thức trong Catalog khi khởi động.</li>
- *   <li>Điều phối quy trình: Query Normalization -> Vector Retrieval -> Evidence Validation -> Citation Grounding.</li>
- *   <li>Tạo ngữ cảnh đóng gói chuẩn Markdown với ranh giới an toàn cho mô hình LLM tiêu thụ (Task 3.8).</li>
+ *   <li>Tự động khởi tạo và lập chỉ mục VectorStore và Lucene BM25 từ toàn bộ tài liệu chính thức trong Catalog.</li>
+ *   <li>Quy trình Hybrid Search: Vector Retrieval + Lucene BM25 -> Reciprocal Rank Fusion (RRF) -> Contextual Re-ranking.</li>
+ *   <li>Kiểm định chứng cứ và phòng vệ Prompt Injection (Task 3.8).</li>
+ *   <li>Tạo ngữ cảnh đóng gói chuẩn Markdown với ranh giới an toàn cho mô hình LLM tiêu thụ.</li>
  * </ul>
  */
 @Service
@@ -38,6 +41,11 @@ public class RagAdvisorService {
     private final RagIngestionService ingestionService;
     private final VectorStore vectorStore;
     private final EmbeddingProvider embeddingProvider;
+    private final LuceneLexicalSearcher lexicalSearcher;
+    private final ReciprocalRankFusion rrf;
+    private final ContextualReRanker reRanker;
+    private final VietnameseQueryNormalizer normalizer = new VietnameseQueryNormalizer();
+    private final Map<String, RagChunk> chunkLookup = new ConcurrentHashMap<>();
 
     private volatile boolean initialized = false;
 
@@ -53,7 +61,13 @@ public class RagAdvisorService {
         RagRetriever retriever = new RagRetriever(embedding, store, normalizer, DEFAULT_MIN_SCORE, DEFAULT_TOP_K);
         EvidenceValidator validator = new EvidenceValidator();
         CitationGrounder grounder = new CitationGrounder();
-        return new ComponentsHolder(retriever, validator, grounder, ingestion, store, embedding);
+        LuceneLexicalSearcher lexicalSearcher = new LuceneLexicalSearcher();
+        ReciprocalRankFusion rrf = new ReciprocalRankFusion();
+        ContextualReRanker reRanker = new ContextualReRanker();
+        return new ComponentsHolder(
+                retriever, validator, grounder, ingestion, store, embedding,
+                lexicalSearcher, rrf, reRanker
+        );
     }
 
     private static class ComponentsHolder {
@@ -63,6 +77,9 @@ public class RagAdvisorService {
         final RagIngestionService ingestionService;
         final VectorStore vectorStore;
         final EmbeddingProvider embeddingProvider;
+        final LuceneLexicalSearcher lexicalSearcher;
+        final ReciprocalRankFusion rrf;
+        final ContextualReRanker reRanker;
 
         ComponentsHolder(
                 RagRetriever retriever,
@@ -70,7 +87,10 @@ public class RagAdvisorService {
                 CitationGrounder grounder,
                 RagIngestionService ingestionService,
                 VectorStore vectorStore,
-                EmbeddingProvider embeddingProvider
+                EmbeddingProvider embeddingProvider,
+                LuceneLexicalSearcher lexicalSearcher,
+                ReciprocalRankFusion rrf,
+                ContextualReRanker reRanker
         ) {
             this.retriever = retriever;
             this.validator = validator;
@@ -78,6 +98,9 @@ public class RagAdvisorService {
             this.ingestionService = ingestionService;
             this.vectorStore = vectorStore;
             this.embeddingProvider = embeddingProvider;
+            this.lexicalSearcher = lexicalSearcher;
+            this.rrf = rrf;
+            this.reRanker = reRanker;
         }
     }
 
@@ -88,7 +111,10 @@ public class RagAdvisorService {
                 holder.grounder,
                 holder.ingestionService,
                 holder.vectorStore,
-                holder.embeddingProvider
+                holder.embeddingProvider,
+                holder.lexicalSearcher,
+                holder.rrf,
+                holder.reRanker
         );
     }
 
@@ -100,25 +126,55 @@ public class RagAdvisorService {
             VectorStore vectorStore,
             EmbeddingProvider embeddingProvider
     ) {
+        this(
+                retriever,
+                validator,
+                grounder,
+                ingestionService,
+                vectorStore,
+                embeddingProvider,
+                new LuceneLexicalSearcher(),
+                new ReciprocalRankFusion(),
+                new ContextualReRanker()
+        );
+    }
+
+    public RagAdvisorService(
+            RagRetriever retriever,
+            EvidenceValidator validator,
+            CitationGrounder grounder,
+            RagIngestionService ingestionService,
+            VectorStore vectorStore,
+            EmbeddingProvider embeddingProvider,
+            LuceneLexicalSearcher lexicalSearcher,
+            ReciprocalRankFusion rrf,
+            ContextualReRanker reRanker
+    ) {
         this.retriever = Objects.requireNonNull(retriever, "retriever must not be null");
         this.validator = Objects.requireNonNull(validator, "validator must not be null");
         this.grounder = Objects.requireNonNull(grounder, "grounder must not be null");
         this.ingestionService = Objects.requireNonNull(ingestionService, "ingestionService must not be null");
         this.vectorStore = Objects.requireNonNull(vectorStore, "vectorStore must not be null");
         this.embeddingProvider = Objects.requireNonNull(embeddingProvider, "embeddingProvider must not be null");
+        this.lexicalSearcher = Objects.requireNonNull(lexicalSearcher, "lexicalSearcher must not be null");
+        this.rrf = Objects.requireNonNull(rrf, "rrf must not be null");
+        this.reRanker = Objects.requireNonNull(reRanker, "reRanker must not be null");
     }
 
     /**
-     * Khởi tạo và nạp dữ liệu từ toàn bộ tài liệu chính thức vào VectorStore nếu chưa có dữ liệu.
+     * Khởi tạo và nạp dữ liệu từ toàn bộ tài liệu chính thức vào VectorStore và Lucene BM25 nếu chưa có dữ liệu.
      */
     public synchronized void initializeCatalogIndex() {
-        if (vectorStore.count() == 0) {
+        if (vectorStore.count() == 0 || chunkLookup.isEmpty()) {
             List<RagChunk> chunks = ingestionService.ingestAll();
             if (!chunks.isEmpty()) {
                 List<float[]> vectors = embeddingProvider.embedAll(
                         chunks.stream().map(RagChunk::getContent).toList()
                 );
                 vectorStore.upsert(chunks, vectors);
+                lexicalSearcher.indexChunks(chunks);
+                chunkLookup.clear();
+                chunks.forEach(c -> chunkLookup.put(c.getChunkId(), c));
             }
         }
         initialized = true;
@@ -132,7 +188,7 @@ public class RagAdvisorService {
     }
 
     /**
-     * Truy xuất và neo nguồn với cấu hình tùy chỉnh.
+     * Truy xuất và neo nguồn qua Hybrid Search (Vector + Lucene BM25 -> RRF -> Contextual Re-ranking).
      *
      * @param userQuery câu hỏi người dùng
      * @param topK      số lượng nguồn tối đa
@@ -140,28 +196,64 @@ public class RagAdvisorService {
      * @return {@link GroundedContext}
      */
     public GroundedContext retrieveAndGround(String userQuery, int topK, double minScore) {
-        if (!initialized && vectorStore.count() == 0) {
+        if (!initialized && (vectorStore.count() == 0 || chunkLookup.isEmpty())) {
             initializeCatalogIndex();
         }
 
-        // 1. Truy xuất Vector tương đồng
-        RetrievalResult retrievalResult = retriever.retrieve(userQuery, topK, minScore);
+        // 1. Thu thập kết quả từ RagRetriever
+        RetrievalResult denseRetrieval = retriever.retrieve(userQuery, topK, minScore);
+        List<VectorSearchResult> denseItems = denseRetrieval.items();
 
-        // 2. Kiểm định chứng cứ và phòng vệ Prompt Injection
-        EvidenceValidationResult validationResult = validator.validate(userQuery, retrievalResult.items(), minScore);
+        // 2. Thu thập kết quả từ Lucene Lexical BM25
+        List<LexicalHit> lexicalItems = lexicalSearcher.search(userQuery, topK);
 
-        // 3. Nếu không có chứng cứ hợp lệ
+        // Kiểm tra ý định học vụ để ngăn chặn dương tính giả từ từ vựng ngẫu nhiên (ví dụ câu hỏi thời tiết)
+        String lowerQuery = userQuery.toLowerCase(Locale.ROOT);
+        boolean hasAcademicIntent = normalizer.hasAcademicIntent(userQuery)
+                || lowerQuery.contains("điều") || lowerQuery.contains("dieu")
+                || lowerQuery.contains("khoản") || lowerQuery.contains("khoan")
+                || lowerQuery.contains("reg-haui");
+
+        if (denseItems.isEmpty() && (!hasAcademicIntent || lexicalItems.isEmpty())) {
+            EvidenceValidationResult validationResult = validator.validate(userQuery, Collections.emptyList(), minScore);
+            String emptyPromptContext = buildEmptyPromptContext();
+            return GroundedContext.noEvidence(userQuery, emptyPromptContext, validationResult.warnings());
+        }
+
+        // 3. Dung hợp thứ hạng qua Reciprocal Rank Fusion
+        List<FusedCandidate> fusedCandidates = rrf.fuse(denseItems, lexicalItems, chunkLookup, topK);
+
+        // 4. Tái xếp hạng ngữ cảnh và lọc theo ngưỡng chất lượng
+        List<ReRankedResult> reRanked = reRanker.reRank(userQuery, fusedCandidates, topK, minScore);
+
+        // Chuyển đổi thành VectorSearchResult phục vụ EvidenceValidator & CitationGrounder
+        List<VectorSearchResult> combinedResults = reRanked.stream()
+                .map(r -> new VectorSearchResult(r.chunk(), r.score()))
+                .toList();
+
+        // Fallback: Nếu tầng tái xếp hạng lọc quá tay nhưng denseItems gốc có ứng viên đạt minScore
+        if (combinedResults.isEmpty() && !denseItems.isEmpty()) {
+            combinedResults = denseItems.stream()
+                    .filter(item -> item.score() >= minScore)
+                    .limit(topK)
+                    .toList();
+        }
+
+        // 5. Kiểm định chứng cứ và phòng vệ Prompt Injection
+        EvidenceValidationResult validationResult = validator.validate(userQuery, combinedResults, minScore);
+
+        // 6. Nếu không có chứng cứ hợp lệ
         if (!validationResult.hasEvidence()) {
             String emptyPromptContext = buildEmptyPromptContext();
             return GroundedContext.noEvidence(userQuery, emptyPromptContext, validationResult.warnings());
         }
 
-        // 4. Neo nguồn trích dẫn
+        // 7. Neo nguồn trích dẫn
         List<VectorSearchResult> validItems = validationResult.validatedItems();
         List<ChatSourceItem> citations = grounder.groundCitations(validItems, true, minScore);
         List<RagChunk> evidenceChunks = validItems.stream().map(VectorSearchResult::chunk).toList();
 
-        // 5. Chuẩn bị ngữ cảnh Prompt Markdown có phân định ranh giới cho LLM
+        // 8. Chuẩn bị ngữ cảnh Prompt Markdown có phân định ranh giới cho LLM
         String formattedPromptContext = buildFormattedPromptContext(validItems);
 
         return new GroundedContext(
