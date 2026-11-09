@@ -107,6 +107,7 @@
     "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/dto/ChatRequest.java": "dd5d309fc77b8a03b04be2a672d8bdf745090ab215821a22d943e24acb41d438",
     "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/dto/ChatResponse.java": "22923a1780ae95b5c88ac25fd0410197dcd22a672d212e3ceabe7666eddec1d1",
     "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/dto/ChatSourceItem.java": "179d3552ec2531c73e248bc83550e92da62e2ce2da0f5e674cc5bc2fe060d351",
+    "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/dto/ChatStreamEvent.java": "b3114f36885fce20b6b9c571a85dc811b9abb911b8ff51ff0bbc3292e6fbf1c3",
     "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/dto/ConfirmTranscriptImportRequest.java": "c34f63842882a9c12ef1555f005d2028f468c119497f2d2246d192beed99ca6b",
     "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/dto/ConversationListResponse.java": "8d9d8e70db253499627458e4b2b646de58720d49d61182199676b382bf1d660c",
     "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/dto/ConversationRecord.java": "2606d0a3b86c563ad3db9e565b0849e7d3941c458879960ede4a4bc49090620c",
