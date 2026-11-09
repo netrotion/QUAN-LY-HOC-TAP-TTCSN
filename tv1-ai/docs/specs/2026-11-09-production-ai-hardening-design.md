@@ -225,3 +225,4 @@ Given a query $q$:
 - **Phase C (Telemetry & APM):** Micrometer observation hooks, Actuator telemetry endpoint (`tv1-ai`, `tv5-platform`).
 - **Phase D (UI Stream Integration):** Frontend SSE reader, streaming chat bubble in `tv3-planner-ui`.
 - **Phase E (Verification & Benchmarking):** Full regression test run, E2E latency audit.
+

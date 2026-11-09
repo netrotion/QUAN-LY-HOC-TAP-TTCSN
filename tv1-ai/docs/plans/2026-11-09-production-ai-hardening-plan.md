@@ -259,3 +259,4 @@ flowchart TD
 - **Ownership Boundaries:** All paths strictly map to role owners (`tv1-ai`, `tv5-platform`, `tv3-planner-ui`).
 - **Dependencies:** Lucene is self-contained in `tv1-ai` with zero external servers.
 - **YAGNI / KISS:** Pure embedded JVM architecture without sprawling Redis or Elasticsearch clusters.
+
