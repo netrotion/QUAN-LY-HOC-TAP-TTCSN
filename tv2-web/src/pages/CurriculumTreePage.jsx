@@ -178,20 +178,29 @@ export function CurriculumTreePage() {
   };
 
   const handleScrollToCurrent = () => {
-    if (timelineScrollRef.current) {
-      timelineScrollRef.current.scrollTo({ left: 680, behavior: 'smooth' });
+    const el = document.getElementById('sem-current') || document.getElementById('sem-6');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else if (timelineScrollRef.current) {
+      timelineScrollRef.current.scrollTo({ top: 480, behavior: 'smooth' });
     }
   };
 
   const handleScrollLeft = () => {
-    if (timelineScrollRef.current) {
-      timelineScrollRef.current.scrollBy({ left: -320, behavior: 'smooth' });
+    const el = document.getElementById('sem-1');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (timelineScrollRef.current) {
+      timelineScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handleScrollRight = () => {
-    if (timelineScrollRef.current) {
-      timelineScrollRef.current.scrollBy({ left: 320, behavior: 'smooth' });
+    const el = document.getElementById('sem-7') || document.getElementById('sem-8');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else if (timelineScrollRef.current) {
+      timelineScrollRef.current.scrollTo({ top: 9999, behavior: 'smooth' });
     }
   };
 
@@ -857,16 +866,16 @@ export function CurriculumTreePage() {
                     onClick={handleScrollLeft}
                     className="haui-pill-btn-canvas"
                     style={{ padding: '6px 10px', fontSize: '11px' }}
-                    title="Cuộn về các kỳ trước"
+                    title="Cuộn về Kỳ 1-3 (Hàng 1)"
                   >
-                    &larr; Kỳ 1-3
+                    Kỳ 1-3
                   </button>
                   <button
                     type="button"
                     onClick={handleScrollToCurrent}
                     className="haui-pill-btn-paper"
                     style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600 }}
-                    title="Cuộn đến Học kỳ 6 hiện tại"
+                    title="Cuộn đến Học kỳ 6 hiện tại (Hàng 2)"
                   >
                     ● Kỳ 6 (Hiện tại)
                   </button>
@@ -875,9 +884,9 @@ export function CurriculumTreePage() {
                     onClick={handleScrollRight}
                     className="haui-pill-btn-canvas"
                     style={{ padding: '6px 10px', fontSize: '11px' }}
-                    title="Cuộn sang các kỳ sau"
+                    title="Cuộn đến Kỳ 7-8 (Hàng 3)"
                   >
-                    Kỳ 7-8 &rarr;
+                    Kỳ 7-8
                   </button>
                 </div>
               </div>
@@ -900,29 +909,38 @@ export function CurriculumTreePage() {
               </div>
             )}
 
-            {/* Horizontal Timeline Container */}
+            {/* Timeline Container */}
             <div
               ref={timelineScrollRef}
               className="haui-tree-timeline-scroll"
               style={{ position: 'relative' }}
             >
-              {/* Semesters Columns Flex Layout */}
-              <div style={{ display: 'flex', gap: '24px', minWidth: '1480px', position: 'relative', zIndex: 1 }}>
+              {/* Semesters Columns Grid Layout (3 semesters per row) */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                  gap: '20px',
+                  position: 'relative',
+                  zIndex: 1,
+                  alignItems: 'start'
+                }}
+              >
                 {filteredTimeline.map((sem) => {
                   const isCurrent = sem.isCurrent;
                   return (
                     <div
                       key={sem.semester}
+                      id={isCurrent ? 'sem-current' : `sem-${sem.semester}`}
                       style={{
-                        width: '240px',
-                        flexShrink: 0,
+                        minWidth: 0,
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '12px',
-                        backgroundColor: isCurrent ? 'rgba(245, 245, 245, 0.75)' : 'transparent',
+                        backgroundColor: isCurrent ? 'var(--color-surface-alt, rgba(245, 245, 245, 0.75))' : 'transparent',
                         padding: isCurrent ? '12px' : '0',
                         borderRadius: isCurrent ? '20px' : '0',
-                        border: isCurrent ? '2px solid rgba(10, 10, 10, 0.15)' : 'none'
+                        border: isCurrent ? '2px solid var(--color-hairline, rgba(10, 10, 10, 0.15))' : 'none'
                       }}
                     >
                       {/* Semester Column Header (Sticky on vertical scroll) */}
@@ -934,7 +952,7 @@ export function CurriculumTreePage() {
                           position: 'sticky',
                           top: 0,
                           zIndex: 5,
-                          backgroundColor: isCurrent ? 'rgba(240, 240, 240, 0.96)' : 'var(--color-paper)',
+                          backgroundColor: isCurrent ? 'var(--color-surface-alt, rgba(240, 240, 240, 0.96))' : 'var(--color-paper)',
                           backdropFilter: 'blur(8px)',
                           paddingTop: '4px',
                           paddingBottom: '8px',
