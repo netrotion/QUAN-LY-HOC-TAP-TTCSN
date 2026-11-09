@@ -127,7 +127,7 @@ export function Sidebar({ collapsed = false }) {
           {!collapsed && (
             <div className="haui-sidebar__brand-text">
               <span className="haui-sidebar__brand-title">HAUI ADVISOR</span>
-              <span className="haui-sidebar__brand-subtitle">Cổng Tư Vấn & Lộ Trình</span>
+              <span className="haui-sidebar__brand-subtitle">Đại học Công nghiệp Hà Nội</span>
             </div>
           )}
         </NavLink>
