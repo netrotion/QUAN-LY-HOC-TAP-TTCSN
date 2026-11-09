@@ -188,7 +188,7 @@ test('Task 3.12 - 7: StudentProfilePage hiển thị đầy đủ thông tin hà
   assert.equal(SAMPLE_K16_PROFILE.accumulatedCredits, 108);
 });
 
-test('Task 3.12 - 7b: StudentProfilePage không hiển thị phần Thông tin chương trình đào tạo và Kế hoạch học tập theo yêu cầu giao diện', () => {
+test('Task 3.12 - 7b: StudentProfilePage không hiển thị phần Thông tin chương trình đào tạo, Kế hoạch học tập và Chỉ số học vụ theo yêu cầu giao diện', () => {
   assert.deepEqual(HAUI_COHORTS, [
     'K16 (2021 - 2025)',
     'K17 (2022 - 2026)',
@@ -206,9 +206,10 @@ test('Task 3.12 - 7b: StudentProfilePage không hiển thị phần Thông tin c
   const html = ReactDOMServer.renderToStaticMarkup(element);
   assert.ok(!html.includes('Thông tin chương trình đào tạo'), 'Không hiển thị khối Thông tin chương trình đào tạo');
   assert.ok(!html.includes('Kế hoạch học tập'), 'Không hiển thị khối Kế hoạch học tập');
+  assert.ok(!html.includes('Chỉ số học vụ & Tùy chọn mục tiêu cá nhân'), 'Không hiển thị khối Chỉ số học vụ & Tùy chọn mục tiêu cá nhân');
 });
 
-test('Task 3.12 - 7c: StudentProfilePage không để null cho CPA/GPA/Tín chỉ, đổi null thành 0 và đồng bộ', () => {
+test('Task 3.12 - 7c: StudentProfilePage không để null hoặc lỗi khi profile có trường null', () => {
   const profileWithNulls = {
     ...SAMPLE_K16_PROFILE,
     cpa: null,
@@ -224,7 +225,6 @@ test('Task 3.12 - 7c: StudentProfilePage không để null cho CPA/GPA/Tín ch�
   const html = ReactDOMServer.renderToStaticMarkup(element);
   assert.ok(!html.includes('>null'), 'Không được hiển thị null trên giao diện');
   assert.ok(!html.includes('null / 4.00'), 'Không được hiển thị null / 4.00 trên giao diện');
-  assert.ok(html.includes('>0 </strong>'), 'CPA hoặc GPA null phải hiển thị 0');
 });
 
 test('Task 3.12 - 8: StudentProfilePage xử lý đúng trạng thái Chưa có hồ sơ (Empty State) và liên kết TV2', () => {
