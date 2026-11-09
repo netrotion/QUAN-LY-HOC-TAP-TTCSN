@@ -21,6 +21,11 @@ import {
   evaluatePlanRules
 } from './services/plannerStore.js';
 import * as plannerApi from './services/plannerApiService.js';
+import {
+  useChatStream,
+  createChatStreamSession,
+  parseSseStream
+} from './hooks/useChatStream.js';
 
 /**
  * HaUI Advisor - Planner UI Feature Package (TV3)
@@ -97,7 +102,10 @@ export {
   HAUI_MEMBER_SCHOOLS,
   HAUI_FACULTIES_AND_MAJORS,
   getMajorsForFaculty,
-  HAUI_COHORTS
+  HAUI_COHORTS,
+  useChatStream,
+  createChatStreamSession,
+  parseSseStream
 };
 
 export const PACKAGE_INFO = {
