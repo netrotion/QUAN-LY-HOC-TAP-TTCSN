@@ -9,8 +9,8 @@ import vn.haui.advisor.ai.telemetry.AiMetricsCollector;
 import vn.haui.advisor.ai.telemetry.AiTelemetrySnapshot;
 import vn.haui.advisor.ai.tools.DefaultToolAdapter;
 import vn.haui.advisor.contracts.dto.ChatRequest;
-import vn.haui.advisor.contracts.dto.ChatStreamEvent;
 import vn.haui.advisor.contracts.dto.TrustedStudentContext;
+import vn.haui.advisor.contracts.stream.ChatStreamEvent;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -15,6 +15,7 @@ import vn.haui.advisor.ai.telemetry.AiMetricsCollector;
 import vn.haui.advisor.ai.tools.GeminiToolDeclarations;
 import vn.haui.advisor.ai.tools.ToolAdapter;
 import vn.haui.advisor.contracts.dto.*;
+import vn.haui.advisor.contracts.stream.ChatStreamEvent;
 
 import java.math.BigDecimal;
 import java.util.*;
