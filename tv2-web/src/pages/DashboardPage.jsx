@@ -613,21 +613,6 @@ export function DashboardPage({ mountedRouteSummary }) {
                 <span style={{ fontSize: '14px', color: 'var(--color-mid-gray)' }}>/ 4.00</span>
               </div>
             </div>
-            {diffToTarget !== null && (
-              <span
-                className="haui-stat-trend"
-                style={{
-                  color: isCpaPositive ? '#16a34a' : 'var(--color-ember, #e7000b)',
-                  backgroundColor: isCpaPositive ? '#f0fdf4' : '#fef2f2'
-                }}
-                title={`So với mục tiêu CPA ${targetCpa.toFixed(2)}`}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
-                  {isCpaPositive ? 'trending_up' : 'trending_down'}
-                </span>
-                {isCpaPositive ? `+${diffToTarget.toFixed(2)}` : `${diffToTarget.toFixed(2)}`}
-              </span>
-            )}
           </div>
 
           <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -882,10 +867,6 @@ export function DashboardPage({ mountedRouteSummary }) {
             <span>
               CPA tích lũy: <strong style={{ color: 'var(--color-ink)', fontWeight: 600 }}>{cpaValue}</strong> ({getCpaRank(cpaValue)}) &bull; Tích lũy: <strong style={{ color: 'var(--color-ink)', fontWeight: 600 }}>{accumulatedCredits}/{totalRequiredCredits} TC</strong>
             </span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--color-ink)', fontWeight: 500 }}>
-              Tiến độ: {creditPercent}% CTĐT
-              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>arrow_forward</span>
-            </span>
           </div>
         </div>
 
@@ -950,18 +931,6 @@ export function DashboardPage({ mountedRouteSummary }) {
             <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
               Theo dõi tiến độ điểm đánh giá thành phần và học phần đang đăng ký trong học kỳ
             </p>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button
-              type="button"
-              className="haui-pill-btn-canvas"
-              style={{ fontSize: '12px', padding: '6px 12px' }}
-              onClick={() => navigate('/curriculum')}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>filter_list</span>
-              Lọc môn học
-            </button>
           </div>
         </div>
 
