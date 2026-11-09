@@ -188,7 +188,7 @@ test('Task 3.12 - 7: StudentProfilePage hiển thị đầy đủ thông tin hà
   assert.equal(SAMPLE_K16_PROFILE.accumulatedCredits, 108);
 });
 
-test('Task 3.12 - 7b: StudentProfilePage hiển thị Cơ sở đào tạo ĐH Công nghiệp Hà Nội và dropdown Khóa học K16-K21', () => {
+test('Task 3.12 - 7b: StudentProfilePage không hiển thị phần Thông tin chương trình đào tạo và Kế hoạch học tập theo yêu cầu giao diện', () => {
   assert.deepEqual(HAUI_COHORTS, [
     'K16 (2021 - 2025)',
     'K17 (2022 - 2026)',
@@ -204,9 +204,8 @@ test('Task 3.12 - 7b: StudentProfilePage hiển thị Cơ sở đào tạo ĐH C
   });
 
   const html = ReactDOMServer.renderToStaticMarkup(element);
-  assert.ok(html.includes('value="Đại học Công nghiệp Hà Nội"'), 'Ô cơ sở đào tạo phải hiển thị Đại học Công nghiệp Hà Nội');
-  assert.ok(html.includes('K16 (2021 - 2025)'), 'Dropdown khóa học phải chứa K16');
-  assert.ok(html.includes('K21 (2026 - 2030)'), 'Dropdown khóa học phải chứa K21');
+  assert.ok(!html.includes('Thông tin chương trình đào tạo'), 'Không hiển thị khối Thông tin chương trình đào tạo');
+  assert.ok(!html.includes('Kế hoạch học tập'), 'Không hiển thị khối Kế hoạch học tập');
 });
 
 test('Task 3.12 - 7c: StudentProfilePage không để null cho CPA/GPA/Tín chỉ, đổi null thành 0 và đồng bộ', () => {
