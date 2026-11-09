@@ -21,3 +21,4 @@ public record FusedCandidate(
         Objects.requireNonNull(chunk, "chunk must not be null");
     }
 }
+

@@ -126,7 +126,32 @@ public class DefaultToolAdapter implements ToolAdapter {
                 semester,
                 context.getDataRevision()
         );
-        return academicFacade.checkCourseEligibility(request);
+        CourseEligibilityResponse response = academicFacade.checkCourseEligibility(request);
+        if (response != null && response.getCourseName() == null && curriculumTreeProvider != null) {
+            try {
+                CurriculumTreeResponse tree = curriculumTreeProvider.apply(context);
+                if (tree != null && tree.getCourses() != null) {
+                    tree.getCourses().stream()
+                            .filter(c -> c.getCourseCode() != null && c.getCourseCode().equalsIgnoreCase(courseCode))
+                            .findFirst()
+                            .ifPresent(c -> {
+                                response.setCourseName(c.getCourseName());
+                                if (response.getPrerequisiteCourseCodes() == null) {
+                                    response.setPrerequisiteCourseCodes(c.getPrerequisiteCourseCodes() != null ? c.getPrerequisiteCourseCodes() : List.of());
+                                }
+                                if (response.getPriorCourseCodes() == null) {
+                                    response.setPriorCourseCodes(c.getPriorCourseCodes() != null ? c.getPriorCourseCodes() : List.of());
+                                }
+                                if (response.getCorequisiteCourseCodes() == null) {
+                                    response.setCorequisiteCourseCodes(c.getCorequisiteCourseCodes() != null ? c.getCorequisiteCourseCodes() : List.of());
+                                }
+                            });
+                }
+            } catch (Exception e) {
+                log.warn("Failed to enrich CourseEligibilityResponse from curriculum tree for course {}", courseCode, e);
+            }
+        }
+        return response;
     }
 
     @Override

@@ -21,3 +21,4 @@ public record ReRankedResult(
         explanation = explanation != null ? explanation : "";
     }
 }
+

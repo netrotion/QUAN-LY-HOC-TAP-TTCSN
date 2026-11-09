@@ -105,3 +105,4 @@ public class ReciprocalRankFusion {
         return Collections.unmodifiableList(candidates);
     }
 }
+

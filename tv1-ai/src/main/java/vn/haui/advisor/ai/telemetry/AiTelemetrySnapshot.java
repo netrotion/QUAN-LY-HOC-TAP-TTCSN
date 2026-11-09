@@ -31,3 +31,4 @@ public record AiTelemetrySnapshot(
         categoryCounts = categoryCounts != null ? Map.copyOf(categoryCounts) : Map.of();
     }
 }
+

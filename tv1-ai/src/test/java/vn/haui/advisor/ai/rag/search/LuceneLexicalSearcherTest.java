@@ -87,3 +87,4 @@ class LuceneLexicalSearcherTest {
         assertThat(searcher.search(null, 5)).isEmpty();
     }
 }
+

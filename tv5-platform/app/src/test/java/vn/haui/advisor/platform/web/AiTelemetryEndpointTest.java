@@ -55,3 +55,4 @@ class AiTelemetryEndpointTest {
                 .andExpect(jsonPath("$.categoryCounts.STUDY_PLAN", greaterThanOrEqualTo(1)));
     }
 }
+

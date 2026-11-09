@@ -127,3 +127,4 @@ class ReciprocalRankFusionTest {
         assertThat(reRanked).isEmpty();
     }
 }
+

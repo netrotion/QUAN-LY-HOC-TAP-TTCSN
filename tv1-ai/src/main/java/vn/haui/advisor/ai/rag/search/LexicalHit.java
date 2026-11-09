@@ -21,3 +21,4 @@ public record LexicalHit(
         content = content != null ? content : "";
     }
 }
+

@@ -84,3 +84,4 @@ class AiMetricsCollectorTest {
         assertThat(snapshot.guardrailViolationsCount()).isEqualTo(2);
     }
 }
+
