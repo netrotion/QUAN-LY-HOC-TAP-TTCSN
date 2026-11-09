@@ -83,6 +83,8 @@ public class SecurityConfig {
                     "/api/v1/system/health",
                     "/actuator/health",
                     "/actuator/health/advisor",
+                    "/actuator/ai-telemetry",
+                    "/actuator/aiTelemetry",
                     "/api/v1/auth/csrf",
                     "/api/v1/auth/session"
                 ).permitAll()
