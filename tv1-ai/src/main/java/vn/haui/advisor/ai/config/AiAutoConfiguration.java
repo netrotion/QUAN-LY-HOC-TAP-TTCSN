@@ -241,7 +241,8 @@ public class AiAutoConfiguration {
                                        ConversationHistoryManager conversationHistoryManager,
                                        IntentClassifier intentClassifier,
                                        ResponseGroundingValidator responseGroundingValidator,
-                                       AiProperties properties) {
+                                       AiProperties properties,
+                                       vn.haui.advisor.ai.telemetry.AiMetricsCollector aiMetricsCollector) {
         return new DefaultAdvisorFacade(
                 advisorModel,
                 toolAdapter,
@@ -249,7 +250,8 @@ public class AiAutoConfiguration {
                 conversationHistoryManager,
                 intentClassifier,
                 responseGroundingValidator,
-                properties.getAdvisor().getToolTimeoutMs()
+                properties.getAdvisor().getToolTimeoutMs(),
+                aiMetricsCollector
         );
     }
 }

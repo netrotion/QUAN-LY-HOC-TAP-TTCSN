@@ -31,6 +31,7 @@ import vn.haui.advisor.ai.rag.vector.InMemoryVectorStore;
 import vn.haui.advisor.ai.rag.vector.PgVectorStoreAdapter;
 import vn.haui.advisor.ai.rag.vector.VectorStore;
 import vn.haui.advisor.ai.service.DefaultAdvisorFacade;
+import vn.haui.advisor.ai.telemetry.AiMetricsCollector;
 import vn.haui.advisor.ai.tools.DefaultToolAdapter;
 import vn.haui.advisor.contracts.ports.AcademicFacade;
 import vn.haui.advisor.contracts.ports.AdvisorFacade;
@@ -121,11 +122,17 @@ public class AdvisorConfig {
     }
 
     @Bean
+    public AiMetricsCollector aiMetricsCollector() {
+        return new AiMetricsCollector();
+    }
+
+    @Bean
     public AdvisorFacade advisorFacade(AdvisorModel model, AcademicFacade academicFacade, RagAdvisorService rag,
                                        ConversationTurns turns, ObjectMapper objectMapper, AiProperties ai,
                                        ResponseGroundingValidator validator,
                                        StudentDataService studentDataService,
-                                       AcademicApiService academicApiService) {
+                                       AcademicApiService academicApiService,
+                                       AiMetricsCollector aiMetricsCollector) {
         ConversationHistoryManager history = new ConversationHistoryManager(turns.advisorStore(), objectMapper, true);
         DefaultToolAdapter adapter = new DefaultToolAdapter(
                 academicFacade,
@@ -134,7 +141,7 @@ public class AdvisorConfig {
                 academicApiService::tree
         );
         return new DefaultAdvisorFacade(model, adapter, rag,
-                history, new IntentClassifier(), validator, ai.getAdvisor().getToolTimeoutMs());
+                history, new IntentClassifier(), validator, ai.getAdvisor().getToolTimeoutMs(), aiMetricsCollector);
     }
 
     /** Luồng chạy lượt chat có giới hạn: quá tải thì từ chối ngay (503) thay vì xếp hàng vô hạn. */

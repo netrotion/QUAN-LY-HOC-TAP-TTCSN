@@ -14,6 +14,7 @@ import vn.haui.advisor.ai.model.GeminiToolCall;
 import vn.haui.advisor.ai.model.LiveAdvisorModel;
 import vn.haui.advisor.ai.rag.service.GroundedContext;
 import vn.haui.advisor.ai.rag.service.RagAdvisorService;
+import vn.haui.advisor.ai.telemetry.AiMetricsCollector;
 import vn.haui.advisor.ai.tools.GeminiToolDeclarations;
 import vn.haui.advisor.ai.tools.ToolAdapter;
 import vn.haui.advisor.ai.tools.ToolNotReadyException;
@@ -47,13 +48,14 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
     private final ConversationTurnPlanner turnPlanner;
     private final ExecutorService executorService;
     private final long toolTimeoutMs;
+    private final AiMetricsCollector metricsCollector;
 
     public DefaultAdvisorFacade(AdvisorModel advisorModel, ToolAdapter toolAdapter) {
-        this(advisorModel, toolAdapter, null, null, null, null, DEFAULT_TOOL_TIMEOUT_MS);
+        this(advisorModel, toolAdapter, null, null, null, null, DEFAULT_TOOL_TIMEOUT_MS, null);
     }
 
     public DefaultAdvisorFacade(AdvisorModel advisorModel, ToolAdapter toolAdapter, RagAdvisorService ragAdvisorService) {
-        this(advisorModel, toolAdapter, ragAdvisorService, null, null, null, DEFAULT_TOOL_TIMEOUT_MS);
+        this(advisorModel, toolAdapter, ragAdvisorService, null, null, null, DEFAULT_TOOL_TIMEOUT_MS, null);
     }
 
     public DefaultAdvisorFacade(AdvisorModel advisorModel,
@@ -62,7 +64,7 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                                 ConversationHistoryManager conversationHistoryManager,
                                 IntentClassifier intentClassifier,
                                 ResponseGroundingValidator responseGroundingValidator) {
-        this(advisorModel, toolAdapter, ragAdvisorService, conversationHistoryManager, intentClassifier, responseGroundingValidator, DEFAULT_TOOL_TIMEOUT_MS);
+        this(advisorModel, toolAdapter, ragAdvisorService, conversationHistoryManager, intentClassifier, responseGroundingValidator, DEFAULT_TOOL_TIMEOUT_MS, null);
     }
 
     public DefaultAdvisorFacade(AdvisorModel advisorModel,
@@ -72,6 +74,17 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                                 IntentClassifier intentClassifier,
                                 ResponseGroundingValidator responseGroundingValidator,
                                 long toolTimeoutMs) {
+        this(advisorModel, toolAdapter, ragAdvisorService, conversationHistoryManager, intentClassifier, responseGroundingValidator, toolTimeoutMs, null);
+    }
+
+    public DefaultAdvisorFacade(AdvisorModel advisorModel,
+                                ToolAdapter toolAdapter,
+                                RagAdvisorService ragAdvisorService,
+                                ConversationHistoryManager conversationHistoryManager,
+                                IntentClassifier intentClassifier,
+                                ResponseGroundingValidator responseGroundingValidator,
+                                long toolTimeoutMs,
+                                AiMetricsCollector metricsCollector) {
         this.advisorModel = Objects.requireNonNull(advisorModel, "advisorModel must not be null");
         this.toolAdapter = Objects.requireNonNull(toolAdapter, "toolAdapter must not be null");
         this.ragAdvisorService = ragAdvisorService;
@@ -80,11 +93,16 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
         this.responseGroundingValidator = responseGroundingValidator != null ? responseGroundingValidator : new ResponseGroundingValidator();
         this.turnPlanner = new ConversationTurnPlanner(this.intentClassifier);
         this.toolTimeoutMs = toolTimeoutMs;
+        this.metricsCollector = metricsCollector != null ? metricsCollector : new AiMetricsCollector();
         this.executorService = Executors.newCachedThreadPool(r -> {
             Thread t = new Thread(r, "advisor-tool-runner");
             t.setDaemon(true);
             return t;
         });
+    }
+
+    public AiMetricsCollector getMetricsCollector() {
+        return metricsCollector;
     }
 
     @Override
@@ -115,6 +133,15 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
         String conversationId = request.getConversationId();
         String studentId = context.getStudentId();
 
+        long totalStart = System.currentTimeMillis();
+        long ragMs = 0;
+        long toolMs = 0;
+        long turn1Ms = 0;
+        long turn2Ms = 0;
+        long promptTokens = 0;
+        long genTokens = 0;
+        String category = "GENERAL";
+
         // 3. Tải lịch sử hội thoại (Sliding Window bounding)
         List<ChatMessageHistoryItem> history = Collections.emptyList();
         if (conversationId != null && !conversationId.trim().isEmpty()) {
@@ -137,11 +164,16 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
         ChatResponse response = null;
         if (advisorModel instanceof LiveAdvisorModel liveModel) {
             try {
+                long t1Start = System.currentTimeMillis();
                 LiveAdvisorModel.GeminiTurnResult turnResult = liveModel.inspectTurn(
                         userMessage, history, GeminiToolDeclarations.getToolDeclarations()
                 );
+                turn1Ms = Math.max(turnResult.latencyMs(), System.currentTimeMillis() - t1Start);
+                promptTokens += turnResult.promptTokens();
+                genTokens += turnResult.candidatesTokens();
 
                 if (turnResult.hasToolCalls()) {
+                    category = "TOOL_USE";
                     Map<String, Object> toolResults = new LinkedHashMap<>();
                     GroundedContext groundedContext = null;
                     List<String> combinedWarnings = new ArrayList<>();
@@ -153,20 +185,36 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                         Map<String, Object> args = call.arguments();
 
                         if ("search_regulations".equals(toolName)) {
+                            category = "REGULATION";
                             String query = args.getOrDefault("query", userMessage).toString();
                             if (ragAdvisorService != null) {
+                                long ragStart = System.currentTimeMillis();
                                 groundedContext = ragAdvisorService.retrieveAndGround(query, 5, 0.35);
+                                long elapsed = System.currentTimeMillis() - ragStart;
+                                ragMs += elapsed;
                                 combinedWarnings.addAll(groundedContext.getWarnings());
                                 toolResults.put("search_regulations", groundedContext.getFormattedPromptContext());
+                                metricsCollector.recordToolExecution("search_regulations", elapsed);
+                            } else {
+                                metricsCollector.recordToolExecution("search_regulations", 0);
                             }
                         } else {
+                            long toolStart = System.currentTimeMillis();
                             dispatchAcademicToolByName(context, toolName, args, toolResults, combinedWarnings);
+                            long elapsed = System.currentTimeMillis() - toolStart;
+                            toolMs += elapsed;
+                            metricsCollector.recordToolExecution(toolName, elapsed);
                         }
                     }
 
-                    String finalAnswer = liveModel.completeTurnWithToolResults(
+                    long t2Start = System.currentTimeMillis();
+                    LiveAdvisorModel.ModelExecutionResult turn2Result = liveModel.completeTurnWithToolResultsDetailed(
                             userMessage, history, turnResult.toolCalls(), turnResult.rawModelParts(), toolResults
                     );
+                    turn2Ms = Math.max(turn2Result.latencyMs(), System.currentTimeMillis() - t2Start);
+                    promptTokens += turn2Result.promptTokens();
+                    genTokens += turn2Result.candidatesTokens();
+                    String finalAnswer = turn2Result.answer();
 
                     List<ChatSourceItem> sources = (groundedContext != null && groundedContext.hasEvidence())
                             ? groundedContext.getCitations()
@@ -192,6 +240,7 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                             validatedOutput.getWarnings()
                     );
                 } else if (turnResult.directText() != null && !turnResult.directText().isBlank()) {
+                    category = "DIRECT_ANSWER";
                     AdvisorModelOutput modelOutput = new AdvisorModelOutput(
                             turnResult.directText(), List.of(), List.of(), null, List.of()
                     );
@@ -224,6 +273,7 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                     decision.policyEvidenceNeeded(), decision.clarificationQuestion() != null,
                     decision.argumentProvenance());
             ParsedUserIntent userIntent = decision.intent();
+            category = userIntent.getCategory() != null ? userIntent.getCategory().name() : "GENERAL";
             boolean isTranscriptMissing = context.getStudentId() != null &&
                     (context.getStudentId().contains("ANONYMOUS") || "REV-0".equals(context.getDataRevision()) || "REV-EMPTY".equals(context.getDataRevision()));
             if (isTranscriptMissing && userIntent.getCategory() != ParsedUserIntent.ScenarioCategory.REGULATION) {
@@ -248,14 +298,21 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                 combinedWarnings.add("TRANSCRIPT_REQUIRED");
             }
             if (ragAdvisorService != null && decision.policyEvidenceNeeded() && decision.clarificationQuestion() == null) {
+                long ragStart = System.currentTimeMillis();
                 groundedContext = ragAdvisorService.retrieveAndGround(decision.retrievalQuery(), 5, 0.35);
+                ragMs += (System.currentTimeMillis() - ragStart);
                 combinedWarnings.addAll(groundedContext.getWarnings());
             }
 
             // 6. Điều phối công cụ học vụ (Academic Tool Calling với Budget & Timeout)
             Map<String, Object> toolResults = new HashMap<>();
             if (decision.clarificationQuestion() == null) {
+                long toolStart = System.currentTimeMillis();
                 executeAcademicTools(context, userIntent, decision, toolResults, combinedWarnings);
+                toolMs += (System.currentTimeMillis() - toolStart);
+                if (!toolResults.isEmpty()) {
+                    metricsCollector.recordToolExecution("academic_tools", toolMs);
+                }
             }
 
             // 7. Đóng gói Input và gọi AdvisorModel (Mock hoặc Live)
@@ -268,6 +325,7 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                     userIntent
             );
 
+            long mStart = System.currentTimeMillis();
             AdvisorModelOutput rawModelOutput = decision.clarificationQuestion() != null
                     ? new AdvisorModelOutput(
                             isTranscriptMissing
@@ -278,6 +336,11 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                             isTranscriptMissing ? List.of(new ChatActionItem("OPEN_TRANSCRIPT_IMPORT", "Nhập bảng điểm", "/academic/import", "{}")) : List.of(),
                             null, List.of())
                     : advisorModel.generate(modelInput);
+            turn1Ms = System.currentTimeMillis() - mStart;
+            promptTokens += Math.max(1, userMessage.length() / 4 + 200);
+            if (rawModelOutput != null && rawModelOutput.getAnswer() != null) {
+                genTokens += Math.max(1, rawModelOutput.getAnswer().length() / 4);
+            }
 
             // 8. Hậu kiểm định neo nguồn và chuẩn hóa phản hồi (Response Grounding Validation kèm PII redaction)
             AdvisorModelOutput validatedOutput = responseGroundingValidator.validate(rawModelOutput, modelInput);
@@ -341,6 +404,26 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                 );
             }
         }
+
+        if (response != null && response.getWarnings() != null) {
+            for (String w : response.getWarnings()) {
+                if (w != null && (w.contains("GUARDRAIL") || w.contains("GROUNDING") || w.contains("PII"))) {
+                    metricsCollector.recordGuardrailViolation(w);
+                }
+            }
+        }
+        long totalMs = Math.max(1, System.currentTimeMillis() - totalStart);
+        metricsCollector.recordTurn(
+                false,
+                category,
+                promptTokens,
+                genTokens,
+                ragMs,
+                toolMs,
+                turn1Ms,
+                turn2Ms,
+                totalMs
+        );
 
         return response;
     }

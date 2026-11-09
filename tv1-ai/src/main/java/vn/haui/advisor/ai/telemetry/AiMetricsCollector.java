@@ -101,6 +101,10 @@ public class AiMetricsCollector {
     /**
      * Ghi nhận một lượt thực thi Tool học vụ.
      */
+    public void recordToolExecution() {
+        recordToolExecution("unknown", 0);
+    }
+
     public void recordToolExecution(String toolName, long elapsedMs) {
         toolExecutionsCount.increment();
         if (elapsedMs > 0) {
@@ -112,6 +116,10 @@ public class AiMetricsCollector {
     /**
      * Ghi nhận một lần vi phạm quy chuẩn an toàn / can thiệp Guardrail.
      */
+    public void recordGuardrailViolation() {
+        recordGuardrailViolation("unspecified");
+    }
+
     public void recordGuardrailViolation(String reason) {
         guardrailViolationsCount.increment();
     }

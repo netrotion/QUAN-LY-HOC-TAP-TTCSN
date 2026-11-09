@@ -122,15 +122,28 @@ public class LiveAdvisorModel implements AdvisorModel {
         }
     }
 
-    public record GeminiTurnResult(List<GeminiToolCall> toolCalls, String directText, JsonNode rawModelParts) {
+    public record GeminiTurnResult(
+            List<GeminiToolCall> toolCalls,
+            String directText,
+            JsonNode rawModelParts,
+            long promptTokens,
+            long candidatesTokens,
+            long latencyMs
+    ) {
         public GeminiTurnResult(List<GeminiToolCall> toolCalls, String directText) {
-            this(toolCalls, directText, null);
+            this(toolCalls, directText, null, 0, 0, 0);
+        }
+
+        public GeminiTurnResult(List<GeminiToolCall> toolCalls, String directText, JsonNode rawModelParts) {
+            this(toolCalls, directText, rawModelParts, 0, 0, 0);
         }
 
         public boolean hasToolCalls() {
             return toolCalls != null && !toolCalls.isEmpty();
         }
     }
+
+    public record ModelExecutionResult(String answer, long promptTokens, long candidatesTokens, long latencyMs) {}
 
     public GeminiTurnResult inspectTurn(String userMessage, List<ChatMessageHistoryItem> history, List<Map<String, Object>> tools) {
         List<Map<String, Object>> contents = new ArrayList<>();
@@ -151,8 +164,10 @@ public class LiveAdvisorModel implements AdvisorModel {
         }
         payload.put("generationConfig", Map.of("temperature", 0.2));
 
+        long start = System.currentTimeMillis();
         String rawResponse = executeModelRequest(payload);
-        return parseTurnResult(rawResponse);
+        long latencyMs = System.currentTimeMillis() - start;
+        return parseTurnResult(rawResponse, latencyMs);
     }
 
     public String completeTurnWithToolResults(String userMessage,
@@ -167,6 +182,14 @@ public class LiveAdvisorModel implements AdvisorModel {
                                               List<GeminiToolCall> toolCalls,
                                               JsonNode rawModelParts,
                                               Map<String, Object> toolResults) {
+        return completeTurnWithToolResultsDetailed(userMessage, history, toolCalls, rawModelParts, toolResults).answer();
+    }
+
+    public ModelExecutionResult completeTurnWithToolResultsDetailed(String userMessage,
+                                                                    List<ChatMessageHistoryItem> history,
+                                                                    List<GeminiToolCall> toolCalls,
+                                                                    JsonNode rawModelParts,
+                                                                    Map<String, Object> toolResults) {
         List<Map<String, Object>> contents = new ArrayList<>();
         if (history != null) {
             for (ChatMessageHistoryItem item : history) {
@@ -207,10 +230,17 @@ public class LiveAdvisorModel implements AdvisorModel {
         payload.put("tools", GeminiToolDeclarations.getToolDeclarations());
         payload.put("generationConfig", Map.of("temperature", 0.2));
 
+        long start = System.currentTimeMillis();
         String rawResponse = executeModelRequest(payload);
+        long latencyMs = System.currentTimeMillis() - start;
         try {
             JsonNode root = objectMapper.readTree(rawResponse);
-            return extractGeminiAnswer(root);
+            String answer = extractGeminiAnswer(root);
+            long promptTokens = root.path("usageMetadata").path("promptTokenCount").asLong(0);
+            long candidateTokens = root.path("usageMetadata").path("candidatesTokenCount").asLong(0);
+            if (promptTokens <= 0) promptTokens = Math.max(1, userMessage.length() / 4 + 200);
+            if (candidateTokens <= 0) candidateTokens = Math.max(1, answer.length() / 4);
+            return new ModelExecutionResult(answer, promptTokens, candidateTokens, latencyMs);
         } catch (Exception e) {
             throw new RuntimeException("Failed to extract answer from Turn 2 model response: " + rawResponse, e);
         }
@@ -236,9 +266,9 @@ public class LiveAdvisorModel implements AdvisorModel {
         return callGeminiApiRaw(jsonPayload, apiKey);
     }
 
-    private GeminiTurnResult parseTurnResult(String rawResponse) {
+    private GeminiTurnResult parseTurnResult(String rawResponse, long latencyMs) {
         if (rawResponse == null || rawResponse.isBlank()) {
-            return new GeminiTurnResult(List.of(), "");
+            return new GeminiTurnResult(List.of(), "", null, 0, 0, latencyMs);
         }
         try {
             JsonNode root = objectMapper.readTree(rawResponse);
@@ -263,11 +293,22 @@ public class LiveAdvisorModel implements AdvisorModel {
                 }
             }
 
-            return new GeminiTurnResult(calls, textBuilder.toString().trim(), parts);
+            long promptTokens = root.path("usageMetadata").path("promptTokenCount").asLong(0);
+            long candidatesTokens = root.path("usageMetadata").path("candidatesTokenCount").asLong(0);
+            String directText = textBuilder.toString().trim();
+            if (promptTokens <= 0) promptTokens = Math.max(1, rawResponse.length() / 4);
+            if (candidatesTokens <= 0 && !directText.isEmpty()) candidatesTokens = Math.max(1, directText.length() / 4);
+
+            return new GeminiTurnResult(calls, directText, parts, promptTokens, candidatesTokens, latencyMs);
         } catch (Exception e) {
             log.warn("Failed to parse Gemini turn result as JSON, returning raw text: {}", e.getMessage());
-            return new GeminiTurnResult(List.of(), rawResponse.trim(), null);
+            long promptTokens = Math.max(1, rawResponse.length() / 4);
+            return new GeminiTurnResult(List.of(), rawResponse.trim(), null, promptTokens, 0, latencyMs);
         }
+    }
+
+    private GeminiTurnResult parseTurnResult(String rawResponse) {
+        return parseTurnResult(rawResponse, 0);
     }
 
     private String callGeminiApiRaw(String requestJson, String apiKey) {
