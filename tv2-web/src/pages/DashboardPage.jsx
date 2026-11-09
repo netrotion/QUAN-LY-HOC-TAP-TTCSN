@@ -594,18 +594,6 @@ export function DashboardPage({ mountedRouteSummary }) {
             </span>
             <span>Lập kế hoạch kỳ tới</span>
           </button>
-
-          <button
-            type="button"
-            className="haui-pill-btn-canvas"
-            onClick={() => navigate('/chat')}
-            title="Hỏi trợ lý ảo cố vấn lộ trình AI"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-              smart_toy
-            </span>
-            <span>Hỏi AI Cố Vấn</span>
-          </button>
         </div>
       </section>
 
