@@ -10,9 +10,9 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import vn.haui.advisor.ai.service.AdvisorStreamingService;
 import vn.haui.advisor.contracts.dto.ChatRequest;
 import vn.haui.advisor.contracts.dto.ChatResponse;
-import vn.haui.advisor.contracts.dto.ChatStreamEvent;
 import vn.haui.advisor.contracts.dto.TrustedStudentContext;
 import vn.haui.advisor.contracts.ports.StudentContextProvider;
+import vn.haui.advisor.contracts.stream.ChatStreamEvent;
 import vn.haui.advisor.platform.advisor.AdvisorChatService;
 
 import java.util.Locale;

@@ -1,6 +1,9 @@
-package vn.haui.advisor.contracts.dto;
+package vn.haui.advisor.contracts.stream;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import vn.haui.advisor.contracts.dto.ChatActionItem;
+import vn.haui.advisor.contracts.dto.ChatPlanProposal;
+import vn.haui.advisor.contracts.dto.ChatSourceItem;
 
 import java.io.Serializable;
 import java.util.List;
@@ -8,7 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * DTO đại diện cho một sự kiện trong luồng Server-Sent Events (SSE) của Trợ lý Cố vấn Học vụ.
+ * Event đại diện cho một sự kiện trong luồng Server-Sent Events (SSE) của Trợ lý Cố vấn Học vụ.
  * Hỗ trợ các pha: STATUS, TOOL_CALL, TOOL_RESULT, CITATION, CHUNK, DONE, ERROR.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -237,3 +240,4 @@ public class ChatStreamEvent implements Serializable {
                 '}';
     }
 }
+

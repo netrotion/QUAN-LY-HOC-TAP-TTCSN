@@ -107,7 +107,6 @@
     "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/dto/ChatRequest.java": "dd5d309fc77b8a03b04be2a672d8bdf745090ab215821a22d943e24acb41d438",
     "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/dto/ChatResponse.java": "22923a1780ae95b5c88ac25fd0410197dcd22a672d212e3ceabe7666eddec1d1",
     "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/dto/ChatSourceItem.java": "179d3552ec2531c73e248bc83550e92da62e2ce2da0f5e674cc5bc2fe060d351",
-    "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/dto/ChatStreamEvent.java": "b3114f36885fce20b6b9c571a85dc811b9abb911b8ff51ff0bbc3292e6fbf1c3",
     "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/dto/ConfirmTranscriptImportRequest.java": "c34f63842882a9c12ef1555f005d2028f468c119497f2d2246d192beed99ca6b",
     "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/dto/ConversationListResponse.java": "8d9d8e70db253499627458e4b2b646de58720d49d61182199676b382bf1d660c",
     "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/dto/ConversationRecord.java": "2606d0a3b86c563ad3db9e565b0849e7d3941c458879960ede4a4bc49090620c",
@@ -175,6 +174,7 @@
     "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/ports/AdvisorFacade.java": "241b85618217865fc50f3c74ad779ebd514457247b521f5e8c61e5f5f0dde510",
     "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/ports/ConversationStore.java": "d308e786859c477f8d5daa4720c146f9d0a5e4bf1f8249038b35ec201c20bda4",
     "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/ports/StudentAcademicRecordProvider.java": "1dacb52912e6546c3c245daec0dc1d96fa7ade0e78ec0e5f6db37cd4f7869b26",
-    "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/ports/StudentContextProvider.java": "b6274b6ab6b5e5cdd5526681ba5569fff925acd09accf31b03c6c748f12de557"
+    "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/ports/StudentContextProvider.java": "b6274b6ab6b5e5cdd5526681ba5569fff925acd09accf31b03c6c748f12de557",
+    "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/stream/ChatStreamEvent.java": "8f42bf43f2f1a743dfa69c8af6411fce5b7c2930f9c6af919e3c4e589b8c25d5"
   }
 }
