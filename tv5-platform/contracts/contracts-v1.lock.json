@@ -175,6 +175,6 @@
     "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/ports/ConversationStore.java": "d308e786859c477f8d5daa4720c146f9d0a5e4bf1f8249038b35ec201c20bda4",
     "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/ports/StudentAcademicRecordProvider.java": "1dacb52912e6546c3c245daec0dc1d96fa7ade0e78ec0e5f6db37cd4f7869b26",
     "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/ports/StudentContextProvider.java": "b6274b6ab6b5e5cdd5526681ba5569fff925acd09accf31b03c6c748f12de557",
-    "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/stream/ChatStreamEvent.java": "8f42bf43f2f1a743dfa69c8af6411fce5b7c2930f9c6af919e3c4e589b8c25d5"
+    "tv5-platform/contracts/src/main/java/vn/haui/advisor/contracts/stream/ChatStreamEvent.java": "2fee4f1098c1bfd55984083fe9e3098bdef5cc91ed9b77b26d962533adfcabce"
   }
 }
