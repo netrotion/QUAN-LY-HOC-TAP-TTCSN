@@ -880,7 +880,7 @@ export function DashboardPage({ mountedRouteSummary }) {
               <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>Đã tích lũy: {accumulatedCredits}/{totalRequiredCredits} TC</span>
             </div>
             <p style={{ margin: '0 0 20px', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
-              Tiến độ hoàn thành các môn kiến thức theo CTĐT ({studentSession?.faculty || 'Đại học Công nghiệp Hà Nội'})
+              Tiến độ hoàn thành các môn theo CTĐT
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -920,17 +920,9 @@ export function DashboardPage({ mountedRouteSummary }) {
       <section className="haui-stat-card" style={{ gap: '20px' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.01em' }}>
-                Học phần đang theo học
-              </h2>
-              <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', fontWeight: 500, backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)' }}>
-                {inProgressCoursesList.length} môn &bull; {inProgressCoursesList.reduce((sum, c) => sum + (Number(c.credits) || 0), 0)} TC
-              </span>
-            </div>
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
-              Theo dõi tiến độ điểm đánh giá thành phần và học phần đang đăng ký trong học kỳ
-            </p>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.01em' }}>
+              Học phần đang theo học
+            </h2>
           </div>
         </div>
 
