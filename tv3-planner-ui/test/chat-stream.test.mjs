@@ -147,4 +147,39 @@ describe('useChatStream & SSE Parser', () => {
     assert.equal(requestedOptions.headers['X-XSRF-TOKEN'], 'test-csrf-token');
     assert.equal(receivedChunk, 'ok');
   });
+
+  test('chatAdvisorStream delegates to api.advisor.chatStream when available', async () => {
+    let streamCalled = false;
+    let streamPayload = null;
+
+    const mockApi = {
+      advisor: {
+        chatStream: async (payload, callbacks) => {
+          streamCalled = true;
+          streamPayload = payload;
+          callbacks.onStatus?.({ message: 'Đang chuẩn bị...' });
+          callbacks.onChunk?.('Dữ ');
+          callbacks.onChunk?.('liệu');
+          callbacks.onDone?.({ text: 'Dữ liệu', proposal: { proposalId: 'prop-1' } });
+        }
+      }
+    };
+
+    let fullText = '';
+    let doneResult = null;
+    let currentStatus = '';
+
+    const { chatAdvisorStream } = await import('../src/services/plannerApiService.js');
+    await chatAdvisorStream(mockApi, { conversationId: 'conv-1', message: 'Hello' }, {
+      onStatus: (evt) => { currentStatus = evt.message; },
+      onChunk: (chunk) => { fullText += chunk; },
+      onDone: (evt) => { doneResult = evt; }
+    });
+
+    assert.ok(streamCalled);
+    assert.equal(streamPayload.message, 'Hello');
+    assert.equal(currentStatus, 'Đang chuẩn bị...');
+    assert.equal(fullText, 'Dữ liệu');
+    assert.equal(doneResult?.proposal?.proposalId, 'prop-1');
+  });
 });
