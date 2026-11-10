@@ -353,19 +353,6 @@ export function StudyPlannerPage({ api, ui, onNavigate } = {}) {
     showToast(res.message);
   }, [showToast]);
 
-  // Thao tác mô phỏng Empty & Error state để phục vụ test
-  const handleClearPlan = useCallback(() => {
-    plannerStore.setPlan({ semesters: [] });
-  }, []);
-
-  const handleTriggerError = useCallback(() => {
-    setError({
-      code: 'PLANNER_API_ERROR',
-      message: 'Mô phỏng lỗi kết nối máy chủ khi truy xuất kế hoạch học tập.',
-      details: ['Endpoint POST /api/v1/planner/generate gặp sự cố', 'Bấm "Thử lại" để tải lại dữ liệu']
-    });
-  }, []);
-
   // Danh mục môn mẫu có thể thêm
   const availableCoursesPool = [
     { courseCode: 'IT6001', courseName: 'Cấu trúc dữ liệu & Giải thuật', credits: 4, courseType: 'Chuẩn CTĐT' },
@@ -437,38 +424,6 @@ export function StudyPlannerPage({ api, ui, onNavigate } = {}) {
               }
             },
             'Kế hoạch học tập cá nhân'
-          ),
-          React.createElement(
-            'span',
-            {
-              style: {
-                fontSize: '11px',
-                fontWeight: 600,
-                padding: '3px 10px',
-                borderRadius: '9999px',
-                background: plan?.status === PLAN_STATUSES.ACTIVE ? 'var(--color-ink, #0a0a0a)' : plan?.status === PLAN_STATUSES.VALIDATED ? '#dcfce7' : 'var(--color-surface-alt, #fafafa)',
-                color: plan?.status === PLAN_STATUSES.ACTIVE ? '#ffffff' : plan?.status === PLAN_STATUSES.VALIDATED ? '#15803d' : 'var(--color-mid-gray, #737373)',
-                border: '1px solid var(--color-hairline, #e5e5e5)',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)'
-              }
-            },
-            plan?.status === PLAN_STATUSES.ACTIVE
-              ? '● Kế hoạch đang theo dõi'
-              : 'Bản nháp chưa kích hoạt'
-          ),
-          React.createElement(
-            'span',
-            {
-              style: {
-                fontSize: '11px',
-                padding: '3px 10px',
-                borderRadius: '9999px',
-                background: 'var(--color-canvas, #f5f5f5)',
-                color: 'var(--color-ink-soft, #171717)',
-                border: '1px solid var(--color-hairline, #e5e5e5)'
-              }
-            },
-            plan.majorName || 'Hệ đào tạo chính quy · HaUI'
           )
         ),
         React.createElement(
@@ -484,82 +439,6 @@ export function StudyPlannerPage({ api, ui, onNavigate } = {}) {
           },
           'Xây dựng lộ trình đăng ký môn học cho các học kỳ tiếp theo. Hệ thống kiểm tra số tín chỉ tối đa/tối thiểu (10–24 TC) và điều kiện tiên quyết theo quy chế đào tạo tín chỉ Đại học Công nghiệp Hà Nội (HaUI).'
         )
-      ),
-      // Nút chức năng ở góc phải
-      React.createElement(
-        'div',
-        { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' } },
-        Button
-          ? React.createElement(
-              Button,
-              { variant: 'secondary', size: 'sm', onClick: handleGeneratePlan },
-              'Tạo phương án đề xuất'
-            )
-          : null,
-        Button
-          ? React.createElement(
-              Button,
-              { variant: 'ghost', size: 'sm', onClick: () => setIsTreeModalOpen(true) },
-              'Xem Cây môn học'
-            )
-          : null,
-        Button
-          ? React.createElement(
-              Button,
-              { variant: 'secondary', size: 'sm', onClick: () => setIsHistoryModalOpen(true) },
-              'Lịch sử & Mở lại'
-            )
-          : null,
-        Button
-          ? React.createElement(
-              Button,
-              {
-                variant: 'secondary',
-                size: 'sm',
-                onClick: () => setIsReconcileModalOpen(true)
-              },
-              'Đối chiếu học kỳ'
-            )
-          : null,
-        Button
-          ? React.createElement(
-              Button,
-              { variant: 'ghost', size: 'sm', onClick: handleDiscardChanges },
-              '↩️ Hủy thay đổi'
-            )
-          : null,
-        Button
-          ? React.createElement(
-              Button,
-              { variant: 'secondary', size: 'sm', loading: saving, onClick: handleSaveDraft },
-              'Lưu bản nháp'
-            )
-          : null,
-        Button
-          ? React.createElement(
-              Button,
-              {
-                variant: 'secondary',
-                size: 'sm',
-                loading: validating,
-                onClick: handleValidatePlan
-              },
-              'Kiểm tra điều kiện'
-            )
-          : null,
-        Button
-          ? React.createElement(
-              Button,
-              {
-                variant: 'primary',
-                size: 'sm',
-                disabled: !isValidated,
-                title: isValidated ? undefined : 'Cần "Kiểm tra điều kiện" và đạt trạng thái VALIDATED trước khi kích hoạt',
-                onClick: () => isValidated && setIsActivateModalOpen(true)
-              },
-              '▶ Bắt đầu theo dõi (Kích hoạt)'
-            )
-          : null
       )
     )
   );
@@ -738,29 +617,6 @@ export function StudyPlannerPage({ api, ui, onNavigate } = {}) {
       )
     : null;
 
-  // Thanh công cụ kiểm thử (Test switchers)
-  const testToolbar = React.createElement(
-    'div',
-    {
-      style: {
-        display: 'flex',
-        gap: '8px',
-        alignItems: 'center',
-        padding: '8px 12px',
-        marginBottom: '16px',
-        borderRadius: '8px',
-        background: '#f8fafc',
-        border: '1px solid #e2e8f0',
-        fontSize: '12px'
-      }
-    },
-    React.createElement('span', { style: { fontWeight: 600, color: '#64748b' } }, 'Kiểm thử trạng thái:'),
-    Button ? React.createElement(Button, { variant: 'ghost', size: 'sm', onClick: handleClearPlan }, 'Trạng thái Rỗng') : null,
-    Button ? React.createElement(Button, { variant: 'ghost', size: 'sm', onClick: handleTriggerError }, 'Mô phỏng Lỗi') : null,
-    Button ? React.createElement(Button, { variant: 'ghost', size: 'sm', onClick: handleDiscardChanges }, 'Hủy thay đổi') : null,
-    Button ? React.createElement(Button, { variant: 'ghost', size: 'sm', onClick: handleFetchPlan }, 'Tải lại kế hoạch') : null
-  );
-
   // ==========================================
   // TRẠNG THÁI LOADING / ERROR / EMPTY
   // ==========================================
@@ -802,7 +658,6 @@ export function StudyPlannerPage({ api, ui, onNavigate } = {}) {
       'div',
       { className: 'haui-page-container' },
       headerSection,
-      testToolbar,
       EmptyState
         ? React.createElement(EmptyState, {
             title: isStudentEmpty ? 'Chưa có dữ liệu bảng điểm & Kế hoạch' : 'Chưa có kế hoạch học tập nào',
@@ -1601,7 +1456,6 @@ export function StudyPlannerPage({ api, ui, onNavigate } = {}) {
     headerSection,
     toastBar,
     proposalBanner,
-    testToolbar,
     kpiSection,
     validationBox,
     semestersList,

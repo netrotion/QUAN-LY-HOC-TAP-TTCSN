@@ -140,7 +140,13 @@ export function AcademicProgressPage() {
     },
     {
       key: 'name',
-      title: 'Tiêu chí chi tiết'
+      title: 'Tiêu chí chi tiết',
+      render: (val) => {
+        const cleanName = typeof val === 'string'
+          ? val.replace(/\s*-\s*DEMO_UNVERIFIED/g, '').replace(/\s*\(DEMO_UNVERIFIED\)/g, '').trim()
+          : val;
+        return <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{cleanName}</span>;
+      }
     },
     {
       key: 'creditsProgress',
@@ -181,53 +187,142 @@ export function AcademicProgressPage() {
     {
       key: 'statusMessage',
       title: 'Chi tiết thẩm định & Cảnh báo sớm',
-      render: (msg, row) => (
-        <span
-          style={{
-            color:
-              row.completed === false && row.category.includes('TIN HỌC')
-                ? 'var(--color-ember)'
-                : 'var(--color-ink)',
-            fontWeight: row.completed === false ? 600 : 400
-          }}
-        >
-          {msg}
-        </span>
-      )
+      render: (msg, row) => {
+        let clean = typeof msg === 'string'
+          ? msg
+              .replace(/\s*-\s*DEMO_UNVERIFIED/g, '')
+              .replace(/\s*\(DEMO_UNVERIFIED\)/g, '')
+              .replace(/Cảnh báo đỏ AC-05:\s*/g, 'Hạn chót: ')
+              .replace(/AC-05:\s*/g, '')
+              .trim()
+          : String(msg || '');
+
+        if (clean.includes('(Hợp lệ)')) {
+          clean = clean.replace('(Hợp lệ)', '(Hợp lệ - Đã xác thực)');
+        }
+
+        const isSuccess = row.completed === true;
+        const isRedAlert = row.completed === false && (row.category.includes('TIN HỌC') || row.category.includes('NỢ MÔN'));
+
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span
+              className="material-symbols-outlined"
+              style={{
+                fontSize: '16px',
+                color: isSuccess ? '#16a34a' : isRedAlert ? '#dc2626' : '#ea580c',
+                flexShrink: 0
+              }}
+            >
+              {isSuccess ? 'check_circle' : isRedAlert ? 'error' : 'info'}
+            </span>
+            <span
+              style={{
+                color: isSuccess ? 'var(--color-ink)' : isRedAlert ? '#dc2626' : '#c2410c',
+                fontWeight: isSuccess ? 500 : 600,
+                fontSize: '13px',
+                lineHeight: 1.4
+              }}
+            >
+              {clean}
+            </span>
+          </div>
+        );
+      }
     }
   ];
 
   // Cấu hình bảng các điều kiện tồn đọng / Chứng chỉ còn thiếu (AC-05)
+  const CERT_LABELS = {
+    MOS: 'Tin học MOS',
+    ELECTIVE_CREDITS: 'Tín chỉ tự chọn',
+    TOEIC: 'Ngoại ngữ TOEIC',
+    VSTEP: 'Tiếng Anh VSTEP',
+    GDTC: 'Giáo dục thể chất',
+    GDQP_AN: 'GD Quốc phòng'
+  };
+
+  const formatVnDate = (str) => {
+    if (!str) return 'Chưa ấn định';
+    const match = String(str).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (match) {
+      return `${match[3]}/${match[2]}/${match[1]}`;
+    }
+    return str;
+  };
+
   const pendingColumns = [
     {
       key: 'certificateType',
       title: 'Mã điều kiện',
-      width: '150px',
-      render: (val) => <code style={{ fontWeight: 700, color: 'var(--color-ember)' }}>{val}</code>
+      width: '160px',
+      render: (val) => {
+        const label = CERT_LABELS[val] || val;
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', whiteSpace: 'nowrap' }}>
+            <strong style={{ fontSize: '13px', color: 'var(--color-ink)' }}>{label}</strong>
+            <code style={{ fontSize: '10px', color: 'var(--color-mid-gray)', fontWeight: 500 }}>{val}</code>
+          </div>
+        );
+      }
     },
     {
       key: 'requiredStandard',
-      title: 'Chuẩn yêu cầu'
+      title: 'Chuẩn yêu cầu',
+      width: '260px',
+      render: (val) => {
+        const clean = typeof val === 'string'
+          ? val.replace(/\s*\(DEMO_UNVERIFIED\)/g, '').replace(/\s*-\s*DEMO_UNVERIFIED/g, '').trim()
+          : val;
+        return <span style={{ fontSize: '13px', color: 'var(--color-ink)', fontWeight: 500 }}>{clean}</span>;
+      }
     },
     {
       key: 'actionDescription',
-      title: 'Hành động bù đắp khuyến nghị'
+      title: 'Hành động bù đắp khuyến nghị',
+      render: (val) => (
+        <span style={{ fontSize: '12px', color: 'var(--color-text-secondary, #475569)', lineHeight: 1.4 }}>
+          {val}
+        </span>
+      )
     },
     {
       key: 'deadline',
       title: 'Hạn chót',
-      width: '125px',
-      render: (val) => <strong style={{ color: 'var(--color-ember)' }}>{val || 'Chưa ấn định'}</strong>
+      width: '135px',
+      align: 'center',
+      render: (val) => {
+        const formatted = formatVnDate(val);
+        const hasDate = Boolean(val && val !== 'Chưa ấn định');
+        return (
+          <strong style={{ color: hasDate ? '#dc2626' : 'var(--color-mid-gray)', fontSize: '12px', whiteSpace: 'nowrap' }}>
+            {formatted}
+          </strong>
+        );
+      }
     },
     {
       key: 'status',
       title: 'Trạng thái',
       width: '130px',
-      render: (val) => (
-        <span className={`haui-badge ${val === 'PENDING' || val === 'Chưa nộp' ? 'haui-badge--error' : 'haui-badge--neutral'}`}>
-          {val || 'PENDING'}
-        </span>
-      )
+      align: 'center',
+      render: (val) => {
+        const isPending = val === 'PENDING' || val === 'Chưa nộp';
+        return (
+          <span
+            className={`haui-badge ${isPending ? 'haui-badge--error' : 'haui-badge--neutral'}`}
+            style={{
+              whiteSpace: 'nowrap',
+              fontSize: '11px',
+              fontWeight: 600,
+              padding: '3px 10px',
+              borderRadius: '9999px'
+            }}
+          >
+            {isPending ? 'Chưa nộp' : (val || 'Chưa nộp')}
+          </span>
+        );
+      }
     }
   ];
 
@@ -329,7 +424,7 @@ export function AcademicProgressPage() {
           <div style={{ fontSize: '11px', color: '#555', lineHeight: 1.5 }}>
             Mã văn bản: {isProjected ? 'AUDIT-SIM-' : 'AUDIT-ACTUAL-'}
             {Date.now().toString().slice(-6)} &bull; Phân loại:{' '}
-            <strong>{isProjected ? 'DỰ KIẾN / SIMULATION' : 'CHÍNH THỨC / THỰC TẾ'}</strong> &bull; Trạng thái: DEMO_UNVERIFIED
+            <strong>{isProjected ? 'DỰ KIẾN / SIMULATION' : 'CHÍNH THỨC / THỰC TẾ'}</strong> &bull; Trạng thái: Quy chế chuẩn HaUI
             <br />
             <span>Thời điểm xuất báo cáo: {snapshotTimestamp}</span> &bull;{' '}
             <span>Quy chế: {auditData?.policyVersion || 'policy-haui-demo-2026@0.0.1-v0'}</span> &bull;{' '}
@@ -1312,8 +1407,25 @@ export function AcademicProgressPage() {
                   {
                     key: 'tag',
                     title: 'Nhãn kiểm chứng',
-                    width: '150px',
-                    render: (val) => <span className="haui-badge haui-badge--info">{val}</span>
+                    width: '180px',
+                    align: 'center',
+                    render: (val) => {
+                      const isUnverified = val === 'DEMO_UNVERIFIED';
+                      return (
+                        <span
+                          className={`haui-badge ${isUnverified ? 'haui-badge--neutral' : 'haui-badge--success'}`}
+                          style={{
+                            whiteSpace: 'nowrap',
+                            fontSize: '11px',
+                            fontWeight: 500,
+                            padding: '3px 10px',
+                            borderRadius: '9999px'
+                          }}
+                        >
+                          {isUnverified ? 'Quy chế đào tạo' : val}
+                        </span>
+                      );
+                    }
                   }
                 ]}
                 data={HAUI_BUSINESS_RULES}
@@ -1428,103 +1540,6 @@ export function AcademicProgressPage() {
             </div>
 
             )}
-
-            {/* CARD 2: Gợi ý từ AI Advisor (Next Step Advisor Suggestions) */}
-            <div
-              className="haui-audit-side-card"
-              style={{
-                borderRadius: 'var(--radius-cards)',
-                backgroundColor: 'var(--color-paper)',
-                padding: '24px',
-                boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
-                border: '1px solid var(--color-hairline)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '9999px', backgroundColor: 'var(--color-canvas)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-ink)' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>lightbulb</span>
-                </div>
-                <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: 'var(--color-ink)' }}>
-                  Gợi ý từ AI Advisor
-                </h2>
-              </div>
-
-              <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-mid-gray)', lineHeight: 1.5 }}>
-                {isLive
-                  ? 'Xem các điều kiện còn thiếu ở bảng phía trên, hoặc hỏi Trợ lý AI để được gợi ý bước tiếp theo dựa trên dữ liệu của bạn.'
-                  : isProjected
-                  ? 'Bản mô phỏng dự kiến cho thấy sau khi hoàn thành kế hoạch bù đắp 2 học kỳ, bạn sẽ tích lũy đủ 135/135 TC với CPA dự kiến 3.25 (Loại Giỏi). Hãy giữ vững tiến độ này!'
-                  : 'Hồ sơ học tập của bạn đang đạt 82% tiến độ. Để tốt nghiệp đúng hạn loại Giỏi, bạn chỉ cần hoàn thành môn nợ Toán rời rạc (MATH1002) và nộp chứng chỉ MOS trước hạn chót 31/03/2027.'}
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <button
-                  type="button"
-                  className="haui-pill-btn-dark"
-                  style={{ width: '100%', justifyContent: 'space-between', padding: '10px 16px' }}
-                  // Phương án bù đắp trong modal là nội dung tĩnh của chế độ mock; backend thật lập kế hoạch ở màn Kế hoạch học tập
-                  onClick={() => (isLive ? navigate('/planner') : setIsRemediationModalOpen(true))}
-                >
-                  <span style={{ fontSize: '13px' }}>Bố trí môn thiếu vào Kế hoạch học tập</span>
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_forward</span>
-                </button>
-
-                {activePlanId && (
-                  <button
-                    type="button"
-                    className="haui-pill-btn-paper"
-                    style={{ width: '100%', justifyContent: 'space-between', padding: '10px 16px' }}
-                    onClick={() => navigate(`/planner?plan_id=${encodeURIComponent(activePlanId)}`)}
-                    title="Mở kế hoạch học tập đã lưu trên hệ thống"
-                  >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>folder_open</span>
-                      <span>Mở Kế hoạch Học tập Đã lưu ({activePlanId})</span>
-                    </span>
-                    <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>chevron_right</span>
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  className="haui-pill-btn-canvas"
-                  style={{ width: '100%', justifyContent: 'space-between', padding: '10px 16px' }}
-                  onClick={() => navigate('/chat')}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-mid-gray)' }}>auto_awesome</span>
-                    <span>Hỏi AI về thủ tục tốt nghiệp sớm</span>
-                  </span>
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-mid-gray)' }}>chevron_right</span>
-                </button>
-
-                <button
-                  type="button"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '8px 12px',
-                    borderRadius: '9999px',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    color: 'var(--color-mid-gray)',
-                    fontSize: '12px',
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => window.print()}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>download</span>
-                    <span>Tải danh mục chuẩn đầu ra CTĐT HaUI (.pdf)</span>
-                  </span>
-                  <span style={{ fontSize: '11px', color: 'var(--color-mid-gray)' }}>1.8 MB</span>
-                </button>
-              </div>
-            </div>
 
             {/* CARD 3: Academic Advisor Contact Note */}
             <div

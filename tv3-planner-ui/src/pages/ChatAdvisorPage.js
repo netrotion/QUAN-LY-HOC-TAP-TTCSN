@@ -390,36 +390,49 @@ export function ChatAdvisorPage({
         {
           style: {
             backgroundColor: 'var(--color-paper, #ffffff)',
-            borderRadius: 'var(--heroui-radius-xl, 24px)',
+            borderRadius: '16px',
             border: '1px solid var(--color-hairline, #e5e5e5)',
-            padding: '24px',
+            padding: '12px 18px',
             boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04))',
             display: 'flex',
             flexWrap: 'wrap',
             justifyContent: 'space-between',
             alignItems: 'center',
-            gap: '16px'
+            gap: '12px'
           }
         },
         React.createElement(
           'div',
-          { style: { display: 'flex', flexDirection: 'column', maxWidth: '780px' } },
+          { style: { display: 'flex', flexDirection: 'column', maxWidth: '780px', gap: '3px' } },
           React.createElement(
             'div',
-            { style: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' } },
+            { style: { display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' } },
+            React.createElement(
+              'h1',
+              {
+                style: {
+                  fontSize: '18px',
+                  fontWeight: 600,
+                  color: 'var(--color-ink, #0a0a0a)',
+                  margin: 0,
+                  letterSpacing: '-0.2px'
+                }
+              },
+              'Tư vấn học tập thông minh (AI Advisor)'
+            ),
             React.createElement(
               'span',
               {
                 style: {
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: '2px 10px',
+                  gap: '5px',
+                  padding: '2px 8px',
                   borderRadius: '9999px',
                   backgroundColor: 'var(--color-canvas, #f5f5f5)',
                   fontSize: '11px',
-                  fontWeight: 600,
-                  color: 'var(--color-ink, #0a0a0a)'
+                  fontWeight: 500,
+                  color: 'var(--color-mid-gray, #737373)'
                 }
               },
               React.createElement('span', {
@@ -434,36 +447,24 @@ export function ChatAdvisorPage({
             )
           ),
           React.createElement(
-            'h1',
-            {
-              style: {
-                fontSize: '30px',
-                fontWeight: 600,
-                color: 'var(--color-ink, #0a0a0a)',
-                margin: 0,
-                letterSpacing: '-0.5px'
-              }
-            },
-            'Tư vấn học tập thông minh (AI Advisor)'
-          ),
-          React.createElement(
             'p',
-            { style: { margin: '6px 0 0', fontSize: '14px', color: 'var(--color-mid-gray, #737373)', lineHeight: 1.5 } },
+            { style: { margin: 0, fontSize: '12px', color: 'var(--color-mid-gray, #737373)', lineHeight: 1.4 } },
             'Hỏi đáp, phân tích tiến độ, tra cứu điều kiện tiên quyết và xây dựng lộ trình học tập tối ưu dựa trên dữ liệu học tập cá nhân.'
           )
         ),
         React.createElement(
           'div',
-          { style: { display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' } },
+          { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
           React.createElement(
             'button',
             {
               type: 'button',
               className: 'haui-pill-btn-canvas',
+              style: { padding: '5px 12px', fontSize: '12px' },
               onClick: handleNewConversation,
               title: 'Làm mới phiên hội thoại'
             },
-            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'refresh'),
+            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '15px' } }, 'refresh'),
             React.createElement('span', null, 'Làm mới phiên chat')
           ),
           React.createElement(
@@ -471,10 +472,11 @@ export function ChatAdvisorPage({
             {
               type: 'button',
               className: 'haui-pill-btn-canvas',
+              style: { padding: '5px 12px', fontSize: '12px' },
               onClick: () => window.print(),
               title: 'Lưu hoặc in hội thoại dưới dạng PDF'
             },
-            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'download'),
+            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '15px' } }, 'download'),
             React.createElement('span', null, 'Lưu hội thoại (.pdf)')
           )
         )
@@ -556,66 +558,6 @@ export function ChatAdvisorPage({
       React.createElement(
         'section',
         { className: 'haui-chat-col-main', style: { display: 'flex', flexDirection: 'column', gap: '20px' } },
-
-        // Quick Starter Prompt Chips Card
-        React.createElement(
-          'div',
-          {
-            style: {
-              backgroundColor: 'var(--color-paper, #ffffff)',
-              borderRadius: 'var(--heroui-radius-xl, 24px)',
-              padding: '16px 20px',
-              border: '1px solid var(--color-hairline, #e5e5e5)',
-              boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04))',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px'
-            }
-          },
-          React.createElement(
-            'div',
-            { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
-            React.createElement(
-              'span',
-              {
-                style: {
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  color: 'var(--color-mid-gray, #737373)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }
-              },
-              React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'bolt'),
-              'Gợi ý câu hỏi phân tích nhanh'
-            ),
-            React.createElement(
-              'span',
-              { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)' } },
-              'Nhấp để điền nhanh'
-            )
-          ),
-          React.createElement(
-            'div',
-            { style: { display: 'flex', flexWrap: 'wrap', gap: '8px' } },
-            QUICK_PROMPTS_MAN_2.map((pill, idx) =>
-              React.createElement(
-                'button',
-                {
-                  key: idx,
-                  type: 'button',
-                  className: 'haui-chat-prompt-chip',
-                  onClick: () => handleSendMessage(pill),
-                  disabled: loading
-                },
-                pill
-              )
-            )
-          )
-        ),
 
         // Dòng hội thoại tin nhắn (Conversation Stream)
         React.createElement(
@@ -1547,97 +1489,6 @@ export function ChatAdvisorPage({
                 updated && !Number.isNaN(updated.getTime()) && React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, updated.toLocaleString('vi-VN'))
               );
             })
-          )
-        ),
-
-        // Card 2: Gợi ý chủ đề hỏi đáp nhanh (4 cards 1-click)
-        React.createElement(
-          'div',
-          {
-            style: {
-              backgroundColor: 'var(--color-paper, #ffffff)',
-              borderRadius: 'var(--heroui-radius-xl, 24px)',
-              border: '1px solid var(--color-hairline, #e5e5e5)',
-              padding: '24px',
-              boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04))',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px'
-            }
-          },
-          React.createElement(
-            'div',
-            { style: { display: 'flex', alignItems: 'center', gap: '8px', paddingBottom: '10px', borderBottom: '1px solid var(--color-hairline)' } },
-            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '20px', color: 'var(--color-ink)' } }, 'explore'),
-            React.createElement('h2', { style: { margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--color-ink)' } }, 'Gợi ý chủ đề hỏi đáp nhanh')
-          ),
-          React.createElement(
-            'div',
-            { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
-            [
-              {
-                icon: 'account_tree',
-                title: 'Điều kiện học phần',
-                desc: 'Cho mình biết mã học phần cần kiểm tra',
-                prompt: 'Mình muốn kiểm tra môn học trước và tiên quyết của một học phần.'
-              },
-              {
-                icon: 'translate',
-                title: 'Đổi điểm tiếng Anh VSTEP',
-                desc: 'Quy chế miễn học phần B1/B2',
-                prompt: 'Quy chế đổi điểm tiếng Anh VSTEP sang chuẩn đầu ra như thế nào?'
-              },
-              {
-                icon: 'speed',
-                title: 'Rút ngắn 3.5 năm tốt nghiệp',
-                desc: 'Phân bổ tín chỉ tăng tốc',
-                prompt: 'Lên lộ trình học vượt 3.5 năm ngành CNTT/KTPM.'
-              },
-              {
-                icon: 'calendar_month',
-                title: 'Đăng ký học vượt kỳ hè',
-                desc: 'Tối đa 8 tín chỉ / kỳ phụ',
-                prompt: 'Quy định đăng ký học vượt kỳ hè tối đa bao nhiêu tín chỉ?'
-              }
-            ].map((topic, tIdx) =>
-              React.createElement(
-                'div',
-                {
-                  key: tIdx,
-                  className: 'haui-chat-topic-card',
-                  onClick: () => handleSendMessage(topic.prompt)
-                },
-                React.createElement(
-                  'div',
-                  { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
-                  React.createElement(
-                    'div',
-                    {
-                      style: {
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
-                        backgroundColor: 'var(--color-paper)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'var(--color-ink)',
-                        flexShrink: 0,
-                        border: '1px solid var(--color-hairline)'
-                      }
-                    },
-                    React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, topic.icon)
-                  ),
-                  React.createElement(
-                    'div',
-                    { style: { display: 'flex', flexDirection: 'column' } },
-                    React.createElement('span', { style: { fontSize: '13px', fontWeight: 500, color: 'var(--color-ink)' } }, topic.title),
-                    React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray)' } }, topic.desc)
-                  )
-                ),
-                React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px', color: 'var(--color-mid-gray)' } }, 'chevron_right')
-              )
-            )
           )
         ),
 
