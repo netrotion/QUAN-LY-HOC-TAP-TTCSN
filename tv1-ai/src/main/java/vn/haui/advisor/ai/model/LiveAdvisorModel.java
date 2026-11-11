@@ -61,32 +61,45 @@ public class LiveAdvisorModel implements AdvisorModel {
             "       Trợ lý: 'Hà Nội cuối tuần có nhiều chỗ xả stress tuyệt vời sau một tuần \"cày cuốc\" bài tập căng thẳng quanh trường! Nhưng trước khi lên đồ đi chơi, bạn đã kiểm tra xem còn môn nào cần hoàn thành điều kiện tiên quyết hay cần tính điểm mục tiêu kỳ này chưa? Nếu cần rà soát lại tiến độ học tập, cứ nhắn mình nhé!'";
 
     private final Function<String, String> providerFunction;
+    private final java.util.function.BiConsumer<String, java.util.function.Consumer<String>> streamingProviderFunction;
     private final ResponseGroundingValidator validator;
     private final ObjectMapper objectMapper;
     private final boolean allowDotEnvFallback;
 
     public LiveAdvisorModel() {
-        this(null, new ResponseGroundingValidator(), true);
+        this(null, null, new ResponseGroundingValidator(), true);
     }
 
     public LiveAdvisorModel(boolean allowDotEnvFallback) {
-        this(null, new ResponseGroundingValidator(), allowDotEnvFallback);
+        this(null, null, new ResponseGroundingValidator(), allowDotEnvFallback);
     }
 
     public LiveAdvisorModel(Function<String, String> providerFunction) {
-        this(providerFunction, new ResponseGroundingValidator(), true);
+        this(providerFunction, null, new ResponseGroundingValidator(), true);
+    }
+
+    public LiveAdvisorModel(java.util.function.BiConsumer<String, java.util.function.Consumer<String>> streamingProviderFunction) {
+        this(null, streamingProviderFunction, new ResponseGroundingValidator(), true);
     }
 
     public LiveAdvisorModel(ResponseGroundingValidator validator) {
-        this(null, validator, true);
+        this(null, null, validator, true);
     }
 
     public LiveAdvisorModel(Function<String, String> providerFunction, ResponseGroundingValidator validator) {
-        this(providerFunction, validator, true);
+        this(providerFunction, null, validator, true);
     }
 
     public LiveAdvisorModel(Function<String, String> providerFunction, ResponseGroundingValidator validator, boolean allowDotEnvFallback) {
+        this(providerFunction, null, validator, allowDotEnvFallback);
+    }
+
+    public LiveAdvisorModel(Function<String, String> providerFunction,
+                            java.util.function.BiConsumer<String, java.util.function.Consumer<String>> streamingProviderFunction,
+                            ResponseGroundingValidator validator,
+                            boolean allowDotEnvFallback) {
         this.providerFunction = providerFunction;
+        this.streamingProviderFunction = streamingProviderFunction;
         this.validator = validator != null ? validator : new ResponseGroundingValidator();
         this.objectMapper = new ObjectMapper();
         this.allowDotEnvFallback = allowDotEnvFallback;
@@ -122,15 +135,28 @@ public class LiveAdvisorModel implements AdvisorModel {
         }
     }
 
-    public record GeminiTurnResult(List<GeminiToolCall> toolCalls, String directText, JsonNode rawModelParts) {
+    public record GeminiTurnResult(
+            List<GeminiToolCall> toolCalls,
+            String directText,
+            JsonNode rawModelParts,
+            long promptTokens,
+            long candidatesTokens,
+            long latencyMs
+    ) {
         public GeminiTurnResult(List<GeminiToolCall> toolCalls, String directText) {
-            this(toolCalls, directText, null);
+            this(toolCalls, directText, null, 0, 0, 0);
+        }
+
+        public GeminiTurnResult(List<GeminiToolCall> toolCalls, String directText, JsonNode rawModelParts) {
+            this(toolCalls, directText, rawModelParts, 0, 0, 0);
         }
 
         public boolean hasToolCalls() {
             return toolCalls != null && !toolCalls.isEmpty();
         }
     }
+
+    public record ModelExecutionResult(String answer, long promptTokens, long candidatesTokens, long latencyMs) {}
 
     public GeminiTurnResult inspectTurn(String userMessage, List<ChatMessageHistoryItem> history, List<Map<String, Object>> tools) {
         List<Map<String, Object>> contents = new ArrayList<>();
@@ -151,8 +177,10 @@ public class LiveAdvisorModel implements AdvisorModel {
         }
         payload.put("generationConfig", Map.of("temperature", 0.2));
 
+        long start = System.currentTimeMillis();
         String rawResponse = executeModelRequest(payload);
-        return parseTurnResult(rawResponse);
+        long latencyMs = System.currentTimeMillis() - start;
+        return parseTurnResult(rawResponse, latencyMs);
     }
 
     public String completeTurnWithToolResults(String userMessage,
@@ -167,6 +195,14 @@ public class LiveAdvisorModel implements AdvisorModel {
                                               List<GeminiToolCall> toolCalls,
                                               JsonNode rawModelParts,
                                               Map<String, Object> toolResults) {
+        return completeTurnWithToolResultsDetailed(userMessage, history, toolCalls, rawModelParts, toolResults).answer();
+    }
+
+    public ModelExecutionResult completeTurnWithToolResultsDetailed(String userMessage,
+                                                                    List<ChatMessageHistoryItem> history,
+                                                                    List<GeminiToolCall> toolCalls,
+                                                                    JsonNode rawModelParts,
+                                                                    Map<String, Object> toolResults) {
         List<Map<String, Object>> contents = new ArrayList<>();
         if (history != null) {
             for (ChatMessageHistoryItem item : history) {
@@ -207,12 +243,205 @@ public class LiveAdvisorModel implements AdvisorModel {
         payload.put("tools", GeminiToolDeclarations.getToolDeclarations());
         payload.put("generationConfig", Map.of("temperature", 0.2));
 
+        long start = System.currentTimeMillis();
         String rawResponse = executeModelRequest(payload);
+        long latencyMs = System.currentTimeMillis() - start;
         try {
             JsonNode root = objectMapper.readTree(rawResponse);
-            return extractGeminiAnswer(root);
+            String answer = extractGeminiAnswer(root);
+            long promptTokens = root.path("usageMetadata").path("promptTokenCount").asLong(0);
+            long candidateTokens = root.path("usageMetadata").path("candidatesTokenCount").asLong(0);
+            if (promptTokens <= 0) promptTokens = Math.max(1, userMessage.length() / 4 + 200);
+            if (candidateTokens <= 0) candidateTokens = Math.max(1, answer.length() / 4);
+            return new ModelExecutionResult(answer, promptTokens, candidateTokens, latencyMs);
         } catch (Exception e) {
             throw new RuntimeException("Failed to extract answer from Turn 2 model response: " + rawResponse, e);
+        }
+    }
+
+    public ModelExecutionResult streamTurn(
+            String userMessage,
+            List<ChatMessageHistoryItem> history,
+            List<GeminiToolCall> toolCalls,
+            JsonNode rawModelParts,
+            Map<String, Object> toolResults,
+            java.util.function.Consumer<String> chunkConsumer
+    ) {
+        Objects.requireNonNull(chunkConsumer, "chunkConsumer must not be null");
+
+        List<Map<String, Object>> contents = new ArrayList<>();
+        if (history != null) {
+            for (ChatMessageHistoryItem item : history) {
+                String role = "assistant".equalsIgnoreCase(item.getRole()) ? "model" : "user";
+                String content = item.getContent() != null ? item.getContent() : "";
+                contents.add(Map.of("role", role, "parts", List.of(Map.of("text", content))));
+            }
+        }
+        contents.add(Map.of("role", "user", "parts", List.of(Map.of("text", userMessage != null ? userMessage : ""))));
+
+        if (rawModelParts != null && rawModelParts.isArray() && !rawModelParts.isEmpty()) {
+            contents.add(Map.of("role", "model", "parts", rawModelParts));
+        } else if (toolCalls != null && !toolCalls.isEmpty()) {
+            List<Map<String, Object>> callParts = new ArrayList<>();
+            for (GeminiToolCall call : toolCalls) {
+                callParts.add(Map.of("functionCall", Map.of("name", call.name(), "args", call.arguments())));
+            }
+            contents.add(Map.of("role", "model", "parts", callParts));
+        }
+
+        if (toolCalls != null && !toolCalls.isEmpty()) {
+            List<Map<String, Object>> responseParts = new ArrayList<>();
+            for (GeminiToolCall call : toolCalls) {
+                Object res = toolResults != null ? toolResults.get(call.name()) : Collections.emptyMap();
+                responseParts.add(Map.of("functionResponse", Map.of(
+                        "name", call.name(),
+                        "response", Map.of("result", res != null ? res : Collections.emptyMap())
+                )));
+            }
+            contents.add(Map.of("role", "user", "parts", responseParts));
+        }
+
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("systemInstruction", Map.of("parts", List.of(Map.of("text", SYSTEM_PROMPT))));
+        payload.put("contents", contents);
+        if (toolCalls != null && !toolCalls.isEmpty()) {
+            payload.put("tools", GeminiToolDeclarations.getToolDeclarations());
+        }
+        payload.put("generationConfig", Map.of("temperature", 0.2));
+
+        String jsonPayload;
+        try {
+            jsonPayload = objectMapper.writeValueAsString(payload);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize streaming payload", e);
+        }
+
+        long start = System.currentTimeMillis();
+
+        if (this.streamingProviderFunction != null) {
+            StringBuilder assembled = new StringBuilder();
+            this.streamingProviderFunction.accept(jsonPayload, chunk -> {
+                if (chunk != null && !chunk.isEmpty()) {
+                    assembled.append(chunk);
+                    chunkConsumer.accept(chunk);
+                }
+            });
+            long latencyMs = System.currentTimeMillis() - start;
+            String answer = assembled.toString();
+            long pTokens = Math.max(1, jsonPayload.length() / 4);
+            long cTokens = Math.max(1, answer.length() / 4);
+            return new ModelExecutionResult(answer, pTokens, cTokens, latencyMs);
+        }
+
+        if (this.providerFunction != null) {
+            ModelExecutionResult syncResult = completeTurnWithToolResultsDetailed(
+                    userMessage, history, toolCalls, rawModelParts, toolResults
+            );
+            String fullText = syncResult.answer();
+            if (fullText != null && !fullText.isEmpty()) {
+                String[] words = fullText.split("(?<=\\s)|(?=\\s)");
+                for (String word : words) {
+                    chunkConsumer.accept(word);
+                }
+            }
+            return syncResult;
+        }
+
+        String apiKey = resolveApiKey();
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalStateException("Gemini API key is missing for streaming");
+        }
+
+        return streamGeminiHttp(jsonPayload, apiKey, userMessage, chunkConsumer);
+    }
+
+    public ModelExecutionResult processSseLines(
+            java.util.stream.Stream<String> lines,
+            java.util.function.Consumer<String> chunkConsumer,
+            String fallbackPrompt,
+            long latencyMs
+    ) {
+        StringBuilder answerBuilder = new StringBuilder();
+        java.util.concurrent.atomic.AtomicLong promptTokens = new java.util.concurrent.atomic.AtomicLong(0);
+        java.util.concurrent.atomic.AtomicLong candidatesTokens = new java.util.concurrent.atomic.AtomicLong(0);
+
+        try (lines) {
+            lines.forEach(line -> {
+                line = line.trim();
+                if (line.startsWith("data:")) {
+                    String json = line.substring(5).trim();
+                    if (!json.isEmpty() && !"[DONE]".equals(json)) {
+                        try {
+                            JsonNode root = objectMapper.readTree(json);
+                            JsonNode candidate = root.path("candidates").path(0);
+                            JsonNode parts = candidate.path("content").path("parts");
+                            if (parts.isArray()) {
+                                for (JsonNode part : parts) {
+                                    if (!part.path("thought").asBoolean(false) && part.has("text") && part.path("text").isTextual()) {
+                                        String txt = part.path("text").asText();
+                                        if (!txt.isEmpty()) {
+                                            answerBuilder.append(txt);
+                                            chunkConsumer.accept(txt);
+                                        }
+                                    }
+                                }
+                            }
+                            if (root.has("usageMetadata")) {
+                                long pt = root.path("usageMetadata").path("promptTokenCount").asLong(0);
+                                long ct = root.path("usageMetadata").path("candidatesTokenCount").asLong(0);
+                                if (pt > 0) promptTokens.set(pt);
+                                if (ct > 0) candidatesTokens.set(ct);
+                            }
+                        } catch (Exception ex) {
+                            log.debug("sse_line_parse_skip error={}", ex.getMessage());
+                        }
+                    }
+                }
+            });
+        }
+
+        String answer = answerBuilder.toString();
+        long pTokens = promptTokens.get() > 0 ? promptTokens.get() : Math.max(1, fallbackPrompt.length() / 4 + 200);
+        long cTokens = candidatesTokens.get() > 0 ? candidatesTokens.get() : Math.max(1, answer.length() / 4);
+        return new ModelExecutionResult(answer, pTokens, cTokens, latencyMs);
+    }
+
+    private ModelExecutionResult streamGeminiHttp(
+            String requestJson,
+            String apiKey,
+            String fallbackPrompt,
+            java.util.function.Consumer<String> chunkConsumer
+    ) {
+        String model = resolveModel();
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":streamGenerateContent?alt=sse&key=" + apiKey;
+
+        java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
+                .connectTimeout(java.time.Duration.ofSeconds(10))
+                .build();
+
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                .uri(java.net.URI.create(url))
+                .header("Content-Type", "application/json")
+                .timeout(java.time.Duration.ofSeconds(60))
+                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(requestJson, java.nio.charset.StandardCharsets.UTF_8))
+                .build();
+
+        long start = System.currentTimeMillis();
+        try {
+            java.net.http.HttpResponse<java.util.stream.Stream<String>> response = client.send(
+                    request,
+                    java.net.http.HttpResponse.BodyHandlers.ofLines()
+            );
+
+            if (response.statusCode() != 200) {
+                throw new RuntimeException("Gemini streaming API error status=" + response.statusCode());
+            }
+
+            long latencyMs = System.currentTimeMillis() - start;
+            return processSseLines(response.body(), chunkConsumer, fallbackPrompt, latencyMs);
+        } catch (Exception e) {
+            log.error("gemini_streaming_failed model={} error={}", model, e.getMessage());
+            throw new RuntimeException("Failed to stream from Gemini API", e);
         }
     }
 
@@ -236,9 +465,9 @@ public class LiveAdvisorModel implements AdvisorModel {
         return callGeminiApiRaw(jsonPayload, apiKey);
     }
 
-    private GeminiTurnResult parseTurnResult(String rawResponse) {
+    private GeminiTurnResult parseTurnResult(String rawResponse, long latencyMs) {
         if (rawResponse == null || rawResponse.isBlank()) {
-            return new GeminiTurnResult(List.of(), "");
+            return new GeminiTurnResult(List.of(), "", null, 0, 0, latencyMs);
         }
         try {
             JsonNode root = objectMapper.readTree(rawResponse);
@@ -263,11 +492,22 @@ public class LiveAdvisorModel implements AdvisorModel {
                 }
             }
 
-            return new GeminiTurnResult(calls, textBuilder.toString().trim(), parts);
+            long promptTokens = root.path("usageMetadata").path("promptTokenCount").asLong(0);
+            long candidatesTokens = root.path("usageMetadata").path("candidatesTokenCount").asLong(0);
+            String directText = textBuilder.toString().trim();
+            if (promptTokens <= 0) promptTokens = Math.max(1, rawResponse.length() / 4);
+            if (candidatesTokens <= 0 && !directText.isEmpty()) candidatesTokens = Math.max(1, directText.length() / 4);
+
+            return new GeminiTurnResult(calls, directText, parts, promptTokens, candidatesTokens, latencyMs);
         } catch (Exception e) {
             log.warn("Failed to parse Gemini turn result as JSON, returning raw text: {}", e.getMessage());
-            return new GeminiTurnResult(List.of(), rawResponse.trim(), null);
+            long promptTokens = Math.max(1, rawResponse.length() / 4);
+            return new GeminiTurnResult(List.of(), rawResponse.trim(), null, promptTokens, 0, latencyMs);
         }
+    }
+
+    private GeminiTurnResult parseTurnResult(String rawResponse) {
+        return parseTurnResult(rawResponse, 0);
     }
 
     private String callGeminiApiRaw(String requestJson, String apiKey) {

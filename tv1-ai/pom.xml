@@ -36,6 +36,23 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
+        <!-- Embedded Apache Lucene 9.10 for Hybrid Lexical Search (BM25) -->
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+            <version>9.10.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-analysis-common</artifactId>
+            <version>9.10.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-queryparser</artifactId>
+            <version>9.10.0</version>
+        </dependency>
+
         <!-- Spring JDBC & PgVector for Vector Store Adapter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -86,6 +86,23 @@ public class AcademicApiService {
         }
         CourseEligibilityResponse result = records.withRecord(record,
                 () -> checkEligibility(record, courseCode, targetSemester));
+        if (result.getCourseName() == null && record.getCurriculumId() != null) {
+            curriculumRepository.listCourses(record.getCurriculumId()).stream()
+                    .filter(c -> c.getCourseCode() != null && c.getCourseCode().equalsIgnoreCase(courseCode))
+                    .findFirst()
+                    .ifPresent(course -> {
+                        result.setCourseName(course.getCourseName());
+                        if (result.getPrerequisiteCourseCodes() == null) {
+                            result.setPrerequisiteCourseCodes(course.getPrerequisiteCourseCodes());
+                        }
+                        if (result.getPriorCourseCodes() == null) {
+                            result.setPriorCourseCodes(course.getPriorCourseCodes());
+                        }
+                        if (result.getCorequisiteCourseCodes() == null) {
+                            result.setCorequisiteCourseCodes(course.getCorequisiteCourseCodes());
+                        }
+                    });
+        }
         result.setPolicyVersion(policy.currentPolicyVersion());
         return result;
     }

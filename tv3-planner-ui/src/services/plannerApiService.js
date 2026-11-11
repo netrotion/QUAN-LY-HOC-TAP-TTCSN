@@ -4,6 +4,7 @@
  *
  * Hỗ trợ giao tiếp thông qua injected singleton `api` từ TV2 web host.
  */
+import { createChatStreamSession } from '../hooks/useChatStream.js';
 
 /**
  * Sinh phương án lộ trình học tập đề xuất để xem trước (không lưu, luôn DRAFT).
@@ -192,6 +193,27 @@ export async function chatAdvisor(api, payload = {}, opts = {}) {
     return api.post('/advisor/chat', payload, opts);
   }
   throw new Error('API client không hỗ trợ endpoint POST /advisor/chat');
+}
+
+/**
+ * Gửi yêu cầu hỏi đáp cố vấn học vụ dạng Server-Sent Events (SSE) theo thời gian thực
+ * POST /advisor/chat/stream
+ *
+ * @param {Object} api
+ * @param {Object} payload - ChatRequest ({ conversationId, message, clientTimestamp })
+ * @param {Object} callbacks - { onStatus, onToolCall, onToolResult, onCitation, onChunk, onDone, onError }
+ * @param {Object} [opts]
+ */
+export async function chatAdvisorStream(api, payload = {}, callbacks = {}, opts = {}) {
+  if (api?.advisor && typeof api.advisor.chatStream === 'function') {
+    return api.advisor.chatStream(payload, callbacks, opts);
+  }
+  const session = createChatStreamSession({
+    fetchFn: api?.fetch || (typeof window !== 'undefined' ? window.fetch : fetch),
+    baseUrl: api?.baseURL || '/api/v1',
+    csrfToken: api?.getCsrfToken?.() || api?.csrfToken || null
+  });
+  return session.send(payload, callbacks, opts);
 }
 
 /**

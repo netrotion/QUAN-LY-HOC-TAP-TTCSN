@@ -169,7 +169,46 @@ export function ChatAdvisorPage({
     }
   }, [onOpenTranscript, navigateTo, showToast]);
 
-  // Xử lý gửi tin nhắn tới API cố vấn học vụ (api.advisor.chat / POST /advisor/chat)
+  // Trợ giúp chuẩn hóa lỗi phản hồi
+  const handleChatError = useCallback((err, userMsgId) => {
+    const isUnavailable =
+      err?.status === 503 ||
+      err?.code === 'AI_UNAVAILABLE' ||
+      err?.body?.code === 'AI_UNAVAILABLE';
+    const isBusy =
+      err?.status === 409 ||
+      err?.code === 'CONVERSATION_BUSY' ||
+      err?.body?.code === 'CONVERSATION_BUSY';
+
+    const errMsg = isUnavailable
+      ? 'Trợ lý AI chưa sẵn sàng hoặc quá tải (503 AI_UNAVAILABLE). Vui lòng thử lại sau.'
+      : isBusy
+        ? 'Hội thoại đang bận do lượt ghi khác (409 CONVERSATION_BUSY). Vui lòng thử lại.'
+        : (err?.message || 'Không thể nhận phản hồi từ dịch vụ Trợ lý AI Cố vấn học vụ.');
+
+    setError({
+      code: err?.code || (isUnavailable ? 'AI_UNAVAILABLE' : isBusy ? 'CONVERSATION_BUSY' : 'CHAT_REQUEST_FAILED'),
+      status: err?.status,
+      retryable: isUnavailable || isBusy || Boolean(err?.retryable),
+      retryAfter: err?.retryAfter || (isUnavailable ? 5 : undefined),
+      message: errMsg,
+      details: err?.details || [
+        isUnavailable
+          ? 'AI_UNAVAILABLE: retryable=true, header Retry-After'
+          : 'Kiểm tra kết nối mạng tới Backend Spring Boot (/api/v1/advisor/chat).'
+      ]
+    });
+
+    // Đánh dấu tin nhắn gần nhất bị lỗi để người dùng có thể Thử lại
+    // TUYỆT ĐỐI KHÔNG hiển thị câu trả lời giả mạo khi AI lỗi
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === userMsgId ? { ...m, failed: true, errorText: errMsg } : m
+      )
+    );
+  }, []);
+
+  // Xử lý gửi tin nhắn tới API cố vấn học vụ (api.advisor.chat / POST /advisor/chat/stream)
   const handleSendMessage = useCallback(async (customText) => {
     const rawText = typeof customText === 'string' ? customText : inputValue;
     if (!rawText || !rawText.trim()) return;
@@ -192,6 +231,121 @@ export function ChatAdvisorPage({
     setLoading(true);
     setError(null);
     setLastFailedQuery(trimmed);
+
+    const useStreaming = Boolean(
+      (api?.advisor && typeof api.advisor.chatStream === 'function') ||
+      (typeof window !== 'undefined' && typeof fetch === 'function' && !api?.isMock && !api?.advisor?.disableStream)
+    );
+
+    if (useStreaming) {
+      const aiMsgId = `msg-ai-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      let accumulatedText = '';
+      let accumulatedSources = [];
+      let accumulatedProposal = null;
+      let accumulatedActions = [];
+      let accumulatedWarnings = [];
+
+      const initialAiMsg = {
+        id: aiMsgId,
+        sender: 'assistant',
+        text: '',
+        sources: [],
+        actions: [],
+        planProposal: null,
+        proposalAccepted: false,
+        proposalDismissed: false,
+        warnings: [],
+        streaming: true,
+        statusText: 'Đang kết nối tới Cố vấn AI HaUI...',
+        timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+      };
+
+      setMessages((prev) => [...prev, initialAiMsg]);
+
+      try {
+        await plannerApi.chatAdvisorStream(
+          api,
+          {
+            conversationId,
+            message: trimmed,
+            clientTimestamp: new Date().toISOString()
+          },
+          {
+            onStatus: (evt) => {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === aiMsgId ? { ...m, statusText: evt.message || 'Đang lập luận và kiểm tra...' } : m
+                )
+              );
+            },
+            onToolCall: (evt) => {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === aiMsgId ? { ...m, statusText: `Đang tra cứu dữ liệu (${evt.toolName || 'công cụ học vụ'})...` } : m
+                )
+              );
+            },
+            onChunk: (chunk) => {
+              accumulatedText += chunk;
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === aiMsgId ? { ...m, text: accumulatedText, statusText: '' } : m
+                )
+              );
+            },
+            onCitation: (evt) => {
+              if (evt.sources) {
+                accumulatedSources = evt.sources;
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === aiMsgId ? { ...m, sources: accumulatedSources } : m
+                  )
+                );
+              }
+            },
+            onDone: (evt) => {
+              accumulatedText = evt.text || accumulatedText;
+              accumulatedProposal = evt.proposal || accumulatedProposal;
+              accumulatedSources = evt.sources || accumulatedSources;
+              accumulatedActions = evt.actions || accumulatedActions;
+              accumulatedWarnings = evt.warnings || accumulatedWarnings;
+
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === aiMsgId
+                    ? {
+                        ...m,
+                        text: accumulatedText || 'Hệ thống đã nhận yêu cầu nhưng nội dung trả lời trống.',
+                        sources: accumulatedSources,
+                        actions: accumulatedActions,
+                        planProposal: accumulatedProposal,
+                        warnings: accumulatedWarnings,
+                        streaming: false,
+                        statusText: ''
+                      }
+                    : m
+                )
+              );
+              setLastFailedQuery(null);
+              loadConversations();
+            },
+            onError: (err) => {
+              setMessages((prev) => prev.filter((m) => m.id !== aiMsgId));
+              throw err;
+            }
+          }
+        );
+        return;
+      } catch (streamErr) {
+        setMessages((prev) => prev.filter((m) => m.id !== aiMsgId));
+        if (!api || (!api.advisor?.chat && typeof api.post !== 'function')) {
+          handleChatError(streamErr, userMsgId);
+          return;
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
 
     try {
       let response = null;
@@ -230,45 +384,11 @@ export function ChatAdvisorPage({
       setLastFailedQuery(null);
       loadConversations();
     } catch (err) {
-      const isUnavailable =
-        err?.status === 503 ||
-        err?.code === 'AI_UNAVAILABLE' ||
-        err?.body?.code === 'AI_UNAVAILABLE';
-      const isBusy =
-        err?.status === 409 ||
-        err?.code === 'CONVERSATION_BUSY' ||
-        err?.body?.code === 'CONVERSATION_BUSY';
-
-      const errMsg = isUnavailable
-        ? 'Trợ lý AI chưa sẵn sàng hoặc quá tải (503 AI_UNAVAILABLE). Vui lòng thử lại sau.'
-        : isBusy
-          ? 'Hội thoại đang bận do lượt ghi khác (409 CONVERSATION_BUSY). Vui lòng thử lại.'
-          : (err?.message || 'Không thể nhận phản hồi từ dịch vụ Trợ lý AI Cố vấn học vụ.');
-
-      setError({
-        code: err?.code || (isUnavailable ? 'AI_UNAVAILABLE' : isBusy ? 'CONVERSATION_BUSY' : 'CHAT_REQUEST_FAILED'),
-        status: err?.status,
-        retryable: isUnavailable || isBusy || Boolean(err?.retryable),
-        retryAfter: err?.retryAfter || (isUnavailable ? 5 : undefined),
-        message: errMsg,
-        details: err?.details || [
-          isUnavailable
-            ? 'AI_UNAVAILABLE: retryable=true, header Retry-After'
-            : 'Kiểm tra kết nối mạng tới Backend Spring Boot (/api/v1/advisor/chat).'
-        ]
-      });
-
-      // Đánh dấu tin nhắn gần nhất bị lỗi để người dùng có thể Thử lại
-      // TUYỆT ĐỐI KHÔNG hiển thị câu trả lời giả mạo khi AI lỗi
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === userMsgId ? { ...m, failed: true, errorText: errMsg } : m
-        )
-      );
+      handleChatError(err, userMsgId);
     } finally {
       setLoading(false);
     }
-  }, [api, conversationId, inputValue, student, loadConversations]);
+  }, [api, conversationId, inputValue, student, loadConversations, handleChatError]);
 
   // Mở lại một hội thoại đã lưu: tin nhắn gửi tiếp sẽ nối vào đúng hội thoại này
   const handleOpenConversation = useCallback(async (id) => {
@@ -759,8 +879,35 @@ export function ChatAdvisorPage({
                         )
                       ),
 
+                      // Trạng thái Streaming động (Status Pill)
+                      msg.streaming && msg.statusText
+                        ? React.createElement(
+                            'div',
+                            {
+                              className: 'haui-chat-status-pill',
+                              style: {
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 14px',
+                                borderRadius: '9999px',
+                                backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                                color: 'var(--color-ink, #0a0a0a)',
+                                fontSize: '12px',
+                                fontWeight: 500,
+                                margin: '8px 0',
+                                border: '1px solid var(--color-hairline, #e5e5e5)'
+                              }
+                            },
+                            React.createElement('span', { className: 'material-symbols-outlined haui-spin', style: { fontSize: '15px' } }, 'progress_activity'),
+                            React.createElement('span', null, msg.statusText)
+                          )
+                        : null,
+
                       // Text body (Render Markdown, GFM tables, and LaTeX math formulas safely)
-                      React.createElement(MarkdownContent, { content: msg.text }),
+                      msg.text
+                        ? React.createElement(MarkdownContent, { content: msg.streaming ? `${msg.text} ▍` : msg.text })
+                        : null,
 
                       // KHỐI 1: Công thức tính toán chi tiết (Calculation Data Breakdown)
                       msg.calculationData
@@ -1165,7 +1312,7 @@ export function ChatAdvisorPage({
                 );
               }),
 
-          loading
+          loading && !messages.some((m) => m.streaming)
             ? React.createElement(
                 'div',
                 { style: { display: 'flex', alignItems: 'center', gap: '10px', padding: '16px', color: 'var(--color-mid-gray)', fontSize: '13px' } },

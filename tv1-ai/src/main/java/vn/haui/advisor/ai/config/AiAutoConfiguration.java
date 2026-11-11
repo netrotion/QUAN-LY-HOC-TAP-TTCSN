@@ -227,6 +227,30 @@ public class AiAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
+    public vn.haui.advisor.ai.telemetry.AiMetricsCollector aiMetricsCollector() {
+        return new vn.haui.advisor.ai.telemetry.AiMetricsCollector();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public vn.haui.advisor.ai.service.AdvisorStreamingService advisorStreamingService(AdvisorModel advisorModel,
+                                                                                       ToolAdapter toolAdapter,
+                                                                                       RagAdvisorService ragAdvisorService,
+                                                                                       ConversationHistoryManager conversationHistoryManager,
+                                                                                       ResponseGroundingValidator responseGroundingValidator,
+                                                                                       vn.haui.advisor.ai.telemetry.AiMetricsCollector aiMetricsCollector) {
+        return new vn.haui.advisor.ai.service.AdvisorStreamingService(
+                advisorModel,
+                toolAdapter,
+                ragAdvisorService,
+                conversationHistoryManager,
+                responseGroundingValidator,
+                aiMetricsCollector
+        );
+    }
+
+    @Bean
     @ConditionalOnMissingBean(ToolAdapter.class)
     public ToolAdapter toolAdapter(AcademicFacade academicFacade, AiProperties properties) {
         boolean strict = properties.getAdvisor().isStrictReadiness();
@@ -241,7 +265,8 @@ public class AiAutoConfiguration {
                                        ConversationHistoryManager conversationHistoryManager,
                                        IntentClassifier intentClassifier,
                                        ResponseGroundingValidator responseGroundingValidator,
-                                       AiProperties properties) {
+                                       AiProperties properties,
+                                       vn.haui.advisor.ai.telemetry.AiMetricsCollector aiMetricsCollector) {
         return new DefaultAdvisorFacade(
                 advisorModel,
                 toolAdapter,
@@ -249,7 +274,8 @@ public class AiAutoConfiguration {
                 conversationHistoryManager,
                 intentClassifier,
                 responseGroundingValidator,
-                properties.getAdvisor().getToolTimeoutMs()
+                properties.getAdvisor().getToolTimeoutMs(),
+                aiMetricsCollector
         );
     }
 }
