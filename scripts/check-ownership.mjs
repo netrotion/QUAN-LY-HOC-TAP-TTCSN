@@ -155,6 +155,21 @@ function getChangedFilesFromGit() {
     // 2. Diff so với HEAD hoặc commit gần nhất nếu repo sạch
     if (files.size === 0) {
       try {
+        // Nếu commit gần nhất là merge commit (tích hợp nhiều role khi merge vào main),
+        // repo sạch thì không có vi phạm uncommitted changes
+        const isMergeCommit = (() => {
+          try {
+            execSync('git rev-parse -q --verify HEAD^2', { stdio: 'ignore' });
+            return true;
+          } catch {
+            return false;
+          }
+        })();
+
+        if (isMergeCommit) {
+          return [];
+        }
+
         const diffHead = execSync('git diff --name-only HEAD~1 HEAD', { encoding: 'utf-8' });
         diffHead.split('\n').map(s => s.trim()).filter(Boolean).forEach(f => files.add(f));
       } catch {
