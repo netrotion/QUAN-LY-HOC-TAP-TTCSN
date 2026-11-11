@@ -1662,42 +1662,87 @@ pre {
   color: var(--color-mid-gray);
 }
 
-/* Segmented tab navigation */
+/* Segmented tab navigation (HeroUI v3 Animated Segmented Control) */
 .haui-login-tabs {
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   padding: 4px;
-  border-radius: 9999px;
+  border-radius: var(--heroui-radius-full, 9999px);
   background: var(--color-canvas);
-  gap: 4px;
+  gap: 0;
   margin-bottom: 20px;
+  user-select: none;
+}
+
+.haui-login-tab-indicator {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  border-radius: var(--heroui-radius-full, 9999px);
+  background: var(--color-ink);
+  box-shadow: var(--heroui-shadow-sm, 0 1px 3px 0 rgba(0, 0, 0, 0.12));
+  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.haui-login-tab-indicator--left {
+  transform: translateX(0);
+}
+
+.haui-login-tab-indicator--right {
+  transform: translateX(100%);
 }
 
 .haui-login-tab {
-  padding: 6px 12px;
-  border-radius: 9999px;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--heroui-radius-full, 9999px);
   border: none;
   background: transparent;
   font-size: 14px;
   font-weight: 500;
   color: var(--color-mid-gray);
   cursor: pointer;
-  transition: all 150ms;
+  transition: color 200ms ease;
   text-align: center;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .haui-login-tab:hover {
   color: var(--color-ink);
-  background: var(--color-surface-alt);
 }
 
 .haui-login-tab--active {
-  background: var(--color-ink);
   color: var(--color-paper);
-  box-shadow: var(--shadow-sm);
+}
+
+.haui-login-tab-icon {
+  font-size: 18px !important;
+}
+
+/* Tab Pane Entrance Animation (HeroUI v3 Cross-fade & Subtle Slide) */
+@keyframes hauiTabFadeSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.haui-login-tab-pane {
+  animation: hauiTabFadeSlide 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Form elements */
@@ -1788,22 +1833,67 @@ pre {
   padding-right: 44px;
 }
 
+/* Ẩn con mắt mặc định của trình duyệt Edge / IE / Webkit để tránh bị trùng 2 con mắt */
+input::-ms-reveal,
+input::-ms-clear,
+.haui-login-input::-ms-reveal,
+.haui-login-input::-ms-clear {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Eye Toggle Button & Animation (HeroUI v3 Interactive Micro-animation) */
 .haui-login-input-toggle {
   position: absolute;
-  right: 14px;
-  background: none;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  background: transparent;
   border: none;
-  padding: 2px;
+  padding: 0;
   color: var(--color-mid-gray);
   cursor: pointer;
   display: flex;
   align-items: center;
-  transition: color 150ms;
-  border-radius: 9999px;
+  justify-content: center;
+  border-radius: var(--heroui-radius-full, 9999px);
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
 }
 
 .haui-login-input-toggle:hover {
   color: var(--color-ink);
+  background-color: rgba(0, 0, 0, 0.06);
+  transform: scale(1.08);
+}
+
+.haui-login-input-toggle:active {
+  transform: scale(var(--heroui-scale-pressed, 0.9));
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+@keyframes hauiEyePop {
+  0% {
+    transform: scale(0.65) rotate(-12deg);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.18) rotate(4deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.haui-login-eye-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  animation: hauiEyePop 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .haui-login-field-error {
@@ -1883,8 +1973,8 @@ pre {
 
 .haui-login-submit {
   width: 100%;
-  padding: 12px 16px;
-  border-radius: 9999px;
+  padding: 12px 18px;
+  border-radius: var(--heroui-radius-full, 9999px);
   border: none;
   background: var(--color-ink);
   color: var(--color-paper);
@@ -1896,15 +1986,47 @@ pre {
   justify-content: center;
   gap: 8px;
   box-shadow: var(--shadow-sm);
-  transition: all 150ms;
+  transition: transform 150ms var(--heroui-transition-timing, cubic-bezier(0.34, 1.56, 0.64, 1)),
+              background-color 150ms ease,
+              box-shadow 150ms ease;
 }
 
-.haui-login-submit:hover {
+.haui-login-submit:hover:not(:disabled) {
   background: var(--color-ink-soft);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
-.haui-login-submit:active {
+.haui-login-submit:active:not(:disabled) {
   transform: scale(var(--heroui-scale-pressed, 0.98));
+}
+
+.haui-login-switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-top: 10px;
+  font-size: 13px;
+  color: var(--color-mid-gray);
+}
+
+.haui-login-switch-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 150ms ease, transform 150ms ease;
+}
+
+.haui-login-switch-btn:hover {
+  color: var(--heroui-primary, #0052cc);
+  transform: translateY(-1px);
 }
 
 .haui-login-submit:disabled {

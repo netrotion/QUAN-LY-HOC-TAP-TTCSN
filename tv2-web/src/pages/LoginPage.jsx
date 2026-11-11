@@ -5,17 +5,17 @@ import { api } from '../services/apiClient.js';
 import hauiLogo from '@haui/logo';
 
 /**
- * LoginPage — Tái thiết kế toàn diện chuẩn 100% Stitch Prototype:
- * - Đồng bộ hoàn hảo giữa 3 trạng thái: Đăng nhập (Sign In), Đăng ký (Register), Quên mật khẩu (Forgot Password)
+ * LoginPage — Thiết kế chuẩn HeroUI v3 & Stitch Prototype:
+ * - Đồng bộ hoàn hảo giữa 2 trạng thái: Đăng nhập (Sign In) và Đăng ký (Register)
  * - Khung Card trung tâm bo góc 24px (rounded-[24px]) trên nền Canvas (#f5f5f5)
  * - Header logo thương hiệu HAUI ADVISOR với font Geist / Inter sắc nét
- * - Segmented Tab Bar 3 tab: Đăng nhập · Đăng ký · Quên MK
+ * - Segmented Tab Bar 2 tab animated indicator: Đăng nhập · Đăng ký
  * - Form input pill rounded-full có icon đại diện chuẩn Material Symbols
  * - Tương thích hoàn toàn với kiểm thử tự động (handleLogin, studentIdInput, STUDENT_PRESETS)
  */
 export function LoginPage() {
   const navigate = useAnimatedNavigate();
-  const [activeTab, setActiveTab] = useState('login'); // 'login' | 'register' | 'forgot'
+  const [activeTab, setActiveTab] = useState('login'); // 'login' | 'register'
 
   // Form State cho Đăng nhập
   const isMock = api.isMockMode();
@@ -134,43 +134,47 @@ export function LoginPage() {
             </span>
           </div>
 
-          {/* Card Title & Subtitle theo từng Tab */}
-          {activeTab === 'login' && (
-            <div className="haui-login-card-header">
-              <h1>Chào mừng đến với HAUI ADVISOR</h1>
-              <p>Đăng nhập để quản lý kết quả học tập và xây dựng lộ trình học tập cá nhân</p>
-            </div>
-          )}
-          {activeTab === 'register' && (
-            <div className="haui-login-card-header">
-              <h1>Tạo tài khoản HAUI ADVISOR</h1>
-              <p>Đăng ký để bắt đầu quản lý lộ trình học tập của bạn</p>
-            </div>
-          )}
-          {activeTab === 'forgot' && null}
+          {/* Card Title & Subtitle theo từng Tab (Đồng bộ nội dung & Animation) */}
+          <div className="haui-login-card-header haui-login-tab-pane" key={activeTab + '-header'}>
+            <h1>{activeTab === 'login' ? 'Chào mừng đến với HAUI ADVISOR' : 'Tạo tài khoản HAUI ADVISOR'}</h1>
+            <p>
+              {activeTab === 'login'
+                ? 'Đăng nhập để quản lý kết quả học tập và xây dựng lộ trình học tập cá nhân'
+                : 'Đăng ký để quản lý kết quả học tập và xây dựng lộ trình học tập cá nhân'}
+            </p>
+          </div>
 
-          {/* Segmented Tab Navigation 3 mục đồng bộ */}
-          <div className="haui-login-tabs">
+          {/* Segmented Tab Navigation 2 mục đồng bộ (HeroUI animated indicator) */}
+          <div className="haui-login-tabs" role="tablist" aria-label="Hình thức đăng nhập hoặc đăng ký">
+            <div
+              className={`haui-login-tab-indicator ${activeTab === 'register' ? 'haui-login-tab-indicator--right' : 'haui-login-tab-indicator--left'}`}
+              aria-hidden="true"
+            />
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === 'login'}
               className={`haui-login-tab ${activeTab === 'login' ? 'haui-login-tab--active' : ''}`}
-              onClick={() => setActiveTab('login')}
+              onClick={() => {
+                setActiveTab('login');
+                setAlert(null);
+              }}
             >
-              Đăng nhập
+              <span className="material-symbols-outlined haui-login-tab-icon">login</span>
+              <span>Đăng nhập</span>
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === 'register'}
               className={`haui-login-tab ${activeTab === 'register' ? 'haui-login-tab--active' : ''}`}
-              onClick={() => setActiveTab('register')}
+              onClick={() => {
+                setActiveTab('register');
+                setAlert(null);
+              }}
             >
-              Đăng ký
-            </button>
-            <button
-              type="button"
-              className={`haui-login-tab ${activeTab === 'forgot' ? 'haui-login-tab--active' : ''}`}
-              onClick={() => setActiveTab('forgot')}
-            >
-              Quên MK
+              <span className="material-symbols-outlined haui-login-tab-icon">person_add</span>
+              <span>Đăng ký</span>
             </button>
           </div>
 
@@ -178,129 +182,140 @@ export function LoginPage() {
               TAB 1: ĐĂNG NHẬP (SIGN IN)
               ========================================================================= */}
           {activeTab === 'login' && (
-            <form className="haui-login-form" onSubmit={handleLogin} noValidate>
-              {/* Field 1: Mã sinh viên hoặc email */}
-              <div className="haui-login-field">
-                <label className="haui-login-label" htmlFor="studentIdInput">
-                  <span>Mã sinh viên hoặc email</span>
-                  <span className="haui-login-label-hint">HaUI ID</span>
-                </label>
-                <div className="haui-login-input-wrap">
-                  <span className="material-symbols-outlined haui-login-input-icon">badge</span>
-                  <input
-                    id="studentIdInput"
-                    name="credential"
-                    type="text"
-                    className="haui-login-input"
-                    placeholder="Ví dụ: 2020601234 hoặc sv@haui.edu.vn"
-                    value={studentIdInput}
-                    onChange={(e) => setStudentIdInput(e.target.value)}
-                    required
-                  />
+            <div className="haui-login-tab-pane" key="login-form-pane">
+              <form className="haui-login-form" onSubmit={handleLogin} noValidate>
+                {/* Field 1: Mã sinh viên hoặc email */}
+                <div className="haui-login-field">
+                  <label className="haui-login-label" htmlFor="studentIdInput">
+                    <span>Mã sinh viên hoặc email</span>
+                    <span className="haui-login-label-hint">HaUI ID</span>
+                  </label>
+                  <div className="haui-login-input-wrap">
+                    <span className="material-symbols-outlined haui-login-input-icon">badge</span>
+                    <input
+                      id="studentIdInput"
+                      name="credential"
+                      type="text"
+                      className="haui-login-input"
+                      placeholder="Ví dụ: 2020601234 hoặc sv@haui.edu.vn"
+                      value={studentIdInput}
+                      onChange={(e) => setStudentIdInput(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Field 2: Mật khẩu */}
-              <div className="haui-login-field">
-                <label className="haui-login-label" htmlFor="passwordInput">
-                  <span>Mật khẩu</span>
-                  {passwordInput && <span className="haui-login-label-hint">Đã nhập</span>}
-                </label>
-                <div className="haui-login-input-wrap">
-                  <span className="material-symbols-outlined haui-login-input-icon">lock_outline</span>
-                  <input
-                    id="passwordInput"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    className="haui-login-input haui-login-input--password"
-                    placeholder="Nhập mật khẩu"
-                    value={passwordInput}
-                    onChange={(e) => setPasswordInput(e.target.value)}
-                    required
-                  />
+                {/* Field 2: Mật khẩu */}
+                <div className="haui-login-field">
+                  <label className="haui-login-label" htmlFor="passwordInput">
+                    <span>Mật khẩu</span>
+                    {passwordInput && <span className="haui-login-label-hint">Đã nhập</span>}
+                  </label>
+                  <div className="haui-login-input-wrap">
+                    <span className="material-symbols-outlined haui-login-input-icon">lock_outline</span>
+                    <input
+                      id="passwordInput"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      className="haui-login-input haui-login-input--password"
+                      placeholder="Nhập mật khẩu"
+                      value={passwordInput}
+                      onChange={(e) => setPasswordInput(e.target.value)}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="haui-login-input-toggle"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label="Ẩn hoặc hiện mật khẩu"
+                    >
+                      <span
+                        key={showPassword ? 'off' : 'on'}
+                        className="material-symbols-outlined haui-login-eye-icon"
+                        style={{ fontSize: '20px' }}
+                      >
+                        {showPassword ? 'visibility_off' : 'visibility'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Options Row (Ghi nhớ đăng nhập) */}
+                <div className="haui-login-options">
+                  <label className="haui-login-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                    />
+                    <span>Ghi nhớ đăng nhập</span>
+                  </label>
+                </div>
+
+                {/* Alert Feedback Banner */}
+                {alert && (
+                  <div className={`haui-login-alert haui-login-alert--${alert.type}`}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
+                      {alert.type === 'error' ? 'error' : alert.type === 'success' ? 'task_alt' : 'check_circle'}
+                    </span>
+                    <span>{alert.message}</span>
+                  </div>
+                )}
+
+                {/* Single Full-width Primary Submit Button */}
+                <button type="submit" className="haui-login-submit" disabled={loading} style={{ marginTop: '4px' }}>
+                  <span>{loading ? 'Đang xác thực...' : 'Đăng nhập'}</span>
+                  {loading ? (
+                    <span className="material-symbols-outlined haui-spin" style={{ fontSize: '18px' }}>
+                      progress_activity
+                    </span>
+                  ) : (
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                      arrow_forward
+                    </span>
+                  )}
+                </button>
+
+                {/* Chuyển nhanh sang Đăng ký */}
+                <div className="haui-login-switch">
+                  <span>Chưa có tài khoản?</span>
                   <button
                     type="button"
-                    className="haui-login-input-toggle"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label="Ẩn hoặc hiện mật khẩu"
+                    className="haui-login-switch-btn"
+                    onClick={() => {
+                      setActiveTab('register');
+                      setAlert(null);
+                    }}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
-                      {showPassword ? 'visibility_off' : 'visibility'}
-                    </span>
+                    Đăng ký ngay
                   </button>
                 </div>
-              </div>
 
-              {/* Options Row (Ghi nhớ đăng nhập + Quên MK) */}
-              <div className="haui-login-options">
-                <label className="haui-login-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                  />
-                  <span>Ghi nhớ đăng nhập</span>
-                </label>
-                <button
-                  type="button"
-                  className="haui-login-forgot-link"
-                  onClick={() => setActiveTab('forgot')}
-                >
-                  Quên mật khẩu?
-                </button>
-              </div>
-
-              {/* Alert Feedback Banner */}
-              {alert && (
-                <div className={`haui-login-alert haui-login-alert--${alert.type}`}>
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
-                    {alert.type === 'error' ? 'error' : alert.type === 'success' ? 'task_alt' : 'check_circle'}
-                  </span>
-                  <span>{alert.message}</span>
-                </div>
-              )}
-
-              {/* Single Full-width Primary Submit Button */}
-              <button type="submit" className="haui-login-submit" disabled={loading} style={{ marginTop: '4px' }}>
-                <span>{loading ? 'Đang xác thực...' : 'Đăng nhập'}</span>
-                {loading ? (
-                  <span className="material-symbols-outlined haui-spin" style={{ fontSize: '18px' }}>
-                    progress_activity
-                  </span>
-                ) : (
-                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                    arrow_forward
-                  </span>
+                {/* Demo Quick Fill Helper Link (Chuẩn prototype) — chỉ có ở mock mode */}
+                {isMock && (
+                  <div style={{ textAlign: 'center', paddingTop: '6px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickFillDemo('at-risk')}
+                      className="haui-login-demo-btn"
+                      title="Điền nhanh thông tin tài khoản sinh viên mẫu"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>bolt</span>
+                      <span>Điền tài khoản mẫu</span>
+                    </button>
+                  </div>
                 )}
-              </button>
-
-              {/* Demo Quick Fill Helper Link (Chuẩn prototype) — chỉ có ở mock mode */}
-              {isMock && <div style={{ textAlign: 'center', paddingTop: '6px' }}>
-                <button
-                  type="button"
-                  onClick={() => handleQuickFillDemo('at-risk')}
-                  className="haui-login-demo-btn"
-                  title="Điền nhanh thông tin tài khoản sinh viên mẫu"
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>bolt</span>
-                  <span>Điền tài khoản mẫu</span>
-                </button>
-              </div>}
-            </form>
+              </form>
+            </div>
           )}
 
           {/* =========================================================================
               TAB 2: ĐĂNG KÝ (REGISTER)
               ========================================================================= */}
           {activeTab === 'register' && (
-            <RegisterForm onSwitchToLogin={() => setActiveTab('login')} onRegistered={() => navigate('/dashboard')} />
-          )}
-
-          {/* =========================================================================
-              TAB 3: QUÊN MẬT KHẨU (FORGOT PASSWORD)
-              ========================================================================= */}
-          {activeTab === 'forgot' && (
-            <ForgotPasswordForm onSwitchToLogin={() => setActiveTab('login')} />
+            <div className="haui-login-tab-pane" key="register-form-pane">
+              <RegisterForm onSwitchToLogin={() => setActiveTab('login')} onRegistered={() => navigate('/dashboard')} />
+            </div>
           )}
         </div>
       </main>
@@ -524,8 +539,13 @@ function RegisterForm({ onSwitchToLogin, onRegistered }) {
               type="button"
               className="haui-login-input-toggle"
               onClick={() => setShowPassword(!showPassword)}
+              aria-label="Ẩn hoặc hiện mật khẩu"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+              <span
+                key={showPassword ? 'off' : 'on'}
+                className="material-symbols-outlined haui-login-eye-icon"
+                style={{ fontSize: '18px' }}
+              >
                 {showPassword ? 'visibility_off' : 'visibility'}
               </span>
             </button>
@@ -550,8 +570,13 @@ function RegisterForm({ onSwitchToLogin, onRegistered }) {
               type="button"
               className="haui-login-input-toggle"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              aria-label="Ẩn hoặc hiện mật khẩu xác nhận"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+              <span
+                key={showConfirmPassword ? 'off' : 'on'}
+                className="material-symbols-outlined haui-login-eye-icon"
+                style={{ fontSize: '18px' }}
+              >
                 {showConfirmPassword ? 'visibility_off' : 'visibility'}
               </span>
             </button>
@@ -586,189 +611,14 @@ function RegisterForm({ onSwitchToLogin, onRegistered }) {
         )}
       </button>
 
-      {/* Back to login */}
-      <div style={{ textAlign: 'center', paddingTop: '4px' }}>
-        <button type="button" className="haui-login-back-link" onClick={onSwitchToLogin}>
-          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_back</span>
-          <span>Quay lại đăng nhập</span>
+      {/* Chuyển nhanh sang Đăng nhập */}
+      <div className="haui-login-switch">
+        <span>Đã có tài khoản?</span>
+        <button type="button" className="haui-login-switch-btn" onClick={onSwitchToLogin}>
+          Đăng nhập ngay
         </button>
       </div>
     </form>
-  );
-}
-
-/* ──────────────────────────────────────────────────────────────────────────
-   Forgot Password Sub-component (Đồng bộ UI 100% với Đăng nhập & Đăng ký)
-   ────────────────────────────────────────────────────────────────────────── */
-function ForgotPasswordForm({ onSwitchToLogin }) {
-  const [submitted, setSubmitted] = useState(false);
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(900); // 15 phút
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!email.trim()) {
-      setError('Vui lòng nhập địa chỉ email của bạn.');
-      return;
-    }
-    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim())) {
-      setError('Định dạng email chưa hợp lệ (ví dụ: 2020601234@sv.haui.edu.vn).');
-      return;
-    }
-    setError('');
-    setLoading(true);
-
-    setTimeout(() => {
-      setLoading(false);
-      setSubmitted(true);
-      setTimeLeft(900);
-      const timer = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }, 1000);
-  };
-
-  const formatTime = (s) =>
-    `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
-
-  // Trạng thái đã gửi mã xác nhận thành công
-  if (submitted) {
-    return (
-      <div className="haui-login-forgot-success">
-        <div className="haui-login-forgot-icon-circle">
-          <span className="material-symbols-outlined" style={{ fontSize: '28px' }}>mark_email_read</span>
-        </div>
-        <span className="haui-login-badge" style={{ marginTop: '8px' }}>
-          <span className="haui-login-badge-dot haui-login-badge-dot--dark" />
-          Yêu cầu đã được tiếp nhận
-        </span>
-        <h2 style={{ fontSize: '22px', fontWeight: 600, color: 'var(--color-ink)', margin: '8px 0 4px' }}>
-          Kiểm tra hộp thư đến
-        </h2>
-        <p style={{ fontSize: '13px', color: 'var(--color-mid-gray)', margin: '0 0 16px', lineHeight: 1.5 }}>
-          Nếu email <strong style={{ color: 'var(--color-ink)' }}>{email}</strong> tồn tại trên hệ thống HAUI, bạn sẽ nhận được liên kết hướng dẫn đặt lại mật khẩu trong giây lát.
-        </p>
-
-        {/* Countdown Box */}
-        <div className="haui-login-forgot-timer">
-          <div className="haui-login-forgot-timer-label">
-            <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>schedule</span>
-            Hạn xác thực mã bảo mật
-          </div>
-          <div className="haui-login-forgot-timer-row">
-            <span style={{ fontSize: '13px' }}>Thời gian hiệu lực còn lại</span>
-            <span className="haui-login-forgot-timer-value">
-              {timeLeft > 0 ? formatTime(timeLeft) : '00:00 (Hết hạn)'}
-            </span>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '8px' }}>
-          <button
-            type="button"
-            className="haui-pill-btn-canvas"
-            onClick={() => {
-              setSubmitted(false);
-              setEmail('');
-            }}
-            style={{ width: '100%', justifyContent: 'center', padding: '10px 16px' }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>replay</span>
-            <span>Thử lại bằng email khác</span>
-          </button>
-          <button
-            type="button"
-            className="haui-pill-btn-dark"
-            onClick={onSwitchToLogin}
-            style={{ width: '100%', justifyContent: 'center', padding: '10px 16px' }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>login</span>
-            <span>Quay lại trang Đăng nhập</span>
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Trạng thái Form nhập Email yêu cầu đặt lại mật khẩu
-  return (
-    <div className="haui-login-forgot-request">
-      <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-        <div className="haui-login-forgot-icon-circle" style={{ margin: '0 auto 10px' }}>
-          <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>key</span>
-        </div>
-        <h2 style={{ fontSize: '24px', fontWeight: 600, margin: '0 0 4px', color: 'var(--color-ink)' }}>
-          Quên mật khẩu?
-        </h2>
-        <p style={{ fontSize: '13px', color: 'var(--color-mid-gray)', margin: 0 }}>
-          Nhập email đã đăng ký để nhận hướng dẫn khôi phục mật khẩu tài khoản
-        </p>
-      </div>
-
-      <form className="haui-login-form" onSubmit={handleSubmit} noValidate>
-        <div className="haui-login-field">
-          <label className="haui-login-label">
-            <span>Email trường hoặc tài khoản sinh viên</span>
-            <span className="haui-login-label-hint">@sv.haui.edu.vn</span>
-          </label>
-          <div className="haui-login-input-wrap">
-            <span className="material-symbols-outlined haui-login-input-icon">mail</span>
-            <input
-              type="email"
-              className="haui-login-input"
-              placeholder="Ví dụ: 2020601234@sv.haui.edu.vn"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setError('');
-              }}
-              required
-            />
-          </div>
-          {error && (
-            <p className="haui-login-field-error">
-              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>error</span>
-              <span>{error}</span>
-            </p>
-          )}
-        </div>
-
-        <div className="haui-login-info-note" style={{ marginTop: '4px' }}>
-          <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--color-mid-gray)' }}>info</span>
-          <p>
-            Đường dẫn khôi phục sẽ có hiệu lực trong vòng <strong>15 phút</strong>. Vui lòng kiểm tra kỹ cả hộp thư <strong>Spam/Rác</strong> sau khi gửi yêu cầu.
-          </p>
-        </div>
-
-        <button type="submit" className="haui-login-submit" disabled={loading} style={{ marginTop: '8px' }}>
-          <span>{loading ? 'Đang gửi yêu cầu...' : 'Gửi yêu cầu'}</span>
-          {loading ? (
-            <span className="material-symbols-outlined haui-spin" style={{ fontSize: '18px' }}>
-              progress_activity
-            </span>
-          ) : (
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-              arrow_forward
-            </span>
-          )}
-        </button>
-      </form>
-
-      <div style={{ textAlign: 'center', paddingTop: '12px' }}>
-        <button type="button" className="haui-login-back-link" onClick={onSwitchToLogin}>
-          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_back</span>
-          <span>Quay lại đăng nhập</span>
-        </button>
-      </div>
-    </div>
   );
 }
 
