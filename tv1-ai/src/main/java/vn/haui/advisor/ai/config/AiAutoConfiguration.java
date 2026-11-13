@@ -272,7 +272,8 @@ public class AiAutoConfiguration {
                                        IntentClassifier intentClassifier,
                                        ResponseGroundingValidator responseGroundingValidator,
                                        AiProperties properties,
-                                       vn.haui.advisor.ai.telemetry.AiMetricsCollector aiMetricsCollector) {
+                                       vn.haui.advisor.ai.telemetry.AiMetricsCollector aiMetricsCollector,
+                                       vn.haui.advisor.ai.conversation.TokenBudgetAuditor tokenBudgetAuditor) {
         return new DefaultAdvisorFacade(
                 advisorModel,
                 toolAdapter,
@@ -281,7 +282,9 @@ public class AiAutoConfiguration {
                 intentClassifier,
                 responseGroundingValidator,
                 properties.getAdvisor().getToolTimeoutMs(),
-                aiMetricsCollector
+                aiMetricsCollector,
+                tokenBudgetAuditor,
+                properties
         );
     }
 }

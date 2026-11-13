@@ -3,9 +3,12 @@ package vn.haui.advisor.ai.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import vn.haui.advisor.ai.config.AiProperties;
+import vn.haui.advisor.ai.conversation.TokenBudgetAuditor;
 import vn.haui.advisor.ai.mock.MockAcademicFacade;
 import vn.haui.advisor.ai.model.AdvisorModel;
 import vn.haui.advisor.ai.model.MockAdvisorModel;
+import vn.haui.advisor.ai.telemetry.AiMetricsCollector;
 import vn.haui.advisor.ai.tools.DefaultToolAdapter;
 import vn.haui.advisor.ai.tools.ToolAdapter;
 import vn.haui.advisor.contracts.dto.*;
@@ -15,6 +18,9 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class AdvisorFacadeTest {
 
@@ -173,5 +179,26 @@ class AdvisorFacadeTest {
         assertThat(response.getAnswer()).isNotBlank();
         // Deterministic mock model should execute in milliseconds
         assertThat(duration).isLessThan(1000);
+    }
+
+    @Test
+    @DisplayName("Should reject and return CONTEXT_LIMIT_EXCEEDED when token budget ceiling is breached")
+    void testChatRejectsWhenBudgetExceeded() {
+        TokenBudgetAuditor strictAuditor = mock(TokenBudgetAuditor.class);
+        when(strictAuditor.audit(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new TokenBudgetAuditor.AuditResult(false, 70000, 2000, 60000, 100, 1000, 1000, 2048, 64000, "Context limit exceeded"));
+
+        DefaultAdvisorFacade facadeWithStrictBudget = new DefaultAdvisorFacade(
+                advisorModel, toolAdapter, null, null,
+                null, null, 2500L, new AiMetricsCollector(), strictAuditor, new AiProperties()
+        );
+
+        ChatResponse response = facadeWithStrictBudget.chat(
+                new ChatRequest("conv-1", "Hỏi tiếp", null),
+                trustedContext
+        );
+
+        assertThat(response.getWarnings()).anyMatch(w -> w.contains("CONTEXT_LIMIT_EXCEEDED"));
+        assertThat(response.getAnswer()).contains("vui lòng mở một cuộc hội thoại mới");
     }
 }

@@ -2,8 +2,10 @@ package vn.haui.advisor.ai.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import vn.haui.advisor.ai.config.AiProperties;
 import vn.haui.advisor.ai.conversation.ChatMessageHistoryItem;
 import vn.haui.advisor.ai.conversation.ConversationHistoryManager;
+import vn.haui.advisor.ai.conversation.TokenBudgetAuditor;
 import vn.haui.advisor.ai.grounding.ResponseGroundingValidator;
 import vn.haui.advisor.ai.intent.IntentClassifier;
 import vn.haui.advisor.ai.intent.ParsedUserIntent;
@@ -49,6 +51,8 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
     private final ExecutorService executorService;
     private final long toolTimeoutMs;
     private final AiMetricsCollector metricsCollector;
+    private final TokenBudgetAuditor tokenBudgetAuditor;
+    private final AiProperties aiProperties;
 
     public DefaultAdvisorFacade(AdvisorModel advisorModel, ToolAdapter toolAdapter) {
         this(advisorModel, toolAdapter, null, null, null, null, DEFAULT_TOOL_TIMEOUT_MS, null);
@@ -85,6 +89,20 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                                 ResponseGroundingValidator responseGroundingValidator,
                                 long toolTimeoutMs,
                                 AiMetricsCollector metricsCollector) {
+        this(advisorModel, toolAdapter, ragAdvisorService, conversationHistoryManager, intentClassifier,
+                responseGroundingValidator, toolTimeoutMs, metricsCollector, null, null);
+    }
+
+    public DefaultAdvisorFacade(AdvisorModel advisorModel,
+                                ToolAdapter toolAdapter,
+                                RagAdvisorService ragAdvisorService,
+                                ConversationHistoryManager conversationHistoryManager,
+                                IntentClassifier intentClassifier,
+                                ResponseGroundingValidator responseGroundingValidator,
+                                long toolTimeoutMs,
+                                AiMetricsCollector metricsCollector,
+                                TokenBudgetAuditor tokenBudgetAuditor,
+                                AiProperties aiProperties) {
         this.advisorModel = Objects.requireNonNull(advisorModel, "advisorModel must not be null");
         this.toolAdapter = Objects.requireNonNull(toolAdapter, "toolAdapter must not be null");
         this.ragAdvisorService = ragAdvisorService;
@@ -94,6 +112,8 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
         this.turnPlanner = new ConversationTurnPlanner(this.intentClassifier);
         this.toolTimeoutMs = toolTimeoutMs;
         this.metricsCollector = metricsCollector != null ? metricsCollector : new AiMetricsCollector();
+        this.tokenBudgetAuditor = tokenBudgetAuditor != null ? tokenBudgetAuditor : new TokenBudgetAuditor();
+        this.aiProperties = aiProperties != null ? aiProperties : new AiProperties();
         this.executorService = Executors.newCachedThreadPool(r -> {
             Thread t = new Thread(r, "advisor-tool-runner");
             t.setDaemon(true);
@@ -142,11 +162,11 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
         long genTokens = 0;
         String category = "GENERAL";
 
-        // 3. Tải lịch sử hội thoại (Sliding Window bounding)
+        // 3. Tải toàn bộ 100% lịch sử hội thoại (loại bỏ hoàn toàn sliding window)
         List<ChatMessageHistoryItem> history = Collections.emptyList();
         if (conversationId != null && !conversationId.trim().isEmpty()) {
             try {
-                history = conversationHistoryManager.loadHistory(conversationId, studentId, DEFAULT_MAX_HISTORY_TURNS);
+                history = conversationHistoryManager.loadFullHistory(conversationId, studentId);
             } catch (SecurityException se) {
                 return new ChatResponse(
                         "Từ chối quyền truy cập hội thoại không thuộc sở hữu của bạn.",
@@ -160,13 +180,35 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
             }
         }
 
+        // Token Budget Audit trước khi điều phối
+        TokenBudgetAuditor.AuditResult initialAudit = tokenBudgetAuditor.audit(
+                LiveAdvisorModel.SYSTEM_PROMPT,
+                history,
+                userMessage,
+                null,
+                null,
+                aiProperties != null ? aiProperties.getModel().getMaxTokens() : null,
+                aiProperties != null ? aiProperties.getConversation().getMaxContextTokens() : null
+        );
+        if (!initialAudit.isAllowed()) {
+            return new ChatResponse(
+                    "Cuộc hội thoại đã đạt đến dung lượng ngữ cảnh tối đa an toàn. Để bảo đảm tính chính xác học vụ, bạn vui lòng mở một cuộc hội thoại mới.",
+                    List.of(),
+                    List.of(),
+                    null,
+                    List.of("CONTEXT_LIMIT_EXCEEDED: " + initialAudit.detailMessage())
+            );
+        }
+
         // Native Gemini Function Calling Orchestration
         ChatResponse response = null;
         if (advisorModel instanceof LiveAdvisorModel liveModel) {
             try {
+                var decision = turnPlanner.decide(userMessage, history);
+                boolean policyOnly = decision.mode() == ConversationTurnPlanner.Mode.POLICY;
                 long t1Start = System.currentTimeMillis();
                 LiveAdvisorModel.GeminiTurnResult turnResult = liveModel.inspectTurn(
-                        userMessage, history, GeminiToolDeclarations.getToolDeclarations()
+                        userMessage, history, GeminiToolDeclarations.getToolDeclarations(), policyOnly
                 );
                 turn1Ms = Math.max(turnResult.latencyMs(), System.currentTimeMillis() - t1Start);
                 promptTokens += turnResult.promptTokens();
@@ -186,7 +228,8 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
 
                         if ("search_regulations".equals(toolName)) {
                             category = "REGULATION";
-                            String query = args.getOrDefault("query", userMessage).toString();
+                            String query = policyOnly && !userMessage.equals(decision.retrievalQuery())
+                                    ? decision.retrievalQuery() : Objects.toString(args.get("query"), userMessage);
                             if (ragAdvisorService != null) {
                                 long ragStart = System.currentTimeMillis();
                                 groundedContext = ragAdvisorService.retrieveAndGround(query, 5, 0.35);
@@ -200,7 +243,7 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                             }
                         } else {
                             long toolStart = System.currentTimeMillis();
-                            dispatchAcademicToolByName(context, toolName, args, toolResults, combinedWarnings);
+                            GeminiAcademicTools.execute(toolAdapter, context, toolName, args, toolResults, combinedWarnings);
                             long elapsed = System.currentTimeMillis() - toolStart;
                             toolMs += elapsed;
                             metricsCollector.recordToolExecution(toolName, elapsed);
@@ -214,7 +257,8 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                     turn2Ms = Math.max(turn2Result.latencyMs(), System.currentTimeMillis() - t2Start);
                     promptTokens += turn2Result.promptTokens();
                     genTokens += turn2Result.candidatesTokens();
-                    String finalAnswer = turn2Result.answer();
+                    String finalAnswer = policyOnly && (groundedContext == null || !groundedContext.hasEvidence())
+                            ? ConversationTurnPlanner.NO_POLICY_EVIDENCE : turn2Result.answer();
 
                     List<ChatSourceItem> sources = (groundedContext != null && groundedContext.hasEvidence())
                             ? groundedContext.getCitations()
@@ -239,10 +283,11 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                             validatedOutput.getPlanProposal(),
                             validatedOutput.getWarnings()
                     );
-                } else if (turnResult.directText() != null && !turnResult.directText().isBlank()) {
+                } else if (policyOnly || (turnResult.directText() != null && !turnResult.directText().isBlank())) {
                     category = "DIRECT_ANSWER";
                     AdvisorModelOutput modelOutput = new AdvisorModelOutput(
-                            turnResult.directText(), List.of(), List.of(), null, List.of()
+                            policyOnly ? ConversationTurnPlanner.NO_POLICY_EVIDENCE : turnResult.directText(),
+                            List.of(), List.of(), null, List.of()
                     );
                     AdvisorModelInput modelInput = new AdvisorModelInput(
                             userMessage, context, Collections.emptyMap(), null, history, null
@@ -364,7 +409,7 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
         // 9. Lưu trữ trạng thái hội thoại đa lượt (Conversation Persistence)
         if (conversationId != null && !conversationId.trim().isEmpty()) {
             try {
-                ChatMessageHistoryItem userHistoryItem = ChatMessageHistoryItem.ofUser(userMessage);
+                ChatMessageHistoryItem userHistoryItem = ChatMessageHistoryItem.ofUser(userMessage, request.getClientTimestamp());
                 ChatMessageHistoryItem assistantHistoryItem = ChatMessageHistoryItem.ofAssistant(
                         response.getAnswer(),
                         response.getSources(),
@@ -586,114 +631,6 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
             warnings.add("TOOL_ERROR: Execution interrupted");
             return null;
         }
-    }
-
-    private void dispatchAcademicToolByName(TrustedStudentContext context,
-                                            String toolName,
-                                            Map<String, Object> args,
-                                            Map<String, Object> toolResults,
-                                            List<String> warnings) {
-        if (toolAdapter == null) return;
-        long started = System.currentTimeMillis();
-        try {
-            switch (toolName) {
-                case "run_graduation_audit" -> {
-                    GraduationAuditResponse audit = toolAdapter.runGraduationAudit(context);
-                    if (audit != null) toolResults.put("run_graduation_audit", audit);
-                }
-                case "get_academic_status" -> {
-                    AcademicStatusResponse status = toolAdapter.getAcademicStatus(context);
-                    if (status != null) toolResults.put("get_academic_status", status);
-                }
-                case "check_course_eligibility" -> {
-                    String courseCode = (String) args.get("course_code");
-                    String semester = (String) args.get("semester");
-                    if (courseCode != null && !courseCode.isBlank()) {
-                        CourseEligibilityResponse eligibility = toolAdapter.checkCourseEligibility(context, courseCode.trim().toUpperCase(Locale.ROOT), semester);
-                        if (eligibility != null) toolResults.put("check_course_eligibility", eligibility);
-                    }
-                }
-                case "rank_retake_courses" -> {
-                    Integer maxSuggestions = args.get("max_suggestions") != null
-                            ? Integer.valueOf(args.get("max_suggestions").toString()) : 3;
-                    RankRetakeCoursesResponse rank = toolAdapter.rankRetakeCourses(context, maxSuggestions);
-                    if (rank != null) toolResults.put("rank_retake_courses", rank);
-                }
-                case "simulate_grades" -> {
-                    List<SimulatedCourseGrade> simList = new ArrayList<>();
-                    if (args.get("simulations") instanceof List<?> list) {
-                        for (Object o : list) {
-                            if (o instanceof Map<?, ?> m) {
-                                String code = m.get("course_code") != null ? m.get("course_code").toString() : null;
-                                String grade = m.get("expected_grade") != null ? m.get("expected_grade").toString() : null;
-                                if (code != null && grade != null) {
-                                    BigDecimal points = gradeToPoints(grade);
-                                    simList.add(new SimulatedCourseGrade(code.trim().toUpperCase(Locale.ROOT), 3, grade.trim().toUpperCase(Locale.ROOT), points));
-                                }
-                            }
-                        }
-                    }
-                    if (!simList.isEmpty()) {
-                        SimulateGradesResponse sim = toolAdapter.simulateGrades(context, simList);
-                        if (sim != null) toolResults.put("simulate_grades", sim);
-                    }
-                }
-                case "generate_study_plan" -> {
-                    String targetSemester = (String) args.get("target_semester");
-                    Integer maxCredits = args.get("max_credits") != null
-                            ? Integer.valueOf(args.get("max_credits").toString()) : 18;
-                    BigDecimal targetCpa = args.get("target_cpa") != null
-                            ? new BigDecimal(args.get("target_cpa").toString()) : null;
-                    GenerateStudyPlanResponse plan = toolAdapter.generateStudyPlan(context, targetSemester, targetCpa, maxCredits, false, List.of());
-                    if (plan != null) {
-                        toolResults.put("generate_study_plan", plan);
-                        if (plan.getSemesters() != null && !plan.getSemesters().isEmpty()) {
-                            String label = targetCpa == null ? "Đề xuất kế hoạch học tập"
-                                    : "Đề xuất kế hoạch học tập mục tiêu CPA " + targetCpa.toPlainString();
-                            toolResults.put("planProposal", new ChatPlanProposal(
-                                    plan.getProposalId(), label, plan.getSemesters(), plan.getProjectedCpa()));
-                        }
-                    }
-                }
-                case "get_transcript" -> {
-                    String filter = args.get("filter") != null ? args.get("filter").toString() : "ALL";
-                    TranscriptResponse transcript = toolAdapter.getTranscript(context);
-                    if (transcript != null) {
-                        String summary = vn.haui.advisor.ai.tools.StudentJourneySummarizer.summarizeTranscript(transcript, filter);
-                        toolResults.put("get_transcript", summary);
-                    }
-                }
-                case "get_curriculum_tree" -> {
-                    String scope = args.get("scope") != null ? args.get("scope").toString() : "ELIGIBLE_NEXT_SEMESTER";
-                    CurriculumTreeResponse tree = toolAdapter.getCurriculumTree(context);
-                    if (tree != null) {
-                        String summary = vn.haui.advisor.ai.tools.StudentJourneySummarizer.summarizeCurriculumTree(tree, scope);
-                        toolResults.put("get_curriculum_tree", summary);
-                    }
-                }
-                default -> log.warn("Unknown native tool call: {}", toolName);
-            }
-            long elapsed = System.currentTimeMillis() - started;
-            log.info("advisor_native_tool capability={} outcome=SUCCESS elapsedMs={}", toolName, elapsed);
-        } catch (Exception ex) {
-            long elapsed = System.currentTimeMillis() - started;
-            log.warn("advisor_native_tool capability={} outcome=FAILURE elapsedMs={} error={}", toolName, elapsed, ex.getMessage());
-            warnings.add("TOOL_FAILURE: " + toolName);
-        }
-    }
-
-    private static BigDecimal gradeToPoints(String grade) {
-        if (grade == null) return BigDecimal.ZERO;
-        return switch (grade.trim().toUpperCase(Locale.ROOT)) {
-            case "A" -> new BigDecimal("4.0");
-            case "B+" -> new BigDecimal("3.5");
-            case "B" -> new BigDecimal("3.0");
-            case "C+" -> new BigDecimal("2.5");
-            case "C" -> new BigDecimal("2.0");
-            case "D+" -> new BigDecimal("1.5");
-            case "D" -> new BigDecimal("1.0");
-            default -> BigDecimal.ZERO;
-        };
     }
 
     private static void logToolOutcome(AcademicCapability capability, String outcome, long started) {
