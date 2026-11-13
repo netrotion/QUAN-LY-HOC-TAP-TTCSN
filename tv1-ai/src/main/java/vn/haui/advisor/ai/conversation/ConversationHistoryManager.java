@@ -64,6 +64,17 @@ public class ConversationHistoryManager {
     }
 
     /**
+     * Nạp toàn bộ 100% lịch sử hội thoại cho sinh viên mà không cắt tỉa (không dùng sliding window).
+     *
+     * @param conversationId định danh hội thoại
+     * @param studentId      mã sinh viên đã xác thực từ context
+     * @return toàn bộ danh sách tin nhắn theo đúng thứ tự thời gian
+     */
+    public List<ChatMessageHistoryItem> loadFullHistory(String conversationId, String studentId) {
+        return loadHistory(conversationId, studentId, -1);
+    }
+
+    /**
      * Nạp lịch sử hội thoại cho sinh viên, giới hạn bởi sliding window maxTurns mới nhất.
      *
      * @param conversationId định danh hội thoại
@@ -110,7 +121,12 @@ public class ConversationHistoryManager {
 
         // Bounded context: sliding window trả về tối đa maxTurns tin nhắn mới nhất
         if (maxTurns > 0 && allMessages.size() > maxTurns) {
-            return new ArrayList<>(allMessages.subList(allMessages.size() - maxTurns, allMessages.size()));
+            int startIndex = allMessages.size() - maxTurns;
+            // Đảm bảo sliding window luôn bắt đầu từ lượt hỏi của người dùng (user), không cắt ngang câu trả lời trợ lý
+            if (startIndex < allMessages.size() && "assistant".equalsIgnoreCase(allMessages.get(startIndex).getRole())) {
+                startIndex++;
+            }
+            return new ArrayList<>(allMessages.subList(startIndex, allMessages.size()));
         }
 
         return new ArrayList<>(allMessages);
@@ -177,14 +193,14 @@ public class ConversationHistoryManager {
         int limit = maxTotalChars > 0 ? maxTotalChars : DEFAULT_MAX_CHARS;
         String json = serialize(messages);
 
-        // Pruning: Cắt tỉa tin nhắn cũ nhất từ đầu danh sách khi kích thước vượt quá ngưỡng
-        while (isSizeExceeded(json, limit) && messages.size() > 2) {
-            messages.remove(0);
-            json = serialize(messages);
-        }
-        while (isSizeExceeded(json, limit) && messages.size() > 1) {
-            messages.remove(0);
-            json = serialize(messages);
+        // Ngăn chặn cắt ngầm: Thay vì âm thầm xoá tin nhắn cũ (silent pruning),
+        // ném ngoại lệ rõ ràng để bảo vệ tính toàn vẹn của cơ sở dữ liệu.
+        if (isSizeExceeded(json, limit)) {
+            throw new ConversationStorageOverflowException(
+                    "Dung lượng hội thoại (" + json.getBytes(StandardCharsets.UTF_8).length
+                            + " bytes) vượt quá giới hạn lưu trữ (" + limit
+                            + " bytes). Giao dịch được bảo vệ để không cắt ngầm dữ liệu cũ."
+            );
         }
 
         // Tự động sinh tiêu đề từ tin nhắn đầu tiên của người dùng nếu tiêu đề còn trống

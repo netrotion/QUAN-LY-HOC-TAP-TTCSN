@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -80,44 +81,37 @@ class ConversationHistoryManagerTest {
     }
 
     @Test
-    @DisplayName("Save turn prunes oldest messages when total serialized size exceeds maxTotalChars")
-    void testSaveHistoryWithPruningWhenLarge() {
-        String convId = "conv-pruning";
-        String studentId = "SV2021002";
-
-        // Add 5 long turns
-        for (int i = 1; i <= 5; i++) {
-            ChatMessageHistoryItem userMsg = new ChatMessageHistoryItem(
-                    "user",
-                    "Câu hỏi dài lượt " + i + ": " + "A".repeat(200),
-                    Instant.now().toString(),
-                    List.of(new ChatSourceItem("REG-01", "Quy chế 2024", "Điều 14", "1.0", "https://haui.edu.vn")),
-                    List.of(new ChatActionItem("NAVIGATE", "Xem CTDT", "/academic", "{}")),
-                    "PROP-123",
-                    List.of("WARNING_TEST")
-            );
-            ChatMessageHistoryItem assistantMsg = new ChatMessageHistoryItem(
-                    "assistant",
-                    "Câu trả lời chi tiết lượt " + i + ": " + "B".repeat(300),
-                    Instant.now().toString(),
-                    List.of(),
-                    List.of(),
-                    null,
-                    List.of()
-            );
-            // Constrain maxTotalChars to 1500 chars
-            historyManager.saveTurn(convId, studentId, userMsg, assistantMsg, 1500);
+    @DisplayName("Should load 100% full history without sliding window truncation when loadFullHistory is called")
+    void testLoadFullHistoryWithoutTruncation() {
+        String convId = "conv-full-" + UUID.randomUUID();
+        String studentId = "SV20246001";
+        for (int i = 1; i <= 25; i++) {
+            historyManager.saveTurn(convId, studentId,
+                    ChatMessageHistoryItem.ofUser("Câu hỏi " + i, null),
+                    ChatMessageHistoryItem.ofAssistant("Trả lời " + i, List.of(), List.of(), null, List.of()),
+                    900_000);
         }
 
-        ConversationRecord record = conversationStore.getConversation(convId, studentId);
-        assertThat(record).isNotNull();
-        assertThat(record.getMessagesJson().getBytes(StandardCharsets.UTF_8).length).isLessThanOrEqualTo(1500);
+        List<ChatMessageHistoryItem> fullHistory = historyManager.loadFullHistory(convId, studentId);
+        assertThat(fullHistory).hasSize(50); // 25 turns * 2 = 50 messages
+        assertThat(fullHistory.get(0).getContent()).isEqualTo("Câu hỏi 1");
+        assertThat(fullHistory.get(49).getContent()).isEqualTo("Trả lời 25");
+    }
 
-        List<ChatMessageHistoryItem> loaded = historyManager.loadHistory(convId, studentId, 50);
-        // The newest messages must be preserved
-        assertThat(loaded).isNotEmpty();
-        assertThat(loaded.get(loaded.size() - 1).getRole()).isEqualTo("assistant");
-        assertThat(loaded.get(loaded.size() - 1).getContent()).contains("Câu trả lời chi tiết lượt 5");
+    @Test
+    @DisplayName("Should throw ConversationStorageOverflowException instead of silently pruning messages when exceeding DB limit")
+    void testSaveTurnThrowsOnOverflowWithoutPruning() {
+        String convId = "conv-overflow-" + UUID.randomUUID();
+        String studentId = "SV20246001";
+        String hugeContent = "A".repeat(500);
+
+        // Set tight limit of 400 chars
+        assertThatThrownBy(() -> historyManager.saveTurn(convId, studentId,
+                ChatMessageHistoryItem.ofUser(hugeContent, null),
+                ChatMessageHistoryItem.ofAssistant("Ok", List.of(), List.of(), null, List.of()),
+                400))
+                .isInstanceOf(ConversationStorageOverflowException.class)
+                .hasMessageContaining("vượt quá giới hạn lưu trữ");
     }
 
     @Test
