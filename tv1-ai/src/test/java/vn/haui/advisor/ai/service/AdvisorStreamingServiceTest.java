@@ -2,6 +2,8 @@ package vn.haui.advisor.ai.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import vn.haui.advisor.ai.config.AiProperties;
+import vn.haui.advisor.ai.conversation.TokenBudgetAuditor;
 import vn.haui.advisor.ai.mock.MockAcademicFacade;
 import vn.haui.advisor.ai.model.LiveAdvisorModel;
 import vn.haui.advisor.ai.model.MockAdvisorModel;
@@ -16,6 +18,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class AdvisorStreamingServiceTest {
 
@@ -52,7 +57,7 @@ class AdvisorStreamingServiceTest {
                 (payload, chunkConsumer) -> {
                     // Turn 2 streamTurn emitting real-time chunks
                     chunkConsumer.accept("Điểm CPA hiện tại ");
-                    chunkConsumer.accept("của bạn là 3.25, ");
+                    chunkConsumer.accept("của bạn là 3.80, ");
                     chunkConsumer.accept("xếp loại Khá.");
                 },
                 null,
@@ -88,7 +93,6 @@ class AdvisorStreamingServiceTest {
                 ChatStreamEvent.EventType.STATUS,
                 ChatStreamEvent.EventType.TOOL_CALL,
                 ChatStreamEvent.EventType.TOOL_RESULT,
-                ChatStreamEvent.EventType.CHUNK,
                 ChatStreamEvent.EventType.DONE
         );
 
@@ -97,14 +101,14 @@ class AdvisorStreamingServiceTest {
                 .filter(e -> e.getEventType() == ChatStreamEvent.EventType.CHUNK)
                 .map(ChatStreamEvent::getText)
                 .reduce("", String::concat);
-        assertThat(fullChunkText).isEqualTo("Điểm CPA hiện tại của bạn là 3.25, xếp loại Khá.");
+        assertThat(fullChunkText).isEmpty();
 
         // Verify DONE event
         ChatStreamEvent doneEvent = emittedEvents.stream()
                 .filter(e -> e.getEventType() == ChatStreamEvent.EventType.DONE)
                 .findFirst()
                 .orElseThrow();
-        assertThat(doneEvent.getText()).contains("3.25");
+        assertThat(doneEvent.getText()).contains("3.15").doesNotContain("3.80");
         assertThat(doneEvent.getMetrics()).isNotNull();
         assertThat(doneEvent.getMetrics()).containsKey("promptTokens");
 
@@ -134,6 +138,35 @@ class AdvisorStreamingServiceTest {
         ChatStreamEvent errorEvent = emittedEvents.getFirst();
         assertThat(errorEvent.getEventType()).isEqualTo(ChatStreamEvent.EventType.ERROR);
         assertThat(errorEvent.getCode()).isEqualTo("VALIDATION_ERROR");
+    }
+
+    @Test
+    @DisplayName("Should emit error event CONTEXT_LIMIT_EXCEEDED when token budget ceiling is breached")
+    void testStreamChatRejectsWhenBudgetExceeded() {
+        TokenBudgetAuditor strictAuditor = mock(TokenBudgetAuditor.class);
+        when(strictAuditor.audit(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new TokenBudgetAuditor.AuditResult(false, 70000, 2000, 60000, 100, 0, 0, 2048, 64000, "Context limit exceeded"));
+
+        AdvisorStreamingService streamingService = new AdvisorStreamingService(
+                new MockAdvisorModel(),
+                new DefaultToolAdapter(new MockAcademicFacade()),
+                null,
+                null,
+                null,
+                new AiMetricsCollector(),
+                strictAuditor,
+                new AiProperties()
+        );
+
+        List<ChatStreamEvent> events = new ArrayList<>();
+        streamingService.streamChat(
+                new ChatRequest("conv-1", "Hỏi tiếp", null),
+                new TrustedStudentContext("SV01", "SV01", "Nguyen Van A", "KTPM", "K16", "REV-1"),
+                events::add
+        );
+
+        assertThat(events).anyMatch(e -> e.getEventType() == ChatStreamEvent.EventType.ERROR
+                && "CONTEXT_LIMIT_EXCEEDED".equals(e.getCode()));
     }
 }
 

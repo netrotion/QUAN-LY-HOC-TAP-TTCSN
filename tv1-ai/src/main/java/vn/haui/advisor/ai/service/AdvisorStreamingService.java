@@ -3,8 +3,10 @@ package vn.haui.advisor.ai.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import vn.haui.advisor.ai.config.AiProperties;
 import vn.haui.advisor.ai.conversation.ChatMessageHistoryItem;
 import vn.haui.advisor.ai.conversation.ConversationHistoryManager;
+import vn.haui.advisor.ai.conversation.TokenBudgetAuditor;
 import vn.haui.advisor.ai.grounding.ResponseGroundingValidator;
 import vn.haui.advisor.ai.intent.IntentClassifier;
 import vn.haui.advisor.ai.intent.ParsedUserIntent;
@@ -17,7 +19,6 @@ import vn.haui.advisor.ai.tools.ToolAdapter;
 import vn.haui.advisor.contracts.dto.*;
 import vn.haui.advisor.contracts.stream.ChatStreamEvent;
 
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -33,12 +34,15 @@ public class AdvisorStreamingService {
     private static final int DEFAULT_MAX_HISTORY_TURNS = 10;
     private static final int TOOL_EXECUTION_BUDGET = 3;
 
+    private final ConversationTurnPlanner turnPlanner = new ConversationTurnPlanner();
     private final AdvisorModel advisorModel;
     private final ToolAdapter toolAdapter;
     private final RagAdvisorService ragAdvisorService;
     private final ConversationHistoryManager conversationHistoryManager;
     private final ResponseGroundingValidator responseGroundingValidator;
     private final AiMetricsCollector metricsCollector;
+    private final TokenBudgetAuditor tokenBudgetAuditor;
+    private final AiProperties aiProperties;
 
     public AdvisorStreamingService(
             AdvisorModel advisorModel,
@@ -48,12 +52,28 @@ public class AdvisorStreamingService {
             ResponseGroundingValidator responseGroundingValidator,
             AiMetricsCollector metricsCollector
     ) {
+        this(advisorModel, toolAdapter, ragAdvisorService, conversationHistoryManager,
+                responseGroundingValidator, metricsCollector, null, null);
+    }
+
+    public AdvisorStreamingService(
+            AdvisorModel advisorModel,
+            ToolAdapter toolAdapter,
+            RagAdvisorService ragAdvisorService,
+            ConversationHistoryManager conversationHistoryManager,
+            ResponseGroundingValidator responseGroundingValidator,
+            AiMetricsCollector metricsCollector,
+            TokenBudgetAuditor tokenBudgetAuditor,
+            AiProperties aiProperties
+    ) {
         this.advisorModel = Objects.requireNonNull(advisorModel, "advisorModel must not be null");
         this.toolAdapter = Objects.requireNonNull(toolAdapter, "toolAdapter must not be null");
         this.ragAdvisorService = ragAdvisorService;
         this.conversationHistoryManager = conversationHistoryManager != null ? conversationHistoryManager : new ConversationHistoryManager();
         this.responseGroundingValidator = responseGroundingValidator != null ? responseGroundingValidator : new ResponseGroundingValidator();
         this.metricsCollector = metricsCollector != null ? metricsCollector : new AiMetricsCollector();
+        this.tokenBudgetAuditor = tokenBudgetAuditor != null ? tokenBudgetAuditor : new TokenBudgetAuditor();
+        this.aiProperties = aiProperties != null ? aiProperties : new AiProperties();
     }
 
     public void streamChat(
@@ -90,17 +110,36 @@ public class AdvisorStreamingService {
         // 2. Phát sự kiện trạng thái khởi tạo ngay lập tức (TTFT milestone)
         eventConsumer.accept(ChatStreamEvent.status("INITIALIZING", "Đang phân tích yêu cầu..."));
 
-        // 3. Tải lịch sử hội thoại
+        // 3. Tải toàn bộ 100% lịch sử hội thoại (không cắt ngầm bằng sliding window)
         List<ChatMessageHistoryItem> history = Collections.emptyList();
         if (conversationId != null && !conversationId.trim().isEmpty()) {
             try {
-                history = conversationHistoryManager.loadHistory(conversationId, studentId, DEFAULT_MAX_HISTORY_TURNS);
+                history = conversationHistoryManager.loadFullHistory(conversationId, studentId);
             } catch (SecurityException se) {
                 eventConsumer.accept(ChatStreamEvent.error("SECURITY_ERROR", "Từ chối quyền truy cập hội thoại không thuộc sở hữu của bạn.", false));
                 return;
             } catch (Exception ignored) {
                 history = Collections.emptyList();
             }
+        }
+
+        // Token Budget Audit trước khi dispatch streaming
+        TokenBudgetAuditor.AuditResult initialAudit = tokenBudgetAuditor.audit(
+                LiveAdvisorModel.SYSTEM_PROMPT,
+                history,
+                userMessage,
+                null,
+                null,
+                aiProperties != null ? aiProperties.getModel().getMaxTokens() : null,
+                aiProperties != null ? aiProperties.getConversation().getMaxContextTokens() : null
+        );
+        if (!initialAudit.isAllowed()) {
+            eventConsumer.accept(ChatStreamEvent.error(
+                    "CONTEXT_LIMIT_EXCEEDED",
+                    "Cuộc hội thoại đã đạt đến dung lượng ngữ cảnh tối đa an toàn. Vui lòng mở cuộc hội thoại mới.",
+                    false
+            ));
+            return;
         }
 
         GroundedContext groundedContext = null;
@@ -115,9 +154,11 @@ public class AdvisorStreamingService {
             try {
                 eventConsumer.accept(ChatStreamEvent.status("PLANNING", "Đang phân tích công cụ và quy chế..."));
 
+                var decision = turnPlanner.decide(userMessage, history);
+                boolean policyOnly = decision.mode() == ConversationTurnPlanner.Mode.POLICY;
                 long t1Start = System.currentTimeMillis();
                 LiveAdvisorModel.GeminiTurnResult turnResult = liveModel.inspectTurn(
-                        userMessage, history, GeminiToolDeclarations.getToolDeclarations()
+                        userMessage, history, GeminiToolDeclarations.getToolDeclarations(), policyOnly
                 );
                 turn1Ms = Math.max(turnResult.latencyMs(), System.currentTimeMillis() - t1Start);
                 promptTokens += turnResult.promptTokens();
@@ -136,7 +177,8 @@ public class AdvisorStreamingService {
                         if ("search_regulations".equals(toolName)) {
                             category = "REGULATION";
                             eventConsumer.accept(ChatStreamEvent.status("SEARCHING_POLICY", "Đang tra cứu quy chế HaUI..."));
-                            String query = args.getOrDefault("query", userMessage).toString();
+                            String query = policyOnly && !userMessage.equals(decision.retrievalQuery())
+                                    ? decision.retrievalQuery() : Objects.toString(args.get("query"), userMessage);
                             if (ragAdvisorService != null) {
                                 long ragStart = System.currentTimeMillis();
                                 groundedContext = ragAdvisorService.retrieveAndGround(query, 5, 0.35);
@@ -154,7 +196,7 @@ public class AdvisorStreamingService {
                         } else {
                             eventConsumer.accept(ChatStreamEvent.status("EXECUTING_TOOL", "Đang thực thi công cụ học vụ " + toolName + "..."));
                             long toolStart = System.currentTimeMillis();
-                            dispatchAcademicToolByName(context, toolName, args, toolResults, combinedWarnings);
+                            GeminiAcademicTools.execute(toolAdapter, context, toolName, args, toolResults, combinedWarnings);
                             long elapsed = System.currentTimeMillis() - toolStart;
                             toolMs += elapsed;
                             metricsCollector.recordToolExecution(toolName, elapsed);
@@ -162,7 +204,7 @@ public class AdvisorStreamingService {
                             if (toolResults.get("planProposal") instanceof ChatPlanProposal p) {
                                 planProposal = p;
                                 eventConsumer.accept(ChatStreamEvent.toolResult(toolName, "Đã tính toán phương án kế hoạch học tập.", p));
-                            } else {
+                            } else if (toolResults.containsKey(toolName)) {
                                 eventConsumer.accept(ChatStreamEvent.toolResult(toolName, "Hoàn tất phân tích dữ liệu học vụ.", null));
                             }
                         }
@@ -177,25 +219,22 @@ public class AdvisorStreamingService {
                             turnResult.toolCalls(),
                             turnResult.rawModelParts(),
                             toolResults,
-                            chunk -> eventConsumer.accept(ChatStreamEvent.chunk(chunk))
+                            chunk -> {}
                     );
                     turn2Ms = Math.max(streamResult.latencyMs(), System.currentTimeMillis() - t2Start);
                     promptTokens += streamResult.promptTokens();
                     genTokens += streamResult.candidatesTokens();
-                    finalAnswerText = streamResult.answer();
+                    finalAnswerText = policyOnly && (groundedContext == null || !groundedContext.hasEvidence())
+                            ? ConversationTurnPlanner.NO_POLICY_EVIDENCE : streamResult.answer();
 
+                } else if (policyOnly) {
+                    finalAnswerText = ConversationTurnPlanner.NO_POLICY_EVIDENCE;
                 } else if (turnResult.directText() != null && !turnResult.directText().isBlank()) {
                     category = "DIRECT_ANSWER";
                     eventConsumer.accept(ChatStreamEvent.status("GENERATING", "Đang gửi phản hồi..."));
                     finalAnswerText = turnResult.directText();
-                    // Stream direct answer chunks
-                    String[] words = finalAnswerText.split("(?<=\\s)|(?=\\s)");
-                    for (String w : words) {
-                        eventConsumer.accept(ChatStreamEvent.chunk(w));
-                    }
                 } else {
                     finalAnswerText = "Xin lỗi, mình chưa tìm thấy thông tin phù hợp cho câu hỏi của bạn.";
-                    eventConsumer.accept(ChatStreamEvent.chunk(finalAnswerText));
                 }
 
             } catch (Exception ex) {
@@ -222,12 +261,6 @@ public class AdvisorStreamingService {
                 eventConsumer.accept(ChatStreamEvent.toolResult("generate_study_plan", "Đã lập phương án kế hoạch học tập.", planProposal));
             }
 
-            if (finalAnswerText != null) {
-                String[] words = finalAnswerText.split("(?<=\\s)|(?=\\s)");
-                for (String w : words) {
-                    eventConsumer.accept(ChatStreamEvent.chunk(w));
-                }
-            }
             promptTokens = Math.max(1, userMessage.length() / 4 + 200);
             genTokens = Math.max(1, (finalAnswerText != null ? finalAnswerText.length() : 0) / 4);
         }
@@ -259,6 +292,25 @@ public class AdvisorStreamingService {
         metrics.put("ragLatencyMs", ragMs);
         metrics.put("toolLatencyMs", toolMs);
 
+        // Lưu trữ lịch sử hội thoại trước khi phát DONE để transaction commit hoàn tất trước khi client gọi tiếp
+        if (conversationId != null && !conversationId.trim().isEmpty()) {
+            try {
+                ChatMessageHistoryItem userHistoryItem = ChatMessageHistoryItem.ofUser(userMessage, request.getClientTimestamp());
+                ChatMessageHistoryItem assistantHistoryItem = ChatMessageHistoryItem.ofAssistant(
+                        validated.getAnswer(),
+                        validated.getSources(),
+                        validated.getActions(),
+                        validated.getPlanProposal() != null ? validated.getPlanProposal().getProposalId() : null,
+                        combinedWarnings
+                );
+                conversationHistoryManager.saveTurn(conversationId, studentId, userHistoryItem, assistantHistoryItem, 900_000);
+            } catch (Exception ex) {
+                log.warn("failed_to_save_streaming_conversation_turn", ex);
+                eventConsumer.accept(ChatStreamEvent.error("AI_UNAVAILABLE", "Chưa lưu được hội thoại. Vui lòng thử lại.", true));
+                return;
+            }
+        }
+
         // Phát sự kiện DONE
         eventConsumer.accept(ChatStreamEvent.done(
                 validated.getAnswer(),
@@ -281,115 +333,6 @@ public class AdvisorStreamingService {
                 turn2Ms,
                 totalMs
         );
-
-        // Lưu trữ lịch sử hội thoại bất đồng bộ
-        if (conversationId != null && !conversationId.trim().isEmpty()) {
-            try {
-                ChatMessageHistoryItem userHistoryItem = ChatMessageHistoryItem.ofUser(userMessage);
-                ChatMessageHistoryItem assistantHistoryItem = ChatMessageHistoryItem.ofAssistant(
-                        validated.getAnswer(),
-                        validated.getSources(),
-                        validated.getActions(),
-                        validated.getPlanProposal() != null ? validated.getPlanProposal().getProposalId() : null,
-                        combinedWarnings
-                );
-                conversationHistoryManager.saveTurn(conversationId, studentId, userHistoryItem, assistantHistoryItem, 900_000);
-            } catch (Exception ex) {
-                log.warn("failed_to_save_streaming_conversation_turn error={}", ex.getMessage());
-            }
-        }
     }
 
-    private void dispatchAcademicToolByName(
-            TrustedStudentContext context,
-            String toolName,
-            Map<String, Object> args,
-            Map<String, Object> toolResults,
-            List<String> warnings
-    ) {
-        if (toolAdapter == null) return;
-        try {
-            switch (toolName) {
-                case "run_graduation_audit" -> {
-                    GraduationAuditResponse audit = toolAdapter.runGraduationAudit(context);
-                    if (audit != null) toolResults.put("run_graduation_audit", audit);
-                }
-                case "get_academic_status" -> {
-                    AcademicStatusResponse status = toolAdapter.getAcademicStatus(context);
-                    if (status != null) toolResults.put("get_academic_status", status);
-                }
-                case "check_course_eligibility" -> {
-                    String courseCode = (String) args.get("course_code");
-                    String semester = (String) args.get("semester");
-                    if (courseCode != null && !courseCode.isBlank()) {
-                        CourseEligibilityResponse eligibility = toolAdapter.checkCourseEligibility(context, courseCode.trim().toUpperCase(Locale.ROOT), semester);
-                        if (eligibility != null) toolResults.put("check_course_eligibility", eligibility);
-                    }
-                }
-                case "rank_retake_courses" -> {
-                    Integer maxSuggestions = args.get("max_suggestions") != null
-                            ? Integer.valueOf(args.get("max_suggestions").toString()) : 3;
-                    RankRetakeCoursesResponse rank = toolAdapter.rankRetakeCourses(context, maxSuggestions);
-                    if (rank != null) toolResults.put("rank_retake_courses", rank);
-                }
-                case "simulate_grades" -> {
-                    List<SimulatedCourseGrade> simList = new ArrayList<>();
-                    if (args.get("simulations") instanceof List<?> list) {
-                        for (Object o : list) {
-                            if (o instanceof Map<?, ?> m) {
-                                String code = m.get("course_code") != null ? m.get("course_code").toString() : null;
-                                String grade = m.get("expected_grade") != null ? m.get("expected_grade").toString() : null;
-                                if (code != null && grade != null) {
-                                    BigDecimal points = gradeToPoints(grade);
-                                    simList.add(new SimulatedCourseGrade(code.trim().toUpperCase(Locale.ROOT), 3, grade.trim().toUpperCase(Locale.ROOT), points));
-                                }
-                            }
-                        }
-                    }
-                    if (!simList.isEmpty()) {
-                        SimulateGradesResponse sim = toolAdapter.simulateGrades(context, simList);
-                        if (sim != null) toolResults.put("simulate_grades", sim);
-                    }
-                }
-                case "generate_study_plan" -> {
-                    String targetSemester = (String) args.get("target_semester");
-                    Integer maxCredits = args.get("max_credits") != null
-                            ? Integer.valueOf(args.get("max_credits").toString()) : 18;
-                    BigDecimal targetCpa = args.get("target_cpa") != null
-                            ? new BigDecimal(args.get("target_cpa").toString()) : null;
-                    GenerateStudyPlanResponse plan = toolAdapter.generateStudyPlan(context, targetSemester, targetCpa, maxCredits, false, List.of());
-                    if (plan != null) {
-                        toolResults.put("generate_study_plan", plan);
-                        if (plan.getSemesters() != null && !plan.getSemesters().isEmpty()) {
-                            String label = targetCpa == null ? "Đề xuất kế hoạch học tập" : "Kế hoạch cải thiện CPA";
-                            ChatPlanProposal prop = new ChatPlanProposal(
-                                    plan.getProposalId(),
-                                    label,
-                                    plan.getSemesters(),
-                                    plan.getProjectedCpa()
-                            );
-                            toolResults.put("planProposal", prop);
-                        }
-                    }
-                }
-            }
-        } catch (Exception ex) {
-            log.warn("tool_dispatch_failed tool={} error={}", toolName, ex.getMessage());
-            warnings.add("TOOL_EXECUTION_ERROR: " + toolName);
-        }
-    }
-
-    private static BigDecimal gradeToPoints(String grade) {
-        if (grade == null) return BigDecimal.ZERO;
-        return switch (grade.trim().toUpperCase(Locale.ROOT)) {
-            case "A" -> BigDecimal.valueOf(4.0);
-            case "B+" -> BigDecimal.valueOf(3.5);
-            case "B" -> BigDecimal.valueOf(3.0);
-            case "C+" -> BigDecimal.valueOf(2.5);
-            case "C" -> BigDecimal.valueOf(2.0);
-            case "D+" -> BigDecimal.valueOf(1.5);
-            case "D" -> BigDecimal.valueOf(1.0);
-            default -> BigDecimal.ZERO;
-        };
-    }
 }

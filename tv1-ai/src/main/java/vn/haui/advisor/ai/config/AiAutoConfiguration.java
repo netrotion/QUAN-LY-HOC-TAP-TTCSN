@@ -245,14 +245,18 @@ public class AiAutoConfiguration {
                                                                                        RagAdvisorService ragAdvisorService,
                                                                                        ConversationHistoryManager conversationHistoryManager,
                                                                                        ResponseGroundingValidator responseGroundingValidator,
-                                                                                       vn.haui.advisor.ai.telemetry.AiMetricsCollector aiMetricsCollector) {
+                                                                                       vn.haui.advisor.ai.telemetry.AiMetricsCollector aiMetricsCollector,
+                                                                                       vn.haui.advisor.ai.conversation.TokenBudgetAuditor tokenBudgetAuditor,
+                                                                                       AiProperties properties) {
         return new vn.haui.advisor.ai.service.AdvisorStreamingService(
                 advisorModel,
                 toolAdapter,
                 ragAdvisorService,
                 conversationHistoryManager,
                 responseGroundingValidator,
-                aiMetricsCollector
+                aiMetricsCollector,
+                tokenBudgetAuditor,
+                properties
         );
     }
 
