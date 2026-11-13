@@ -222,6 +222,12 @@ public class AiAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public vn.haui.advisor.ai.conversation.TokenBudgetAuditor tokenBudgetAuditor() {
+        return new vn.haui.advisor.ai.conversation.TokenBudgetAuditor();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public ResponseGroundingValidator responseGroundingValidator() {
         return new ResponseGroundingValidator();
     }

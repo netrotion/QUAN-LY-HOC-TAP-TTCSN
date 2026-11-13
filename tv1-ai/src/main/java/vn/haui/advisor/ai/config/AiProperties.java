@@ -151,7 +151,16 @@ public class AiProperties {
     public static class ConversationProperties {
         private int maxHistoryTurns = 10;
         private int maxHistoryChars = 900_000;
+        private int maxContextTokens = 64_000;
         private boolean requirePersistentStore = false;
+
+        public int getMaxContextTokens() {
+            return maxContextTokens;
+        }
+
+        public void setMaxContextTokens(int maxContextTokens) {
+            this.maxContextTokens = maxContextTokens;
+        }
 
         public int getMaxHistoryTurns() {
             return maxHistoryTurns;
