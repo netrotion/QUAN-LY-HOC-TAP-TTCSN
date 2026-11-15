@@ -99,6 +99,30 @@ class ConversationHistoryManagerTest {
     }
 
     @Test
+    @DisplayName("Should progressively compact older messages when conversation size exceeds limit across multiple turns")
+    void testSaveTurnWithProgressiveCompactionOnApproachingLimit() {
+        String convId = "conv-compact-" + UUID.randomUUID();
+        String studentId = "SV20246001";
+        int tightLimit = 900; // 900 bytes limit
+
+        // Save 5 turns. Each turn is ~180-200 bytes. Total without compaction would be ~1100 bytes.
+        for (int i = 1; i <= 5; i++) {
+            historyManager.saveTurn(convId, studentId,
+                    ChatMessageHistoryItem.ofUser("Câu hỏi học vụ lượt thứ " + i + ": Tôi muốn hỏi về môn KTPM" + i, null),
+                    ChatMessageHistoryItem.ofAssistant("Câu trả lời học vụ lượt thứ " + i + ": Bạn cần tích lũy học phần này", List.of(), List.of(), null, List.of()),
+                    tightLimit);
+        }
+
+        // Without throwing ConversationStorageOverflowException, record should be saved successfully.
+        List<ChatMessageHistoryItem> messages = historyManager.loadFullHistory(convId, studentId);
+        assertThat(messages).isNotEmpty();
+        // The earliest message should be a compacted summary of older turns
+        assertThat(messages.get(0).getContent()).contains("Tóm tắt");
+        // The latest turn should be preserved intact
+        assertThat(messages.get(messages.size() - 1).getContent()).contains("lượt thứ 5");
+    }
+
+    @Test
     @DisplayName("Should throw ConversationStorageOverflowException instead of silently pruning messages when exceeding DB limit")
     void testSaveTurnThrowsOnOverflowWithoutPruning() {
         String convId = "conv-overflow-" + UUID.randomUUID();

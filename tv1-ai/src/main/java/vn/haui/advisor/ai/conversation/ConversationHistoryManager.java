@@ -193,8 +193,15 @@ public class ConversationHistoryManager {
         int limit = maxTotalChars > 0 ? maxTotalChars : DEFAULT_MAX_CHARS;
         String json = serialize(messages);
 
+        // Progressive Compaction: Nếu dung lượng vượt ngưỡng giới hạn lưu trữ và có nhiều tin nhắn,
+        // thực hiện nén gộp các lượt cũ thành 1 bản tóm tắt có cấu trúc thay vì làm gãy ngang phiên trò chuyện.
+        if (isSizeExceeded(json, limit) && messages.size() > 2) {
+            messages = compactHistory(messages, limit);
+            json = serialize(messages);
+        }
+
         // Ngăn chặn cắt ngầm: Thay vì âm thầm xoá tin nhắn cũ (silent pruning),
-        // ném ngoại lệ rõ ràng để bảo vệ tính toàn vẹn của cơ sở dữ liệu.
+        // ném ngoại lệ rõ ràng nếu sau khi nén dung lượng vẫn vượt quá giới hạn vật lý.
         if (isSizeExceeded(json, limit)) {
             throw new ConversationStorageOverflowException(
                     "Dung lượng hội thoại (" + json.getBytes(StandardCharsets.UTF_8).length
@@ -240,6 +247,81 @@ public class ConversationHistoryManager {
             log.error("Failed to serialize conversation history: {}", e.getMessage());
             return "[]";
         }
+    }
+
+    private List<ChatMessageHistoryItem> compactHistory(List<ChatMessageHistoryItem> messages, int limit) {
+        if (messages == null || messages.size() <= 2) {
+            return messages;
+        }
+
+        // Thử giữ lại 4 tin nhắn gần nhất
+        if (messages.size() > 4) {
+            List<ChatMessageHistoryItem> candidate4 = doCompact(messages, 4, limit);
+            if (!isSizeExceeded(serialize(candidate4), limit)) {
+                return candidate4;
+            }
+        }
+
+        // Nếu vẫn vượt, giữ lại 2 tin nhắn gần nhất (lượt hội thoại mới nhất)
+        return doCompact(messages, 2, limit);
+    }
+
+    private List<ChatMessageHistoryItem> doCompact(List<ChatMessageHistoryItem> messages, int keepCount, int limit) {
+        int actualKeep = Math.min(keepCount, messages.size());
+        int splitIndex = messages.size() - actualKeep;
+        if (splitIndex <= 0) {
+            return messages;
+        }
+
+        List<ChatMessageHistoryItem> older = messages.subList(0, splitIndex);
+        List<ChatMessageHistoryItem> recent = new ArrayList<>(messages.subList(splitIndex, messages.size()));
+
+        StringBuilder summaryBuilder = new StringBuilder("[Tóm tắt lịch sử trao đổi trước đó: ");
+        int count = 0;
+        for (ChatMessageHistoryItem item : older) {
+            if (item == null || item.getContent() == null || item.getContent().isBlank()) {
+                continue;
+            }
+            String raw = item.getContent().trim().replaceAll("\\s+", " ");
+            if (raw.startsWith("[Tóm tắt lịch sử trao đổi trước đó:")) {
+                // Tách nội dung tóm tắt cũ để gộp tiếp
+                raw = raw.replace("[Tóm tắt lịch sử trao đổi trước đó:", "").replaceAll("\\]$", "").trim();
+                if (!raw.isBlank()) {
+                    if (count > 0) summaryBuilder.append("; ");
+                    summaryBuilder.append(raw);
+                    count++;
+                }
+                continue;
+            }
+            if (count > 0) {
+                summaryBuilder.append("; ");
+            }
+            String roleTag = "assistant".equalsIgnoreCase(item.getRole()) ? "Cố vấn" : "Sinh viên";
+            if (raw.length() > 40) {
+                raw = raw.substring(0, 40) + "...";
+            }
+            summaryBuilder.append(roleTag).append(": ").append(raw);
+            count++;
+            if (summaryBuilder.length() > 120) {
+                summaryBuilder.append("...");
+                break;
+            }
+        }
+        summaryBuilder.append("]");
+
+        String timestamp = older.isEmpty() ? Instant.now().toString() : older.get(0).getTimestamp();
+        ChatMessageHistoryItem summaryItem = ChatMessageHistoryItem.ofUser(summaryBuilder.toString(), null);
+        summaryItem.setTimestamp(timestamp != null ? timestamp : Instant.now().toString());
+
+        List<ChatMessageHistoryItem> compacted = new ArrayList<>();
+        compacted.add(summaryItem);
+        compacted.addAll(recent);
+
+        if (isSizeExceeded(serialize(compacted), limit)) {
+            summaryItem.setContent("[Tóm tắt trao đổi trước đó]");
+        }
+
+        return compacted;
     }
 
     private String generateTitle(List<ChatMessageHistoryItem> messages, ChatMessageHistoryItem fallbackUserMsg) {
