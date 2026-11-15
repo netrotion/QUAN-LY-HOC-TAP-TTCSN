@@ -417,6 +417,9 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                         response.getPlanProposal() != null ? response.getPlanProposal().getProposalId() : null,
                         response.getWarnings()
                 );
+                if (ResponseGroundingValidator.isSevereGroundingViolation(response.getWarnings())) {
+                    assistantHistoryItem.setQuarantined(true);
+                }
                 conversationHistoryManager.saveTurn(conversationId, studentId, userHistoryItem, assistantHistoryItem, 900_000);
             } catch (SecurityException | IllegalArgumentException se) {
                 if (se.getMessage() != null && (se.getMessage().contains("sinh viên khác") || se.getMessage().contains("Cross-account") || se.getMessage().contains("belongs to another student"))) {

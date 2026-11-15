@@ -253,6 +253,9 @@ public class AdvisorStreamingService {
             planProposal = rawOutput.getPlanProposal();
             citations = rawOutput.getSources();
             actions = rawOutput.getActions();
+            if (rawOutput.getWarnings() != null) {
+                combinedWarnings.addAll(rawOutput.getWarnings());
+            }
 
             if (citations != null && !citations.isEmpty()) {
                 eventConsumer.accept(ChatStreamEvent.citation(citations));
@@ -303,6 +306,9 @@ public class AdvisorStreamingService {
                         validated.getPlanProposal() != null ? validated.getPlanProposal().getProposalId() : null,
                         combinedWarnings
                 );
+                if (ResponseGroundingValidator.isSevereGroundingViolation(combinedWarnings)) {
+                    assistantHistoryItem.setQuarantined(true);
+                }
                 conversationHistoryManager.saveTurn(conversationId, studentId, userHistoryItem, assistantHistoryItem, 900_000);
             } catch (Exception ex) {
                 log.warn("failed_to_save_streaming_conversation_turn", ex);
