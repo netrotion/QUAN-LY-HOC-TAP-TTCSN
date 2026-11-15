@@ -231,6 +231,17 @@ export function DashboardPage({ mountedRouteSummary }) {
     return 'Yếu (Cảnh báo)';
   };
 
+  const getTrainingRank = (score) => {
+    if (score === null || score === undefined || score === '—') return 'Chưa có dữ liệu';
+    const num = Number(score);
+    if (isNaN(num)) return 'Chưa có dữ liệu';
+    if (num >= 90) return 'Xuất sắc';
+    if (num >= 80) return 'Tốt';
+    if (num >= 65) return 'Khá';
+    if (num >= 50) return 'Trung bình';
+    return 'Yếu';
+  };
+
   const semesterTrend = useMemo(() => {
     if (academicStatus?.semesterTrend && academicStatus.semesterTrend.length > 0) {
       return academicStatus.semesterTrend;
@@ -663,12 +674,43 @@ export function DashboardPage({ mountedRouteSummary }) {
               {creditPercent}%
             </span>
           </div>
-          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-              <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{studentSession?.majorName || 'Chương trình đào tạo HaUI'} ({studentSession?.cohort || 'Toàn khóa'})</span>
-              <span style={{ color: 'var(--color-mid-gray)' }}>Còn thiếu {totalRequiredCredits - accumulatedCredits} TC</span>
+
+          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {/* Dòng 1: Chuyên ngành */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+              <span style={{ color: 'var(--color-mid-gray)' }}>Chuyên ngành:</span>
+              <span
+                style={{
+                  color: 'var(--color-ink)',
+                  fontWeight: 600,
+                  maxWidth: '160px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
+                title={studentSession?.majorName || 'Kỹ thuật phần mềm'}
+              >
+                {studentSession?.majorName || 'Kỹ thuật phần mềm'}
+              </span>
             </div>
-            <div className="haui-progress-bar-minimal">
+
+            {/* Dòng 2: Tín chỉ còn thiếu */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+              <span style={{ color: 'var(--color-mid-gray)' }}>Tín chỉ còn lại:</span>
+              <span
+                style={{
+                  color: totalRequiredCredits - accumulatedCredits > 0 ? 'var(--color-ember, #b45309)' : '#047857',
+                  fontWeight: 500
+                }}
+              >
+                {totalRequiredCredits - accumulatedCredits > 0
+                  ? `Còn thiếu ${totalRequiredCredits - accumulatedCredits} TC`
+                  : 'Đã tích lũy đủ'}
+              </span>
+            </div>
+
+            {/* Thanh tiến độ */}
+            <div className="haui-progress-bar-minimal" style={{ marginTop: '4px' }}>
               <div className="haui-progress-bar-fill" style={{ width: `${creditPercent}%` }} />
             </div>
           </div>
@@ -691,17 +733,33 @@ export function DashboardPage({ mountedRouteSummary }) {
               </div>
             </div>
           </div>
-          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-              <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>
-                {trainingScore !== null ? 'Đạt điều kiện tốt nghiệp' : 'Chưa có điểm rèn luyện'}
-              </span>
-              <span style={{ color: 'var(--color-mid-gray)' }}>
-                {trainingScore !== null ? `Mức điểm: ${trainingScore}/100` : 'Cần nạp bảng điểm'}
+
+          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {/* Dòng trên: Xếp loại */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+              <span style={{ color: 'var(--color-mid-gray)' }}>Xếp loại rèn luyện:</span>
+              <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>
+                {trainingScore !== null ? getTrainingRank(trainingScore) : 'Chưa có'}
               </span>
             </div>
-            <div className="haui-progress-bar-minimal">
-              <div className="haui-progress-bar-fill" style={{ width: trainingScore !== null ? `${trainingScore}%` : '0%' }} />
+
+            {/* Dòng dưới: Chuẩn tốt nghiệp */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+              <span style={{ color: 'var(--color-mid-gray)' }}>Chuẩn tốt nghiệp:</span>
+              <span style={{ color: trainingScore !== null && trainingScore >= 50 ? '#047857' : 'var(--color-ink)', fontWeight: 500 }}>
+                {trainingScore !== null ? (trainingScore >= 50 ? 'Đạt (≥ 50 điểm)' : 'Chưa đạt (yêu cầu ≥ 50)') : 'Cần nạp bảng điểm'}
+              </span>
+            </div>
+
+            {/* Thanh tiến độ */}
+            <div className="haui-progress-bar-minimal" style={{ marginTop: '4px' }}>
+              <div
+                className="haui-progress-bar-fill"
+                style={{
+                  width: trainingScore !== null ? `${Math.min(100, trainingScore)}%` : '0%',
+                  backgroundColor: trainingScore !== null && trainingScore < 50 ? 'var(--color-ember, #e7000b)' : 'var(--color-ink)'
+                }}
+              />
             </div>
           </div>
         </div>
@@ -723,19 +781,36 @@ export function DashboardPage({ mountedRouteSummary }) {
               </div>
             </div>
             <span className="haui-stat-trend">
-              {auditPercent !== null ? `${auditPercent}%` : 'Chưa có dữ liệu'}
+              {auditPercent !== null ? `${auditPercent}%` : 'Chưa có'}
             </span>
           </div>
-          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-              <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>
-                {auditPercent !== null ? `${auditPercent}% tiêu chuẩn đạt` : 'Chưa có dữ liệu kiểm toán'}
-              </span>
-              <span style={{ color: 'var(--color-mid-gray)' }}>
-                {auditPercent !== null ? `${completedChecklistCount}/${totalChecklistCount} tiêu chí` : 'Cần nạp bảng điểm'}
+
+          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {/* Dòng 1: Tiêu chí hoàn thành */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+              <span style={{ color: 'var(--color-mid-gray)' }}>Tiêu chuẩn đạt:</span>
+              <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>
+                {completedChecklistCount !== null ? `${completedChecklistCount}/${totalChecklistCount} tiêu chí` : 'Chưa có dữ liệu'}
               </span>
             </div>
-            <div className="haui-progress-bar-minimal">
+
+            {/* Dòng 2: Trạng thái xét tốt nghiệp */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+              <span style={{ color: 'var(--color-mid-gray)' }}>Chuẩn đầu ra:</span>
+              <span
+                style={{
+                  color: auditPercent === 100 ? '#047857' : (auditPercent !== null ? '#b45309' : 'var(--color-ink)'),
+                  fontWeight: 500
+                }}
+              >
+                {auditPercent !== null
+                  ? (auditPercent === 100 ? 'Đạt toàn bộ tiêu chí' : `Còn thiếu ${totalChecklistCount - completedChecklistCount} tiêu chí`)
+                  : 'Cần nạp bảng điểm'}
+              </span>
+            </div>
+
+            {/* Thanh tiến độ */}
+            <div className="haui-progress-bar-minimal" style={{ marginTop: '4px' }}>
               <div className="haui-progress-bar-fill" style={{ width: auditPercent !== null ? `${auditPercent}%` : '0%' }} />
             </div>
           </div>

@@ -13,14 +13,14 @@ const NAV_ITEMS = Object.freeze([
     icon: 'grid_view'
   },
   {
+    to: '/chat',
+    label: 'Tư vấn AI',
+    icon: 'smart_toy'
+  },
+  {
     to: '/progress',
     label: 'Hồ sơ sinh viên',
     icon: 'badge'
-  },
-  {
-    to: '/transcript',
-    label: 'Nhập bảng điểm',
-    icon: 'upload_file'
   },
   {
     to: '/curriculum',
@@ -31,11 +31,6 @@ const NAV_ITEMS = Object.freeze([
     to: '/planner',
     label: 'Kế hoạch học tập',
     icon: 'event_note'
-  },
-  {
-    to: '/chat',
-    label: 'Tư vấn AI',
-    icon: 'smart_toy'
   },
   {
     to: '/audit',
