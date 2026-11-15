@@ -67,6 +67,34 @@ public class ResponseGroundingValidator {
     );
     private static final Pattern INLINE_POLICY_ID = Pattern.compile("\\bREG-HAUI-[A-Z0-9-]+\\b");
 
+    private static final List<String> SEVERE_WARNING_PREFIXES = List.of(
+            "SECURITY_VIOLATION",
+            "DATA_POISONING_SUSPECT",
+            "MODEL_PROVIDER_ERROR",
+            "UNGROUNDED_COURSE_CODE",
+            "COURSE_RELATION_CONTRADICTION",
+            "UNRELIABLE_GROUNDING"
+    );
+
+    /**
+     * Xác định xem danh sách cảnh báo có chứa vi phạm nghiêm trọng (ảo giác, phá vỡ an toàn hoặc lỗi provider)
+     * cần cách ly nhằm ngăn chặn đầu độc lịch sử hội thoại hay không.
+     */
+    public static boolean isSevereGroundingViolation(List<String> warnings) {
+        if (warnings == null || warnings.isEmpty()) {
+            return false;
+        }
+        for (String w : warnings) {
+            if (w == null) continue;
+            for (String prefix : SEVERE_WARNING_PREFIXES) {
+                if (w.startsWith(prefix) || w.contains(prefix)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private final ObjectMapper objectMapper;
 
     public ResponseGroundingValidator() {
@@ -502,7 +530,7 @@ public class ResponseGroundingValidator {
     }
 
     private BigDecimal extractAuthoritativeCpa(Map<String, Object> toolResults) {
-        if (toolResults.get("academicStatus") instanceof AcademicStatusResponse status && status.getCpa() != null) {
+        if (toolResults.getOrDefault("get_academic_status", toolResults.get("academicStatus")) instanceof AcademicStatusResponse status && status.getCpa() != null) {
             return status.getCpa();
         }
         if (toolResults.get("cpa") instanceof BigDecimal cpa) {
@@ -515,7 +543,7 @@ public class ResponseGroundingValidator {
     }
 
     private BigDecimal extractAuthoritativeGpa(Map<String, Object> toolResults) {
-        if (toolResults.get("academicStatus") instanceof AcademicStatusResponse status && status.getGpa() != null) {
+        if (toolResults.getOrDefault("get_academic_status", toolResults.get("academicStatus")) instanceof AcademicStatusResponse status && status.getGpa() != null) {
             return status.getGpa();
         }
         if (toolResults.get("gpa") instanceof BigDecimal gpa) {
@@ -528,10 +556,10 @@ public class ResponseGroundingValidator {
     }
 
     private Integer extractAuthoritativeCredits(Map<String, Object> toolResults) {
-        if (toolResults.get("academicStatus") instanceof AcademicStatusResponse status && status.getAccumulatedCredits() != null) {
+        if (toolResults.getOrDefault("get_academic_status", toolResults.get("academicStatus")) instanceof AcademicStatusResponse status && status.getAccumulatedCredits() != null) {
             return status.getAccumulatedCredits();
         }
-        if (toolResults.get("graduationAudit") instanceof GraduationAuditResponse audit && audit.getAccumulatedCredits() != null) {
+        if (toolResults.getOrDefault("run_graduation_audit", toolResults.get("graduationAudit")) instanceof GraduationAuditResponse audit && audit.getAccumulatedCredits() != null) {
             return audit.getAccumulatedCredits();
         }
         if (toolResults.get("accumulatedCredits") instanceof Integer creds) {
@@ -544,7 +572,7 @@ public class ResponseGroundingValidator {
     }
 
     private BigDecimal extractProjectedCpa(Map<String, Object> toolResults) {
-        if (toolResults.get("simulateGrades") instanceof SimulateGradesResponse sim && sim.getProjectedCpa() != null) {
+        if (toolResults.getOrDefault("simulate_grades", toolResults.get("simulateGrades")) instanceof SimulateGradesResponse sim && sim.getProjectedCpa() != null) {
             return sim.getProjectedCpa();
         }
         if (toolResults.get("planProposal") instanceof ChatPlanProposal prop && prop.getProjectedCpa() != null) {

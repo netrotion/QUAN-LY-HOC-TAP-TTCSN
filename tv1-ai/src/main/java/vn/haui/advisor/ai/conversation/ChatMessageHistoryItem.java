@@ -19,6 +19,9 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ChatMessageHistoryItem implements Serializable {
 
+    public static final String QUARANTINED_TOMBSTONE =
+            "[Nội dung phản hồi này không đạt chuẩn căn cứ học vụ và đã được cách ly để tránh sai lệch thông tin]";
+
     @JsonProperty("role")
     private String role;
 
@@ -27,6 +30,10 @@ public class ChatMessageHistoryItem implements Serializable {
 
     @JsonProperty("timestamp")
     private String timestamp;
+
+    @JsonProperty("clientTimestamp")
+    // shortcut: deduplicate retained turns by the client timestamp and text; use request IDs if clients can send identical turns in the same millisecond.
+    private String clientTimestamp;
 
     @JsonProperty("sources")
     private List<ChatSourceItem> sources;
@@ -39,6 +46,9 @@ public class ChatMessageHistoryItem implements Serializable {
 
     @JsonProperty("warnings")
     private List<String> warnings;
+
+    @JsonProperty("quarantined")
+    private Boolean quarantined;
 
     public ChatMessageHistoryItem() {
         this.sources = new ArrayList<>();
@@ -64,6 +74,18 @@ public class ChatMessageHistoryItem implements Serializable {
 
     public static ChatMessageHistoryItem ofUser(String content) {
         return new ChatMessageHistoryItem("user", content, Instant.now().toString(), List.of(), List.of(), null, List.of());
+    }
+
+    public static ChatMessageHistoryItem ofUser(String content, String clientTimestamp) {
+        var item = ofUser(content);
+        if (clientTimestamp != null && clientTimestamp.length() <= 64) {
+            try {
+                item.clientTimestamp = Instant.parse(clientTimestamp).toString();
+            } catch (java.time.format.DateTimeParseException ignored) {
+                // Older clients can omit the timestamp or send a non-ISO value.
+            }
+        }
+        return item;
     }
 
     public static ChatMessageHistoryItem ofAssistant(String content,
@@ -128,5 +150,13 @@ public class ChatMessageHistoryItem implements Serializable {
 
     public void setWarnings(List<String> warnings) {
         this.warnings = warnings != null ? new ArrayList<>(warnings) : new ArrayList<>();
+    }
+
+    public boolean isQuarantined() {
+        return Boolean.TRUE.equals(quarantined);
+    }
+
+    public void setQuarantined(Boolean quarantined) {
+        this.quarantined = quarantined;
     }
 }
