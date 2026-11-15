@@ -3,6 +3,7 @@ package vn.haui.advisor.ai.model;
 import vn.haui.advisor.ai.conversation.ChatMessageHistoryItem;
 import vn.haui.advisor.ai.intent.ParsedUserIntent;
 import vn.haui.advisor.ai.rag.service.GroundedContext;
+import vn.haui.advisor.contracts.dto.StudentFactRecord;
 import vn.haui.advisor.contracts.dto.TrustedStudentContext;
 
 import java.io.Serializable;
@@ -13,7 +14,8 @@ import java.util.Map;
 /**
  * Đầu vào cho abstraction AdvisorModel.
  * Chứa tin nhắn người dùng, danh tính sinh viên tin cậy từ server context, kết quả từ ToolAdapter,
- * ngữ cảnh tri thức RAG đã neo dẫn chứng, lịch sử hội thoại nhiều lượt và ý định người dùng đã bóc tách.
+ * ngữ cảnh tri thức RAG đã neo dẫn chứng, lịch sử hội thoại nhiều lượt, ý định người dùng đã bóc tách
+ * và sổ tay dữ kiện học tập dài hạn (StudentFactRecord).
  */
 public class AdvisorModelInput implements Serializable {
     private final String userMessage;
@@ -22,16 +24,17 @@ public class AdvisorModelInput implements Serializable {
     private final GroundedContext groundedContext;
     private final List<ChatMessageHistoryItem> history;
     private final ParsedUserIntent userIntent;
+    private final StudentFactRecord studentFacts;
 
     public AdvisorModelInput(String userMessage, TrustedStudentContext studentContext, Map<String, Object> toolResults) {
-        this(userMessage, studentContext, toolResults, null, Collections.emptyList(), null);
+        this(userMessage, studentContext, toolResults, null, Collections.emptyList(), null, null);
     }
 
     public AdvisorModelInput(String userMessage,
                              TrustedStudentContext studentContext,
                              Map<String, Object> toolResults,
                              GroundedContext groundedContext) {
-        this(userMessage, studentContext, toolResults, groundedContext, Collections.emptyList(), null);
+        this(userMessage, studentContext, toolResults, groundedContext, Collections.emptyList(), null, null);
     }
 
     public AdvisorModelInput(String userMessage,
@@ -40,12 +43,23 @@ public class AdvisorModelInput implements Serializable {
                              GroundedContext groundedContext,
                              List<ChatMessageHistoryItem> history,
                              ParsedUserIntent userIntent) {
+        this(userMessage, studentContext, toolResults, groundedContext, history, userIntent, null);
+    }
+
+    public AdvisorModelInput(String userMessage,
+                             TrustedStudentContext studentContext,
+                             Map<String, Object> toolResults,
+                             GroundedContext groundedContext,
+                             List<ChatMessageHistoryItem> history,
+                             ParsedUserIntent userIntent,
+                             StudentFactRecord studentFacts) {
         this.userMessage = userMessage;
         this.studentContext = studentContext;
         this.toolResults = toolResults != null ? Collections.unmodifiableMap(toolResults) : Collections.emptyMap();
         this.groundedContext = groundedContext;
         this.history = history != null ? Collections.unmodifiableList(history) : Collections.emptyList();
         this.userIntent = userIntent;
+        this.studentFacts = studentFacts;
     }
 
     public String getUserMessage() {
@@ -70,5 +84,9 @@ public class AdvisorModelInput implements Serializable {
 
     public ParsedUserIntent getUserIntent() {
         return userIntent;
+    }
+
+    public StudentFactRecord getStudentFacts() {
+        return studentFacts;
     }
 }

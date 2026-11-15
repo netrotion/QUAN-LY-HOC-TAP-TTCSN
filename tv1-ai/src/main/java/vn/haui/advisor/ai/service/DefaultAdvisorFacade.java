@@ -21,7 +21,9 @@ import vn.haui.advisor.ai.tools.GeminiToolDeclarations;
 import vn.haui.advisor.ai.tools.ToolAdapter;
 import vn.haui.advisor.ai.tools.ToolNotReadyException;
 import vn.haui.advisor.contracts.dto.*;
+import vn.haui.advisor.contracts.fake.InMemoryStudentFactStore;
 import vn.haui.advisor.contracts.ports.AdvisorFacade;
+import vn.haui.advisor.contracts.ports.StudentFactStore;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -53,6 +55,7 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
     private final AiMetricsCollector metricsCollector;
     private final TokenBudgetAuditor tokenBudgetAuditor;
     private final AiProperties aiProperties;
+    private final StudentFactStore studentFactStore;
 
     public DefaultAdvisorFacade(AdvisorModel advisorModel, ToolAdapter toolAdapter) {
         this(advisorModel, toolAdapter, null, null, null, null, DEFAULT_TOOL_TIMEOUT_MS, null);
@@ -103,6 +106,21 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                                 AiMetricsCollector metricsCollector,
                                 TokenBudgetAuditor tokenBudgetAuditor,
                                 AiProperties aiProperties) {
+        this(advisorModel, toolAdapter, ragAdvisorService, conversationHistoryManager, intentClassifier,
+                responseGroundingValidator, toolTimeoutMs, metricsCollector, tokenBudgetAuditor, aiProperties, null);
+    }
+
+    public DefaultAdvisorFacade(AdvisorModel advisorModel,
+                                ToolAdapter toolAdapter,
+                                RagAdvisorService ragAdvisorService,
+                                ConversationHistoryManager conversationHistoryManager,
+                                IntentClassifier intentClassifier,
+                                ResponseGroundingValidator responseGroundingValidator,
+                                long toolTimeoutMs,
+                                AiMetricsCollector metricsCollector,
+                                TokenBudgetAuditor tokenBudgetAuditor,
+                                AiProperties aiProperties,
+                                StudentFactStore studentFactStore) {
         this.advisorModel = Objects.requireNonNull(advisorModel, "advisorModel must not be null");
         this.toolAdapter = Objects.requireNonNull(toolAdapter, "toolAdapter must not be null");
         this.ragAdvisorService = ragAdvisorService;
@@ -114,11 +132,16 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
         this.metricsCollector = metricsCollector != null ? metricsCollector : new AiMetricsCollector();
         this.tokenBudgetAuditor = tokenBudgetAuditor != null ? tokenBudgetAuditor : new TokenBudgetAuditor();
         this.aiProperties = aiProperties != null ? aiProperties : new AiProperties();
+        this.studentFactStore = studentFactStore != null ? studentFactStore : new InMemoryStudentFactStore();
         this.executorService = Executors.newCachedThreadPool(r -> {
             Thread t = new Thread(r, "advisor-tool-runner");
             t.setDaemon(true);
             return t;
         });
+    }
+
+    public StudentFactStore getStudentFactStore() {
+        return studentFactStore;
     }
 
     public AiMetricsCollector getMetricsCollector() {
@@ -270,8 +293,11 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                             finalAnswer, sources, List.of(), planProposal, combinedWarnings
                     );
 
+                    StudentFactRecord studentFacts = (studentFactStore != null && context != null && context.getStudentId() != null)
+                            ? studentFactStore.getFacts(context.getStudentId()) : null;
+
                     AdvisorModelInput modelInput = new AdvisorModelInput(
-                            userMessage, context, toolResults, groundedContext, history, null
+                            userMessage, context, toolResults, groundedContext, history, null, studentFacts
                     );
 
                     AdvisorModelOutput validatedOutput = responseGroundingValidator.validate(modelOutput, modelInput);
@@ -289,8 +315,11 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                             policyOnly ? ConversationTurnPlanner.NO_POLICY_EVIDENCE : turnResult.directText(),
                             List.of(), List.of(), null, List.of()
                     );
+                    StudentFactRecord studentFacts = (studentFactStore != null && context != null && context.getStudentId() != null)
+                            ? studentFactStore.getFacts(context.getStudentId()) : null;
+
                     AdvisorModelInput modelInput = new AdvisorModelInput(
-                            userMessage, context, Collections.emptyMap(), null, history, null
+                            userMessage, context, Collections.emptyMap(), null, history, null, studentFacts
                     );
                     AdvisorModelOutput validatedOutput = responseGroundingValidator.validate(modelOutput, modelInput);
 
@@ -361,13 +390,29 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
             }
 
             // 7. Đóng gói Input và gọi AdvisorModel (Mock hoặc Live)
+            StudentFactRecord studentFacts = null;
+            if (studentFactStore != null && context != null && context.getStudentId() != null) {
+                if (userIntent != null && userIntent.getTargetCpa() != null) {
+                    StudentFactRecord existingRecord = studentFactStore.getFacts(context.getStudentId());
+                    if (existingRecord == null) {
+                        existingRecord = new StudentFactRecord(context.getStudentId(), userIntent.getTargetCpa(), null, null, Map.of(), Instant.now().toString());
+                    } else {
+                        existingRecord.setTargetCpa(userIntent.getTargetCpa());
+                        existingRecord.setUpdatedAt(Instant.now().toString());
+                    }
+                    studentFactStore.saveFacts(existingRecord);
+                }
+                studentFacts = studentFactStore.getFacts(context.getStudentId());
+            }
+
             AdvisorModelInput modelInput = new AdvisorModelInput(
                     userMessage,
                     context,
                     toolResults,
                     groundedContext,
                     history,
-                    userIntent
+                    userIntent,
+                    studentFacts
             );
 
             long mStart = System.currentTimeMillis();

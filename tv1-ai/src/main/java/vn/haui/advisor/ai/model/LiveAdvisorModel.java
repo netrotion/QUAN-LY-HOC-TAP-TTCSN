@@ -912,6 +912,24 @@ public class LiveAdvisorModel implements AdvisorModel {
         }
         sb.append("</student_context>\n\n");
 
+        if (input != null && input.getStudentFacts() != null && !isGeneralRegulation) {
+            StudentFactRecord facts = input.getStudentFacts();
+            sb.append("<student_preferences>\n");
+            if (facts.getTargetCpa() != null) {
+                sb.append("Mục tiêu CPA: ").append(facts.getTargetCpa().toPlainString()).append("\n");
+            }
+            if (facts.getPreferredCareerTrack() != null && !facts.getPreferredCareerTrack().isBlank()) {
+                sb.append("Định hướng chuyên ngành: ").append(facts.getPreferredCareerTrack().trim()).append("\n");
+            }
+            if (facts.getMaxCreditsPerSemester() != null) {
+                sb.append("Số tín chỉ tối đa mong muốn/kỳ: ").append(facts.getMaxCreditsPerSemester()).append("\n");
+            }
+            if (facts.getVerifiedPreferences() != null && !facts.getVerifiedPreferences().isEmpty()) {
+                facts.getVerifiedPreferences().forEach((k, v) -> sb.append(k).append(": ").append(v).append("\n"));
+            }
+            sb.append("</student_preferences>\n\n");
+        }
+
         sb.append("<conversation_history>\n");
         if (input != null && input.getHistory() != null && !input.getHistory().isEmpty()) {
             List<ChatMessageHistoryItem> hist = input.getHistory();
