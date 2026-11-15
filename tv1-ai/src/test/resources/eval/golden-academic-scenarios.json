@@ -1,0 +1,92 @@
+[
+  {
+    "id": "SCENARIO-01",
+    "name": "Tra cứu môn điểm kém để cải thiện",
+    "query": "có môn học nào tôi điểm kém (C trở xuống) cần học lại không?",
+    "expectedIntent": "RETAKE_IMPROVEMENT",
+    "requiredTools": ["RANK_RETAKE_COURSES", "GET_ACADEMIC_STATUS"],
+    "expectedKeywords": ["cải thiện", "điểm", "C"],
+    "mustNotHallucinate": true
+  },
+  {
+    "id": "SCENARIO-02",
+    "name": "Rà soát điều kiện tốt nghiệp cá nhân",
+    "query": "Kiểm tra xem mình còn thiếu điều kiện gì tốt nghiệp và tiến độ tốt nghiệp của mình ra sao?",
+    "expectedIntent": "GRADUATION_AUDIT",
+    "requiredTools": ["RUN_GRADUATION_AUDIT"],
+    "expectedKeywords": ["tốt nghiệp", "điều kiện"],
+    "mustNotHallucinate": true
+  },
+  {
+    "id": "SCENARIO-03",
+    "name": "Kiểm tra điều kiện tiên quyết môn học",
+    "query": "Tôi muốn kiểm tra điều kiện tiên quyết môn IT6001 kỳ tới có được đăng ký học được không?",
+    "expectedIntent": "DEBT_COURSES",
+    "requiredTools": ["CHECK_COURSE_ELIGIBILITY"],
+    "expectedKeywords": ["tiên quyết", "đăng ký"],
+    "mustNotHallucinate": false
+  },
+  {
+    "id": "SCENARIO-04",
+    "name": "Tra cứu tình trạng học vụ và CPA cá nhân",
+    "query": "Xem điểm của mình và tình trạng học tập hiện tại có bị cảnh báo học vụ không?",
+    "expectedIntent": "REGULATION",
+    "requiredTools": [],
+    "expectedKeywords": ["cảnh báo", "tình trạng"],
+    "mustNotHallucinate": true
+  },
+  {
+    "id": "SCENARIO-05",
+    "name": "Lập kế hoạch học tập đề xuất với mục tiêu CPA",
+    "query": "Lập kế hoạch học tập kỳ tới cho mình với mục tiêu cpa 3.20 và tối đa 18 tín chỉ năm 2026_1",
+    "expectedIntent": "STUDY_PLAN",
+    "requiredTools": ["GENERATE_STUDY_PLAN"],
+    "expectedKeywords": ["kế hoạch", "tín chỉ"],
+    "mustNotHallucinate": false
+  },
+  {
+    "id": "SCENARIO-06",
+    "name": "Tra cứu nợ môn học và bảng điểm học tập",
+    "query": "Tôi nợ môn nào trong chương trình đào tạo và điểm học tập của mình ra sao?",
+    "expectedIntent": "DEBT_COURSES",
+    "requiredTools": ["GET_ACADEMIC_STATUS"],
+    "expectedKeywords": ["nợ môn", "điểm"],
+    "mustNotHallucinate": true
+  },
+  {
+    "id": "SCENARIO-07",
+    "name": "Kiểm tra điều kiện đăng ký môn học cụ thể",
+    "query": "Học phần IT6015 có chặn môn hoặc cần học trước môn nào không?",
+    "expectedIntent": "DEBT_COURSES",
+    "requiredTools": ["CHECK_COURSE_ELIGIBILITY"],
+    "expectedKeywords": ["chặn môn", "học trước"],
+    "mustNotHallucinate": false
+  },
+  {
+    "id": "SCENARIO-08",
+    "name": "Giả lập điểm số học kỳ What-If",
+    "query": "Nếu kỳ này tôi đạt B+ môn học và kéo cpa lên 3.0 thì kết quả thế nào?",
+    "expectedIntent": "WHAT_IF",
+    "requiredTools": [],
+    "expectedKeywords": ["giả lập", "CPA"],
+    "mustNotHallucinate": false
+  },
+  {
+    "id": "SCENARIO-09",
+    "name": "Hỏi quy chế đào tạo HaUI về cảnh báo học vụ",
+    "query": "Quy chế đào tạo HaUI quy định thế nào về điều kiện xét buộc thôi học do cảnh báo học vụ?",
+    "expectedIntent": "REGULATION",
+    "requiredTools": [],
+    "expectedKeywords": ["buộc thôi học", "cảnh báo"],
+    "mustNotHallucinate": false
+  },
+  {
+    "id": "SCENARIO-10",
+    "name": "Tra cứu học cải thiện nâng điểm CPA",
+    "query": "Cải thiện môn nào để nâng điểm CPA lên hiệu quả nhất?",
+    "expectedIntent": "RETAKE_IMPROVEMENT",
+    "requiredTools": ["RANK_RETAKE_COURSES"],
+    "expectedKeywords": ["cải thiện", "CPA"],
+    "mustNotHallucinate": true
+  }
+]

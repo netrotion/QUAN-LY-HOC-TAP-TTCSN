@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 
 /** Chooses evidence and academic capabilities from user-confirmed conversation facts. */
 public class ConversationTurnPlanner {
+    static final String NO_POLICY_EVIDENCE = "Mình chưa có nguồn quy chế đã xác minh để trả lời câu hỏi này.";
     private static final Pattern YEAR = Pattern.compile("20\\d{2}");
     private static final Pattern PLAN_ID = Pattern.compile("\\b(PLAN-[A-Z0-9_-]+)\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern VERSION = Pattern.compile("(?:phiên bản|version|v)\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
@@ -148,6 +149,13 @@ public class ConversationTurnPlanner {
                 && !containsAny(lower, "quy chế", "quy định", "điều kiện chung") && !generalGraduationRule) policy = false;
 
         String retrievalQuery = current;
+        if (!userHistory.isEmpty() && lower.matches("(?:còn\\s+)?(?:học\\s+)?kỳ\\s+(?:hè|phụ|chính)\\s+(?:thì\\s+)?sao[?!.\\s]*")) {
+            String previous = userHistory.getLast().getContent();
+            if (decide(previous, List.of()).mode() == Mode.POLICY) {
+                policy = true;
+                retrievalQuery = current + " (tiếp theo câu hỏi: " + previous + ")";
+            }
+        }
         if (policy && containsAny(lower, "điều đó", "quy định đó", "còn trường hợp này")) {
             for (int i = userHistory.size() - 1; i >= 0; i--) {
                 String previous = userHistory.get(i).getContent();
@@ -256,8 +264,13 @@ public class ConversationTurnPlanner {
             if (courseCode != null) capabilities.add(AcademicCapability.CHECK_COURSE_ELIGIBILITY);
             else capabilities.add(AcademicCapability.GET_ACADEMIC_STATUS);
         } else if (parsed.getCategory() == ParsedUserIntent.ScenarioCategory.RETAKE_IMPROVEMENT) {
-            if (containsAny(lower, "môn nào", "xếp hạng", "gợi ý môn", "top ")) {
+            if (containsAny(lower, "môn nào", "môn học nào", "xếp hạng", "gợi ý môn", "top ", "điểm kém", "điểm thấp", "trở xuống", "học lại")) {
                 capabilities.add(AcademicCapability.RANK_RETAKE_COURSES);
+            }
+            if (containsAny(lower, "điểm kém", "điểm thấp", "trở xuống", "bảng điểm", "điểm của tôi", "tôi điểm")) {
+                if (!capabilities.contains(AcademicCapability.GET_ACADEMIC_STATUS)) {
+                    capabilities.add(AcademicCapability.GET_ACADEMIC_STATUS);
+                }
             }
         } else if (parsed.getCategory() != ParsedUserIntent.ScenarioCategory.REGULATION
                 && containsAny(lower, "cpa của mình", "gpa của mình", "tình trạng học tập", "điểm của mình",

@@ -184,7 +184,8 @@ public class IntentClassifier {
 
         // 7. Retake Improvement (Học cải thiện, nâng điểm)
         if (containsAny(lower, "học cải thiện", "cải thiện điểm", "học lại môn nào", "cải thiện môn nào",
-                "kéo điểm", "nâng điểm", "môn nào cần học lại", "cải thiện gpa", "cải thiện cpa")) {
+                "kéo điểm", "nâng điểm", "môn nào cần học lại", "cải thiện gpa", "cải thiện cpa",
+                "cần học lại", "học lại không", "điểm kém", "điểm thấp", "c trở xuống", "d trở xuống", "môn trượt")) {
             builder.category(ScenarioCategory.RETAKE_IMPROVEMENT);
             Matcher m = RETAKE_SUGGESTIONS_PATTERN.matcher(raw);
             if (m.find()) {
