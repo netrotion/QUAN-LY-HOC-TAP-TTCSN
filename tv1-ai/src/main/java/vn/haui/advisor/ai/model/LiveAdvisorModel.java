@@ -39,6 +39,7 @@ public class LiveAdvisorModel implements AdvisorModel {
             "   - Xưng hô 'mình - bạn' với tư cách trợ lý AI cố vấn học vụ khách quan, hỗ trợ tận tình (tuyệt đối không đóng vai thầy/cô hay giảng viên).\n" +
             "   - Đi thẳng vào trọng tâm câu hỏi. TUYỆT ĐỐI KHÔNG chào hỏi rườm rà ở đầu câu và KHÔNG dùng các câu chúc kết bài khuôn mẫu.\n" +
             "   - BẢO MẬT THÔNG TIN CÁ NHÂN: Tuyệt đối không tự ý hiển thị Mã sinh viên trong câu trả lời trừ khi người dùng yêu cầu.\n" +
+            "   - NHẬN DIỆN DANH TÍNH: Khi người dùng hỏi về danh tính của họ (ví dụ: 'tôi là ai', 'tên tôi là gì', 'hồ sơ của tôi', 'thông tin của tôi'), hãy sử dụng thông tin trong thẻ <student_context> (Họ và tên, Chuyên ngành, Khóa) để xác nhận và chào hỏi thân thiện, chính xác.\n" +
             "   - KHÔNG ĐƯA THÔNG TIN THỪA: Không trích dẫn công thức toán học hoặc quy chế chung nếu câu hỏi không yêu cầu cách tính.\n" +
             "   - KHI THIẾU DỮ LIỆU HỌC VỤ CÁ NHÂN: Nói rõ dữ kiện nào chưa có; không suy diễn điểm, tín chỉ, môn nợ hay tiến độ. Vẫn có thể trao đổi phương án chung có điều kiện.\n" +
             "6. TƯ VẤN RA QUYẾT ĐỊNH: Dựa vào mục tiêu và ràng buộc người dùng đã nêu qua các lượt, cân nhắc lợi ích và đánh đổi của các phương án; đề xuất bước tiếp theo có điều kiện. Nếu thiếu dữ kiện quyết định, hỏi một câu hỏi làm rõ đúng trọng tâm. Độ dài tùy độ phức tạp, tránh khuôn mẫu cố định.\n" +
@@ -59,7 +60,11 @@ public class LiveAdvisorModel implements AdvisorModel {
             "       Trợ lý: 'Nghe đến phở bò Hà Nội nóng hổi là thấy ấm bụng và muốn nạp năng lượng ngay rồi! Dù rất muốn cùng bạn nấu một bát phở thật ngon, nhưng sở trường chính của mình là \"cứu vớt\" GPA và đồng hành cùng sinh viên HaUI qua các mùa thi cử chứ không thạo đứng bếp gia truyền cho lắm. Nạp năng lượng xong rồi, bạn có cần mình hỗ trợ kiểm tra tiến độ tích lũy tín chỉ, tra cứu quy chế hay lên kế hoạch đăng ký môn kỳ tới không?'\n" +
             "     * Ví dụ 3 (Hỏi vui chơi / giải trí):\n" +
             "       Người dùng: 'Cuối tuần này đi đâu chơi ở Hà Nội cho vui?'\n" +
-            "       Trợ lý: 'Hà Nội cuối tuần có nhiều chỗ xả stress tuyệt vời sau một tuần \"cày cuốc\" bài tập căng thẳng quanh trường! Nhưng trước khi lên đồ đi chơi, bạn đã kiểm tra xem còn môn nào cần hoàn thành điều kiện tiên quyết hay cần tính điểm mục tiêu kỳ này chưa? Nếu cần rà soát lại tiến độ học tập, cứ nhắn mình nhé!'";
+            "       Trợ lý: 'Hà Nội cuối tuần có nhiều chỗ xả stress tuyệt vời sau một tuần \"cày cuốc\" bài tập căng thẳng quanh trường! Nhưng trước khi lên đồ đi chơi, bạn đã kiểm tra xem còn môn nào cần hoàn thành điều kiện tiên quyết hay cần tính điểm mục tiêu kỳ này chưa? Nếu cần rà soát lại tiến độ học tập, cứ nhắn mình nhé!'\n" +
+            "10. QUY TẮC BẮT BUỘC SỬ DỤNG CÔNG CỤ (TOOL CALLING FIRST):\n" +
+            "    - Khi người dùng hỏi hoặc yêu cầu bất kỳ thông tin nào về học vụ cá nhân: điểm số, bảng điểm, các môn đã học, môn điểm kém, môn điểm thấp, môn tạch/trượt/rớt, môn điểm C/D/F, môn kéo tụt GPA, môn học lại, cải thiện điểm, GPA/CPA, kiểm tra điều kiện học phần (tiên quyết, học trước, song hành), kiểm tra tiến độ tốt nghiệp, hoặc lập kế hoạch học tập, BẮT BUỘC PHẢI GỌI CÔNG CỤ HỌC VỤ TƯƠNG ỨNG trong danh sách tools.\n" +
+            "    - TUYỆT ĐỐI KHÔNG trả lời trực tiếp là 'chưa có dữ liệu', 'dữ liệu chưa đồng bộ trong phiên này' hoặc phỏng đoán kết quả khi chưa thực thi công cụ tra cứu.\n" +
+            "    - Khi người dùng hỏi về quy chế, quy định đào tạo HaUI chung (điều kiện cảnh báo học vụ, hoãn thi, thôi học, học bổng, thang điểm...), BẮT BUỘC gọi search_regulations.";
 
     private final Function<String, String> providerFunction;
     private final java.util.function.BiConsumer<String, java.util.function.Consumer<String>> streamingProviderFunction;
@@ -214,16 +219,52 @@ public class LiveAdvisorModel implements AdvisorModel {
         return contents;
     }
 
+    public static String buildSystemInstruction(TrustedStudentContext studentContext, StudentFactRecord studentFacts) {
+        StringBuilder sb = new StringBuilder(SYSTEM_PROMPT);
+        if (studentContext != null && studentContext.getFullName() != null && !studentContext.getFullName().isBlank()) {
+            sb.append("\n\n<student_context>\n");
+            sb.append(String.format("Họ và tên: %s, Chuyên ngành: %s, Khóa: %s\n",
+                    studentContext.getFullName(),
+                    studentContext.getMajorCode() != null ? studentContext.getMajorCode() : "N/A",
+                    studentContext.getCohort() != null ? studentContext.getCohort() : "N/A"));
+            sb.append("</student_context>");
+        }
+        if (studentFacts != null) {
+            sb.append("\n\n<student_preferences>\n");
+            if (studentFacts.getTargetCpa() != null) {
+                sb.append("Mục tiêu CPA: ").append(studentFacts.getTargetCpa().toPlainString()).append("\n");
+            }
+            if (studentFacts.getPreferredCareerTrack() != null && !studentFacts.getPreferredCareerTrack().isBlank()) {
+                sb.append("Định hướng chuyên ngành: ").append(studentFacts.getPreferredCareerTrack().trim()).append("\n");
+            }
+            if (studentFacts.getMaxCreditsPerSemester() != null) {
+                sb.append("Số tín chỉ tối đa mong muốn/kỳ: ").append(studentFacts.getMaxCreditsPerSemester()).append("\n");
+            }
+            if (studentFacts.getVerifiedPreferences() != null && !studentFacts.getVerifiedPreferences().isEmpty()) {
+                studentFacts.getVerifiedPreferences().forEach((k, v) -> sb.append(k).append(": ").append(v).append("\n"));
+            }
+            sb.append("</student_preferences>");
+        }
+        return sb.toString();
+    }
+
     public GeminiTurnResult inspectTurn(String userMessage, List<ChatMessageHistoryItem> history, List<Map<String, Object>> tools) {
-        return inspectTurn(userMessage, history, tools, false);
+        return inspectTurn(userMessage, history, tools, false, null, null);
     }
 
     public GeminiTurnResult inspectTurn(String userMessage, List<ChatMessageHistoryItem> history,
                                         List<Map<String, Object>> tools, boolean requirePolicyLookup) {
+        return inspectTurn(userMessage, history, tools, requirePolicyLookup, null, null);
+    }
+
+    public GeminiTurnResult inspectTurn(String userMessage, List<ChatMessageHistoryItem> history,
+                                        List<Map<String, Object>> tools, boolean requirePolicyLookup,
+                                        TrustedStudentContext studentContext, StudentFactRecord studentFacts) {
         List<Map<String, Object>> contents = formatGeminiContents(history, userMessage);
 
         Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("systemInstruction", Map.of("parts", List.of(Map.of("text", SYSTEM_PROMPT))));
+        String systemInstructionText = buildSystemInstruction(studentContext, studentFacts);
+        payload.put("systemInstruction", Map.of("parts", List.of(Map.of("text", systemInstructionText))));
         payload.put("contents", contents);
         if (tools != null && !tools.isEmpty()) {
             payload.put("tools", tools);
@@ -252,7 +293,7 @@ public class LiveAdvisorModel implements AdvisorModel {
                                               List<GeminiToolCall> toolCalls,
                                               JsonNode rawModelParts,
                                               Map<String, Object> toolResults) {
-        return completeTurnWithToolResultsDetailed(userMessage, history, toolCalls, rawModelParts, toolResults).answer();
+        return completeTurnWithToolResultsDetailed(userMessage, history, toolCalls, rawModelParts, toolResults, null, null).answer();
     }
 
     public ModelExecutionResult completeTurnWithToolResultsDetailed(String userMessage,
@@ -260,6 +301,16 @@ public class LiveAdvisorModel implements AdvisorModel {
                                                                     List<GeminiToolCall> toolCalls,
                                                                     JsonNode rawModelParts,
                                                                     Map<String, Object> toolResults) {
+        return completeTurnWithToolResultsDetailed(userMessage, history, toolCalls, rawModelParts, toolResults, null, null);
+    }
+
+    public ModelExecutionResult completeTurnWithToolResultsDetailed(String userMessage,
+                                                                    List<ChatMessageHistoryItem> history,
+                                                                    List<GeminiToolCall> toolCalls,
+                                                                    JsonNode rawModelParts,
+                                                                    Map<String, Object> toolResults,
+                                                                    TrustedStudentContext studentContext,
+                                                                    StudentFactRecord studentFacts) {
         List<Map<String, Object>> contents = new ArrayList<>(formatGeminiContents(history, userMessage));
 
         if (rawModelParts != null && rawModelParts.isArray() && !rawModelParts.isEmpty()) {
@@ -284,7 +335,8 @@ public class LiveAdvisorModel implements AdvisorModel {
         contents.add(Map.of("role", "user", "parts", responseParts));
 
         Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("systemInstruction", Map.of("parts", List.of(Map.of("text", SYSTEM_PROMPT))));
+        String systemInstructionText = buildSystemInstruction(studentContext, studentFacts);
+        payload.put("systemInstruction", Map.of("parts", List.of(Map.of("text", systemInstructionText))));
         payload.put("contents", contents);
         payload.put("tools", GeminiToolDeclarations.getToolDeclarations());
         payload.put("toolConfig", Map.of("functionCallingConfig", Map.of("mode", "NONE")));
@@ -314,6 +366,19 @@ public class LiveAdvisorModel implements AdvisorModel {
             Map<String, Object> toolResults,
             java.util.function.Consumer<String> chunkConsumer
     ) {
+        return streamTurn(userMessage, history, toolCalls, rawModelParts, toolResults, chunkConsumer, null, null);
+    }
+
+    public ModelExecutionResult streamTurn(
+            String userMessage,
+            List<ChatMessageHistoryItem> history,
+            List<GeminiToolCall> toolCalls,
+            JsonNode rawModelParts,
+            Map<String, Object> toolResults,
+            java.util.function.Consumer<String> chunkConsumer,
+            TrustedStudentContext studentContext,
+            StudentFactRecord studentFacts
+    ) {
         Objects.requireNonNull(chunkConsumer, "chunkConsumer must not be null");
 
         List<Map<String, Object>> contents = new ArrayList<>(formatGeminiContents(history, userMessage));
@@ -338,7 +403,8 @@ public class LiveAdvisorModel implements AdvisorModel {
         }
 
         Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("systemInstruction", Map.of("parts", List.of(Map.of("text", SYSTEM_PROMPT))));
+        String systemInstructionText = buildSystemInstruction(studentContext, studentFacts);
+        payload.put("systemInstruction", Map.of("parts", List.of(Map.of("text", systemInstructionText))));
         payload.put("contents", contents);
         if (toolCalls != null && !toolCalls.isEmpty()) {
             payload.put("tools", GeminiToolDeclarations.getToolDeclarations());

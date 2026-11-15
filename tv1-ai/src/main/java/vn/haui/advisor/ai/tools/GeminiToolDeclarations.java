@@ -18,7 +18,7 @@ public final class GeminiToolDeclarations {
         // 1. run_graduation_audit
         functions.add(Map.of(
                 "name", "run_graduation_audit",
-                "description", "Rà soát tiến độ tốt nghiệp của sinh viên hiện tại, tổng số tín chỉ tích lũy, số tín chỉ còn thiếu, và trạng thái hoàn thành các chuẩn đầu ra (Tin học, Ngoại ngữ, GDQP, Thể chất).",
+                "description", "Rà soát tiến độ tốt nghiệp của sinh viên: tổng số tín chỉ tích lũy, số tín chỉ còn thiếu, tỷ lệ hoàn thành CTĐT, và trạng thái hoàn thành các chuẩn đầu ra (Tin học, Ngoại ngữ TOEIC, GDQP-AN, Thể chất). BẮT BUỘC DÙNG KHI sinh viên hỏi về: điều kiện tốt nghiệp, xét tốt nghiệp, ra trường, thiếu gì để ra trường, tiến độ tốt nghiệp cá nhân.",
                 "parameters", Map.of(
                         "type", "OBJECT",
                         "properties", Collections.emptyMap()
@@ -28,7 +28,7 @@ public final class GeminiToolDeclarations {
         // 2. get_academic_status
         functions.add(Map.of(
                 "name", "get_academic_status",
-                "description", "Tra cứu điểm trung bình tích lũy CPA, điểm GPA kỳ gần nhất, số tín chỉ tích lũy, xếp loại học lực và tình trạng cảnh báo học tập hiện tại của sinh viên.",
+                "description", "Tra cứu điểm trung bình tích lũy CPA, điểm GPA kỳ gần nhất, tổng số tín chỉ tích lũy, xếp loại học lực, tình trạng học tập, cảnh báo học vụ (mức 0, 1, 2) và nợ môn của sinh viên. BẮT BUỘC DÙNG KHI sinh viên hỏi về: xem điểm, điểm của mình, CPA hiện tại, tình trạng học tập, có bị cảnh báo học vụ không, nợ môn nào.",
                 "parameters", Map.of(
                         "type", "OBJECT",
                         "properties", Collections.emptyMap()
@@ -47,7 +47,7 @@ public final class GeminiToolDeclarations {
         ));
         functions.add(Map.of(
                 "name", "check_course_eligibility",
-                "description", "Kiểm tra điều kiện tiên quyết, học phần học trước, học phần song hành và điều kiện hợp lệ để đăng ký một học phần cụ thể.",
+                "description", "Kiểm tra điều kiện tiên quyết, học phần học trước, học phần song hành và điều kiện hợp lệ để đăng ký một học phần cụ thể. BẮT BUỘC DÙNG KHI sinh viên hỏi môn X có được đăng ký không, có chặn môn nào không, cần học trước môn gì.",
                 "parameters", Map.of(
                         "type", "OBJECT",
                         "properties", checkProps,
@@ -67,7 +67,7 @@ public final class GeminiToolDeclarations {
         ));
         functions.add(Map.of(
                 "name", "rank_retake_courses",
-                "description", "Phân tích bảng điểm cá nhân và xếp hạng danh sách các học phần sinh viên nên học lại/học cải thiện để nâng điểm CPA hiệu quả nhất.",
+                "description", "Phân tích bảng điểm cá nhân và xếp hạng danh sách các học phần sinh viên nên học lại, học cải thiện để nâng điểm CPA hiệu quả nhất (các môn điểm kém, điểm thấp C/D/F, môn tạch, môn trượt, môn kéo tụt GPA). BẮT BUỘC DÙNG KHI sinh viên hỏi về: học cải thiện, học lại môn nào, môn nào kéo điểm CPA, môn điểm kém/thấp nên học lại, môn tạch/trượt cần cải thiện.",
                 "parameters", Map.of(
                         "type", "OBJECT",
                         "properties", retakeProps
@@ -115,7 +115,7 @@ public final class GeminiToolDeclarations {
         ));
         functions.add(Map.of(
                 "name", "generate_study_plan",
-                "description", "Lập đề xuất kế hoạch lộ trình học tập chi tiết phân bổ các môn theo từng học kỳ cho đến khi tốt nghiệp.",
+                "description", "Lập đề xuất kế hoạch lộ trình học tập chi tiết phân bổ các môn theo từng học kỳ cho đến khi tốt nghiệp. BẮT BUỘC DÙNG KHI sinh viên yêu cầu: lập kế hoạch, lên lộ trình học tập, tư vấn đăng ký môn cho các kỳ tới.",
                 "parameters", Map.of(
                         "type", "OBJECT",
                         "properties", planProps,
@@ -131,7 +131,7 @@ public final class GeminiToolDeclarations {
         ));
         functions.add(Map.of(
                 "name", "search_regulations",
-                "description", "Tra cứu cẩm nang quy chế đào tạo đại học chính quy HaUI (quy định đăng ký tín chỉ, thang điểm, điều kiện cảnh báo học vụ, hoãn thi, thôi học, học bổng...).",
+                "description", "Tra cứu cẩm nang quy chế đào tạo đại học chính quy HaUI (quy định đăng ký tín chỉ, thang điểm, điều kiện cảnh báo học vụ, hoãn thi, thôi học, học bổng...). BẮT BUỘC DÙNG KHI người dùng hỏi về quy chế, quy định chung của trường.",
                 "parameters", Map.of(
                         "type", "OBJECT",
                         "properties", regProps,
@@ -147,7 +147,7 @@ public final class GeminiToolDeclarations {
         ));
         functions.add(Map.of(
                 "name", "get_transcript",
-                "description", "Tra cứu toàn bộ lịch sử học tập và bảng điểm chi tiết của sinh viên: danh sách các học phần đã học, điểm chữ (A, B, C, D, F), điểm thang 10, số tín chỉ và học kỳ hoàn thành. Dùng khi sinh viên hỏi về các môn đã học, môn điểm cao/thấp, môn điểm A, hoặc phân tích kết quả học tập trong quá khứ.",
+                "description", "Tra cứu toàn bộ lịch sử học tập và bảng điểm chi tiết của sinh viên: danh sách các học phần đã học, điểm chữ (A, B, C, D, F), điểm thang 10, số tín chỉ và học kỳ hoàn thành. BẮT BUỘC DÙNG KHI sinh viên hỏi về: các môn đã học, xem điểm, môn điểm cao, môn điểm thấp, môn điểm kém, môn tạch, môn trượt, môn rớt, môn điểm C/D/F, môn kéo tụt GPA, hoặc phân tích kết quả học tập cá nhân.",
                 "parameters", Map.of(
                         "type", "OBJECT",
                         "properties", transcriptProps
@@ -162,7 +162,7 @@ public final class GeminiToolDeclarations {
         ));
         functions.add(Map.of(
                 "name", "get_curriculum_tree",
-                "description", "Tra cứu toàn bộ cây chương trình đào tạo (CTĐT) của sinh viên: danh sách các môn chưa học (bắt buộc/tự chọn), danh sách các môn ĐỦ ĐIỀU KIỆN ĐĂNG KÝ trong học kỳ tới, điều kiện tiên quyết và học kỳ gợi ý. Dùng khi sinh viên hỏi về các môn học trong tương lai, kỳ tới nên/được học môn gì, hoặc lộ trình các môn còn lại.",
+                "description", "Tra cứu toàn bộ cây chương trình đào tạo (CTĐT) của sinh viên: danh sách các môn chưa học (bắt buộc/tự chọn), danh sách các môn ĐỦ ĐIỀU KIỆN ĐĂNG KÝ trong học kỳ tới, điều kiện tiên quyết và học kỳ gợi ý. BẮT BUỘC DÙNG KHI sinh viên hỏi về các môn học trong tương lai, kỳ tới nên/được học môn gì, hoặc lộ trình các môn còn lại.",
                 "parameters", Map.of(
                         "type", "OBJECT",
                         "properties", treeProps

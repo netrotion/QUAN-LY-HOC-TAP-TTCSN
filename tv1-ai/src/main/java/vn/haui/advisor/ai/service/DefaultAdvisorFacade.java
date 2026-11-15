@@ -229,9 +229,12 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
             try {
                 var decision = turnPlanner.decide(userMessage, history);
                 boolean policyOnly = decision.mode() == ConversationTurnPlanner.Mode.POLICY;
+                StudentFactRecord studentFacts = (studentFactStore != null && context != null && context.getStudentId() != null)
+                        ? studentFactStore.getFacts(context.getStudentId()) : null;
                 long t1Start = System.currentTimeMillis();
                 LiveAdvisorModel.GeminiTurnResult turnResult = liveModel.inspectTurn(
-                        userMessage, history, GeminiToolDeclarations.getToolDeclarations(), policyOnly
+                        userMessage, history, GeminiToolDeclarations.getToolDeclarations(), policyOnly,
+                        context, studentFacts
                 );
                 turn1Ms = Math.max(turnResult.latencyMs(), System.currentTimeMillis() - t1Start);
                 promptTokens += turnResult.promptTokens();
@@ -275,7 +278,8 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
 
                     long t2Start = System.currentTimeMillis();
                     LiveAdvisorModel.ModelExecutionResult turn2Result = liveModel.completeTurnWithToolResultsDetailed(
-                            userMessage, history, turnResult.toolCalls(), turnResult.rawModelParts(), toolResults
+                            userMessage, history, turnResult.toolCalls(), turnResult.rawModelParts(), toolResults,
+                            context, studentFacts
                     );
                     turn2Ms = Math.max(turn2Result.latencyMs(), System.currentTimeMillis() - t2Start);
                     promptTokens += turn2Result.promptTokens();
@@ -293,9 +297,6 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                             finalAnswer, sources, List.of(), planProposal, combinedWarnings
                     );
 
-                    StudentFactRecord studentFacts = (studentFactStore != null && context != null && context.getStudentId() != null)
-                            ? studentFactStore.getFacts(context.getStudentId()) : null;
-
                     AdvisorModelInput modelInput = new AdvisorModelInput(
                             userMessage, context, toolResults, groundedContext, history, null, studentFacts
                     );
@@ -309,14 +310,72 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                             validatedOutput.getPlanProposal(),
                             validatedOutput.getWarnings()
                     );
+                } else if (!policyOnly && !decision.capabilities().isEmpty()) {
+                    // Fallback Interceptor: Turn 1 did not emit tool call, but planner identified capabilities
+                    category = "TOOL_FALLBACK";
+                    Map<String, Object> toolResults = new LinkedHashMap<>();
+                    List<String> combinedWarnings = new ArrayList<>();
+                    List<GeminiToolCall> syntheticCalls = new ArrayList<>();
+
+                    for (AcademicCapability cap : decision.capabilities()) {
+                        String toolName = mapCapabilityToToolName(cap);
+                        if (toolName != null) {
+                            syntheticCalls.add(new GeminiToolCall(toolName, Map.of()));
+                            long toolStart = System.currentTimeMillis();
+                            GeminiAcademicTools.execute(toolAdapter, context, toolName, Map.of(), toolResults, combinedWarnings);
+                            long elapsed = System.currentTimeMillis() - toolStart;
+                            toolMs += elapsed;
+                            metricsCollector.recordToolExecution(toolName, elapsed);
+                        }
+                    }
+
+                    if (!toolResults.isEmpty()) {
+                        long t2Start = System.currentTimeMillis();
+                        LiveAdvisorModel.ModelExecutionResult turn2Result = liveModel.completeTurnWithToolResultsDetailed(
+                                userMessage, history, syntheticCalls, null, toolResults,
+                                context, studentFacts
+                        );
+                        turn2Ms = Math.max(turn2Result.latencyMs(), System.currentTimeMillis() - t2Start);
+                        promptTokens += turn2Result.promptTokens();
+                        genTokens += turn2Result.candidatesTokens();
+
+                        ChatPlanProposal planProposal = toolResults.get("planProposal") instanceof ChatPlanProposal p ? p : null;
+                        AdvisorModelOutput modelOutput = new AdvisorModelOutput(
+                                turn2Result.answer(), List.of(), List.of(), planProposal, combinedWarnings
+                        );
+                        AdvisorModelInput modelInput = new AdvisorModelInput(
+                                userMessage, context, toolResults, null, history, null, studentFacts
+                        );
+                        AdvisorModelOutput validatedOutput = responseGroundingValidator.validate(modelOutput, modelInput);
+
+                        response = new ChatResponse(
+                                validatedOutput.getAnswer(),
+                                validatedOutput.getSources(),
+                                validatedOutput.getActions(),
+                                validatedOutput.getPlanProposal(),
+                                validatedOutput.getWarnings()
+                        );
+                    } else {
+                        category = "DIRECT_ANSWER";
+                        AdvisorModelOutput modelOutput = new AdvisorModelOutput(
+                                turnResult.directText() != null ? turnResult.directText() : "Xin lỗi, mình chưa tìm thấy thông tin phù hợp cho câu hỏi của bạn.",
+                                List.of(), List.of(), null, List.of()
+                        );
+                        AdvisorModelInput modelInput = new AdvisorModelInput(
+                                userMessage, context, Collections.emptyMap(), null, history, null, studentFacts
+                        );
+                        AdvisorModelOutput validatedOutput = responseGroundingValidator.validate(modelOutput, modelInput);
+                        response = new ChatResponse(
+                                validatedOutput.getAnswer(), validatedOutput.getSources(), validatedOutput.getActions(),
+                                validatedOutput.getPlanProposal(), validatedOutput.getWarnings()
+                        );
+                    }
                 } else if (policyOnly || (turnResult.directText() != null && !turnResult.directText().isBlank())) {
                     category = "DIRECT_ANSWER";
                     AdvisorModelOutput modelOutput = new AdvisorModelOutput(
                             policyOnly ? ConversationTurnPlanner.NO_POLICY_EVIDENCE : turnResult.directText(),
                             List.of(), List.of(), null, List.of()
                     );
-                    StudentFactRecord studentFacts = (studentFactStore != null && context != null && context.getStudentId() != null)
-                            ? studentFactStore.getFacts(context.getStudentId()) : null;
 
                     AdvisorModelInput modelInput = new AdvisorModelInput(
                             userMessage, context, Collections.emptyMap(), null, history, null, studentFacts
@@ -684,5 +743,18 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
     private static void logToolOutcome(AcademicCapability capability, String outcome, long started) {
         log.info("advisor_tool capability={} outcome={} elapsedMs={}", capability, outcome,
                 TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started));
+    }
+
+    private static String mapCapabilityToToolName(AcademicCapability cap) {
+        if (cap == null) return null;
+        return switch (cap) {
+            case GET_ACADEMIC_STATUS -> "get_academic_status";
+            case CHECK_COURSE_ELIGIBILITY -> "check_course_eligibility";
+            case GENERATE_STUDY_PLAN -> "generate_study_plan";
+            case SIMULATE_GRADES -> "simulate_grades";
+            case RANK_RETAKE_COURSES -> "rank_retake_courses";
+            case RUN_GRADUATION_AUDIT -> "run_graduation_audit";
+            default -> null;
+        };
     }
 }

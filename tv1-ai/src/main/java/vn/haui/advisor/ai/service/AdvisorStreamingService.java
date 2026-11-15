@@ -158,7 +158,8 @@ public class AdvisorStreamingService {
                 boolean policyOnly = decision.mode() == ConversationTurnPlanner.Mode.POLICY;
                 long t1Start = System.currentTimeMillis();
                 LiveAdvisorModel.GeminiTurnResult turnResult = liveModel.inspectTurn(
-                        userMessage, history, GeminiToolDeclarations.getToolDeclarations(), policyOnly
+                        userMessage, history, GeminiToolDeclarations.getToolDeclarations(), policyOnly,
+                        context, null
                 );
                 turn1Ms = Math.max(turnResult.latencyMs(), System.currentTimeMillis() - t1Start);
                 promptTokens += turnResult.promptTokens();
@@ -219,13 +220,54 @@ public class AdvisorStreamingService {
                             turnResult.toolCalls(),
                             turnResult.rawModelParts(),
                             toolResults,
-                            chunk -> {}
+                            chunk -> {},
+                            context,
+                            null
                     );
                     turn2Ms = Math.max(streamResult.latencyMs(), System.currentTimeMillis() - t2Start);
                     promptTokens += streamResult.promptTokens();
                     genTokens += streamResult.candidatesTokens();
                     finalAnswerText = policyOnly && (groundedContext == null || !groundedContext.hasEvidence())
                             ? ConversationTurnPlanner.NO_POLICY_EVIDENCE : streamResult.answer();
+
+                } else if (!policyOnly && !decision.capabilities().isEmpty()) {
+                    // Fallback Interceptor: Turn 1 did not emit a tool call, but planner identified capabilities.
+                    category = "TOOL_FALLBACK";
+                    List<GeminiToolCall> syntheticCalls = new ArrayList<>();
+                    for (AcademicCapability cap : decision.capabilities()) {
+                        String toolName = mapCapabilityToToolName(cap);
+                        if (toolName != null) {
+                            syntheticCalls.add(new GeminiToolCall(toolName, Map.of()));
+                            eventConsumer.accept(ChatStreamEvent.status("EXECUTING_TOOL", "Đang tự động tra cứu dữ liệu học vụ: " + toolName + "..."));
+                            long toolStart = System.currentTimeMillis();
+                            GeminiAcademicTools.execute(toolAdapter, context, toolName, Map.of(), toolResults, combinedWarnings);
+                            long elapsed = System.currentTimeMillis() - toolStart;
+                            toolMs += elapsed;
+                            metricsCollector.recordToolExecution(toolName, elapsed);
+                        }
+                    }
+                    if (!toolResults.isEmpty()) {
+                        eventConsumer.accept(ChatStreamEvent.status("GENERATING", "Đang tổng hợp dữ liệu học vụ..."));
+                        long t2Start = System.currentTimeMillis();
+                        LiveAdvisorModel.ModelExecutionResult streamResult = liveModel.streamTurn(
+                                userMessage,
+                                history,
+                                syntheticCalls,
+                                null,
+                                toolResults,
+                                chunk -> {},
+                                context,
+                                null
+                        );
+                        turn2Ms = Math.max(streamResult.latencyMs(), System.currentTimeMillis() - t2Start);
+                        promptTokens += streamResult.promptTokens();
+                        genTokens += streamResult.candidatesTokens();
+                        finalAnswerText = streamResult.answer();
+                    } else if (turnResult.directText() != null && !turnResult.directText().isBlank()) {
+                        finalAnswerText = turnResult.directText();
+                    } else {
+                        finalAnswerText = "Xin lỗi, mình chưa tìm thấy thông tin phù hợp cho câu hỏi của bạn.";
+                    }
 
                 } else if (policyOnly) {
                     finalAnswerText = ConversationTurnPlanner.NO_POLICY_EVIDENCE;
@@ -339,6 +381,19 @@ public class AdvisorStreamingService {
                 turn2Ms,
                 totalMs
         );
+    }
+
+    private static String mapCapabilityToToolName(AcademicCapability cap) {
+        if (cap == null) return null;
+        return switch (cap) {
+            case GET_ACADEMIC_STATUS -> "get_academic_status";
+            case CHECK_COURSE_ELIGIBILITY -> "check_course_eligibility";
+            case GENERATE_STUDY_PLAN -> "generate_study_plan";
+            case SIMULATE_GRADES -> "simulate_grades";
+            case RANK_RETAKE_COURSES -> "rank_retake_courses";
+            case RUN_GRADUATION_AUDIT -> "run_graduation_audit";
+            default -> null;
+        };
     }
 
 }
