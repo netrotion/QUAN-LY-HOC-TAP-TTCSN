@@ -20,6 +20,31 @@ public class AiMetricsCollector {
     private static final BigDecimal PROMPT_TOKEN_PRICE_PER_MILLION = BigDecimal.valueOf(0.35);
     private static final BigDecimal GEN_TOKEN_PRICE_PER_MILLION = BigDecimal.valueOf(1.05);
     private static final BigDecimal ONE_MILLION = BigDecimal.valueOf(1_000_000);
+    public static final BigDecimal USD_TO_VND_RATE = BigDecimal.valueOf(25400);
+
+    /**
+     * Tính toán chi phí ước tính bằng USD dựa trên số lượng prompt và generation tokens.
+     */
+    public static BigDecimal calculateCostUsd(long pTokens, long gTokens) {
+        BigDecimal promptCost = BigDecimal.valueOf(pTokens)
+                .multiply(PROMPT_TOKEN_PRICE_PER_MILLION)
+                .divide(ONE_MILLION, 8, RoundingMode.HALF_UP);
+
+        BigDecimal genCost = BigDecimal.valueOf(gTokens)
+                .multiply(GEN_TOKEN_PRICE_PER_MILLION)
+                .divide(ONE_MILLION, 8, RoundingMode.HALF_UP);
+
+        return promptCost.add(genCost);
+    }
+
+    /**
+     * Tính toán chi phí ước tính bằng VND dựa trên tỷ giá quy ước định mức.
+     */
+    public static BigDecimal calculateCostVnd(long pTokens, long gTokens) {
+        return calculateCostUsd(pTokens, gTokens)
+                .multiply(USD_TO_VND_RATE)
+                .setScale(2, RoundingMode.HALF_UP);
+    }
 
     private final LongAdder totalRequests = new LongAdder();
     private final LongAdder streamingRequests = new LongAdder();
@@ -132,15 +157,7 @@ public class AiMetricsCollector {
         long gTokens = generationTokens.sum();
         long totTokens = pTokens + gTokens;
 
-        BigDecimal promptCost = BigDecimal.valueOf(pTokens)
-                .multiply(PROMPT_TOKEN_PRICE_PER_MILLION)
-                .divide(ONE_MILLION, 8, RoundingMode.HALF_UP);
-
-        BigDecimal genCost = BigDecimal.valueOf(gTokens)
-                .multiply(GEN_TOKEN_PRICE_PER_MILLION)
-                .divide(ONE_MILLION, 8, RoundingMode.HALF_UP);
-
-        BigDecimal totalCost = promptCost.add(genCost);
+        BigDecimal totalCost = calculateCostUsd(pTokens, gTokens);
 
         long rCount = ragCount.sum();
         double avgRag = rCount > 0 ? (double) totalRagTimeMs.sum() / rCount : 0.0;
