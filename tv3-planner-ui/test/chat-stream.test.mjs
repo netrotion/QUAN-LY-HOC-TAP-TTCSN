@@ -80,6 +80,16 @@ describe('useChatStream & SSE Parser', () => {
     assert.ok(doneCalled);
   });
 
+  test('rejects an incomplete advisor response', async () => {
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('data: {"eventType":"STATUS"}\n\n'));
+        controller.close();
+      }
+    });
+    await assert.rejects(parseSseStream(stream), { code: 'CHAT_STREAM_INCOMPLETE' });
+  });
+
   test('parseSseStream handles ERROR events and server-side errors', async () => {
     const ssePayload = 'event: error\ndata: {"eventType":"ERROR","code":"AI_UNAVAILABLE","message":"Model overloaded","retryable":true}\n\n';
 
@@ -114,6 +124,7 @@ describe('useChatStream & SSE Parser', () => {
       const stream = new ReadableStream({
         start(controller) {
           controller.enqueue(encoder.encode('event: chunk\ndata: {"eventType":"CHUNK","text":"ok"}\n\n'));
+          controller.enqueue(encoder.encode('data: {"eventType":"DONE","text":"ok"}\n\n'));
           controller.close();
         }
       });

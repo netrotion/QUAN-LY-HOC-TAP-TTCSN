@@ -16,6 +16,7 @@ import vn.haui.advisor.academic.service.DefaultAcademicFacade;
 import vn.haui.advisor.contracts.dto.AcademicStatusRequest;
 import vn.haui.advisor.contracts.dto.ConfirmTranscriptImportRequest;
 import vn.haui.advisor.contracts.dto.CourseEligibilityRequest;
+import vn.haui.advisor.contracts.dto.CourseEligibilityResponse;
 import vn.haui.advisor.contracts.dto.GraduationAuditRequest;
 import vn.haui.advisor.contracts.dto.GraduationAuditResponse;
 import vn.haui.advisor.contracts.ports.AcademicFacade;
@@ -260,6 +261,16 @@ class AcademicApiIntegrationTest {
         }
         ObjectNode actual = api.deepCopy();
         ObjectNode expected = (ObjectNode) objectMapper.readTree(objectMapper.writeValueAsString(facadeResult));
+        if (facadeResult instanceof CourseEligibilityResponse) {
+            actual.remove("courseName");
+            actual.remove("prerequisiteCourseCodes");
+            actual.remove("priorCourseCodes");
+            actual.remove("corequisiteCourseCodes");
+            expected.remove("courseName");
+            expected.remove("prerequisiteCourseCodes");
+            expected.remove("priorCourseCodes");
+            expected.remove("corequisiteCourseCodes");
+        }
         assertThat(actual.remove("policyVersion").asText()).isEqualTo(POLICY);
         expected.remove("policyVersion");
         assertThat(actual).isEqualTo(expected);

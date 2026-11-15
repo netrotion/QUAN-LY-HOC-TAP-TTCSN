@@ -1,10 +1,12 @@
 package vn.haui.advisor.platform.academic;
 
 import vn.haui.advisor.academic.engine.PlanReconciler;
+import vn.haui.advisor.academic.model.CurriculumFixture;
 import vn.haui.advisor.academic.model.StudentProfileFixture;
 import vn.haui.advisor.academic.service.DefaultAcademicFacade;
 import vn.haui.advisor.contracts.dto.*;
 import vn.haui.advisor.platform.transcript.DbStudentAcademicRecordProvider;
+import vn.haui.advisor.platform.error.ApiException;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -50,7 +52,18 @@ public class RecordBackedAcademicFacade extends DefaultAcademicFacade {
 
     @Override
     public SimulateGradesResponse simulateGrades(SimulateGradesRequest request) {
-        return withEngine(request == null ? null : request.getStudentId(), engine -> engine.simulateGrades(request));
+        return withEngine(request == null ? null : request.getStudentId(), engine -> {
+            List<SimulatedCourseGrade> courses = request.getCourses().stream().map(course -> {
+                Integer credits = sources.curriculum().getCourses().stream()
+                        .filter(item -> item.getCourseCode().equalsIgnoreCase(course.getCourseCode()))
+                        .findFirst().map(CurriculumFixture.CourseDefinitionItem::getCredits).orElse(course.getCredits());
+                if (credits == null || credits < 1) {
+                    throw ApiException.badRequest("Cần số tín chỉ cho học phần mô phỏng " + course.getCourseCode() + ".");
+                }
+                return new SimulatedCourseGrade(course.getCourseCode(), credits, course.getExpectedGrade(), course.getExpectedGradePoints());
+            }).toList();
+            return engine.simulateGrades(new SimulateGradesRequest(request.getStudentId(), courses, request.getDataRevision()));
+        });
     }
 
     @Override

@@ -1,5 +1,7 @@
 package vn.haui.advisor.platform.conversation;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 import vn.haui.advisor.contracts.dto.ConversationRecord;
 import vn.haui.advisor.contracts.dto.ConversationSummaryItem;
@@ -17,11 +19,34 @@ import java.util.function.Supplier;
 public class ConversationTurns {
 
     private final JdbcConversationStore store;
+    private final ObjectMapper mapper;
     private final ThreadLocal<Turn> current = new ThreadLocal<>();
     private final ConversationStore advisorStore = new AdvisorStore();
 
-    public ConversationTurns(JdbcConversationStore store) {
+    public ConversationTurns(JdbcConversationStore store, ObjectMapper mapper) {
         this.store = store;
+        this.mapper = mapper;
+    }
+
+    public boolean alreadySaved(String conversationId, String studentId, String message, String clientTimestamp) {
+        if (clientTimestamp == null || clientTimestamp.length() > 64) return false;
+        final String timestamp;
+        try {
+            timestamp = java.time.Instant.parse(clientTimestamp).toString();
+        } catch (java.time.format.DateTimeParseException ignored) {
+            return false;
+        }
+        ConversationRecord record = store.getConversation(conversationId, studentId);
+        if (record == null) return false;
+        try {
+            for (var item : mapper.readTree(record.getMessagesJson())) {
+                if ("user".equals(item.path("role").asText()) && message.equals(item.path("content").asText())
+                        && timestamp.equals(item.path("clientTimestamp").asText())) return true;
+            }
+            return false;
+        } catch (JsonProcessingException ex) {
+            throw new IllegalStateException("Không đọc được lịch sử hội thoại", ex);
+        }
     }
 
     /** Một lượt chat của sinh viên trên một hội thoại. */

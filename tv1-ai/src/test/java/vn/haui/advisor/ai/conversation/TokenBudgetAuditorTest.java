@@ -64,3 +64,4 @@ class TokenBudgetAuditorTest {
         assertThat(result.estimatedTotalTokens()).isGreaterThan(10000);
     }
 }
+

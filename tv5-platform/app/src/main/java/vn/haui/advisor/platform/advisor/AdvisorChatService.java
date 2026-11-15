@@ -2,13 +2,16 @@ package vn.haui.advisor.platform.advisor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import vn.haui.advisor.ai.service.AdvisorStreamingService;
 import vn.haui.advisor.contracts.dto.ChatActionItem;
 import vn.haui.advisor.contracts.dto.ChatRequest;
 import vn.haui.advisor.contracts.dto.ChatResponse;
 import vn.haui.advisor.contracts.dto.TrustedStudentContext;
 import vn.haui.advisor.contracts.ports.AdvisorFacade;
+import vn.haui.advisor.contracts.stream.ChatStreamEvent;
 import vn.haui.advisor.platform.config.AdvisorProperties;
 import vn.haui.advisor.platform.conversation.ConversationTurns;
 import vn.haui.advisor.platform.conversation.JdbcConversationStore;
@@ -16,6 +19,7 @@ import vn.haui.advisor.platform.error.ApiException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -49,16 +53,90 @@ public class AdvisorChatService {
     private final JdbcConversationStore conversations;
     private final ExecutorService executor;
     private final AdvisorProperties properties;
+    private final AdvisorStreamingService streamingService;
 
     public AdvisorChatService(AdvisorFacade advisorFacade, AdvisorReadiness readiness, ConversationTurns turns,
                               JdbcConversationStore conversations, @Qualifier("advisorChatExecutor") ExecutorService executor,
                               AdvisorProperties properties) {
+        this(advisorFacade, readiness, turns, conversations, executor, properties, null);
+    }
+
+    @Autowired
+    public AdvisorChatService(AdvisorFacade advisorFacade, AdvisorReadiness readiness, ConversationTurns turns,
+                              JdbcConversationStore conversations, @Qualifier("advisorChatExecutor") ExecutorService executor,
+                              AdvisorProperties properties,
+                              @Autowired(required = false) AdvisorStreamingService streamingService) {
         this.advisorFacade = advisorFacade;
         this.readiness = readiness;
         this.turns = turns;
         this.conversations = conversations;
         this.executor = executor;
         this.properties = properties;
+        this.streamingService = streamingService;
+    }
+
+    public void streamChat(TrustedStudentContext context, ChatRequest request, Consumer<ChatStreamEvent> eventConsumer) {
+        String conversationId = request == null || request.getConversationId() == null ? null : request.getConversationId().trim();
+        String message = request == null || request.getMessage() == null ? null : request.getMessage().trim();
+        if (conversationId == null || !CONVERSATION_ID.matcher(conversationId).matches()) {
+            throw ApiException.badRequest("conversationId là bắt buộc (1–100 ký tự chữ, số, '.', '_', ':', '-'); hội thoại mới dùng UUID.");
+        }
+        if (message == null || message.isEmpty() || message.length() > properties.getMaxMessageLength()) {
+            throw ApiException.badRequest("message là bắt buộc, tối đa " + properties.getMaxMessageLength() + " ký tự.");
+        }
+        String studentId = context.getStudentId();
+        if (conversations.ownerOf(conversationId).filter(owner -> !owner.equals(studentId)).isPresent()) {
+            throw ApiException.conversationNotFound(conversationId);
+        }
+        if (turns.alreadySaved(conversationId, studentId, message, request.getClientTimestamp())) {
+            eventConsumer.accept(ChatStreamEvent.error("TURN_ALREADY_SAVED", "Câu trả lời đã có trong lịch sử hội thoại.", false));
+            return;
+        }
+        if (!readiness.canAnswer()) {
+            throw unavailable("NOT_CONFIGURED", "Trợ lý AI chưa được cấu hình trên máy chủ nên chưa trả lời được. "
+                    + "Hồ sơ, kế hoạch và What-if vẫn dùng bình thường.");
+        }
+        if (streamingService == null) {
+            throw unavailable("NOT_CONFIGURED", "Dịch vụ streaming AI chưa sẵn sàng.");
+        }
+
+        ConversationTurns.Turn turn = new ConversationTurns.Turn(conversationId, studentId);
+        ChatRequest input = new ChatRequest(conversationId, message, request.getClientTimestamp());
+
+        turns.run(turn, () -> {
+            try {
+                streamingService.streamChat(input, context, event -> {
+                    if (event.getEventType() == ChatStreamEvent.EventType.DONE) {
+                        if (!turn.hasPendingWrite()) {
+                            readiness.recordFailure("PERSISTENCE");
+                            throw unavailable("PERSISTENCE", "Chưa lưu được hội thoại. Vui lòng thử lại.");
+                        }
+                        if (turns.alreadySaved(conversationId, studentId, message, input.getClientTimestamp())) {
+                            turn.abandon();
+                            eventConsumer.accept(ChatStreamEvent.error("TURN_ALREADY_SAVED", "Câu trả lời đã có trong lịch sử hội thoại.", false));
+                            return;
+                        }
+                        if (!turns.commit(turn)) {
+                            throw ApiException.conversationBusy(conversationId, retryAfterSeconds());
+                        }
+                        readiness.recordSuccess();
+                    } else if (event.getEventType() == ChatStreamEvent.EventType.ERROR) {
+                        turn.abandon();
+                        readiness.recordFailure("PROVIDER_ERROR");
+                    }
+                    eventConsumer.accept(event);
+                });
+            } catch (ApiException ex) {
+                turn.abandon();
+                eventConsumer.accept(ChatStreamEvent.error(ex.getCode().name(), ex.getMessage(), ex.getRetryAfterSeconds() != null));
+            } catch (Exception ex) {
+                turn.abandon();
+                readiness.recordFailure("ERROR");
+                log.warn("Lượt chat streaming lỗi ở module AI", ex);
+                eventConsumer.accept(ChatStreamEvent.error("AI_UNAVAILABLE", "Không thể hoàn tất lượt chat. Vui lòng thử lại.", true));
+            }
+            return null;
+        });
     }
 
     public ChatResponse chat(TrustedStudentContext context, ChatRequest request) {
@@ -73,6 +151,9 @@ public class AdvisorChatService {
         String studentId = context.getStudentId();
         if (conversations.ownerOf(conversationId).filter(owner -> !owner.equals(studentId)).isPresent()) {
             throw ApiException.conversationNotFound(conversationId);
+        }
+        if (turns.alreadySaved(conversationId, studentId, message, request.getClientTimestamp())) {
+            throw ApiException.conversationBusy(conversationId, retryAfterSeconds());
         }
         if (!readiness.canAnswer()) {
             throw unavailable("NOT_CONFIGURED", "Trợ lý AI chưa được cấu hình trên máy chủ nên chưa trả lời được. "
@@ -102,7 +183,7 @@ public class AdvisorChatService {
             readiness.recordFailure("PERSISTENCE");
             throw unavailable("PERSISTENCE", "Chưa lưu được hội thoại nên câu trả lời không được gửi. Vui lòng gửi lại.");
         }
-        if (!turns.commit(turn)) {
+        if (turns.alreadySaved(conversationId, studentId, message, input.getClientTimestamp()) || !turns.commit(turn)) {
             throw ApiException.conversationBusy(conversationId, retryAfterSeconds());
         }
         readiness.recordSuccess();

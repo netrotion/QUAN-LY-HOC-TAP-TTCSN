@@ -10,6 +10,15 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ConversationTurnPlannerTest {
+    @Test
+    void summerFollowUpRetainsTheCreditLimitTopic() {
+        var planner = new ConversationTurnPlanner();
+        var history = List.of(
+                ChatMessageHistoryItem.ofUser("Học kỳ chính được đăng ký tối đa bao nhiêu tín chỉ?"));
+        var decision = planner.decide("Kỳ hè thì sao?", history);
+        assertThat(decision.policyEvidenceNeeded()).isTrue();
+        assertThat(decision.retrievalQuery()).contains("tín chỉ", "Kỳ hè");
+    }
     private final ConversationTurnPlanner planner = new ConversationTurnPlanner();
 
     @Test

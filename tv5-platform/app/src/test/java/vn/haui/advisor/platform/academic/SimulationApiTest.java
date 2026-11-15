@@ -95,6 +95,12 @@ class SimulationApiTest {
         assertThat(simulated.get("currentCpa").isNumber()).isTrue();
         assertSameAsEngine(simulated, reference.simulateGrades(new SimulateGradesRequest(sv, courses, revision)));
 
+        var alteredCredits = List.of(new SimulatedCourseGrade("LP6010", 1, "A", null),
+                new SimulatedCourseGrade("LP6004", 2, "B", null), new SimulatedCourseGrade("IT6126", 4, "B+", null));
+        JsonNode canonical = api().call(post("/api/v1/simulation/grades"), sv, 200, "SimulateGradesResponse",
+                new SimulateGradesRequest(null, alteredCredits, revision));
+        assertThat(canonical).isEqualTo(simulated);
+
         JsonNode ranked = api().call(post("/api/v1/simulation/retake-ranking"), sv, 200, "RankRetakeCoursesResponse",
                 new RankRetakeCoursesRequest(null, 5, revision));
         assertThat(ranked.get("recommendations").findValuesAsText("courseCode"))

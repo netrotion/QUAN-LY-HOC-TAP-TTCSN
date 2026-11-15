@@ -16,6 +16,32 @@ class LiveAdvisorModelToolCallingTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
+    void requiresRegulationLookupAndReturnsTheOriginalToolCallId() throws Exception {
+        var prompt = new AtomicReference<String>();
+        var model = new LiveAdvisorModel(payload -> {
+            prompt.set(payload);
+            return payload.contains("functionResponse")
+                    ? """
+                      {"candidates":[{"finishReason":"STOP","content":{"parts":[{"text":"Kỳ hè tối đa 12 tín chỉ [REG-HAUI-01]."}]}}]}
+                      """
+                    : """
+                      {"candidates":[{"content":{"parts":[{"functionCall":{"name":"search_regulations","id":"lookup-1","args":{"query":"tín chỉ kỳ hè"}}}]}}]}
+                      """;
+        });
+        String question = "Kỳ hè thì sao?";
+        var turn = model.inspectTurn(question, List.of(), GeminiToolDeclarations.getToolDeclarations(), true);
+        var config = objectMapper.readTree(prompt.get()).at("/toolConfig/functionCallingConfig");
+        assertThat(config.path("mode").asText()).isEqualTo("ANY");
+        assertThat(config.at("/allowedFunctionNames/0").asText()).isEqualTo("search_regulations");
+
+        String answer = model.completeTurnWithToolResults(question, List.of(), turn.toolCalls(),
+                turn.rawModelParts(), Map.of("search_regulations", "Kỳ hè tối đa 12 tín chỉ"));
+        assertThat(answer).contains("12 tín chỉ");
+        assertThat(objectMapper.readTree(prompt.get()).at("/contents/2/parts/0/functionResponse/id").asText())
+                .isEqualTo("lookup-1");
+    }
+
+    @Test
     void shouldExtractFunctionCallsWhenModelReturnsToolInvocation() {
         String mockResponse = """
                 {

@@ -52,3 +52,4 @@ class LiveAdvisorModelHistoryFormattingTest {
         assertThat(lastPartText).isEqualTo("Câu hỏi hiện tại");
     }
 }
+

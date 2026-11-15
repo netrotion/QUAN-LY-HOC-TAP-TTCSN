@@ -47,6 +47,7 @@ export function ChatAdvisorPage({
   const [error, setError] = useState(initialError);
   const [toastMessage, setToastMessage] = useState('');
   const [lastFailedQuery, setLastFailedQuery] = useState(null);
+  const lastTurnRef = useRef(null);
 
   // Sinh viên hiện tại từ apiConfig
   const [student, setStudent] = useState(() => api?.getConfig?.()?.sessionStudent || null);
@@ -209,11 +210,12 @@ export function ChatAdvisorPage({
   }, []);
 
   // Xử lý gửi tin nhắn tới API cố vấn học vụ (api.advisor.chat / POST /advisor/chat/stream)
-  const handleSendMessage = useCallback(async (customText) => {
+  const handleSendMessage = useCallback(async (customText, retry) => {
     const rawText = typeof customText === 'string' ? customText : inputValue;
     if (!rawText || !rawText.trim()) return;
 
     const trimmed = rawText.trim();
+    const clientTimestamp = retry?.clientTimestamp || new Date().toISOString();
 
     // 1. Thêm tin nhắn của người dùng vào dòng hội thoại
     const userMsgId = `msg-user-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
@@ -222,11 +224,13 @@ export function ChatAdvisorPage({
       sender: 'user',
       senderName: student?.fullName || 'Nguyễn Văn An',
       text: trimmed,
+      clientTimestamp,
       timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
       failed: false
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    lastTurnRef.current = { id: userMsgId, text: trimmed, clientTimestamp, conversationId };
+    setMessages((prev) => [...prev.filter((m) => m.id !== retry?.id), userMsg]);
     setInputValue('');
     setLoading(true);
     setError(null);
@@ -268,7 +272,7 @@ export function ChatAdvisorPage({
           {
             conversationId,
             message: trimmed,
-            clientTimestamp: new Date().toISOString()
+            clientTimestamp
           },
           {
             onStatus: (evt) => {
@@ -282,14 +286,6 @@ export function ChatAdvisorPage({
               setMessages((prev) =>
                 prev.map((m) =>
                   m.id === aiMsgId ? { ...m, statusText: `Đang tra cứu dữ liệu (${evt.toolName || 'công cụ học vụ'})...` } : m
-                )
-              );
-            },
-            onChunk: (chunk) => {
-              accumulatedText += chunk;
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === aiMsgId ? { ...m, text: accumulatedText, statusText: '' } : m
                 )
               );
             },
@@ -338,7 +334,19 @@ export function ChatAdvisorPage({
         return;
       } catch (streamErr) {
         setMessages((prev) => prev.filter((m) => m.id !== aiMsgId));
-        if (!api || (!api.advisor?.chat && typeof api.post !== 'function')) {
+        if (streamErr?.code === 'TURN_ALREADY_SAVED') {
+          try {
+            const record = await plannerApi.getConversation(api, conversationId);
+            setMessages(plannerApi.conversationToMessages(record, student?.fullName || ''));
+            setLastFailedQuery(null);
+            loadConversations();
+          } catch (err) {
+            handleChatError(err, userMsgId);
+          }
+          return;
+        }
+        const unsupported = [404, 405, 406, 415, 501].includes(streamErr?.status);
+        if (!unsupported || (!api?.advisor?.chat && typeof api?.post !== 'function')) {
           handleChatError(streamErr, userMsgId);
           return;
         }
@@ -348,6 +356,7 @@ export function ChatAdvisorPage({
     }
 
     try {
+      setLoading(true);
       let response = null;
 
       // Ưu tiên gọi API thật POST /advisor/chat qua plannerApi hoặc api client
@@ -355,7 +364,7 @@ export function ChatAdvisorPage({
         response = await plannerApi.chatAdvisor(api, {
           conversationId,
           message: trimmed,
-          clientTimestamp: new Date().toISOString()
+          clientTimestamp
         });
       } else {
         throw new Error('Chưa cấu hình kết nối API cố vấn học vụ.');
@@ -409,12 +418,12 @@ export function ChatAdvisorPage({
 
   // Xử lý Thử lại (Retry) khi gửi tin nhắn thất bại
   const handleRetry = useCallback((textToRetry, failedMsgId) => {
-    if (failedMsgId) {
-      setMessages((prev) => prev.filter((m) => m.id !== failedMsgId));
-    }
+    const turn = failedMsgId ? messages.find((m) => m.id === failedMsgId) : lastTurnRef.current;
+    const text = textToRetry || lastFailedQuery;
+    const retry = turn?.text === text && (!turn.conversationId || turn.conversationId === conversationId) ? turn : null;
     setError(null);
-    handleSendMessage(textToRetry || lastFailedQuery);
-  }, [handleSendMessage, lastFailedQuery]);
+    handleSendMessage(text, retry);
+  }, [conversationId, handleSendMessage, lastFailedQuery, messages]);
 
   // Nhánh hành động 1: Chấp nhận phương án -> Nạp vào Planner và mở Planner
   const handleAcceptProposal = useCallback((msgId, proposal) => {

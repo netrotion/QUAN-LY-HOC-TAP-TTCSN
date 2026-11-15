@@ -76,10 +76,10 @@ export async function parseSseStream(stream, callbacks = {}) {
               break;
             case 'DONE':
               callbacks.onDone?.(eventData);
-              break;
+              return;
             case 'ERROR':
               callbacks.onError?.(eventData);
-              break;
+              return;
             default:
               if (callbacks.onMessage) {
                 callbacks.onMessage(eventData);
@@ -89,6 +89,10 @@ export async function parseSseStream(stream, callbacks = {}) {
         }
       }
     }
+    const error = new Error('Kết nối kết thúc trước khi nhận được câu trả lời đầy đủ.');
+    error.code = 'CHAT_STREAM_INCOMPLETE';
+    error.retryable = true;
+    throw error;
   } finally {
     reader.releaseLock();
   }

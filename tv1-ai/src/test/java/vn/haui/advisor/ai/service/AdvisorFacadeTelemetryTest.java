@@ -120,7 +120,7 @@ class AdvisorFacadeTelemetryTest {
         ChatResponse response = facade.chat(request, context);
 
         assertThat(response).isNotNull();
-        assertThat(response.getAnswer()).contains("3.25");
+        assertThat(response.getAnswer()).contains("3.15").doesNotContain("3.25");
 
         AiTelemetrySnapshot snapshot = collector.snapshot();
         assertThat(snapshot.totalRequests()).isEqualTo(1L);
