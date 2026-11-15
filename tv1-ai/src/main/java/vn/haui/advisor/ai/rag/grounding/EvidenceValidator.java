@@ -33,7 +33,12 @@ public class EvidenceValidator {
             Pattern.compile("(?i)bạn\\s+là\\s+(một\\s+)?(ai|trợ\\s+lý)\\s+(mới|không\\s+có\\s+giới\\s+hạn)"),
             Pattern.compile("(?i)you\\s+are\\s+now\\s+(an?\\s+)?(unfiltered|new|dan|system|jailbreak)"),
             Pattern.compile("(?i)act\\s+as\\s+(an?\\s+)?(unfiltered|dan|developer|system)"),
-            Pattern.compile("(?i)(system\\s+prompt|developer\\s+mode|jailbreak|do\\s+anything\\s+now)")
+            Pattern.compile("(?i)(system\\s+prompt|developer\\s+mode|jailbreak|do\\s+anything\\s+now)"),
+            Pattern.compile("(?i)\\[(?:SYSTEM|INSTRUCTION|DEVELOPER|ADMIN)[^\\]]*\\]"),
+            Pattern.compile("(?i)<\\s*(?:system|instruction|admin|override)\\s*>"),
+            Pattern.compile("(?i)```\\s*(?:system|override|admin)"),
+            Pattern.compile("(?i)<!--.*?-->"),
+            Pattern.compile("(?i)base64\\s*:\\s*[A-Za-z0-9+/=]{16,}")
     );
 
     private final Set<String> validCatalogSourceIds = new HashSet<>();

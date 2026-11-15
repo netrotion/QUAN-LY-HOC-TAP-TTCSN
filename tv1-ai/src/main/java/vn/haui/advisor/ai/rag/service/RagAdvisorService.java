@@ -284,9 +284,11 @@ public class RagAdvisorService {
             }
             sb.append("- **Độ tương đồng ngữ nghĩa**: ").append(String.format(Locale.ROOT, "%.2f", item.getScore())).append("\n");
             sb.append("- **Nội dung trích xuất**:\n");
-            sb.append("```text\n");
-            sb.append(chunk.getContent().trim()).append("\n");
-            sb.append("```\n\n");
+            sb.append(String.format("<evidence_chunk id=\"%s\" source_id=\"%s\" section=\"%s\" trust_level=\"external_passive_data\">\n%s\n</evidence_chunk>\n\n",
+                    chunk.getChunkId() != null ? chunk.getChunkId() : "CH-" + index,
+                    chunk.getSourceId() != null ? chunk.getSourceId() : "REG-HAUI",
+                    chunk.getSection() != null ? chunk.getSection() : "",
+                    chunk.getContent() != null ? chunk.getContent().trim() : ""));
         }
         return sb.toString().trim();
     }
