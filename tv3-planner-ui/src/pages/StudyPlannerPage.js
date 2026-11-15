@@ -963,20 +963,29 @@ export function StudyPlannerPage({ api, ui, onNavigate } = {}) {
         dataIndex: 'targetGrade',
         align: 'center',
         width: '12%',
-        render: (val) =>
-          React.createElement(
+        render: (val) => {
+          const letter = (val ? String(val).replace(/\s*\(.*?\)/, '').trim() : '') || 'B';
+          return React.createElement(
             'span',
             {
               style: {
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minWidth: '32px',
+                height: '28px',
+                padding: '0 8px',
+                borderRadius: '9999px',
                 fontWeight: 700,
+                fontSize: '13px',
                 color: 'var(--color-ink)',
                 background: 'var(--color-surface-alt)',
-                padding: '5px 10px',
-                borderRadius: '9999px'
+                border: '1px solid var(--color-hairline)'
               }
             },
-            val || 'B (3.0)'
-          )
+            letter
+          );
+        }
       },
       {
         key: 'actions',
@@ -1051,26 +1060,8 @@ export function StudyPlannerPage({ api, ui, onNavigate } = {}) {
       : null;
   });
 
-  // Lời khuyên & Cảnh báo của AI
-  const adviceSection = plan.aiRiskAdvice && Card
-    ? React.createElement(
-        Card,
-        {
-          title: 'Phân tích rủi ro & Lời khuyên từ AI Advisor',
-          subtitle: 'Dựa trên đối chiếu khung chương trình đào tạo và bảng điểm cá nhân',
-          variant: 'default',
-          style: { marginTop: '12px' }
-        },
-        React.createElement('p', { style: { margin: '0 0 8px 0', fontSize: '13px', color: '#92400e' } }, `${plan.aiRiskAdvice}`),
-        plan.warnings && plan.warnings.length > 0
-          ? React.createElement(
-              'ul',
-              { style: { margin: 0, paddingLeft: '20px', fontSize: '12px', color: '#b45309' } },
-              plan.warnings.map((w, i) => React.createElement('li', { key: i }, w))
-            )
-          : null
-      )
-    : null;
+  // Lời khuyên & Cảnh báo của AI (ẩn theo yêu cầu)
+  const adviceSection = null;
 
   // ==========================================
   // MODAL KÍCH HOẠT KẾ HOẠCH (ACTIVATE MODAL)
