@@ -169,7 +169,9 @@ public class LiveAdvisorModel implements AdvisorModel {
         if (history != null) {
             for (ChatMessageHistoryItem item : history) {
                 if (item == null) continue;
-                String content = item.getContent() != null ? item.getContent().trim() : "";
+                String content = item.isQuarantined()
+                        ? ChatMessageHistoryItem.QUARANTINED_TOMBSTONE
+                        : (item.getContent() != null ? item.getContent().trim() : "");
                 if (content.isEmpty()) continue;
                 String role = "assistant".equalsIgnoreCase(item.getRole()) ? "model" : "user";
 
@@ -911,7 +913,9 @@ public class LiveAdvisorModel implements AdvisorModel {
                 ChatMessageHistoryItem item = hist.get(i);
                 if (item == null) continue;
                 String role = (item.getRole() != null && !item.getRole().isBlank()) ? item.getRole().trim() : "user";
-                String content = item.getContent() != null ? item.getContent().trim() : "";
+                String content = item.isQuarantined()
+                        ? ChatMessageHistoryItem.QUARANTINED_TOMBSTONE
+                        : (item.getContent() != null ? item.getContent().trim() : "");
                 // Nếu tin nhắn cuối trong history trùng với user_query thì bỏ qua để không lặp lại hai lần
                 if (i == size - 1 && "user".equalsIgnoreCase(role) && input.getUserMessage() != null
                         && content.equals(input.getUserMessage().trim())) {

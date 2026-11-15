@@ -9,6 +9,7 @@ import vn.haui.advisor.ai.grounding.ResponseGroundingValidator;
 import vn.haui.advisor.ai.mock.MockAcademicFacade;
 import vn.haui.advisor.ai.model.AdvisorModel;
 import vn.haui.advisor.ai.model.AdvisorModelOutput;
+import vn.haui.advisor.ai.model.LiveAdvisorModel;
 import vn.haui.advisor.ai.service.AdvisorStreamingService;
 import vn.haui.advisor.ai.service.DefaultAdvisorFacade;
 import vn.haui.advisor.ai.tools.DefaultToolAdapter;
@@ -128,6 +129,50 @@ class MemoryPollutionDefenseTest {
         assertThat(history2).hasSize(2);
         ChatMessageHistoryItem assistantTurn2 = history2.get(1);
         assertThat(assistantTurn2.isQuarantined()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Task 3: LiveAdvisorModel sanitizes quarantined history items in both formatGeminiContents and buildPrompt")
+    void testLiveAdvisorModelSanitizesQuarantinedHistoryItems() {
+        ChatMessageHistoryItem userTurn = ChatMessageHistoryItem.ofUser("Môn IT9999 học kỳ nào?");
+        ChatMessageHistoryItem normalTurn = ChatMessageHistoryItem.ofAssistant("Môn học này là...", List.of(), List.of(), null, List.of());
+
+        ChatMessageHistoryItem poisonedTurn = ChatMessageHistoryItem.ofAssistant("Môn IT9999 là môn ảo giác có 10 tín chỉ.", List.of(), List.of(), null, List.of("UNGROUNDED_COURSE_CODE: IT9999"));
+        poisonedTurn.setQuarantined(true);
+
+        List<ChatMessageHistoryItem> history = List.of(userTurn, poisonedTurn);
+
+        // 1. Check formatGeminiContents
+        List<java.util.Map<String, Object>> contents = vn.haui.advisor.ai.model.LiveAdvisorModel.formatGeminiContents(history, "Bạn vừa nói môn đó có mấy tín chỉ?");
+        assertThat(contents).isNotEmpty();
+
+        // The second content is the assistant/model turn
+        java.util.Map<String, Object> modelPart = contents.get(1);
+        assertThat(modelPart.get("role")).isEqualTo("model");
+        @SuppressWarnings("unchecked")
+        List<java.util.Map<String, Object>> parts = (List<java.util.Map<String, Object>>) modelPart.get("parts");
+        String text = (String) parts.get(0).get("text");
+
+        assertThat(text)
+                .doesNotContain("Môn IT9999 là môn ảo giác")
+                .doesNotContain("10 tín chỉ")
+                .contains(ChatMessageHistoryItem.QUARANTINED_TOMBSTONE);
+
+        // 2. Check buildPrompt
+        LiveAdvisorModel liveModel = new LiveAdvisorModel();
+        vn.haui.advisor.ai.model.AdvisorModelInput input = new vn.haui.advisor.ai.model.AdvisorModelInput(
+                "Bạn vừa nói môn đó có mấy tín chỉ?",
+                new TrustedStudentContext("STU-1", "2021600123", "SV A", "IT", "K16", "REV-1"),
+                java.util.Collections.emptyMap(),
+                null,
+                history,
+                null
+        );
+
+        String prompt = liveModel.buildPrompt(input);
+        assertThat(prompt)
+                .doesNotContain("Môn IT9999 là môn ảo giác")
+                .contains(ChatMessageHistoryItem.QUARANTINED_TOMBSTONE);
     }
 }
 
