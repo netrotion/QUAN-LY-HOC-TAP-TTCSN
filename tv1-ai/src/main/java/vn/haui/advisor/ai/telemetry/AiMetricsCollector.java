@@ -1,9 +1,12 @@
 package vn.haui.advisor.ai.telemetry;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +15,7 @@ import java.util.concurrent.atomic.LongAdder;
 
 /**
  * Bộ thu thập dữ liệu đo lường hiệu năng và chi phí LLM (LLM Observability & Cost APM Collector).
- * Hoàn toàn thread-safe, sử dụng LongAdder phân tán để giảm thiểu tranh chấp bộ nhớ.
+ * Hoàn toàn thread-safe, sử dụng LongAdder phân tán và tích hợp Micrometer Prometheus chuẩn APM.
  */
 @Component
 public class AiMetricsCollector {
@@ -21,6 +24,17 @@ public class AiMetricsCollector {
     private static final BigDecimal GEN_TOKEN_PRICE_PER_MILLION = BigDecimal.valueOf(1.05);
     private static final BigDecimal ONE_MILLION = BigDecimal.valueOf(1_000_000);
     public static final BigDecimal USD_TO_VND_RATE = BigDecimal.valueOf(25400);
+
+    private final MeterRegistry meterRegistry;
+
+    public AiMetricsCollector() {
+        this(null);
+    }
+
+    @Autowired(required = false)
+    public AiMetricsCollector(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
 
     /**
      * Tính toán chi phí ước tính bằng USD dựa trên số lượng prompt và generation tokens.
@@ -121,6 +135,26 @@ public class AiMetricsCollector {
         if (category != null && !category.isBlank()) {
             categoryCounts.computeIfAbsent(category, k -> new LongAdder()).increment();
         }
+
+        // Tích hợp xuất Prometheus Metrics qua Micrometer
+        if (meterRegistry != null) {
+            String modeTag = isStreaming ? "streaming" : "standard";
+            String catTag = (category != null && !category.isBlank()) ? category : "unknown";
+            meterRegistry.counter("ai.advisor.requests", "mode", modeTag, "category", catTag).increment();
+
+            if (pTokens > 0) {
+                meterRegistry.counter("ai.advisor.tokens", "type", "prompt").increment(pTokens);
+            }
+            if (gTokens > 0) {
+                meterRegistry.counter("ai.advisor.tokens", "type", "generation").increment(gTokens);
+            }
+            if (totalMs > 0) {
+                meterRegistry.timer("ai.advisor.latency").record(Duration.ofMillis(totalMs));
+            }
+            if (ragMs > 0) {
+                meterRegistry.timer("ai.advisor.rag.duration").record(Duration.ofMillis(ragMs));
+            }
+        }
     }
 
     /**
@@ -136,6 +170,15 @@ public class AiMetricsCollector {
             totalToolTimeMs.add(elapsedMs);
             toolCount.increment();
         }
+
+        if (meterRegistry != null) {
+            String name = (toolName != null && !toolName.isBlank()) ? toolName : "unknown";
+            if (elapsedMs > 0) {
+                meterRegistry.timer("ai.advisor.tool.duration", "tool", name).record(Duration.ofMillis(elapsedMs));
+            } else {
+                meterRegistry.counter("ai.advisor.tool.executions", "tool", name).increment();
+            }
+        }
     }
 
     /**
@@ -147,6 +190,11 @@ public class AiMetricsCollector {
 
     public void recordGuardrailViolation(String reason) {
         guardrailViolationsCount.increment();
+
+        if (meterRegistry != null) {
+            String r = (reason != null && !reason.isBlank()) ? reason : "unspecified";
+            meterRegistry.counter("ai.advisor.guardrail.violations", "reason", r).increment();
+        }
     }
 
     /**

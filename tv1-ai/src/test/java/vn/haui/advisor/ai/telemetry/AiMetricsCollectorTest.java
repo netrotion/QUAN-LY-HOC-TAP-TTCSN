@@ -83,5 +83,45 @@ class AiMetricsCollectorTest {
         AiTelemetrySnapshot snapshot = collector.snapshot();
         assertThat(snapshot.guardrailViolationsCount()).isEqualTo(2);
     }
+
+    @Test
+    @DisplayName("Exposes Prometheus metrics via Micrometer MeterRegistry")
+    void testMicrometerMetricsIntegration() {
+        io.micrometer.core.instrument.simple.SimpleMeterRegistry registry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
+        AiMetricsCollector micrometerCollector = new AiMetricsCollector(registry);
+
+        micrometerCollector.recordTurn(
+                true,
+                "STUDY_PLAN",
+                1500,
+                400,
+                25,
+                110,
+                500,
+                600,
+                1235
+        );
+        micrometerCollector.recordToolExecution("run_graduation_audit", 110);
+        micrometerCollector.recordGuardrailViolation("PII_DETECTED");
+
+        // Assert Micrometer counters & timers
+        assertThat(registry.find("ai.advisor.requests").counter()).isNotNull();
+        assertThat(registry.find("ai.advisor.requests").counter().count()).isEqualTo(1.0);
+
+        assertThat(registry.find("ai.advisor.tokens").tags("type", "prompt").counter()).isNotNull();
+        assertThat(registry.find("ai.advisor.tokens").tags("type", "prompt").counter().count()).isEqualTo(1500.0);
+
+        assertThat(registry.find("ai.advisor.tokens").tags("type", "generation").counter()).isNotNull();
+        assertThat(registry.find("ai.advisor.tokens").tags("type", "generation").counter().count()).isEqualTo(400.0);
+
+        assertThat(registry.find("ai.advisor.latency").timer()).isNotNull();
+        assertThat(registry.find("ai.advisor.latency").timer().count()).isEqualTo(1);
+
+        assertThat(registry.find("ai.advisor.tool.duration").tags("tool", "run_graduation_audit").timer()).isNotNull();
+        assertThat(registry.find("ai.advisor.tool.duration").tags("tool", "run_graduation_audit").timer().count()).isEqualTo(1);
+
+        assertThat(registry.find("ai.advisor.guardrail.violations").tags("reason", "PII_DETECTED").counter()).isNotNull();
+        assertThat(registry.find("ai.advisor.guardrail.violations").tags("reason", "PII_DETECTED").counter().count()).isEqualTo(1.0);
+    }
 }
 
