@@ -64,7 +64,7 @@ export function LoginPage() {
             type: 'success',
             message: `Xác thực thành công! Xin chào ${student?.fullName || student?.studentId}.`
           });
-          setTimeout(() => navigate('/dashboard'), 400);
+          setTimeout(() => navigate('/chat'), 400);
         })
         .catch((err) => {
           setAlert({
@@ -100,7 +100,7 @@ export function LoginPage() {
       setLoading(false);
 
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate('/chat');
       }, 400);
     }, 450);
   };
@@ -314,7 +314,7 @@ export function LoginPage() {
               ========================================================================= */}
           {activeTab === 'register' && (
             <div className="haui-login-tab-pane" key="register-form-pane">
-              <RegisterForm onSwitchToLogin={() => setActiveTab('login')} onRegistered={() => navigate('/dashboard')} />
+              <RegisterForm onSwitchToLogin={() => setActiveTab('login')} onRegistered={() => navigate('/chat')} />
             </div>
           )}
         </div>

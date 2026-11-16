@@ -1,5 +1,5 @@
 import React, { useEffect, useState, Component } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar.jsx';
 import { Topbar } from './Topbar.jsx';
 import { Link } from './animatedNavigation.jsx';
@@ -108,14 +108,17 @@ export function MainLayout({ children }) {
     return null;
   }
 
+  const { pathname } = useLocation();
+  const isChat = pathname === '/chat';
+
   return (
-    <div className="haui-app-shell">
+    <div className={`haui-app-shell ${isChat ? 'haui-app-shell--chat' : ''}`}>
       <Sidebar collapsed={isCollapsed} />
       <div className="haui-main-wrapper">
         <Topbar collapsed={isCollapsed} onToggleCollapse={toggleSidebar} />
-        <main className="haui-content">
+        <main className={`haui-content ${isChat ? 'haui-content--chat' : ''}`}>
           <PageErrorBoundary>
-            <div className="haui-route-content">
+            <div className={`haui-route-content ${isChat ? 'haui-route-content--chat' : ''}`}>
               {children || <Outlet />}
             </div>
           </PageErrorBoundary>

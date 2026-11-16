@@ -7,15 +7,15 @@ import hauiLogo from '@haui/logo';
 
 const NAV_ITEMS = Object.freeze([
   {
-    to: '/',
-    end: true,
-    label: 'Tổng quan',
-    icon: 'grid_view'
-  },
-  {
     to: '/chat',
+    alias: '/',
     label: 'Tư vấn AI',
     icon: 'smart_toy'
+  },
+  {
+    to: '/dashboard',
+    label: 'Tổng quan',
+    icon: 'grid_view'
   },
   {
     to: '/progress',
@@ -112,7 +112,7 @@ export function Sidebar({ collapsed = false }) {
     >
       {/* 1. Logo Brand Header — matches prototype sidebar header */}
       <div className="haui-sidebar__brand">
-        <NavLink to="/" className="haui-sidebar__brand-link" title="HaUI Advisor Dashboard">
+        <NavLink to="/chat" className="haui-sidebar__brand-link" title="HaUI Advisor">
           <img
             src={hauiLogo}
             alt=""
@@ -138,7 +138,7 @@ export function Sidebar({ collapsed = false }) {
             end={item.end}
             title={collapsed ? item.label : undefined}
             className={({ isActive }) =>
-              `haui-sidebar__link ${isActive || (item.to === '/' && pathname === '/dashboard') || (item.to === '/progress' && pathname === '/profile') ? 'haui-sidebar__link--active' : ''}`.trim()
+              `haui-sidebar__link ${isActive || (item.to === '/chat' && pathname === '/') || (item.to === '/progress' && pathname === '/profile') ? 'haui-sidebar__link--active' : ''}`.trim()
             }
           >
             <span className="material-symbols-outlined haui-sidebar__icon" aria-hidden="true">

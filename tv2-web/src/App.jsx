@@ -38,7 +38,7 @@ export function AppRoutes() {
 
       <Route element={<MainLayout />}>
         {/* TV2 core pages */}
-        <Route index element={<DashboardPage mountedRouteSummary={mountedRouteSummary} />} />
+        <Route index element={<Navigate to="/chat" replace />} />
         <Route path="/dashboard" element={<DashboardPage mountedRouteSummary={mountedRouteSummary} />} />
         <Route path="/transcript" element={<TranscriptImportPage />} />
         <Route path="/academic/import" element={<Navigate to="/transcript" replace />} />

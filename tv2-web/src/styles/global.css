@@ -2858,29 +2858,86 @@ select.haui-select:focus {
 }
 
 /* ==========================================================================
-   13. AI Advisor Chat (Prototype: ai_advisor)
+   13. AI Advisor Chat (Full-Height Layout & Aligned Input Dock)
    ========================================================================== */
+.haui-content--chat,
+.haui-content:has(.haui-chat-container) {
+  padding-top: var(--space-4);
+  padding-bottom: var(--space-3); /* 12px - căn ngang bằng chính xác với đáy .haui-sidebar__bottom */
+  height: calc(100vh - var(--topbar-height));
+  max-height: calc(100vh - var(--topbar-height));
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.haui-route-content--chat,
+.haui-route-content:has(.haui-chat-container) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
 .haui-chat-container {
   max-width: 1600px;
   margin: 0 auto;
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-}
-
-.haui-chat-stream {
-  max-height: min(68vh, 720px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
 }
 
 .haui-chat-grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 24px;
-  align-items: start;
+  gap: 20px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+}
+
+.haui-chat-col-main {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  justify-content: space-between !important;
+}
+
+.haui-chat-stream {
+  flex: 1 !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: 6px;
+}
+
+/* Khung chat AI ở đáy: căn ngang hàng và cùng cao độ với thẻ sinh viên ở Sidebar */
+.haui-chat-col-main > div:last-child {
+  position: static !important;
+  bottom: auto !important;
+  margin-top: auto !important;
+  padding-top: 4px;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.haui-chat-col-sidebar {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-right: 4px;
 }
 
 @media (max-width: 1024px) {
@@ -2889,6 +2946,23 @@ select.haui-select:focus {
   }
   .haui-chat-col-sidebar {
     grid-column: span 12 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .haui-content--chat,
+  .haui-content:has(.haui-chat-container) {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    padding-bottom: var(--space-4);
+  }
+  .haui-chat-container {
+    height: auto;
+  }
+  .haui-chat-col-main > div:last-child {
+    position: sticky !important;
+    bottom: 12px !important;
   }
 }
 
