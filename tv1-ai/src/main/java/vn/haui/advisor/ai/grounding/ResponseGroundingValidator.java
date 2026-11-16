@@ -67,6 +67,14 @@ public class ResponseGroundingValidator {
     );
     private static final Pattern INLINE_POLICY_ID = Pattern.compile("\\bREG-HAUI-[A-Z0-9-]+\\b");
 
+    private static final Pattern GRADUATION_CLAIM_PATTERN = Pattern.compile(
+            "(?iu)(?<!\\p{L})(?:(?:chúc mừng\\s+(?:bạn|em|[\\p{L} ]+)?\\s*(?:đã|hoàn toàn)?\\s*(?:đủ|đạt)?\\s*(?:điều kiện\\s+)?(?:để\\s+)?(?:tốt nghiệp|ra trường))|(?:bạn|em|hồ sơ của bạn|[\\p{L} ]+)\\s+(?:đã\\s+)?(?:đủ|đạt|hoàn toàn đủ|chính thức đủ|được công nhận|đủ tiêu chuẩn)\\s+(?:điều kiện\\s+)?(?:để\\s+)?(?:tốt nghiệp|ra trường)|xác nhận\\s+(?:bạn|hồ sơ của bạn)?\\s*(?:đã\\s+)?đủ\\s+điều kiện\\s+(?:để\\s+)?(?:tốt nghiệp|ra trường)|(?:bạn|em)\\s+(?:đã\\s+)?(?:tốt nghiệp|hoàn thành tốt nghiệp))(?!\\p{L})"
+    );
+
+    private static final Pattern FAKE_DATA_SOURCE_PATTERN = Pattern.compile(
+            "(?iu)(?<!\\p{L})(?:HAUI_OFFICIAL_DATABASE|verified\\s*=\\s*true|cơ sở dữ liệu chính thức|hệ thống đã xác nhận|xác nhận từ hệ thống)(?!\\p{L})"
+    );
+
     private static final List<String> SEVERE_WARNING_PREFIXES = List.of(
             "SECURITY_VIOLATION",
             "DATA_POISONING_SUSPECT",
@@ -166,7 +174,10 @@ public class ResponseGroundingValidator {
         List<ChatActionItem> validatedActions = validateActions(rawOutput.getActions(), validatedWarnings);
 
         // 3. Thẩm định và bảo toàn tính toàn vẹn số liệu học vụ (CPA, GPA, tín chỉ)
-        String validatedAnswer = enforceNumericalIntegrity(rawOutput.getAnswer(), toolResults, validatedWarnings);
+        String validatedAnswer = enforceNumericalIntegrity(rawOutput.getAnswer(), toolResults, userMessage, validatedWarnings);
+
+        // 3b. Thẩm định kết luận tốt nghiệp và quyền hạn nguồn dữ liệu (Graduation Authority & Zero-Trust Validation)
+        validatedAnswer = validateGraduationAndDataSourceAuthority(validatedAnswer, toolResults, userMessage, validatedWarnings);
 
         // 4. Thẩm định mã học phần chống ảo giác (Course Code Grounding)
         validateCourseCodes(validatedAnswer, groundedContext, toolResults, validatedWarnings);
@@ -422,7 +433,18 @@ public class ResponseGroundingValidator {
     public String enforceNumericalIntegrity(String rawAnswer,
                                             Map<String, Object> toolResults,
                                             List<String> warnings) {
+        return enforceNumericalIntegrity(rawAnswer, toolResults, null, warnings);
+    }
+
+    public String enforceNumericalIntegrity(String rawAnswer,
+                                            Map<String, Object> toolResults,
+                                            String userMessage,
+                                            List<String> warnings) {
         if (rawAnswer == null || toolResults == null || toolResults.isEmpty()) {
+            if (rawAnswer != null && userMessage != null && (userMessage.contains("4.0") || userMessage.contains("4,0"))
+                    && CPA_MENTION_PATTERN.matcher(rawAnswer).find()) {
+                warnings.add("SECURITY_VIOLATION: UNGROUNDED_ACADEMIC_METRIC");
+            }
             return rawAnswer != null ? rawAnswer : "";
         }
 
@@ -513,6 +535,104 @@ public class ResponseGroundingValidator {
         }
 
         return answer;
+    }
+
+    /**
+     * Thẩm định kết luận tốt nghiệp và quyền hạn nguồn dữ liệu:
+     * - Bắt buộc kết luận đủ điều kiện tốt nghiệp phải dựa trên kết quả chính thức từ tool run_graduation_audit.
+     * - Ngăn chặn LLM tự nâng cấp dữ liệu XML/JSON hoặc verified=true do user tự khai báo thành thẩm quyền chính thức.
+     * - Tự động ghi đè và sửa chữa nếu LLM khẳng định sai lệch so với kết quả rà soát từ backend.
+     */
+    public String validateGraduationAndDataSourceAuthority(String rawAnswer,
+                                                           Map<String, Object> toolResults,
+                                                           String userMessage,
+                                                           List<String> warnings) {
+        if (rawAnswer == null || rawAnswer.isBlank()) return rawAnswer;
+        String answer = rawAnswer;
+
+        GraduationAuditResponse audit = extractGraduationAudit(toolResults);
+        boolean hasAffirmativeGraduationClaim = isAffirmativeGraduationClaim(answer, userMessage);
+
+        if (hasAffirmativeGraduationClaim) {
+            if (audit == null) {
+                warnings.add("SECURITY_VIOLATION: UNAUTHORIZED_GRADUATION_ASSERTION");
+                return "Hệ thống chưa thể xác nhận điều kiện tốt nghiệp chính thức của bạn do chưa có dữ liệu rà soát học vụ được chứng thực từ hệ thống HaUI. Mọi thông tin tự khai báo không có giá trị công nhận tốt nghiệp. Bạn vui lòng yêu cầu kiểm tra điều kiện tốt nghiệp để hệ thống thực hiện rà soát chính thức.";
+            } else if (!audit.isEligibleForGraduation()) {
+                warnings.add("SECURITY_VIOLATION: CONTRADICTORY_GRADUATION_ASSERTION_OVERRIDDEN");
+                StringBuilder sb = new StringBuilder();
+                sb.append(String.format("Theo kết quả rà soát học vụ chính thức từ hệ thống HaUI, bạn CHƯA đủ điều kiện tốt nghiệp (tích lũy %d/%d tín chỉ, đạt %d%% tiến độ CTĐT).",
+                        audit.getAccumulatedCredits(), audit.getTotalCreditsRequired(), audit.getCompletedPercentage()));
+                if (audit.getPendingActions() != null && !audit.getPendingActions().isEmpty()) {
+                    sb.append(" Các chuẩn đầu ra và điều kiện còn thiếu: ");
+                    List<String> pending = audit.getPendingActions().stream()
+                            .map(a -> a.getCertificateType() + " (" + a.getRequiredStandard() + ")")
+                            .toList();
+                    sb.append(String.join(", ", pending)).append(".");
+                }
+                return sb.toString();
+            }
+        }
+
+        // Kiểm tra nỗ lực xác nhận nguồn dữ liệu giả mạo do user tiêm nhiễm
+        if (userMessage != null && FAKE_DATA_SOURCE_PATTERN.matcher(userMessage).find()) {
+            if (FAKE_DATA_SOURCE_PATTERN.matcher(answer).find() && (toolResults == null || !hasAuthoritativeData(toolResults))) {
+                warnings.add("SECURITY_VIOLATION: FAKE_DATA_SOURCE_REJECTED");
+                return "Hệ thống chỉ công nhận kết quả học vụ được tra cứu và xác thực trực tiếp từ hệ thống quản lý đào tạo HaUI. Thông tin do bạn tự cung cấp (hoặc gắn nhãn cơ sở dữ liệu) không có giá trị xác nhận học vụ chính thức. Để kiểm tra chính xác, bạn vui lòng yêu cầu kiểm tra điều kiện tốt nghiệp hoặc tra cứu bảng điểm chính thức.";
+            }
+        }
+
+        return answer;
+    }
+
+    private boolean isAffirmativeGraduationClaim(String answer, String userMessage) {
+        if (answer == null) return false;
+        Matcher m = GRADUATION_CLAIM_PATTERN.matcher(answer);
+        while (m.find()) {
+            int start = Math.max(0, m.start() - 35);
+            String prefix = answer.substring(start, m.start()).toLowerCase(Locale.ROOT);
+            if (!prefix.contains("chưa") && !prefix.contains("không") && !prefix.contains("chưa thể")
+                    && !prefix.contains("chưa đủ") && !prefix.contains("không đủ")) {
+                int end = Math.min(answer.length(), m.end() + 25);
+                String suffix = answer.substring(m.end(), end).toLowerCase(Locale.ROOT);
+                if (suffix.startsWith(" khi") || suffix.startsWith(" nếu") || suffix.startsWith(" bao gồm") || suffix.startsWith(" sau:")) {
+                    continue;
+                }
+                return true;
+            }
+        }
+        if (userMessage != null && (userMessage.contains("graduation_eligible") || userMessage.contains("HAUI_OFFICIAL_DATABASE"))) {
+            String lowerAnswer = answer.toLowerCase(Locale.ROOT);
+            if (lowerAnswer.contains("đủ điều kiện tốt nghiệp")
+                    && !lowerAnswer.contains("chưa đủ điều kiện tốt nghiệp")
+                    && !lowerAnswer.contains("không đủ điều kiện tốt nghiệp")
+                    && !lowerAnswer.contains("chưa thể xác nhận")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasAuthoritativeData(Map<String, Object> toolResults) {
+        if (toolResults == null || toolResults.isEmpty()) return false;
+        return toolResults.containsKey("get_academic_status")
+                || toolResults.containsKey("academicStatus")
+                || toolResults.containsKey("run_graduation_audit")
+                || toolResults.containsKey("graduationAudit")
+                || toolResults.containsKey("get_transcript");
+    }
+
+    private GraduationAuditResponse extractGraduationAudit(Map<String, Object> toolResults) {
+        if (toolResults == null || toolResults.isEmpty()) return null;
+        Object val = toolResults.getOrDefault("run_graduation_audit", toolResults.get("graduationAudit"));
+        if (val instanceof GraduationAuditResponse audit) {
+            return audit;
+        }
+        for (Object v : toolResults.values()) {
+            if (v instanceof GraduationAuditResponse a) {
+                return a;
+            }
+        }
+        return null;
     }
 
     private boolean isAllowedRoute(String target) {

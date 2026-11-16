@@ -139,14 +139,23 @@ public class ConversationTurnPlanner {
             }
         }
 
-        boolean generalGraduationRule = lower.contains("điều kiện tốt nghiệp")
-                && !containsAny(lower, "của mình", "mình còn", "mình thiếu", "tôi còn", "tôi thiếu", "của tôi", "của em", "em còn", "em thiếu");
+        boolean personalGraduationQuery = containsAny(lower, "tốt nghiệp", "ra trường")
+                && (containsAny(lower, "của mình", "mình còn", "mình thiếu", "mình đã", "mình có", "mình đủ",
+                                       "tôi còn", "tôi thiếu", "tôi đã", "tôi có", "tôi đủ", "của tôi",
+                                       "của em", "em còn", "em thiếu", "em đã", "em có", "em đủ",
+                                       "đủ điều kiện chưa", "đủ điều kiện không", "đã đủ điều kiện",
+                                       "được tốt nghiệp chưa", "xét tốt nghiệp chưa", "tiến độ tốt nghiệp",
+                                       "sợ muộn", "sợ trễ", "đúng hạn", "ra trường được chưa")
+                    || lower.contains("graduation_eligible") || lower.contains("haui_official_database"));
+
+        boolean generalGraduationRule = lower.contains("điều kiện tốt nghiệp") && !personalGraduationQuery;
         boolean policy = parsed.getCategory() == ParsedUserIntent.ScenarioCategory.REGULATION
                 || containsAny(lower, "quy chế", "quy định", "được phép", "điều kiện", "tối đa bao nhiêu tín", "giới hạn tín chỉ")
                 || (lower.contains("đăng ký") && lower.contains("bao nhiêu tín"))
                 || (lower.contains("gpa") && lower.contains("cpa") && containsAny(lower, "khác nhau", "cách tính"));
         if (parsed.getCategory() == ParsedUserIntent.ScenarioCategory.GRADUATION_AUDIT
                 && !containsAny(lower, "quy chế", "quy định", "điều kiện chung") && !generalGraduationRule) policy = false;
+        if (personalGraduationQuery && !containsAny(lower, "quy chế", "quy định", "điều kiện chung")) policy = false;
 
         String retrievalQuery = current;
         if (!userHistory.isEmpty() && lower.matches("(?:còn\\s+)?(?:học\\s+)?kỳ\\s+(?:hè|phụ|chính)\\s+(?:thì\\s+)?sao[?!.\\s]*")) {
@@ -257,8 +266,7 @@ public class ConversationTurnPlanner {
             if (courseCode == null) clarification = "Bạn cho mình mã học phần cần đối chiếu tên nhé?";
             else capabilities.add(AcademicCapability.CHECK_COURSE_ELIGIBILITY);
         } else if ((parsed.getCategory() == ParsedUserIntent.ScenarioCategory.GRADUATION_AUDIT && !generalGraduationRule)
-                || (containsAny(lower, "tốt nghiệp", "ra trường")
-                && containsAny(lower, "mình còn thiếu", "mình thiếu", "mình sợ", "đúng hạn", "tiến độ của mình", "tiến độ tốt nghiệp của mình"))) {
+                || personalGraduationQuery) {
             capabilities.add(AcademicCapability.RUN_GRADUATION_AUDIT);
         } else if (parsed.getCategory() == ParsedUserIntent.ScenarioCategory.DEBT_COURSES) {
             if (courseCode != null) capabilities.add(AcademicCapability.CHECK_COURSE_ELIGIBILITY);

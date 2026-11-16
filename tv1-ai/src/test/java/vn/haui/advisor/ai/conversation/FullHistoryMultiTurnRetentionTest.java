@@ -118,4 +118,16 @@ public class FullHistoryMultiTurnRetentionTest {
         // Verify database records were NOT truncated
         assertThat(historyManager.loadFullHistory(convId, context.getStudentId())).hasSize(10);
     }
+
+    @Test
+    void chatDoesNotAnswerWithMissingHistoryWhenStoredHistoryIsMalformed() {
+        String conversationId = "conv-corrupt-chat";
+        store.saveConversation(new ConversationRecord(conversationId, context.getStudentId(), "Title", null, null, "{broken"));
+
+        ChatResponse response = advisorFacade.chat(new ChatRequest(conversationId, "What is my CPA?", null), context);
+
+        assertThat(response.getWarnings()).anyMatch(w -> w.startsWith("HISTORY_UNAVAILABLE"));
+        assertThat(capturedInput.get()).isNull();
+        assertThat(store.getConversation(conversationId, context.getStudentId()).getMessagesJson()).isEqualTo("{broken");
+    }
 }

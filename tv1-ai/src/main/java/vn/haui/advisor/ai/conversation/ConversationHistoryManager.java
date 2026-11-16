@@ -112,10 +112,13 @@ public class ConversationHistoryManager {
             allMessages = objectMapper.readValue(json, new TypeReference<List<ChatMessageHistoryItem>>() {});
         } catch (JsonProcessingException e) {
             log.error("Failed to deserialize messagesJson for conversationId={}: {}", conversationId, e.getMessage());
-            return Collections.emptyList();
+            throw new IllegalStateException("Failed to deserialize conversation history", e);
         }
 
-        if (allMessages == null || allMessages.isEmpty()) {
+        if (allMessages == null) {
+            throw new IllegalStateException("Failed to deserialize conversation history: expected a message array");
+        }
+        if (allMessages.isEmpty()) {
             return Collections.emptyList();
         }
 
@@ -168,11 +171,13 @@ public class ConversationHistoryManager {
                         existing.getMessagesJson(),
                         new TypeReference<List<ChatMessageHistoryItem>>() {}
                 );
-                if (prev != null) {
-                    messages.addAll(prev);
+                if (prev == null) {
+                    throw new IllegalStateException("Failed to deserialize conversation history: expected a message array");
                 }
+                messages.addAll(prev);
             } catch (JsonProcessingException e) {
                 log.warn("Corrupted existing messagesJson for conversationId={}: {}", conversationId, e.getMessage());
+                throw new IllegalStateException("Failed to deserialize conversation history", e);
             }
         }
 
@@ -245,7 +250,7 @@ public class ConversationHistoryManager {
             return objectMapper.writeValueAsString(messages);
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize conversation history: {}", e.getMessage());
-            return "[]";
+            throw new IllegalStateException("Failed to serialize conversation history", e);
         }
     }
 

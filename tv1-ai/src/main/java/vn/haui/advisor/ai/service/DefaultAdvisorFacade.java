@@ -198,8 +198,10 @@ public class DefaultAdvisorFacade implements AdvisorFacade {
                         null,
                         List.of("SECURITY_ERROR: Access denied to conversation " + conversationId)
                 );
-            } catch (Exception ignored) {
-                history = Collections.emptyList();
+            } catch (Exception ex) {
+                log.warn("Failed to load conversation history for conversationId={}", conversationId, ex);
+                return new ChatResponse("Chưa đọc được lịch sử hội thoại. Vui lòng thử lại sau.",
+                        List.of(), List.of(), null, List.of("HISTORY_UNAVAILABLE"));
             }
         }
 

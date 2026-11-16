@@ -99,6 +99,38 @@ class ConversationHistoryManagerTest {
     }
 
     @Test
+    void malformedHistoryCannotBeReadOrOverwritten() {
+        String conversationId = "conv-corrupt";
+        String studentId = "SV20246001";
+        String malformed = "{broken";
+        conversationStore.saveConversation(new ConversationRecord(conversationId, studentId, "Title", null, null, malformed));
+
+        assertThatThrownBy(() -> historyManager.loadFullHistory(conversationId, studentId))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("conversation history");
+        assertThatThrownBy(() -> historyManager.saveTurn(conversationId, studentId,
+                ChatMessageHistoryItem.ofUser("New question", null),
+                ChatMessageHistoryItem.ofAssistant("New answer", List.of(), List.of(), null, List.of()), 900_000))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("conversation history");
+        assertThat(conversationStore.getConversation(conversationId, studentId).getMessagesJson()).isEqualTo(malformed);
+    }
+
+    @Test
+    void jsonNullHistoryCannotBeTreatedAsEmpty() {
+        String conversationId = "conv-null-history";
+        String studentId = "SV20246001";
+        conversationStore.saveConversation(new ConversationRecord(conversationId, studentId, "Title", null, null, "null"));
+
+        assertThatThrownBy(() -> historyManager.loadFullHistory(conversationId, studentId))
+                .isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> historyManager.saveTurn(conversationId, studentId,
+                ChatMessageHistoryItem.ofUser("New question", null), null, 900_000))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(conversationStore.getConversation(conversationId, studentId).getMessagesJson()).isEqualTo("null");
+    }
+
+    @Test
     @DisplayName("Should progressively compact older messages when conversation size exceeds limit across multiple turns")
     void testSaveTurnWithProgressiveCompactionOnApproachingLimit() {
         String convId = "conv-compact-" + UUID.randomUUID();

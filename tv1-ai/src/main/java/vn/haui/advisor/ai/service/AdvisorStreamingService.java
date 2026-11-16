@@ -118,8 +118,11 @@ public class AdvisorStreamingService {
             } catch (SecurityException se) {
                 eventConsumer.accept(ChatStreamEvent.error("SECURITY_ERROR", "Từ chối quyền truy cập hội thoại không thuộc sở hữu của bạn.", false));
                 return;
-            } catch (Exception ignored) {
-                history = Collections.emptyList();
+            } catch (Exception ex) {
+                log.warn("Failed to load streaming conversation history for conversationId={}", conversationId, ex);
+                eventConsumer.accept(ChatStreamEvent.error("HISTORY_UNAVAILABLE",
+                        "Chưa đọc được lịch sử hội thoại. Vui lòng thử lại sau.", true));
+                return;
             }
         }
 

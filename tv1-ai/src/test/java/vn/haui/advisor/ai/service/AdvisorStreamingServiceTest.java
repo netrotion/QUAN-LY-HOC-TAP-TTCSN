@@ -4,6 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import vn.haui.advisor.ai.config.AiProperties;
 import vn.haui.advisor.ai.conversation.TokenBudgetAuditor;
+import vn.haui.advisor.ai.conversation.ConversationHistoryManager;
 import vn.haui.advisor.ai.mock.MockAcademicFacade;
 import vn.haui.advisor.ai.model.LiveAdvisorModel;
 import vn.haui.advisor.ai.model.MockAdvisorModel;
@@ -11,7 +12,9 @@ import vn.haui.advisor.ai.telemetry.AiMetricsCollector;
 import vn.haui.advisor.ai.telemetry.AiTelemetrySnapshot;
 import vn.haui.advisor.ai.tools.DefaultToolAdapter;
 import vn.haui.advisor.contracts.dto.ChatRequest;
+import vn.haui.advisor.contracts.dto.ConversationRecord;
 import vn.haui.advisor.contracts.dto.TrustedStudentContext;
+import vn.haui.advisor.contracts.fake.InMemoryConversationStore;
 import vn.haui.advisor.contracts.stream.ChatStreamEvent;
 
 import java.util.ArrayList;
@@ -23,6 +26,24 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class AdvisorStreamingServiceTest {
+
+    @Test
+    void streamingDoesNotContinueWhenStoredHistoryIsMalformed() {
+        InMemoryConversationStore store = new InMemoryConversationStore();
+        store.saveConversation(new ConversationRecord("conv-corrupt-stream", "STU-001", "Title", null, null, "{broken"));
+        AdvisorStreamingService service = new AdvisorStreamingService(new MockAdvisorModel(),
+                mock(vn.haui.advisor.ai.tools.ToolAdapter.class), null,
+                new ConversationHistoryManager(store), null, new AiMetricsCollector());
+        List<ChatStreamEvent> events = new ArrayList<>();
+
+        service.streamChat(new ChatRequest("conv-corrupt-stream", "What is my CPA?", null),
+                new TrustedStudentContext("STU-001", "STU-001", "Student", "IT", "K16", "REV-1"), events::add);
+
+        assertThat(events).anyMatch(event -> event.getEventType() == ChatStreamEvent.EventType.ERROR
+                && "HISTORY_UNAVAILABLE".equals(event.getCode()));
+        assertThat(events).noneMatch(event -> event.getEventType() == ChatStreamEvent.EventType.DONE);
+        assertThat(store.getConversation("conv-corrupt-stream", "STU-001").getMessagesJson()).isEqualTo("{broken");
+    }
 
     @Test
     @DisplayName("streamChat coordinates STATUS -> TOOL_CALL -> TOOL_RESULT -> CHUNK -> DONE events")
