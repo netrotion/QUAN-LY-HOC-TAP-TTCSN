@@ -547,32 +547,7 @@ export function ChatAdvisorPage({
                   letterSpacing: '-0.2px'
                 }
               },
-              'Tư vấn học tập thông minh (AI Advisor)'
-            ),
-            React.createElement(
-              'span',
-              {
-                style: {
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '2px 8px',
-                  borderRadius: '9999px',
-                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
-                  fontSize: '11px',
-                  fontWeight: 500,
-                  color: 'var(--color-mid-gray, #737373)'
-                }
-              },
-              React.createElement('span', {
-                style: {
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--color-ink, #0a0a0a)'
-                }
-              }),
-              'Mô hình HaUI Academic v2.4'
+              'Tư vấn học tập thông minh'
             )
           ),
           React.createElement(
@@ -1645,55 +1620,6 @@ export function ChatAdvisorPage({
                 updated && !Number.isNaN(updated.getTime()) && React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, updated.toLocaleString('vi-VN'))
               );
             })
-          )
-        ),
-
-        // Card 3: Lưu ý thuật toán AI
-        React.createElement(
-          'div',
-          {
-            style: {
-              backgroundColor: 'var(--color-paper, #ffffff)',
-              borderRadius: 'var(--heroui-radius-xl, 24px)',
-              border: '1px solid var(--color-hairline, #e5e5e5)',
-              padding: '24px',
-              boxShadow: 'var(--heroui-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04))',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px'
-            }
-          },
-          React.createElement(
-            'div',
-            { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '20px', color: 'var(--color-ink)' } }, 'shield'),
-            React.createElement('h2', { style: { margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--color-ink)' } }, 'Lưu ý thuật toán AI')
-          ),
-          React.createElement(
-            'div',
-            {
-              style: {
-                padding: '12px 14px',
-                borderRadius: '18px',
-                backgroundColor: 'var(--color-canvas, #f5f5f5)',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '8px'
-              }
-            },
-            React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '18px', color: 'var(--color-mid-gray)', marginTop: '2px', flexShrink: 0 } }, 'lock'),
-            React.createElement(
-              'p',
-              { style: { margin: 0, fontSize: '12px', color: 'var(--color-mid-gray)', lineHeight: 1.5 } },
-              React.createElement('strong', { style: { color: 'var(--color-ink)' } }, 'Ghi chú an toàn: '),
-              'AI hoạt động độc lập trên thiết bị, không thay đổi dữ liệu gốc trên hệ thống quản lý đào tạo của HaUI. Dữ liệu phân tích dựa trên cây tiên quyết của Khoa Công nghệ Thông tin.'
-            )
-          ),
-          React.createElement(
-            'div',
-            { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: 'var(--color-mid-gray)', paddingTop: '4px' } },
-            React.createElement('span', null, 'Phiên bản thuật toán: 2024.3'),
-            React.createElement('a', { href: '#', style: { color: 'var(--color-ink)', textDecoration: 'underline' } }, 'Chính sách bảo mật')
           )
         )
       )

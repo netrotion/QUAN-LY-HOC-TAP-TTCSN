@@ -13,7 +13,6 @@ import { DashboardPage } from './pages/DashboardPage.jsx';
 import { AcademicProgressPage } from './pages/AcademicProgressPage.jsx';
 import { GraduationAuditPage } from './pages/GraduationAuditPage.jsx';
 import { CurriculumTreePage } from './pages/CurriculumTreePage.jsx';
-import { TranscriptImportPage } from './pages/TranscriptImportPage.jsx';
 import { LoginPage } from './pages/LoginPage.jsx';
 import { PlanHistoryPage } from './pages/PlanHistoryPage.jsx';
 import { DemoUiPage } from './pages/DemoUiPage.jsx';
@@ -40,8 +39,8 @@ export function AppRoutes() {
         {/* TV2 core pages */}
         <Route index element={<Navigate to="/chat" replace />} />
         <Route path="/dashboard" element={<DashboardPage mountedRouteSummary={mountedRouteSummary} />} />
-        <Route path="/transcript" element={<TranscriptImportPage />} />
-        <Route path="/academic/import" element={<Navigate to="/transcript" replace />} />
+        <Route path="/transcript" element={<Navigate to="/" replace />} />
+        <Route path="/academic/import" element={<Navigate to="/" replace />} />
         <Route path="/progress" element={<StudentProfilePage api={api} ui={ui} onNavigate={navigate} onOpenTranscript={() => navigate('/transcript')} onOpenPlanner={() => navigate('/planner')} />} />
         <Route path="/profile" element={<StudentProfilePage api={api} ui={ui} onNavigate={navigate} onOpenTranscript={() => navigate('/transcript')} onOpenPlanner={() => navigate('/planner')} />} />
         <Route path="/academic" element={<Navigate to="/progress" replace />} />

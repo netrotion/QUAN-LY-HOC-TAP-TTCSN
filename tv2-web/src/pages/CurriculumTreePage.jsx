@@ -177,30 +177,63 @@ export function CurriculumTreePage() {
     setSelectedCourseCode(code);
   };
 
-  const handleScrollToCurrent = () => {
-    const el = document.getElementById('sem-current') || document.getElementById('sem-6');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    } else if (timelineScrollRef.current) {
-      timelineScrollRef.current.scrollTo({ top: 480, behavior: 'smooth' });
-    }
-  };
+  // Xác định học kỳ hiện tại (1..8) động theo dữ liệu sinh viên
+  const currentSemesterNum = useMemo(() => {
+    // 1. Thử lấy từ cài đặt của sinh viên nếu có lưu trong haui_settings
+    try {
+      const saved = localStorage.getItem('haui_settings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.semester && typeof parsed.semester === 'string' && parsed.semester.startsWith('sem')) {
+          const num = parseInt(parsed.semester.replace('sem', ''), 10);
+          if (num >= 1 && num <= 8) return num;
+        }
+      }
+    } catch (_) {}
 
-  const handleScrollLeft = () => {
-    const el = document.getElementById('sem-1');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else if (timelineScrollRef.current) {
-      timelineScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    // 2. Thử lấy từ các học phần đang học (IN_PROGRESS)
+    const inProgress = courses.filter((c) => c.status === 'IN_PROGRESS');
+    if (inProgress.length > 0) {
+      const sems = inProgress.map((c) => Number(c.suggestedSemester)).filter((n) => n >= 1 && n <= 8);
+      if (sems.length > 0) return Math.max(...sems);
     }
-  };
 
-  const handleScrollRight = () => {
-    const el = document.getElementById('sem-7') || document.getElementById('sem-8');
+    // 3. Thử lấy từ các học phần đã đạt cao nhất + 1
+    const passed = courses.filter((c) => c.status === 'PASSED');
+    if (passed.length > 0) {
+      const sems = passed.map((c) => Number(c.suggestedSemester)).filter((n) => n >= 1 && n <= 8);
+      if (sems.length > 0) {
+        const nextSem = Math.max(...sems) + 1;
+        return Math.min(8, nextSem);
+      }
+    }
+
+    // 4. Mặc định là kỳ 6
+    return 6;
+  }, [courses]);
+
+  // Nhóm học kỳ chứa kỳ hiện tại: 1 (Kỳ 1-3) | 2 (Kỳ 4-6) | 3 (Kỳ 7-8)
+  const currentGroup = currentSemesterNum <= 3 ? 1 : currentSemesterNum <= 6 ? 2 : 3;
+
+  const handleScrollToGroup = (group) => {
+    let targetId = 'sem-1';
+    let fallbackTop = 0;
+    if (group === 1) {
+      targetId = currentGroup === 1 ? 'sem-current' : 'sem-1';
+      fallbackTop = 0;
+    } else if (group === 2) {
+      targetId = currentGroup === 2 ? 'sem-current' : 'sem-4';
+      fallbackTop = 480;
+    } else if (group === 3) {
+      targetId = currentGroup === 3 ? 'sem-current' : 'sem-7';
+      fallbackTop = 9999;
+    }
+
+    const el = document.getElementById(targetId) || document.getElementById(group === 1 ? 'sem-1' : group === 2 ? 'sem-4' : 'sem-7');
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      el.scrollIntoView({ behavior: 'smooth', block: group === 1 ? 'start' : 'nearest' });
     } else if (timelineScrollRef.current) {
-      timelineScrollRef.current.scrollTo({ top: 9999, behavior: 'smooth' });
+      timelineScrollRef.current.scrollTo({ top: fallbackTop, behavior: 'smooth' });
     }
   };
 
@@ -264,10 +297,14 @@ export function CurriculumTreePage() {
       { semester: 3, label: 'Học kỳ 3 · Năm 2', meta: 'Cơ sở ngành' },
       { semester: 4, label: 'Học kỳ 4 · Năm 2', meta: 'Cơ sở & Chuyên ngành' },
       { semester: 5, label: 'Học kỳ 5 · Năm 3', meta: 'Chuyên ngành' },
-      { semester: 6, label: 'Học kỳ 6 · Năm 3', meta: 'Chuyên ngành · Hiện tại', isCurrent: true },
+      { semester: 6, label: 'Học kỳ 6 · Năm 3', meta: 'Chuyên ngành' },
       { semester: 7, label: 'Học kỳ 7 · Năm 4', meta: 'Đồ án & Thực tập' },
       { semester: 8, label: 'Học kỳ 8 · Năm 4', meta: 'Tốt nghiệp' }
-    ];
+    ].map((s) => ({
+      ...s,
+      meta: s.semester === currentSemesterNum ? `${s.meta} · Hiện tại` : s.meta,
+      isCurrent: s.semester === currentSemesterNum
+    }));
 
     defaultSems.forEach((s) => semMap.set(s.semester, { ...s, courses: [] }));
 
@@ -316,7 +353,7 @@ export function CurriculumTreePage() {
         };
       })
       .filter(Boolean);
-  }, [courses, semesterFilter, statusFilter, blockFilter, searchTerm]);
+  }, [courses, semesterFilter, statusFilter, blockFilter, searchTerm, currentSemesterNum]);
 
   // Cấu hình bảng dữ liệu cho Chế độ Table view
   const tableColumns = [
@@ -550,19 +587,11 @@ export function CurriculumTreePage() {
               Chưa có dữ liệu bảng điểm để hiển thị cây môn học
             </h2>
             <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-mid-gray)', lineHeight: 1.6, maxWidth: '580px' }}>
-              Mỗi ngành đào tạo tại Đại học Công nghiệp Hà Nội có khung chương trình và sơ đồ tiên quyết riêng biệt. Vui lòng nạp bảng điểm cá nhân để hệ thống đồng bộ chính xác cây môn học và trạng thái các học phần theo đúng ngành của bạn.
+              Mỗi ngành đào tạo tại Đại học Công nghiệp Hà Nội có khung chương trình và sơ đồ tiên quyết riêng biệt. Vui lòng cập nhật hồ sơ sinh viên để đồng bộ thông tin ngành và cây môn học.
             </p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button
-              type="button"
-              className="haui-pill-btn-dark"
-              onClick={() => navigate('/transcript')}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>upload_file</span>
-              <span>Nạp bảng điểm e-HaUI ngay</span>
-            </button>
             <button
               type="button"
               className="haui-pill-btn-canvas"
@@ -571,28 +600,6 @@ export function CurriculumTreePage() {
               <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>person</span>
               <span>Cập nhật hồ sơ sinh viên</span>
             </button>
-          </div>
-
-          <div
-            style={{
-              marginTop: '12px',
-              padding: '16px 20px',
-              borderRadius: '16px',
-              backgroundColor: 'var(--color-surface-alt)',
-              border: '1px solid var(--color-hairline)',
-              width: '100%',
-              boxSizing: 'border-box',
-              textAlign: 'left'
-            }}
-          >
-            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-ink)', display: 'block', marginBottom: '8px' }}>
-              Quy trình đồng bộ lộ trình môn học:
-            </span>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: 'var(--color-mid-gray)' }}>
-              <span>1. Tải file bảng điểm PDF / Excel xuất từ cổng <strong>sv.haui.edu.vn</strong></span>
-              <span>2. Tải lên tại mục <strong>Nhập bảng điểm</strong> và xác nhận danh sách môn</span>
-              <span>3. Sơ đồ cây môn học sẽ tự động nhận diện ngành và tô màu trực quan (Đã đạt, Đang học, Đủ điều kiện, Khóa)</span>
-            </div>
           </div>
         </div>
       ) : (
@@ -676,14 +683,14 @@ export function CurriculumTreePage() {
                 }}
               >
                 <option value="all">Tất cả kỳ (1 - 8)</option>
-                <option value="1">Kỳ 1</option>
-                <option value="2">Kỳ 2</option>
-                <option value="3">Kỳ 3</option>
-                <option value="4">Kỳ 4</option>
-                <option value="5">Kỳ 5</option>
-                <option value="6">Kỳ 6 (Hiện tại)</option>
-                <option value="7">Kỳ 7</option>
-                <option value="8">Kỳ 8 (Tốt nghiệp)</option>
+                <option value="1">Kỳ 1{currentSemesterNum === 1 ? ' (Hiện tại)' : ''}</option>
+                <option value="2">Kỳ 2{currentSemesterNum === 2 ? ' (Hiện tại)' : ''}</option>
+                <option value="3">Kỳ 3{currentSemesterNum === 3 ? ' (Hiện tại)' : ''}</option>
+                <option value="4">Kỳ 4{currentSemesterNum === 4 ? ' (Hiện tại)' : ''}</option>
+                <option value="5">Kỳ 5{currentSemesterNum === 5 ? ' (Hiện tại)' : ''}</option>
+                <option value="6">Kỳ 6{currentSemesterNum === 6 ? ' (Hiện tại)' : ''}</option>
+                <option value="7">Kỳ 7{currentSemesterNum === 7 ? ' (Hiện tại)' : ''}</option>
+                <option value="8">Kỳ 8{currentSemesterNum === 8 ? ' (Hiện tại)' : ' (Tốt nghiệp)'}</option>
               </Select>
             </div>
 
@@ -821,72 +828,46 @@ export function CurriculumTreePage() {
 
               {/* Mode Switcher & Quick Navigation */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                {/* Tracer Mode Toggle */}
-                <div style={{ display: 'inline-flex', padding: '2px', backgroundColor: 'var(--color-canvas)', borderRadius: '9999px', border: '1px solid var(--color-hairline)' }}>
-                  <button
-                    type="button"
-                    onClick={() => setTracerMode('all')}
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: '9999px',
-                      border: 'none',
-                      fontSize: '11px',
-                      fontWeight: tracerMode === 'all' ? 600 : 400,
-                      backgroundColor: tracerMode === 'all' ? 'var(--color-paper)' : 'transparent',
-                      color: tracerMode === 'all' ? 'var(--color-ink)' : 'var(--color-mid-gray)',
-                      cursor: 'pointer',
-                      transition: 'all 150ms'
-                    }}
-                  >
-                    Tất cả môn
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTracerMode('tracer')}
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: '9999px',
-                      border: 'none',
-                      fontSize: '11px',
-                      fontWeight: tracerMode === 'tracer' ? 600 : 400,
-                      backgroundColor: tracerMode === 'tracer' ? 'var(--color-ink)' : 'transparent',
-                      color: tracerMode === 'tracer' ? 'var(--color-paper)' : 'var(--color-mid-gray)',
-                      cursor: 'pointer',
-                      transition: 'all 150ms'
-                    }}
-                  >
-                    Tô sáng luồng môn
-                  </button>
-                </div>
-
                 {/* Quick Scroll Navigation Controls */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <button
                     type="button"
-                    onClick={handleScrollLeft}
-                    className="haui-pill-btn-canvas"
-                    style={{ padding: '6px 10px', fontSize: '11px' }}
-                    title="Cuộn về Kỳ 1-3 (Hàng 1)"
+                    onClick={() => handleScrollToGroup(1)}
+                    className={currentGroup === 1 ? 'haui-pill-btn-paper' : 'haui-pill-btn-canvas'}
+                    style={{
+                      padding: currentGroup === 1 ? '6px 12px' : '6px 10px',
+                      fontSize: '11px',
+                      fontWeight: currentGroup === 1 ? 600 : 400
+                    }}
+                    title={currentGroup === 1 ? `Cuộn về Kỳ 1-3 (Kỳ ${currentSemesterNum} hiện tại)` : 'Cuộn về Kỳ 1-3 (Hàng 1)'}
                   >
-                    Kỳ 1-3
+                    {currentGroup === 1 ? '● Kỳ 1-3 (Hiện tại)' : 'Kỳ 1-3'}
                   </button>
                   <button
                     type="button"
-                    onClick={handleScrollToCurrent}
-                    className="haui-pill-btn-paper"
-                    style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600 }}
-                    title="Cuộn đến Học kỳ 6 hiện tại (Hàng 2)"
+                    onClick={() => handleScrollToGroup(2)}
+                    className={currentGroup === 2 ? 'haui-pill-btn-paper' : 'haui-pill-btn-canvas'}
+                    style={{
+                      padding: currentGroup === 2 ? '6px 12px' : '6px 10px',
+                      fontSize: '11px',
+                      fontWeight: currentGroup === 2 ? 600 : 400
+                    }}
+                    title={currentGroup === 2 ? `Cuộn đến Kỳ 4-6 (Kỳ ${currentSemesterNum} hiện tại)` : 'Cuộn đến Kỳ 4-6 (Hàng 2)'}
                   >
-                    ● Kỳ 6 (Hiện tại)
+                    {currentGroup === 2 ? '● Kỳ 4-6 (Hiện tại)' : 'Kỳ 4-6'}
                   </button>
                   <button
                     type="button"
-                    onClick={handleScrollRight}
-                    className="haui-pill-btn-canvas"
-                    style={{ padding: '6px 10px', fontSize: '11px' }}
-                    title="Cuộn đến Kỳ 7-8 (Hàng 3)"
+                    onClick={() => handleScrollToGroup(3)}
+                    className={currentGroup === 3 ? 'haui-pill-btn-paper' : 'haui-pill-btn-canvas'}
+                    style={{
+                      padding: currentGroup === 3 ? '6px 12px' : '6px 10px',
+                      fontSize: '11px',
+                      fontWeight: currentGroup === 3 ? 600 : 400
+                    }}
+                    title={currentGroup === 3 ? `Cuộn đến Kỳ 7-8 (Kỳ ${currentSemesterNum} hiện tại)` : 'Cuộn đến Kỳ 7-8 (Hàng 3)'}
                   >
-                    Kỳ 7-8
+                    {currentGroup === 3 ? '● Kỳ 7-8 (Hiện tại)' : 'Kỳ 7-8'}
                   </button>
                 </div>
               </div>

@@ -587,18 +587,10 @@ export function AcademicProgressPage() {
             <div>
               <strong style={{ fontSize: '14px', color: '#92400e' }}>Chưa có dữ liệu bảng điểm cá nhân</strong>
               <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#b45309' }}>
-                Hồ sơ học vụ chưa ghi nhận bảng điểm chính thức. Toàn bộ các tiêu chí đang ở trạng thái chưa hoàn thành hoặc chưa xác định. Vui lòng nạp bảng điểm từ sv.haui.edu.vn để kích hoạt kiểm toán.
+                Hồ sơ học vụ chưa ghi nhận bảng điểm chính thức. Toàn bộ các tiêu chí đang ở trạng thái chưa hoàn thành hoặc chưa xác định.
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            className="haui-pill-btn-dark"
-            onClick={() => navigate('/transcript')}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>upload_file</span>
-            <span>Nạp bảng điểm ngay</span>
-          </button>
         </div>
       )}
 

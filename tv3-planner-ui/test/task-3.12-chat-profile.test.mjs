@@ -25,6 +25,10 @@ test('live chat does not offer a false course name or fabricate an answer or tim
   assert.ok(!source.includes('generateMockChatResponse'));
   assert.ok(!source.includes('executionTime'));
   assert.ok(!source.includes('Mô hình hoàn thành phản hồi trong'));
+  assert.ok(!source.includes('Mô hình HaUI Academic v2.4'));
+  assert.ok(!source.includes('Lưu ý thuật toán AI'));
+  assert.ok(!source.includes('Tư vấn học tập thông minh (AI Advisor)'));
+  assert.ok(source.includes('Tư vấn học tập thông minh'));
 });
 
 const mockUi = {

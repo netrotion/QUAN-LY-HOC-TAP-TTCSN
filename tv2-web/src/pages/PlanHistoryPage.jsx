@@ -122,16 +122,10 @@ export function PlanHistoryPage() {
           <h2 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--color-ink)', margin: 0 }}>Chưa có lịch sử phiên bản kế hoạch</h2>
           <p style={{ fontSize: '14px', color: 'var(--color-mid-gray)', margin: '0 0 16px', maxWidth: '480px', lineHeight: 1.6 }}>
             {isStudentEmpty
-              ? 'Hồ sơ của bạn chưa có dữ liệu bảng điểm và chưa lưu bản kế hoạch nào. Vui lòng nạp bảng điểm hoặc tạo kế hoạch mới.'
+              ? 'Hồ sơ của bạn chưa có dữ liệu bảng điểm và chưa lưu bản kế hoạch nào.'
               : 'Bạn chưa lưu bản nháp hoặc kích hoạt kế hoạch nào trên hệ thống. Hãy truy cập mục Kế hoạch học tập để tạo và lưu kế hoạch.'}
           </p>
           <div style={{ display: 'flex', gap: '10px' }}>
-            {isStudentEmpty && (
-              <button type="button" className="haui-pill-btn-paper" onClick={() => navigate('/transcript')}>
-                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>upload_file</span>
-                <span>Nạp bảng điểm ngay</span>
-              </button>
-            )}
             <button type="button" className="haui-pill-btn-dark" onClick={() => navigate('/planner')}>
               <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>calendar_add_on</span>
               <span>Lập kế hoạch học tập</span>

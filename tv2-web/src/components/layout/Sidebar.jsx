@@ -9,7 +9,7 @@ const NAV_ITEMS = Object.freeze([
   {
     to: '/chat',
     alias: '/',
-    label: 'Tư vấn AI',
+    label: 'Tư vấn với AI',
     icon: 'smart_toy'
   },
   {
@@ -48,7 +48,7 @@ const NAV_ITEMS = Object.freeze([
  * Sidebar Navigation Component của Web Host (TV2 — design-base-v1)
  * Phong cách "Clinical Blueprint on Frosted Paper" chuẩn xác theo prototype:
  * - Logo thương hiệu HaUI Advisor (SVG)
- * - 8 mục điều hướng với Material Symbols Outlined
+ * - 7 mục điều hướng với Material Symbols Outlined
  * - Thẻ sinh viên tinh gọn bo góc 24px ở đáy sidebar
  * - Hỗ trợ chế độ thu gọn (collapsed 72px) / mở rộng (expanded 268px)
  *

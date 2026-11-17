@@ -584,18 +584,6 @@ export function DashboardPage({ mountedRouteSummary }) {
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px' }}>
           <button
             type="button"
-            className="haui-pill-btn-dark"
-            onClick={() => navigate('/transcript')}
-            title="Mở luồng nạp và bóc tách bảng điểm"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-              upload_file
-            </span>
-            <span>Cập nhật bảng điểm</span>
-          </button>
-
-          <button
-            type="button"
             className="haui-pill-btn-paper"
             onClick={() => navigate('/planner')}
             title="Mở giao diện lập kế hoạch học tập kỳ tới"
@@ -849,13 +837,9 @@ export function DashboardPage({ mountedRouteSummary }) {
             {semesterTrend.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '36px 20px', color: 'var(--color-mid-gray)', backgroundColor: 'var(--color-canvas)', borderRadius: '16px' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '36px', marginBottom: '6px', opacity: 0.6 }}>query_stats</span>
-                <p style={{ margin: '0 0 10px', fontSize: '13px', color: 'var(--color-ink)', fontWeight: 500 }}>
+                <p style={{ margin: '0', fontSize: '13px', color: 'var(--color-ink)', fontWeight: 500 }}>
                   Chưa có dữ liệu bảng điểm để biểu diễn biến thiên GPA &amp; CPA tích lũy.
                 </p>
-                <button type="button" className="haui-pill-btn-paper" onClick={() => navigate('/transcript')}>
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>upload_file</span>
-                  <span>Nạp bảng điểm e-HaUI ngay</span>
-                </button>
               </div>
             ) : (() => {
               const N = semesterTrend.length;
@@ -1007,13 +991,9 @@ export function DashboardPage({ mountedRouteSummary }) {
             <div style={{ padding: '36px 20px', textAlign: 'center', backgroundColor: 'var(--color-surface-alt)', borderRadius: '16px', border: '1px solid var(--color-hairline)' }}>
               <span className="material-symbols-outlined" style={{ fontSize: '36px', color: 'var(--color-mid-gray)', marginBottom: '8px' }}>school</span>
               <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-ink)', margin: '0 0 4px' }}>Chưa có dữ liệu học phần đang học</h3>
-              <p style={{ fontSize: '13px', color: 'var(--color-mid-gray)', margin: '0 0 16px', maxWidth: '520px', marginInline: 'auto' }}>
+              <p style={{ fontSize: '13px', color: 'var(--color-mid-gray)', margin: '0', maxWidth: '520px', marginInline: 'auto' }}>
                 Hiện tại chưa ghi nhận học phần nào đang theo học trong học kỳ này. Khi bạn cập nhật bảng điểm từ cổng sv.haui.edu.vn hoặc đăng ký môn học mới, danh sách sẽ tự động hiển thị tại đây.
               </p>
-              <button type="button" className="haui-pill-btn-paper" onClick={() => navigate('/transcript')}>
-                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>upload_file</span>
-                <span>Cập nhật bảng điểm</span>
-              </button>
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
@@ -1133,13 +1113,9 @@ export function DashboardPage({ mountedRouteSummary }) {
               <div style={{ padding: '36px 20px', textAlign: 'center', backgroundColor: 'var(--color-surface-alt)', borderRadius: '16px', border: '1px solid var(--color-hairline)' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '36px', color: 'var(--color-mid-gray)', marginBottom: '8px' }}>info</span>
                 <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-ink)', margin: '0 0 4px' }}>Chưa có dữ liệu bảng điểm</h3>
-                <p style={{ fontSize: '13px', color: 'var(--color-mid-gray)', margin: '0 0 16px', maxWidth: '440px', marginInline: 'auto' }}>
-                  Hồ sơ hiện tại chưa có dữ liệu bảng điểm cá nhân. Vui lòng nạp bảng điểm từ cổng sv.haui.edu.vn để hệ thống rà soát môn nợ và môn tiên quyết.
+                <p style={{ fontSize: '13px', color: 'var(--color-mid-gray)', margin: '0', maxWidth: '440px', marginInline: 'auto' }}>
+                  Hồ sơ hiện tại chưa có dữ liệu bảng điểm cá nhân.
                 </p>
-                <button type="button" className="haui-pill-btn-paper" onClick={() => navigate('/transcript')}>
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>upload_file</span>
-                  <span>Nạp bảng điểm ngay</span>
-                </button>
               </div>
             ) : failedCoursesList.length > 0 ? (
               failedCoursesList.map((fc) => (

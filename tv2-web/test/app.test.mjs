@@ -314,6 +314,11 @@ test('6. Kiểm tra mốc bàn giao design-base-v1 (Task 2.1): tokens.json, desi
   for (const itemRoute of ['/', '/progress', '/curriculum', '/planner', '/chat', '/audit']) {
     assert.ok(sidebarCode.includes(`'${itemRoute}'`), `Sidebar thiếu route: ${itemRoute}`);
   }
+  assert.ok(!sidebarCode.includes("'/transcript'"), 'Sidebar phải ẩn mục Nhập bảng điểm (/transcript)');
+  assert.ok(sidebarCode.includes("label: 'Tư vấn với AI'"), 'Sidebar menu phải đặt tên là "Tư vấn với AI"');
+
+  const appCode = fs.readFileSync(path.join(tv2Root, 'src/App.jsx'), 'utf-8');
+  assert.ok(appCode.includes('<Route path="/transcript" element={<Navigate to="/" replace />} />'), 'App.jsx phải chuyển hướng /transcript về Trang chủ');
 
   // 4. Kiểm tra UI Shell: Topbar có nút thu gọn sidebar và lối tắt tư vấn AI
   const topbarCode = fs.readFileSync(path.join(tv2Root, 'src/components/layout/Topbar.jsx'), 'utf-8');
@@ -451,6 +456,9 @@ test('9. Task 2.2a: Sơ đồ Cây môn học 4 trạng thái màu và Drawer/Mo
   assert.ok(treeCode.includes('/planner?course_id='));
   assert.ok(treeCode.includes('CHUỖI ẢNH HƯỞNG'));
   assert.ok(treeCode.includes('TIÊN QUYẾT'));
+  assert.ok(!treeCode.includes('Tô sáng luồng môn'), 'CurriculumTreePage phải xóa phần Tô sáng luồng môn');
+  assert.ok(treeCode.includes('Kỳ 1-3') && treeCode.includes('Kỳ 4-6') && treeCode.includes('Kỳ 7-8'), 'CurriculumTreePage phải có các nút điều hướng theo học kỳ (Kỳ 1-3, Kỳ 4-6, Kỳ 7-8)');
+  assert.ok(treeCode.includes('handleScrollToGroup'), 'CurriculumTreePage phải có hàm cuộn theo nhóm học kỳ');
 });
 
 test('10. Task 2.2a: Bảng Kiểm toán tốt nghiệp 100% tiêu chí & Bản in (@media print)', async () => {
