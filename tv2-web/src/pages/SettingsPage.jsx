@@ -73,7 +73,16 @@ export function SettingsPage() {
       return 'light';
     }
   });
-  const [semester, setSemester] = useState('sem7');
+  const [semester, setSemester] = useState(() => {
+    try {
+      const s = localStorage.getItem('haui_settings');
+      if (s) {
+        const p = JSON.parse(s);
+        if (p.semester) return p.semester;
+      }
+    } catch {}
+    return 'sem5';
+  });
   const [language, setLanguage] = useState('vi');
   const [targetCpa, setTargetCpa] = useState('3.40');
   const [creditsLimit, setCreditsLimit] = useState('18');

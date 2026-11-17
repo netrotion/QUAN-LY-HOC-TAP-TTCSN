@@ -12,7 +12,9 @@ import {
 } from '../src/services/academicStore.js';
 import {
   calculateSemesterGpaTrend,
-  mockAcademicService
+  mockAcademicService,
+  NORMAL_SEMESTER_TREND_8,
+  ATRISK_SEMESTER_TREND_8
 } from '../src/services/mockAcademicService.js';
 import { api } from '../src/services/apiClient.js';
 import { plannerStore } from '@haui/planner-ui';
@@ -191,5 +193,40 @@ test('5. Các mục chưa có dữ liệu hiển thị thông báo trạng thái
 
   // 5. Kiểm toán tốt nghiệp: có xử lý khi chưa có dữ liệu kiểm toán
   assert.ok(code.includes('Chưa có dữ liệu kiểm toán'));
+});
+
+test('6. Biến thiên GPA & CPA tích lũy chỉ biểu diễn đến kỳ học hiện tại (currentSemesterNum)', () => {
+  const dashFile = path.resolve(__dirname, '../src/pages/DashboardPage.jsx');
+  const code = fs.readFileSync(dashFile, 'utf-8');
+
+  // Đảm bảo DashboardPage render nhãn HK ${i + 1} và chỉ hiển thị đến kỳ hiện tại
+  assert.ok(code.includes('`HK ${i + 1}`') || code.includes("'HK ' + (i + 1)"));
+  assert.ok(code.includes('currentSemesterNum'));
+  assert.ok(code.includes('targetLength = Math.min(8, Math.max(1, currentSemesterNum))'));
+
+  // Đảm bảo mockAcademicService cung cấp chuẩn 8 học kỳ làm nguồn dữ liệu đầy đủ
+  assert.equal(NORMAL_SEMESTER_TREND_8.length, 8);
+  assert.equal(ATRISK_SEMESTER_TREND_8.length, 8);
+  for (let i = 0; i < 8; i++) {
+    assert.equal(NORMAL_SEMESTER_TREND_8[i].displayLabel, `HK ${i + 1}`);
+    assert.equal(ATRISK_SEMESTER_TREND_8[i].displayLabel, `HK ${i + 1}`);
+  }
+});
+
+test('7. CurriculumTreePage đã xóa chú thích sơ đồ, info sv.haui.edu.vn, Contract V1.3.0 và chuẩn hóa tên CTĐT', () => {
+  const treeFile = path.resolve(__dirname, '../src/pages/CurriculumTreePage.jsx');
+  const code = fs.readFileSync(treeFile, 'utf-8');
+
+  assert.ok(!code.includes('Chú thích sơ đồ:'));
+  assert.ok(!code.includes('Đối chiếu chương trình đào tạo chính thức tại'));
+  assert.ok(!code.includes('Chi tiết học phần (Contract V1.3.0)'));
+  assert.ok(code.includes('Chi tiết học phần'));
+  assert.ok(code.includes('Chương trình đào tạo ngành Kỹ thuật phần mềm'));
+  assert.ok(code.includes('Học kỳ ${s.semester} (Hiện tại)'));
+  assert.ok(code.includes('Kỳ 4-6 (Hiện tại)'));
+  assert.ok(code.includes('repeat(auto-fill, minmax(280px, 1fr))'));
+  assert.ok(!code.includes('• {sem.meta}'));
+  assert.ok(code.includes('blockFilter'));
+  assert.ok(code.includes('Môn kiến thức:'));
 });
 

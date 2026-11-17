@@ -193,10 +193,6 @@ export function Sidebar({ collapsed = false }) {
                 </span>
               </button>
             </div>
-            <div className="haui-sidebar__profile-status">
-              <span className="haui-sidebar__status-dot"></span>
-              <span className="haui-sidebar__status-text">Đang học kỳ 6/8</span>
-            </div>
           </div>
         )}
       </div>

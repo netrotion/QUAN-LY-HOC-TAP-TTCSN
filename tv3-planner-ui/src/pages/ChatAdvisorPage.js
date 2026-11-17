@@ -48,6 +48,10 @@ export function ChatAdvisorPage({
   const [toastMessage, setToastMessage] = useState('');
   const [lastFailedQuery, setLastFailedQuery] = useState(null);
   const lastTurnRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const [attachedFile, setAttachedFile] = useState(null);
+  const attachedFileRef = useRef(attachedFile);
+  attachedFileRef.current = attachedFile;
 
   // Sinh viên hiện tại từ apiConfig
   const [student, setStudent] = useState(() => api?.getConfig?.()?.sessionStudent || null);
@@ -160,15 +164,32 @@ export function ChatAdvisorPage({
     }
   }, [onNavigate]);
 
-  // Xử lý nút đính kèm -> mở luồng nhập bảng điểm chung của TV2 (/transcript)
-  const handleAttachmentClick = useCallback(() => {
-    showToast('Đang chuyển đến luồng Nhập bảng điểm chung của TV2 (/transcript)...');
-    if (typeof onOpenTranscript === 'function') {
-      onOpenTranscript();
-    } else {
-      navigateTo('/transcript');
+  // Xử lý chọn tệp từ máy
+  const handleFileSelect = useCallback((e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      const sizeStr = file.size < 1024 * 1024
+        ? `${(file.size / 1024).toFixed(1)} KB`
+        : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+      setAttachedFile({
+        name: file.name,
+        size: sizeStr,
+        type: file.type,
+        raw: file
+      });
+      showToast(`Đã chọn tệp "${file.name}" (${sizeStr}) từ máy.`);
     }
-  }, [onOpenTranscript, navigateTo, showToast]);
+    if (e.target) {
+      e.target.value = '';
+    }
+  }, [showToast]);
+
+  // Xử lý nút đính kèm -> mở hộp thoại chọn tệp từ máy
+  const handleAttachmentClick = useCallback(() => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  }, []);
 
   // Trợ giúp chuẩn hóa lỗi phản hồi
   const handleChatError = useCallback((err, userMsgId) => {
@@ -212,9 +233,13 @@ export function ChatAdvisorPage({
   // Xử lý gửi tin nhắn tới API cố vấn học vụ (api.advisor.chat / POST /advisor/chat/stream)
   const handleSendMessage = useCallback(async (customText, retry) => {
     const rawText = typeof customText === 'string' ? customText : inputValue;
-    if (!rawText || !rawText.trim()) return;
+    const currentAttachment = attachedFileRef.current;
+    if ((!rawText || !rawText.trim()) && !currentAttachment) return;
 
-    const trimmed = rawText.trim();
+    const attachmentHeader = currentAttachment ? `[Tệp đính kèm: ${currentAttachment.name} (${currentAttachment.size})]` : '';
+    const trimmed = rawText && rawText.trim()
+      ? (currentAttachment ? `${attachmentHeader}\n${rawText.trim()}` : rawText.trim())
+      : `${attachmentHeader}\nVui lòng phân tích tài liệu đính kèm này.`;
     const clientTimestamp = retry?.clientTimestamp || new Date().toISOString();
 
     // 1. Thêm tin nhắn của người dùng vào dòng hội thoại
@@ -223,7 +248,8 @@ export function ChatAdvisorPage({
       id: userMsgId,
       sender: 'user',
       senderName: student?.fullName || 'Nguyễn Văn An',
-      text: trimmed,
+      text: rawText?.trim() || 'Vui lòng phân tích tài liệu đính kèm.',
+      attachment: currentAttachment ? { name: currentAttachment.name, size: currentAttachment.size } : null,
       clientTimestamp,
       timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
       failed: false
@@ -232,6 +258,7 @@ export function ChatAdvisorPage({
     lastTurnRef.current = { id: userMsgId, text: trimmed, clientTimestamp, conversationId };
     setMessages((prev) => [...prev.filter((m) => m.id !== retry?.id), userMsg]);
     setInputValue('');
+    setAttachedFile(null);
     setLoading(true);
     setError(null);
     setLastFailedQuery(trimmed);
@@ -734,6 +761,27 @@ export function ChatAdvisorPage({
                       React.createElement(
                         'div',
                         { className: 'haui-chat-bubble-user' },
+                        msg.attachment
+                          ? React.createElement(
+                              'div',
+                              {
+                                style: {
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '4px 10px',
+                                  borderRadius: '8px',
+                                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                  fontSize: '12px',
+                                  marginBottom: '6px',
+                                  maxWidth: '100%'
+                                }
+                              },
+                              React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '15px' } }, 'attach_file'),
+                              React.createElement('span', { style: { fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, msg.attachment.name),
+                              React.createElement('span', { style: { fontSize: '11px', opacity: 0.85 } }, `(${msg.attachment.size})`)
+                            )
+                          : null,
                         React.createElement('p', { style: { margin: 0, whiteSpace: 'pre-line' } }, msg.text)
                       ),
                       React.createElement(
@@ -1314,6 +1362,7 @@ export function ChatAdvisorPage({
           React.createElement(
             'div',
             {
+              className: 'haui-chat-input-dock',
               style: {
                 backgroundColor: 'var(--color-paper, #ffffff)',
                 borderRadius: 'var(--heroui-radius-xl, 24px)',
@@ -1325,6 +1374,53 @@ export function ChatAdvisorPage({
                 gap: '6px'
               }
             },
+            React.createElement('input', {
+              type: 'file',
+              ref: fileInputRef,
+              style: { display: 'none' },
+              accept: '.pdf,.png,.jpg,.jpeg,.xlsx,.xls,.csv,.docx,.doc,.txt',
+              onChange: handleFileSelect
+            }),
+            attachedFile && React.createElement(
+              'div',
+              {
+                style: {
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '4px 12px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                  border: '1px solid var(--color-hairline, #e5e5e5)',
+                  fontSize: '12px',
+                  color: 'var(--color-ink, #0a0a0a)',
+                  alignSelf: 'flex-start',
+                  maxWidth: '100%',
+                  boxSizing: 'border-box'
+                }
+              },
+              React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px', color: 'var(--color-ink)' } }, 'attach_file'),
+              React.createElement('span', { style: { fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, attachedFile.name),
+              React.createElement('span', { style: { fontSize: '11px', color: 'var(--color-mid-gray, #737373)' } }, `(${attachedFile.size})`),
+              React.createElement(
+                'button',
+                {
+                  type: 'button',
+                  onClick: () => setAttachedFile(null),
+                  title: 'Gỡ tệp đính kèm',
+                  style: {
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '2px',
+                    color: 'var(--color-mid-gray, #737373)'
+                  }
+                },
+                React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '14px' } }, 'close')
+              )
+            ),
             React.createElement(
               'div',
               { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
@@ -1333,18 +1429,18 @@ export function ChatAdvisorPage({
                 'button',
                 {
                   type: 'button',
-                  title: 'Đính kèm bảng điểm hoặc minh chứng',
+                  title: 'Tải tệp lên từ máy (PDF, Ảnh, Excel, Word, Text)',
                   onClick: handleAttachmentClick,
                   style: {
                     width: '38px',
                     height: '38px',
                     borderRadius: 'var(--heroui-radius-full, 9999px)',
-                    backgroundColor: 'var(--color-canvas, #f5f5f5)',
+                    backgroundColor: attachedFile ? 'var(--color-ink, #0a0a0a)' : 'var(--color-canvas, #f5f5f5)',
+                    color: attachedFile ? '#ffffff' : 'var(--color-mid-gray, #737373)',
                     border: 'none',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: 'var(--color-mid-gray, #737373)',
                     cursor: 'pointer',
                     flexShrink: 0,
                     transition: 'all 150ms'
@@ -1401,7 +1497,7 @@ export function ChatAdvisorPage({
                   type: 'button',
                   title: 'Gửi yêu cầu',
                   onClick: () => handleSendMessage(),
-                  disabled: loading || !inputValue.trim(),
+                  disabled: loading || (!inputValue.trim() && !attachedFile),
                   style: {
                     width: '40px',
                     height: '40px',
@@ -1412,8 +1508,8 @@ export function ChatAdvisorPage({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: loading || !inputValue.trim() ? 'not-allowed' : 'pointer',
-                    opacity: loading || !inputValue.trim() ? 0.45 : 1,
+                    cursor: loading || (!inputValue.trim() && !attachedFile) ? 'not-allowed' : 'pointer',
+                    opacity: loading || (!inputValue.trim() && !attachedFile) ? 0.45 : 1,
                     flexShrink: 0,
                     boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)',
                     transition: 'all 150ms'

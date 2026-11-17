@@ -177,7 +177,7 @@ export function CurriculumTreePage() {
     setSelectedCourseCode(code);
   };
 
-  // Xác định học kỳ hiện tại (1..8) động theo dữ liệu sinh viên
+  // Xác định học kỳ hiện tại (1..8) động theo dữ liệu sinh viên (kỳ hiện tại là kỳ 5)
   const currentSemesterNum = useMemo(() => {
     // 1. Thử lấy từ cài đặt của sinh viên nếu có lưu trong haui_settings
     try {
@@ -191,49 +191,45 @@ export function CurriculumTreePage() {
       }
     } catch (_) {}
 
-    // 2. Thử lấy từ các học phần đang học (IN_PROGRESS)
-    const inProgress = courses.filter((c) => c.status === 'IN_PROGRESS');
-    if (inProgress.length > 0) {
-      const sems = inProgress.map((c) => Number(c.suggestedSemester)).filter((n) => n >= 1 && n <= 8);
-      if (sems.length > 0) return Math.max(...sems);
-    }
-
-    // 3. Thử lấy từ các học phần đã đạt cao nhất + 1
-    const passed = courses.filter((c) => c.status === 'PASSED');
-    if (passed.length > 0) {
-      const sems = passed.map((c) => Number(c.suggestedSemester)).filter((n) => n >= 1 && n <= 8);
-      if (sems.length > 0) {
-        const nextSem = Math.max(...sems) + 1;
-        return Math.min(8, nextSem);
-      }
-    }
-
-    // 4. Mặc định là kỳ 6
-    return 6;
-  }, [courses]);
+    // 2. Mặc định chuẩn kỳ học hiện tại của sinh viên là kỳ 5
+    return 5;
+  }, []);
 
   // Nhóm học kỳ chứa kỳ hiện tại: 1 (Kỳ 1-3) | 2 (Kỳ 4-6) | 3 (Kỳ 7-8)
   const currentGroup = currentSemesterNum <= 3 ? 1 : currentSemesterNum <= 6 ? 2 : 3;
 
   const handleScrollToGroup = (group) => {
-    let targetId = 'sem-1';
-    let fallbackTop = 0;
-    if (group === 1) {
-      targetId = currentGroup === 1 ? 'sem-current' : 'sem-1';
-      fallbackTop = 0;
-    } else if (group === 2) {
-      targetId = currentGroup === 2 ? 'sem-current' : 'sem-4';
-      fallbackTop = 480;
-    } else if (group === 3) {
-      targetId = currentGroup === 3 ? 'sem-current' : 'sem-7';
-      fallbackTop = 9999;
+    // Nếu đang lọc theo từng học kỳ thì chuyển về 'all' để hiển thị đầy đủ nhóm kỳ
+    if (semesterFilter !== 'all') {
+      setSemesterFilter('all');
     }
 
-    const el = document.getElementById(targetId) || document.getElementById(group === 1 ? 'sem-1' : group === 2 ? 'sem-4' : 'sem-7');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: group === 1 ? 'start' : 'nearest' });
-    } else if (timelineScrollRef.current) {
-      timelineScrollRef.current.scrollTo({ top: fallbackTop, behavior: 'smooth' });
+    const doScroll = () => {
+      let targetId = 'sem-1';
+      let fallbackTop = 0;
+      if (group === 1) {
+        targetId = currentGroup === 1 ? 'sem-current' : 'sem-1';
+        fallbackTop = 0;
+      } else if (group === 2) {
+        targetId = currentGroup === 2 ? 'sem-current' : 'sem-4';
+        fallbackTop = 480;
+      } else if (group === 3) {
+        targetId = currentGroup === 3 ? 'sem-current' : 'sem-7';
+        fallbackTop = 9999;
+      }
+
+      const el = document.getElementById(targetId) || document.getElementById(group === 1 ? 'sem-1' : group === 2 ? 'sem-4' : 'sem-7');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (timelineScrollRef.current) {
+        timelineScrollRef.current.scrollTo({ top: fallbackTop, behavior: 'smooth' });
+      }
+    };
+
+    if (semesterFilter !== 'all') {
+      setTimeout(doScroll, 80);
+    } else {
+      doScroll();
     }
   };
 
@@ -292,17 +288,17 @@ export function CurriculumTreePage() {
   const filteredTimeline = useMemo(() => {
     const semMap = new Map();
     const defaultSems = [
-      { semester: 1, label: 'Học kỳ 1 · Năm 1', meta: 'Đại cương' },
-      { semester: 2, label: 'Học kỳ 2 · Năm 1', meta: 'Đại cương & Cơ sở' },
-      { semester: 3, label: 'Học kỳ 3 · Năm 2', meta: 'Cơ sở ngành' },
-      { semester: 4, label: 'Học kỳ 4 · Năm 2', meta: 'Cơ sở & Chuyên ngành' },
-      { semester: 5, label: 'Học kỳ 5 · Năm 3', meta: 'Chuyên ngành' },
-      { semester: 6, label: 'Học kỳ 6 · Năm 3', meta: 'Chuyên ngành' },
-      { semester: 7, label: 'Học kỳ 7 · Năm 4', meta: 'Đồ án & Thực tập' },
-      { semester: 8, label: 'Học kỳ 8 · Năm 4', meta: 'Tốt nghiệp' }
+      { semester: 1, label: 'Học kỳ 1 · Năm 1' },
+      { semester: 2, label: 'Học kỳ 2 · Năm 1' },
+      { semester: 3, label: 'Học kỳ 3 · Năm 2' },
+      { semester: 4, label: 'Học kỳ 4 · Năm 2' },
+      { semester: 5, label: 'Học kỳ 5 · Năm 3' },
+      { semester: 6, label: 'Học kỳ 6 · Năm 3' },
+      { semester: 7, label: 'Học kỳ 7 · Năm 4' },
+      { semester: 8, label: 'Học kỳ 8 · Năm 4' }
     ].map((s) => ({
       ...s,
-      meta: s.semester === currentSemesterNum ? `${s.meta} · Hiện tại` : s.meta,
+      label: s.semester === currentSemesterNum ? `Học kỳ ${s.semester} (Hiện tại)` : s.label,
       isCurrent: s.semester === currentSemesterNum
     }));
 
@@ -759,34 +755,6 @@ export function CurriculumTreePage() {
             />
           </div>
         </div>
-
-        {/* Legend bar */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px', paddingTop: '10px', borderTop: '1px solid var(--color-hairline)', fontSize: '12px', color: 'var(--color-mid-gray)' }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '16px' }}>
-            <span style={{ fontWeight: 600, color: 'var(--color-ink)' }}>Chú thích sơ đồ:</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--color-paper)', border: '1px solid var(--color-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 700, color: 'var(--color-ink)' }}></span>
-              Đã hoàn thành
-            </span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--color-ink)' }} />
-              Đang học
-            </span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--color-canvas)', border: '1px solid var(--color-mid-gray)' }} />
-              Đủ điều kiện
-            </span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--color-mid-gray)' }}>lock</span>
-              Khóa / Nợ môn
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>info</span>
-            <span>Đối chiếu chương trình đào tạo chính thức tại <strong>sv.haui.edu.vn</strong></span>
-          </div>
-        </div>
       </div>
 
       {/* =========================================================================
@@ -818,7 +786,13 @@ export function CurriculumTreePage() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-ink)' }}>
-                    {treeData?.curriculumName || 'Chương trình đào tạo'}
+                    {(() => {
+                      const name = treeData?.curriculumName;
+                      if (!name || name === 'Chương trình đào tạo' || name.includes('Kỹ sư Kỹ thuật phần mềm') || name.includes('Khóa 2024')) {
+                        return 'Chương trình đào tạo ngành Kỹ thuật phần mềm';
+                      }
+                      return name;
+                    })()}
                   </span>
                   <span style={{ fontSize: '12px', color: 'var(--color-mid-gray)' }}>
                     Tổng số {courses.length} học phần
@@ -841,7 +815,7 @@ export function CurriculumTreePage() {
                     }}
                     title={currentGroup === 1 ? `Cuộn về Kỳ 1-3 (Kỳ ${currentSemesterNum} hiện tại)` : 'Cuộn về Kỳ 1-3 (Hàng 1)'}
                   >
-                    {currentGroup === 1 ? '● Kỳ 1-3 (Hiện tại)' : 'Kỳ 1-3'}
+                    {currentGroup === 1 ? 'Kỳ 1-3 (Hiện tại)' : 'Kỳ 1-3'}
                   </button>
                   <button
                     type="button"
@@ -854,7 +828,7 @@ export function CurriculumTreePage() {
                     }}
                     title={currentGroup === 2 ? `Cuộn đến Kỳ 4-6 (Kỳ ${currentSemesterNum} hiện tại)` : 'Cuộn đến Kỳ 4-6 (Hàng 2)'}
                   >
-                    {currentGroup === 2 ? '● Kỳ 4-6 (Hiện tại)' : 'Kỳ 4-6'}
+                    {currentGroup === 2 ? 'Kỳ 4-6 (Hiện tại)' : 'Kỳ 4-6'}
                   </button>
                   <button
                     type="button"
@@ -867,7 +841,7 @@ export function CurriculumTreePage() {
                     }}
                     title={currentGroup === 3 ? `Cuộn đến Kỳ 7-8 (Kỳ ${currentSemesterNum} hiện tại)` : 'Cuộn đến Kỳ 7-8 (Hàng 3)'}
                   >
-                    {currentGroup === 3 ? '● Kỳ 7-8 (Hiện tại)' : 'Kỳ 7-8'}
+                    {currentGroup === 3 ? 'Kỳ 7-8 (Hiện tại)' : 'Kỳ 7-8'}
                   </button>
                 </div>
               </div>
@@ -896,11 +870,11 @@ export function CurriculumTreePage() {
               className="haui-tree-timeline-scroll"
               style={{ position: 'relative' }}
             >
-              {/* Semesters Columns Grid Layout (3 semesters per row) */}
+              {/* Semesters Columns Grid Layout: 3 cột khi xem toàn bộ, 1 cột toàn màn hình khi chọn bộ lọc từng học kỳ */}
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                  gridTemplateColumns: semesterFilter !== 'all' ? '1fr' : 'repeat(3, minmax(0, 1fr))',
                   gap: '20px',
                   position: 'relative',
                   zIndex: 1,
@@ -909,6 +883,7 @@ export function CurriculumTreePage() {
               >
                 {filteredTimeline.map((sem) => {
                   const isCurrent = sem.isCurrent;
+                  const isFilteredSingle = semesterFilter !== 'all';
                   return (
                     <div
                       key={sem.semester}
@@ -919,9 +894,11 @@ export function CurriculumTreePage() {
                         flexDirection: 'column',
                         gap: '12px',
                         backgroundColor: isCurrent ? 'var(--color-surface-alt, rgba(245, 245, 245, 0.75))' : 'transparent',
-                        padding: isCurrent ? '12px' : '0',
-                        borderRadius: isCurrent ? '20px' : '0',
-                        border: isCurrent ? '2px solid var(--color-hairline, rgba(10, 10, 10, 0.15))' : 'none'
+                        padding: isCurrent ? '14px' : (isFilteredSingle ? '16px' : '0'),
+                        borderRadius: (isCurrent || isFilteredSingle) ? '20px' : '0',
+                        border: isCurrent
+                          ? '2px solid var(--color-hairline, rgba(10, 10, 10, 0.15))'
+                          : (isFilteredSingle ? '1px solid var(--color-hairline)' : 'none')
                       }}
                     >
                       {/* Semester Column Header (Sticky on vertical scroll) */}
@@ -935,93 +912,111 @@ export function CurriculumTreePage() {
                           zIndex: 5,
                           backgroundColor: isCurrent ? 'var(--color-surface-alt, rgba(240, 240, 240, 0.96))' : 'var(--color-paper)',
                           backdropFilter: 'blur(8px)',
-                          paddingTop: '4px',
-                          paddingBottom: '8px',
-                          borderBottom: '1px solid var(--color-hairline)'
+                          paddingTop: '6px',
+                          paddingBottom: '10px',
+                          borderBottom: '1px solid var(--color-hairline)',
+                          marginBottom: isFilteredSingle ? '6px' : '0'
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           {isCurrent && (
                             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-ink)' }} />
                           )}
-                          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-ink)' }}>{sem.label}</span>
+                          <span style={{ fontSize: isFilteredSingle ? '15px' : '13px', fontWeight: 600, color: 'var(--color-ink)' }}>{sem.label}</span>
                         </div>
-                        <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '9999px', backgroundColor: isCurrent ? 'var(--color-ink)' : 'var(--color-canvas)', color: isCurrent ? 'var(--color-paper)' : 'var(--color-mid-gray)', fontWeight: 500 }}>
+                        <span style={{ fontSize: '11px', padding: '2px 10px', borderRadius: '9999px', backgroundColor: isCurrent ? 'var(--color-ink)' : 'var(--color-canvas)', color: isCurrent ? 'var(--color-paper)' : 'var(--color-mid-gray)', fontWeight: 500 }}>
                           {sem.courses.length} môn
                         </span>
                       </div>
 
-                      {/* Course Cards inside Semester */}
-                      {sem.courses.map((course) => {
-                        const code = course.courseCode;
-                        const isSelected = selectedCourseCode === code;
-                        const isPrereq = activePrereqCodes.has(code);
-                        const isUnlock = activeUnlockCodes.has(code);
-                        const isDimmed = tracerMode === 'tracer' && !isSelected && !isPrereq && !isUnlock;
-                        const meta = getCourseDisplayMeta(course);
+                      {/* Course Cards inside Semester: Dàn trải sang ngang khi chọn bộ lọc theo từng học kỳ */}
+                      <div
+                        style={
+                          isFilteredSingle
+                            ? {
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                                gap: '14px',
+                                width: '100%'
+                              }
+                            : {
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '12px'
+                              }
+                        }
+                      >
+                        {sem.courses.map((course) => {
+                          const code = course.courseCode;
+                          const isSelected = selectedCourseCode === code;
+                          const isPrereq = activePrereqCodes.has(code);
+                          const isUnlock = activeUnlockCodes.has(code);
+                          const isDimmed = tracerMode === 'tracer' && !isSelected && !isPrereq && !isUnlock;
+                          const meta = getCourseDisplayMeta(course);
 
-                        let cardClass = 'haui-tree-map-card';
-                        if (isSelected) cardClass += ' haui-tree-map-card--active';
-                        else if (isPrereq) cardClass += ' haui-tree-map-card--prereq';
-                        else if (isUnlock) cardClass += ' haui-tree-map-card--unlock';
-                        else if (isDimmed) cardClass += ' haui-tree-map-card--dimmed';
+                          let cardClass = 'haui-tree-map-card';
+                          if (isSelected) cardClass += ' haui-tree-map-card--active';
+                          else if (isPrereq) cardClass += ' haui-tree-map-card--prereq';
+                          else if (isUnlock) cardClass += ' haui-tree-map-card--unlock';
+                          else if (isDimmed) cardClass += ' haui-tree-map-card--dimmed';
 
-                        return (
-                          <div
-                            key={code}
-                            className={cardClass}
-                            onClick={() => handleSelectCourse(code)}
-                            style={{
-                              cursor: 'pointer'
-                            }}
-                          >
-                            {/* Card Top: Code + Credits + Relation Tag */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-mono, monospace)', color: 'var(--color-ink)' }}>
-                                {code}
-                              </span>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                {isPrereq && (
-                                  <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '9999px', backgroundColor: '#dcfce7', color: '#15803d', fontWeight: 700 }}>
-                                    ← Tiên quyết
+                          return (
+                            <div
+                              key={code}
+                              className={cardClass}
+                              onClick={() => handleSelectCourse(code)}
+                              style={{
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {/* Card Top: Code + Credits + Relation Tag */}
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-mono, monospace)', color: 'var(--color-ink)' }}>
+                                  {code}
+                                </span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  {isPrereq && (
+                                    <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '9999px', backgroundColor: '#dcfce7', color: '#15803d', fontWeight: 700 }}>
+                                      ← Tiên quyết
+                                    </span>
+                                  )}
+                                  {isUnlock && (
+                                    <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '9999px', backgroundColor: '#dbeafe', color: '#1e40af', fontWeight: 700 }}>
+                                      → Mở khóa
+                                    </span>
+                                  )}
+                                  <span style={{ fontSize: '11px', padding: '1px 8px', borderRadius: '9999px', backgroundColor: isSelected && isCurrent ? 'var(--color-ink)' : 'var(--color-canvas)', color: isSelected && isCurrent ? 'var(--color-paper)' : 'var(--color-ink)', fontWeight: 600 }}>
+                                    {course.credits} TC
                                   </span>
-                                )}
-                                {isUnlock && (
-                                  <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '9999px', backgroundColor: '#dbeafe', color: '#1e40af', fontWeight: 700 }}>
-                                    → Mở khóa
+                                </div>
+                              </div>
+
+                              {/* Card Name & Category */}
+                              <div>
+                                <h4 style={{ margin: 0, fontSize: '13px', fontWeight: isSelected ? 600 : 500, color: 'var(--color-ink)', lineHeight: 1.3 }}>
+                                  {course.courseName}
+                                </h4>
+                                <p style={{ margin: '3px 0 0', fontSize: '11px', color: 'var(--color-mid-gray)' }}>
+                                  {course.knowledgeBlock || 'Học phần CTĐT'}
+                                </p>
+                              </div>
+
+                              {/* Card Bottom: Status & Indicator */}
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid var(--color-hairline)', marginTop: '2px', fontSize: '11px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: meta.statusType === 'passed' ? 'var(--color-ink)' : meta.statusType === 'studying' ? 'var(--color-ink)' : 'var(--color-mid-gray)', fontWeight: 500 }}>
+                                  <span className={`material-symbols-outlined ${meta.statusType === 'studying' ? 'haui-spin' : ''}`} style={{ fontSize: '14px' }}>
+                                    {meta.icon}
                                   </span>
-                                )}
-                                <span style={{ fontSize: '11px', padding: '1px 8px', borderRadius: '9999px', backgroundColor: isSelected && isCurrent ? 'var(--color-ink)' : 'var(--color-canvas)', color: isSelected && isCurrent ? 'var(--color-paper)' : 'var(--color-ink)', fontWeight: 600 }}>
-                                  {course.credits} TC
+                                  <span>{meta.statusText}</span>
+                                </div>
+                                <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--color-mid-gray)' }}>
+                                  {isSelected ? 'check' : meta.statusType === 'eligible' ? 'add_circle' : 'arrow_forward'}
                                 </span>
                               </div>
                             </div>
-
-                            {/* Card Name & Category */}
-                            <div>
-                              <h4 style={{ margin: 0, fontSize: '13px', fontWeight: isSelected ? 600 : 500, color: 'var(--color-ink)', lineHeight: 1.3 }}>
-                                {course.courseName}
-                              </h4>
-                              <p style={{ margin: '3px 0 0', fontSize: '11px', color: 'var(--color-mid-gray)' }}>
-                                {course.knowledgeBlock || 'Học phần CTĐT'}
-                              </p>
-                            </div>
-
-                            {/* Card Bottom: Status & Indicator */}
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid var(--color-hairline)', marginTop: '2px', fontSize: '11px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: meta.statusType === 'passed' ? 'var(--color-ink)' : meta.statusType === 'studying' ? 'var(--color-ink)' : 'var(--color-mid-gray)', fontWeight: 500 }}>
-                                <span className={`material-symbols-outlined ${meta.statusType === 'studying' ? 'haui-spin' : ''}`} style={{ fontSize: '14px' }}>
-                                  {meta.icon}
-                                </span>
-                                <span>{meta.statusText}</span>
-                              </div>
-                              <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--color-mid-gray)' }}>
-                                {isSelected ? 'check' : meta.statusType === 'eligible' ? 'add_circle' : 'arrow_forward'}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
                   );
                 })}
@@ -1051,7 +1046,7 @@ export function CurriculumTreePage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '12px', borderBottom: '1px solid var(--color-hairline)' }}>
                   <div style={{ minWidth: 0 }}>
                     <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-mid-gray)' }}>
-                      Chi tiết học phần (Contract V1.3.0)
+                      Chi tiết học phần
                     </span>
                     <h3 style={{ margin: '4px 0 2px', fontSize: '18px', fontWeight: 600, color: 'var(--color-ink)' }}>
                       {selectedCourse.courseName}

@@ -309,6 +309,242 @@ export function StudentProfilePage({
     }
   }, [onOpenPlanner, navigateTo]);
 
+  // Tải bản Sơ yếu lý lịch sinh viên đã đăng nhập (.doc / HTML kèm hỗ trợ in PDF)
+  const handleDownloadCurriculumVitae = useCallback(() => {
+    if (!profileData) {
+      showToast('Chưa có dữ liệu hồ sơ sinh viên để tải sơ yếu lý lịch.');
+      return;
+    }
+
+    const studentName = fullNameInput || profileData.fullName || 'Sinh viên';
+    const studentCode = profileData.studentCode || 'HaUI';
+    const dob = dobInput || profileData.dob || '';
+    const gender = genderInput || profileData.gender || 'Nam';
+    const phone = phoneInput || profileData.phone || '';
+    const schoolEmail = profileData.email || '';
+    const personalEmail = personalEmailInput || profileData.personalEmail || '';
+    const address = addressInput || profileData.address || 'Hà Nội';
+    const institutionName = institutionInput || profileData.institutionName || 'Trường Đại học Công nghiệp Hà Nội (HaUI)';
+    const faculty = facultyInput || profileData.faculty || 'Khoa Công nghệ Thông tin';
+    const majorName = majorNameInput || profileData.majorName || 'Kỹ thuật Phần mềm';
+    const cohort = cohortInput || profileData.cohort || 'K17 (2022 - 2026)';
+    const advisorClass = advisorClassInput || profileData.advisorClass || '2022DHKTPM01';
+    const spec = specialization || profileData.specialization || 'Kỹ nghệ phần mềm & Hệ thống thông tin';
+
+    const today = new Date();
+    const day = today.getDate();
+    const month = today.getMonth() + 1;
+    const year = today.getFullYear();
+    const formattedDate = `Hà Nội, ngày ${day} tháng ${month} năm ${year}`;
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Sơ yếu lý lịch - ${studentName} - ${studentCode}</title>
+  <style>
+    @page { size: A4; margin: 20mm; }
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 14pt;
+      line-height: 1.5;
+      color: #000;
+      background: #fff;
+      margin: 0;
+      padding: 24px;
+    }
+    .header-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .header-table td { vertical-align: top; text-align: center; }
+    .title { text-align: center; margin: 20px 0 15px; text-transform: uppercase; font-size: 18pt; font-weight: bold; }
+    .section-title { font-weight: bold; font-size: 14pt; margin-top: 18px; margin-bottom: 8px; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 3px; }
+    .info-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+    .info-table td { padding: 6px 4px; vertical-align: top; }
+    .info-label { width: 28%; font-weight: 500; color: #222; }
+    .info-value { font-weight: 600; color: #000; }
+    .photo-box { width: 110px; height: 140px; border: 1px solid #333; display: flex; align-items: center; justify-content: center; font-size: 11pt; color: #666; text-align: center; }
+    .signature-table { width: 100%; margin-top: 35px; border-collapse: collapse; }
+    .signature-table td { text-align: center; vertical-align: top; width: 50%; }
+    @media print {
+      body { padding: 0; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px 16px; margin-bottom: 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-family: Arial, sans-serif; font-size: 13px;">
+    <span>Đang xem bản in <strong>Sơ yếu lý lịch sinh viên</strong>. Bạn có thể in trực tiếp hoặc lưu dưới dạng PDF.</span>
+    <button onclick="window.print()" style="padding: 6px 16px; background: #0a0a0a; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">In / Lưu thành PDF</button>
+  </div>
+
+  <table class="header-table">
+    <tr>
+      <td style="width: 45%;">
+        <strong>BỘ CÔNG THƯƠNG</strong><br>
+        <strong>TRƯỜNG ĐẠI HỌC CÔNG NGHIỆP HÀ NỘI</strong><br>
+        <span style="font-size: 11pt;">Số: ${studentCode || 'HaUI'}/SYLL-HaUI</span>
+      </td>
+      <td style="width: 55%;">
+        <strong>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</strong><br>
+        <strong>Độc lập - Tự do - Hạnh phúc</strong><br>
+        <span style="letter-spacing: 2px;">---------------</span>
+      </td>
+    </tr>
+  </table>
+
+  <table style="width: 100%; margin-bottom: 10px;">
+    <tr>
+      <td style="width: 130px; vertical-align: top;">
+        <div class="photo-box">
+          Ảnh 3x4<br>(Đóng dấu giáp lai)
+        </div>
+      </td>
+      <td style="vertical-align: middle; padding-left: 20px;">
+        <div class="title" style="margin: 0; text-align: left;">SƠ YẾU LÝ LỊCH SINH VIÊN</div>
+        <div style="font-style: italic; font-size: 12pt; margin-top: 5px;">Hệ đào tạo: Đại học chính quy</div>
+        <div style="font-style: italic; font-size: 11pt; color: #444;">(Dữ liệu chính thức trích xuất từ hệ thống HaUI Advisor)</div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="section-title">I. THÔNG TIN BẢN THÂN</div>
+  <table class="info-table">
+    <tr>
+      <td class="info-label">1. Họ và tên khai sinh:</td>
+      <td class="info-value" colspan="3">${studentName.toUpperCase()}</td>
+    </tr>
+    <tr>
+      <td class="info-label">2. Mã sinh viên (MSSV):</td>
+      <td class="info-value" style="width: 32%;">${studentCode}</td>
+      <td class="info-label" style="width: 15%; text-align: right; padding-right: 10px;">3. Giới tính:</td>
+      <td class="info-value">${gender}</td>
+    </tr>
+    <tr>
+      <td class="info-label">4. Ngày, tháng, năm sinh:</td>
+      <td class="info-value">${dob || ''}</td>
+      <td class="info-label" style="text-align: right; padding-right: 10px;">5. Dân tộc:</td>
+      <td class="info-value">Kinh</td>
+    </tr>
+    <tr>
+      <td class="info-label">6. Số điện thoại liên hệ:</td>
+      <td class="info-value">${phone || ''}</td>
+      <td class="info-label" style="text-align: right; padding-right: 10px;">7. Tôn giáo:</td>
+      <td class="info-value">Không</td>
+    </tr>
+    <tr>
+      <td class="info-label">8. Email trường cấp:</td>
+      <td class="info-value" colspan="3">${schoolEmail || ''}</td>
+    </tr>
+    <tr>
+      <td class="info-label">9. Email cá nhân:</td>
+      <td class="info-value" colspan="3">${personalEmail || ''}</td>
+    </tr>
+    <tr>
+      <td class="info-label">10. Nơi ở hiện nay:</td>
+      <td class="info-value" colspan="3">${address}</td>
+    </tr>
+  </table>
+
+  <div class="section-title">II. THÔNG TIN QUÁ TRÌNH HỌC TẬP TẠI TRƯỜNG</div>
+  <table class="info-table">
+    <tr>
+      <td class="info-label">1. Cơ sở đào tạo:</td>
+      <td class="info-value" colspan="3">${institutionName}</td>
+    </tr>
+    <tr>
+      <td class="info-label">2. Khoa / Viện quản lý:</td>
+      <td class="info-value" colspan="3">${faculty}</td>
+    </tr>
+    <tr>
+      <td class="info-label">3. Ngành đào tạo:</td>
+      <td class="info-value">${majorName}</td>
+      <td class="info-label" style="text-align: right; padding-right: 10px;">4. Khóa học:</td>
+      <td class="info-value">${cohort}</td>
+    </tr>
+    <tr>
+      <td class="info-label">5. Lớp sinh hoạt:</td>
+      <td class="info-value">${advisorClass}</td>
+      <td class="info-label" style="text-align: right; padding-right: 10px;">6. Niên khóa:</td>
+      <td class="info-value">2022 - 2026</td>
+    </tr>
+    <tr>
+      <td class="info-label">7. Chuyên ngành đào tạo:</td>
+      <td class="info-value" colspan="3">${spec}</td>
+    </tr>
+    <tr>
+      <td class="info-label">8. Tình trạng học vụ:</td>
+      <td class="info-value" colspan="3">Đang theo học chính quy - Đã định danh chính thức trên HaUI Portal</td>
+    </tr>
+  </table>
+
+  <div class="section-title">III. CAM ĐOAN CỦA SINH VIÊN</div>
+  <p style="margin: 8px 0; text-align: justify; text-indent: 25px;">
+    Tôi xin cam đoan những lời khai trong bản sơ yếu lý lịch này là hoàn toàn đúng sự thật. Nếu có điều gì sai sót, tôi xin hoàn toàn chịu trách nhiệm trước Nhà trường và pháp luật hiện hành.
+  </p>
+
+  <table class="signature-table">
+    <tr>
+      <td>
+        <strong>XÁC NHẬN CỦA KHOA / GIÁO VỤ</strong><br>
+        <span style="font-style: italic; font-size: 11pt;">(Ký, ghi rõ họ tên và đóng dấu)</span>
+        <div style="height: 90px;"></div>
+      </td>
+      <td>
+        <span style="font-style: italic;">${formattedDate}</span><br>
+        <strong>NGƯỜI KHAI KÝ TÊN</strong><br>
+        <span style="font-style: italic; font-size: 11pt;">(Ký và ghi rõ họ tên)</span>
+        <div style="height: 70px;"></div>
+        <strong>${studentName}</strong>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    // 1. Tải trực tiếp file sơ yếu lý lịch (.doc) về máy với UTF-8 BOM
+    if (typeof document !== 'undefined') {
+      const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword;charset=utf-8' });
+      const fileName = `so_yeu_ly_lich_${studentCode}.doc`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      // 2. Mở cửa sổ in ấn cho phép lưu trực tiếp thành PDF nếu trình duyệt hỗ trợ
+      try {
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(htmlContent);
+          printWindow.document.close();
+          printWindow.focus();
+          setTimeout(() => {
+            try { printWindow.print(); } catch (_) {}
+          }, 350);
+        }
+      } catch (_) {}
+
+      showToast(`Đã tải xuống sơ yếu lý lịch sinh viên (${fileName})!`);
+    }
+  }, [
+    profileData,
+    fullNameInput,
+    dobInput,
+    genderInput,
+    phoneInput,
+    personalEmailInput,
+    addressInput,
+    institutionInput,
+    facultyInput,
+    majorNameInput,
+    cohortInput,
+    advisorClassInput,
+    specialization,
+    showToast
+  ]);
+
   // Cập nhật form state khi profileData thay đổi — chỉ điền thông tin có thật, còn lại để trống
   useEffect(() => {
     if (profileData) {
@@ -939,13 +1175,13 @@ export function StudentProfilePage({
                 }
               })
             ),
-            React.createElement(
-              'p',
-              { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)', margin: '4px 0 0', lineHeight: 1.4 } },
-              profileCompletion === 100
-                ? 'Hồ sơ chuẩn hóa đã sẵn sàng cho cổng thẩm định tốt nghiệp và What-if.'
-                : 'Bổ sung các thông tin còn thiếu để hoàn thiện hồ sơ.'
-            )
+            profileCompletion !== 100
+              ? React.createElement(
+                  'p',
+                  { style: { fontSize: '12px', color: 'var(--color-mid-gray, #737373)', margin: '4px 0 0', lineHeight: 1.4 } },
+                  'Bổ sung các thông tin còn thiếu để hoàn thiện hồ sơ.'
+                )
+              : null
           ),
 
           // Divider
@@ -1049,7 +1285,8 @@ export function StudentProfilePage({
             'button',
             {
               type: 'button',
-              onClick: () => showToast('Đang tạo bản sơ yếu lý lịch (.pdf)...'),
+              onClick: handleDownloadCurriculumVitae,
+              title: 'Tải xuống sơ yếu lý lịch sinh viên (.doc / in PDF)',
               style: {
                 width: '100%',
                 display: 'inline-flex',
@@ -1068,7 +1305,7 @@ export function StudentProfilePage({
               }
             },
             React.createElement('span', { className: 'material-symbols-outlined', style: { fontSize: '16px' } }, 'file_download'),
-            'Tải bản sơ yếu lý lịch (.pdf)'
+            'Tải bản sơ yếu lý lịch'
           )
         )
       ),

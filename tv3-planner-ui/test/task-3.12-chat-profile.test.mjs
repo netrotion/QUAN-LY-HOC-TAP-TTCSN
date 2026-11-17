@@ -466,3 +466,58 @@ test('Task 3.12 - 14: UI test Ranh giới kiến trúc — Tuyệt đối không
     `VIOLATION: Phát hiện import ngược từ host vào TV3: ${JSON.stringify(violations)}`
   );
 });
+
+test('Task 3.12 - 15: ChatAdvisorPage hỗ trợ chọn và đính kèm tệp từ máy tính', () => {
+  const srcDir = fs.existsSync(path.resolve('src')) ? path.resolve('src') : path.resolve('tv3-planner-ui/src');
+  const chatFile = path.join(srcDir, 'pages/ChatAdvisorPage.js');
+  const source = fs.readFileSync(chatFile, 'utf-8');
+
+  assert.ok(source.includes('fileInputRef'), 'ChatAdvisorPage phải có fileInputRef để tương tác với input file');
+  assert.ok(
+    source.includes('type: \'file\'') || source.includes('type: "file"'),
+    'ChatAdvisorPage phải có input file native để tải tệp từ máy'
+  );
+  assert.ok(
+    source.includes('handleFileSelect'),
+    'ChatAdvisorPage phải có hàm xử lý handleFileSelect khi người dùng chọn tệp'
+  );
+  assert.ok(
+    source.includes('setAttachedFile(null)') || source.includes('Gỡ tệp đính kèm'),
+    'ChatAdvisorPage phải có thao tác gỡ tệp đính kèm khi không muốn gửi'
+  );
+});
+
+test('Task 3.12 - 16: StudentProfilePage xóa dòng thẩm định tốt nghiệp và xuất sơ yếu lý lịch sinh viên', () => {
+  const srcDir = fs.existsSync(path.resolve('src')) ? path.resolve('src') : path.resolve('tv3-planner-ui/src');
+  const profileFile = path.join(srcDir, 'pages/StudentProfilePage.js');
+  const source = fs.readFileSync(profileFile, 'utf-8');
+
+  assert.ok(
+    !source.includes('Hồ sơ chuẩn hóa đã sẵn sàng cho cổng thẩm định tốt nghiệp và What-if.'),
+    'StudentProfilePage không còn chứa dòng text chuẩn hóa sẵn sàng cho cổng thẩm định tốt nghiệp và What-if.'
+  );
+  assert.ok(
+    source.includes('handleDownloadCurriculumVitae'),
+    'StudentProfilePage phải có hàm xuất và tải sơ yếu lý lịch của sinh viên'
+  );
+  assert.ok(
+    source.includes('so_yeu_ly_lich_'),
+    'Tệp tải về phải có định dạng đặt tên sơ yếu lý lịch kèm mã sinh viên'
+  );
+  assert.ok(
+    !source.includes('.info-dots'),
+    'StudentProfilePage không còn dùng class .info-dots tạo dòng kẻ chấm dưới thông tin'
+  );
+  assert.ok(
+    !source.includes('border-bottom: 1px dotted'),
+    'StudentProfilePage đã xóa dòng kẻ chấm border-bottom dotted dưới các thông tin sơ yếu lý lịch'
+  );
+  assert.ok(
+    !source.includes('Số: ......./SYLL-HaUI'),
+    'StudentProfilePage không còn dùng dấu chấm lửng ..... cho số hiệu sơ yếu lý lịch'
+  );
+  assert.ok(
+    source.includes('.info-value'),
+    'StudentProfilePage dùng class .info-value hiển thị thông tin rõ ràng không bị gạch chân chấm'
+  );
+});

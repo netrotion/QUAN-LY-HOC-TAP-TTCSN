@@ -537,6 +537,28 @@ export function calculateSemesterGpaTrend(attempts = [], overallCpa = null) {
   return trend;
 }
 
+export const NORMAL_SEMESTER_TREND_8 = [
+  { semesterCode: '2022_1', displayLabel: 'HK 1', semesterGpa: 3.25, cumulativeCpa: 3.25, semesterCredits: 17, cumCredits: 17, passedCount: 5, failedCount: 0, totalCourses: 5 },
+  { semesterCode: '2022_2', displayLabel: 'HK 2', semesterGpa: 3.15, cumulativeCpa: 3.20, semesterCredits: 18, cumCredits: 35, passedCount: 5, failedCount: 0, totalCourses: 5 },
+  { semesterCode: '2023_1', displayLabel: 'HK 3', semesterGpa: 3.28, cumulativeCpa: 3.23, semesterCredits: 18, cumCredits: 53, passedCount: 5, failedCount: 0, totalCourses: 5 },
+  { semesterCode: '2023_2', displayLabel: 'HK 4', semesterGpa: 3.12, cumulativeCpa: 3.20, semesterCredits: 17, cumCredits: 70, passedCount: 5, failedCount: 0, totalCourses: 5 },
+  { semesterCode: '2024_1', displayLabel: 'HK 5', semesterGpa: 3.24, cumulativeCpa: 3.21, semesterCredits: 18, cumCredits: 88, passedCount: 5, failedCount: 0, totalCourses: 5 },
+  { semesterCode: '2024_2', displayLabel: 'HK 6', semesterGpa: 3.30, cumulativeCpa: 3.22, semesterCredits: 18, cumCredits: 106, passedCount: 5, failedCount: 0, totalCourses: 5 },
+  { semesterCode: '2025_1', displayLabel: 'HK 7', semesterGpa: 3.20, cumulativeCpa: 3.22, semesterCredits: 16, cumCredits: 122, passedCount: 4, failedCount: 0, totalCourses: 4 },
+  { semesterCode: '2025_2', displayLabel: 'HK 8', semesterGpa: 3.15, cumulativeCpa: 3.20, semesterCredits: 13, cumCredits: 135, passedCount: 3, failedCount: 0, totalCourses: 3 }
+];
+
+export const ATRISK_SEMESTER_TREND_8 = [
+  { semesterCode: '2022_1', displayLabel: 'HK 1', semesterGpa: 2.10, cumulativeCpa: 2.10, semesterCredits: 15, cumCredits: 15, passedCount: 4, failedCount: 0, totalCourses: 4 },
+  { semesterCode: '2022_2', displayLabel: 'HK 2', semesterGpa: 1.54, cumulativeCpa: 1.82, semesterCredits: 16, cumCredits: 31, passedCount: 4, failedCount: 1, totalCourses: 5 },
+  { semesterCode: '2023_1', displayLabel: 'HK 3', semesterGpa: 1.90, cumulativeCpa: 1.85, semesterCredits: 14, cumCredits: 45, passedCount: 4, failedCount: 0, totalCourses: 4 },
+  { semesterCode: '2023_2', displayLabel: 'HK 4', semesterGpa: 1.82, cumulativeCpa: 1.84, semesterCredits: 13, cumCredits: 58, passedCount: 4, failedCount: 0, totalCourses: 4 },
+  { semesterCode: '2024_1', displayLabel: 'HK 5', semesterGpa: 1.92, cumulativeCpa: 1.86, semesterCredits: 15, cumCredits: 73, passedCount: 4, failedCount: 0, totalCourses: 4 },
+  { semesterCode: '2024_2', displayLabel: 'HK 6', semesterGpa: 1.80, cumulativeCpa: 1.85, semesterCredits: 14, cumCredits: 87, passedCount: 4, failedCount: 0, totalCourses: 4 },
+  { semesterCode: '2025_1', displayLabel: 'HK 7', semesterGpa: 1.95, cumulativeCpa: 1.88, semesterCredits: 15, cumCredits: 102, passedCount: 4, failedCount: 0, totalCourses: 4 },
+  { semesterCode: '2025_2', displayLabel: 'HK 8', semesterGpa: 1.75, cumulativeCpa: 1.85, semesterCredits: 12, cumCredits: 114, passedCount: 3, failedCount: 0, totalCourses: 3 }
+];
+
 /**
  * State Controller lưu trữ dữ liệu Mock Service ở phạm vi singleton
  */
@@ -626,7 +648,9 @@ class MockAcademicServiceState {
       policyVersion: 'policy-haui-demo-2026@0.0.1-v0',
       trainingScore: student.studentId === 'std-2026-empty' || !student.hasTranscript ? null : (student.studentId === 'std-2026-001' ? 78 : 84),
       trainingClassification: student.studentId === 'std-2026-empty' || !student.hasTranscript ? 'Chưa có dữ liệu' : (student.studentId === 'std-2026-001' ? 'Khá' : 'Tốt'),
-      semesterTrend: calculateSemesterGpaTrend(student.attempts, context.cpa),
+      semesterTrend: student.studentId === 'std-2026-empty' || !student.hasTranscript
+        ? []
+        : (student.studentId === 'std-2026-001' ? ATRISK_SEMESTER_TREND_8 : NORMAL_SEMESTER_TREND_8),
       failedCourses,
       passedCourses,
       inProgressCourses,
@@ -727,7 +751,7 @@ class MockAcademicServiceState {
 
     return {
       curriculumId: 'curriculum-ktpm-haui-2024',
-      curriculumName: 'Chương trình đào tạo',
+      curriculumName: 'Chương trình đào tạo ngành Kỹ thuật phần mềm',
       majorCode: student.majorCode,
       majorName: student.majorName,
       faculty: student.faculty,
@@ -876,7 +900,7 @@ class MockAcademicServiceState {
     return {
       studentId: student.studentId,
       curriculumId: 'curriculum-ktpm-haui-2024',
-      curriculumName: 'Chương trình đào tạo',
+      curriculumName: 'Chương trình đào tạo ngành Kỹ thuật phần mềm',
       majorCode: student.majorCode,
       totalCreditsRequired: student.totalCreditsRequired || 150,
       transcriptStatus,
